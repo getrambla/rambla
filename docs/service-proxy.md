@@ -4,7 +4,7 @@ Rambla proxies HTTP traffic to services running inside your workspaces. Localhos
 
 ## How it works
 
-When a `paseo.json` script of `"type": "service"` starts, Rambla assigns it a local port and registers a route in the service proxy. Incoming requests whose `Host` header matches the script's generated hostname are forwarded to that port.
+When a `rambla.json` script of `"type": "service"` starts, Rambla assigns it a local port and registers a route in the service proxy. Incoming requests whose `Host` header matches the script's generated hostname are forwarded to that port.
 
 The generated hostname is built from the script name, branch, and project:
 
@@ -28,12 +28,12 @@ Local and public routes use one combined leftmost label (`script--branch--projec
 
 ## Managing workspace scripts
 
-Configured `paseo.json` scripts can be managed without addressing their backing terminal directly:
+Configured `rambla.json` scripts can be managed without addressing their backing terminal directly:
 
 ```bash
-paseo script ls [--cwd <path> | --workspace <workspace-id>]
-paseo script start <name> [--cwd <path> | --workspace <workspace-id>]
-paseo script stop <name> [--cwd <path> | --workspace <workspace-id>]
+rambla script ls [--cwd <path> | --workspace <workspace-id>]
+rambla script start <name> [--cwd <path> | --workspace <workspace-id>]
+rambla script stop <name> [--cwd <path> | --workspace <workspace-id>]
 ```
 
 The commands return the same script metadata shown by the workspace: lifecycle, service port, proxy URLs, health, exit code, and supervised terminal ID. `stop` terminates the managed terminal rather than only removing the proxy route, so normal script lifecycle cleanup remains authoritative. MCP exposes matching `list_workspace_scripts`, `start_workspace_script`, and `stop_workspace_script` tools; those require an explicit workspace ID.
@@ -48,7 +48,7 @@ Add a `serviceProxy` block under `daemon` in `~/.rambla/config.json`:
   "daemon": {
     "serviceProxy": {
       "listen": "0.0.0.0:8080",
-      "publicBaseUrl": "https://paseoapps.my.domain.com"
+      "publicBaseUrl": "https://ramblaapps.my.domain.com"
     }
   }
 }
@@ -65,15 +65,15 @@ Add a `serviceProxy` block under `daemon` in `~/.rambla/config.json`:
 
 For generated URLs to be reachable, you need wildcard DNS pointing to the machine running the Rambla daemon.
 
-**Example:** to expose services at `https://dev--miniweb.paseoapps.my.domain.com` where the daemon host is `10.1.1.1`:
+**Example:** to expose services at `https://dev--miniweb.ramblaapps.my.domain.com` where the daemon host is `10.1.1.1`:
 
 1. Configure a wildcard DNS record:
 
    ```
-   *.paseoapps.my.domain.com  →  10.1.1.1
+   *.ramblaapps.my.domain.com  →  10.1.1.1
    ```
 
-2. Set `publicBaseUrl` to `https://paseoapps.my.domain.com` in your config.
+2. Set `publicBaseUrl` to `https://ramblaapps.my.domain.com` in your config.
 
 3. If you put a reverse proxy (nginx, Caddy, Traefik, etc.) in front of Rambla, point it at either the daemon listener or the optional service-only listener and ensure it forwards the `Host` header unchanged. The proxy uses the `Host` header to route requests to the correct service — rewriting it will break routing.
 
@@ -97,7 +97,7 @@ Nginx example:
 ```nginx
 server {
     listen 443 ssl;
-    server_name *.paseoapps.my.domain.com;
+    server_name *.ramblaapps.my.domain.com;
 
     location / {
         proxy_pass http://10.1.1.1:8080;

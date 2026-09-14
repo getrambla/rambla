@@ -14,7 +14,7 @@ import {
   getRealProviderConfig,
 } from "../../daemon-e2e/real-provider-test-config.js";
 
-const COMMAND_NAME = "paseo-issue-903-big-pickle";
+const COMMAND_NAME = "rambla-issue-903-big-pickle";
 const COMMAND_FILE_NAME = `${COMMAND_NAME}.md`;
 const OPENCODE_REAL_TEST_MODEL = getRealProviderConfig("opencode").model;
 const EXPECTED_RESPONSE = "RAMBLA_ISSUE_903_BIG_PICKLE_OK";
@@ -40,7 +40,7 @@ describe("opencode custom command Big Pickle E2E (real)", () => {
       throw new Error(`Refusing to overwrite existing OpenCode command file: ${commandFile}`);
     }
 
-    const projectDir = await mkdtemp(path.join(tmpdir(), "paseo-opencode-big-pickle-"));
+    const projectDir = await mkdtemp(path.join(tmpdir(), "rambla-opencode-big-pickle-"));
     const logger = pino({ level: "silent" });
     let ctx: DaemonTestContext | undefined;
 

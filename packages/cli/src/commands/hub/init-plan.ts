@@ -26,7 +26,7 @@ export interface HubInitScaffold {
 }
 
 export function hubLoginResumeCommand(step: "connect" | "init", origin: string): string {
-  return step === "connect" ? `paseo hub connect ${origin}` : "paseo hub init";
+  return step === "connect" ? `rambla hub connect ${origin}` : "rambla hub init";
 }
 
 export function resolveHubInitConnection(
@@ -87,8 +87,8 @@ function providerScaffold(
       name: "github-help",
       event: "github.issue_comment",
       connection,
-      filters: { repo, contains: "@paseo", from_users: [user] },
-      testAction: `Comment \`@paseo have a look\` on ${repo}.`,
+      filters: { repo, contains: "@rambla", from_users: [user] },
+      testAction: `Comment \`@rambla have a look\` on ${repo}.`,
     };
   }
 
@@ -135,7 +135,7 @@ function triggerDocument(input: {
       continuation: { mode: "conversation" },
       max_runtime: "90m",
       idle_timeout: "10m",
-      prompt: `${replyInstruction}complete this request and call hub.finish_execution when done.\n\n<user-prompt>\n\${{ paseo.prompt }}\n</user-prompt>\n`,
+      prompt: `${replyInstruction}complete this request and call hub.finish_execution when done.\n\n<user-prompt>\n\${{ rambla.prompt }}\n</user-prompt>\n`,
       ...(input.reply === undefined
         ? {}
         : { outputs: { [input.reply]: { max: 1, required: true } } }),

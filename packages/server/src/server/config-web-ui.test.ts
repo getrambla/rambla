@@ -7,12 +7,12 @@ import { loadConfig } from "./config.js";
 
 const roots: string[] = [];
 async function createRamblaHome(config: unknown): Promise<string> {
-  const root = await mkdtemp(path.join(os.tmpdir(), "paseo-config-web-ui-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "rambla-config-web-ui-"));
   roots.push(root);
-  const paseoHome = path.join(root, ".rambla");
-  await mkdir(paseoHome, { recursive: true });
-  await writeFile(path.join(paseoHome, "config.json"), JSON.stringify(config, null, 2));
-  return paseoHome;
+  const ramblaHome = path.join(root, ".rambla");
+  await mkdir(ramblaHome, { recursive: true });
+  await writeFile(path.join(ramblaHome, "config.json"), JSON.stringify(config, null, 2));
+  return ramblaHome;
 }
 
 function expectBundledWebUiDistDir(distDir: string | null): void {
@@ -96,7 +96,7 @@ describe("daemon web UI config", () => {
 
   test("resolves RAMBLA_WEB_UI_DIST_DIR as absolute path", async () => {
     const home = await createRamblaHome({ version: 1 });
-    const distDir = path.join(os.tmpdir(), "paseo-web-ui-dist");
+    const distDir = path.join(os.tmpdir(), "rambla-web-ui-dist");
 
     const config = loadConfig(home, { env: { RAMBLA_WEB_UI_DIST_DIR: distDir } });
 

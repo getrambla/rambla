@@ -6,7 +6,7 @@ import pino from "pino";
 
 import { resolveBinaryVersion } from "../agent/providers/diagnostic-utils.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import {
   canRunRealProvider,
   createRealProviderClients,

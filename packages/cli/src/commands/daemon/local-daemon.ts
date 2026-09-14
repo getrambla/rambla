@@ -2,7 +2,7 @@ import { spawnSync, type ChildProcess } from "node:child_process";
 import { existsSync, readFileSync, unlinkSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
-import { loadConfig, resolveRamblaHome, spawnProcess } from "@getpaseo/server";
+import { loadConfig, resolveRamblaHome, spawnProcess } from "@getrambla/server";
 import treeKill from "tree-kill";
 import { tryConnectToDaemon } from "../../utils/client.js";
 
@@ -184,7 +184,7 @@ function resolveServerRunnerFromDir(currentDir: string): string | null {
   if (!existsSync(packageJsonPath)) return null;
   try {
     const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as { name?: string };
-    if (packageJson.name !== "@getpaseo/server") return null;
+    if (packageJson.name !== "@getrambla/server") return null;
     const distRunner = path.join(currentDir, "dist", "scripts", "supervisor-entrypoint.js");
     if (existsSync(distRunner)) {
       return distRunner;
@@ -196,7 +196,7 @@ function resolveServerRunnerFromDir(currentDir: string): string | null {
 }
 
 function resolveDaemonRunnerEntry(): string {
-  const serverExportPath = require.resolve("@getpaseo/server");
+  const serverExportPath = require.resolve("@getrambla/server");
   let currentDir = path.dirname(serverExportPath);
 
   while (true) {
@@ -212,11 +212,11 @@ function resolveDaemonRunnerEntry(): string {
     currentDir = parentDir;
   }
 
-  throw new Error("Unable to resolve @getpaseo/server package root for daemon runner");
+  throw new Error("Unable to resolve @getrambla/server package root for daemon runner");
 }
 
-function pidFilePath(paseoHome: string): string {
-  return path.join(paseoHome, DAEMON_PID_FILENAME);
+function pidFilePath(ramblaHome: string): string {
+  return path.join(ramblaHome, DAEMON_PID_FILENAME);
 }
 
 function resolveListenField(listen: unknown, sockPath: unknown): string | undefined {
@@ -587,8 +587,8 @@ export async function startLocalDaemonDetached(
   const daemonRunnerEntry = runtime.resolveRunnerEntry();
   const childEnv = buildChildEnv(options);
 
-  const paseoHome = runtime.resolveHome(childEnv);
-  const logPath = path.join(paseoHome, DAEMON_LOG_FILENAME);
+  const ramblaHome = runtime.resolveHome(childEnv);
+  const logPath = path.join(ramblaHome, DAEMON_LOG_FILENAME);
   const child = runtime.spawnDetached(
     process.execPath,
     [...process.execArgv, daemonRunnerEntry, ...buildRunnerArgs(options)],

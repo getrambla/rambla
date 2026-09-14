@@ -1,4 +1,4 @@
-import { createRamblaApi } from "@getpaseo/client";
+import { createRamblaApi } from "@getrambla/client";
 import { connectToDaemon, getDaemonHost } from "../../utils/client.js";
 import type { CommandError, CommandOptions } from "../../output/index.js";
 
@@ -21,7 +21,7 @@ export async function connectTerminalClient(host?: string) {
     const error: CommandError = {
       code: "DAEMON_NOT_RUNNING",
       message: `Cannot connect to daemon at ${daemonHost}: ${message}`,
-      details: "Start the daemon with: paseo daemon start",
+      details: "Start the daemon with: rambla daemon start",
     };
     throw error;
   }

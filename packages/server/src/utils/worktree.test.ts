@@ -29,7 +29,7 @@ interface LegacyCreateWorktreeTestOptions {
   baseBranch: string;
   worktreeSlug: string;
   runSetup?: boolean;
-  paseoHome?: string;
+  ramblaHome?: string;
 }
 
 function createLegacyWorktreeForTest(
@@ -48,19 +48,19 @@ function createLegacyWorktreeForTest(
       branchName: options.branchName,
     },
     runSetup: options.runSetup ?? true,
-    paseoHome: options.paseoHome,
+    ramblaHome: options.ramblaHome,
   });
 }
 
-describe("paseo worktree manager", () => {
+describe("rambla worktree manager", () => {
   let tempDir: string;
   let repoDir: string;
-  let paseoHome: string;
+  let ramblaHome: string;
 
   beforeEach(() => {
     tempDir = realpathSync(mkdtempSync(join(tmpdir(), "worktree-manager-test-")));
     repoDir = join(tempDir, "test-repo");
-    paseoHome = join(tempDir, "paseo-home");
+    ramblaHome = join(tempDir, "rambla-home");
 
     mkdirSync(repoDir, { recursive: true });
     execFileSync("git", ["init", "-b", "main"], { cwd: repoDir });
@@ -77,13 +77,13 @@ describe("paseo worktree manager", () => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it("treats a worktree as paseo-owned even when its .git admin is missing", async () => {
+  it("treats a worktree as rambla-owned even when its .git admin is missing", async () => {
     const created = await createLegacyWorktreeForTest({
       branchName: "orphan-admin-branch",
       cwd: repoDir,
       baseBranch: "main",
       worktreeSlug: "orphan-admin",
-      paseoHome,
+      ramblaHome,
     });
 
     // Simulate a previous archive attempt that removed git's admin dir but left
@@ -94,21 +94,21 @@ describe("paseo worktree manager", () => {
     });
     expect(existsSync(created.worktreePath)).toBe(true);
 
-    const ownership = await isRamblaOwnedWorktreeCwd(created.worktreePath, { paseoHome });
+    const ownership = await isRamblaOwnedWorktreeCwd(created.worktreePath, { ramblaHome });
     expect(ownership.allowed).toBe(true);
     await expect(
-      isRamblaOwnedWorktreeCwd(join(created.worktreePath, "packages", "app"), { paseoHome }),
+      isRamblaOwnedWorktreeCwd(join(created.worktreePath, "packages", "app"), { ramblaHome }),
     ).resolves.toMatchObject({
       allowed: true,
       worktreePath: created.worktreePath,
     });
   });
 
-  it("rejects paths that are not under the paseo worktrees root", async () => {
-    const outsidePath = join(tempDir, "outside-paseo-home");
+  it("rejects paths that are not under the rambla worktrees root", async () => {
+    const outsidePath = join(tempDir, "outside-rambla-home");
     mkdirSync(outsidePath, { recursive: true });
 
-    const ownership = await isRamblaOwnedWorktreeCwd(outsidePath, { paseoHome });
+    const ownership = await isRamblaOwnedWorktreeCwd(outsidePath, { ramblaHome });
 
     expect(ownership.allowed).toBe(false);
   });
@@ -119,10 +119,10 @@ describe("paseo worktree manager", () => {
       cwd: repoDir,
       baseBranch: "main",
       worktreeSlug: "placement-root",
-      paseoHome,
+      ramblaHome,
     });
 
-    const ownership = await isRamblaOwnedWorktreeCwd(created.worktreePath, { paseoHome });
+    const ownership = await isRamblaOwnedWorktreeCwd(created.worktreePath, { ramblaHome });
 
     expect(ownership.allowed).toBe(true);
     expect(createRealpathAwarePathMatcher(repoDir)(ownership.repoRoot ?? "")).toBe(true);
@@ -181,14 +181,14 @@ describe("paseo worktree manager", () => {
 
   it("rejects the worktrees root itself and the per-repo hash dir", async () => {
     const projectHash = await deriveWorktreeProjectHash(repoDir);
-    const worktreesRoot = join(paseoHome, "worktrees");
+    const worktreesRoot = join(ramblaHome, "worktrees");
     const projectHashDir = join(worktreesRoot, projectHash);
     mkdirSync(projectHashDir, { recursive: true });
 
-    await expect(isRamblaOwnedWorktreeCwd(worktreesRoot, { paseoHome })).resolves.toMatchObject({
+    await expect(isRamblaOwnedWorktreeCwd(worktreesRoot, { ramblaHome })).resolves.toMatchObject({
       allowed: false,
     });
-    await expect(isRamblaOwnedWorktreeCwd(projectHashDir, { paseoHome })).resolves.toMatchObject({
+    await expect(isRamblaOwnedWorktreeCwd(projectHashDir, { ramblaHome })).resolves.toMatchObject({
       allowed: false,
     });
   });
@@ -199,7 +199,7 @@ describe("paseo worktree manager", () => {
       cwd: repoDir,
       baseBranch: "main",
       worktreeSlug: "orphan-delete",
-      paseoHome,
+      ramblaHome,
     });
 
     rmSync(join(repoDir, ".git", "worktrees", "orphan-delete"), {
@@ -211,7 +211,7 @@ describe("paseo worktree manager", () => {
     await deleteRamblaWorktree({
       cwd: repoDir,
       worktreePath: created.worktreePath,
-      paseoHome,
+      ramblaHome,
     });
 
     expect(existsSync(created.worktreePath)).toBe(false);
@@ -223,19 +223,19 @@ describe("paseo worktree manager", () => {
       cwd: repoDir,
       baseBranch: "main",
       worktreeSlug: "idempotent-delete",
-      paseoHome,
+      ramblaHome,
     });
 
     await deleteRamblaWorktree({
       cwd: repoDir,
       worktreePath: created.worktreePath,
-      paseoHome,
+      ramblaHome,
     });
     expect(existsSync(created.worktreePath)).toBe(false);
 
     // Second call — nothing left on disk and no admin entry — must not throw.
     await expect(
-      deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome }),
+      deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, ramblaHome }),
     ).resolves.toBeUndefined();
   });
 
@@ -245,10 +245,10 @@ describe("paseo worktree manager", () => {
       cwd: repoDir,
       baseBranch: "main",
       worktreeSlug: "no-cwd",
-      paseoHome,
+      ramblaHome,
     });
 
-    const ownership = await isRamblaOwnedWorktreeCwd(created.worktreePath, { paseoHome });
+    const ownership = await isRamblaOwnedWorktreeCwd(created.worktreePath, { ramblaHome });
     expect(ownership.allowed).toBe(true);
     expect(ownership.worktreeRoot).toBeTruthy();
 
@@ -258,7 +258,7 @@ describe("paseo worktree manager", () => {
       cwd: null,
       worktreePath: created.worktreePath,
       worktreesRoot: ownership.worktreeRoot,
-      paseoHome,
+      ramblaHome,
     });
 
     expect(existsSync(created.worktreePath)).toBe(false);

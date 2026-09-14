@@ -734,7 +734,7 @@ export const ru: TranslationResources = {
       },
       routes: {
         public: "Обратный прокси",
-        paseo: "Запоминающийся адрес",
+        rambla: "Запоминающийся адрес",
         direct: "Прямой адрес",
       },
       states: {
@@ -1328,7 +1328,7 @@ export const ru: TranslationResources = {
       fullStatus: {
         title: "Полный статус",
         modalTitle: "Статус демона",
-        hint: "Выполняет команду `paseo daemon status` и показывает результат",
+        hint: "Выполняет команду `rambla daemon status` и показывает результат",
         view: "Посмотреть статус",
         copied: "Статус скопирован в буфер обмена.",
         fetchFailed: "Не удалось получить статус демона: {{message}}",
@@ -1892,7 +1892,7 @@ export const ru: TranslationResources = {
       one: "использован {{count}} другой инструмент",
       other: "использованы другие инструменты ({{count}})",
     },
-    paseoCalls: {
+    ramblaCalls: {
       one: "выполнен {{count}} вызов Rambla",
       other: "выполнены вызовы Rambla ({{count}})",
     },
@@ -2640,13 +2640,13 @@ export const ru: TranslationResources = {
         savedToast: "Проект обновлён",
       },
       readFailures: {
-        invalidTitle: "Не удалось разобрать paseo.json",
+        invalidTitle: "Не удалось разобрать rambla.json",
         invalidDescription: "Исправьте файл на диске, затем загрузите его заново.",
         missingTitle: "У этого хоста нет этого проекта",
         missingSingleHost: "У выбранного хоста нет записей об этом проекте.",
-        transportTitle: "Не удалось загрузить paseo.json.",
+        transportTitle: "Не удалось загрузить rambla.json.",
         transportFallback: "Хост не ответил.",
-        failedTitle: "Не удалось загрузить paseo.json.",
+        failedTitle: "Не удалось загрузить rambla.json.",
         failedDescription: "Загрузите данные заново, чтобы повторить попытку.",
       },
       worktree: {
@@ -2657,7 +2657,7 @@ export const ru: TranslationResources = {
           "Дополнительную информацию и переменные среды, доступные для этих команд, см. в документации.",
         setup: "Настройка",
         setupAccessibility: "Команды настройки worktree",
-        uncommittedTitle: "Закоммитьте изменения в paseo.json",
+        uncommittedTitle: "Закоммитьте изменения в rambla.json",
         uncommittedDescription:
           "Новые worktree используют скрипт настройки из выбранной базовой ветки.",
         teardown: "Удаление",
@@ -2703,9 +2703,9 @@ export const ru: TranslationResources = {
       },
       writeFailures: {
         staleTitle: "Конфигурация изменена на диске",
-        staleDescription: "Перед сохранением загрузите с диска последнюю версию paseo.json.",
-        failedTitle: "Не удалось сохранить paseo.json.",
-        failedDescription: "Повторите попытку или загрузите с диска последнюю версию paseo.json.",
+        staleDescription: "Перед сохранением загрузите с диска последнюю версию rambla.json.",
+        failedTitle: "Не удалось сохранить rambla.json.",
+        failedDescription: "Повторите попытку или загрузите с диска последнюю версию rambla.json.",
       },
       actions: {
         reload: "Загрузить заново",

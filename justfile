@@ -131,16 +131,16 @@ ci:
 e2e: e2e-server e2e-cli e2e-app e2e-desktop
 
 e2e-server:
-    PORT=26767 npm run test:integration -w @getpaseo/server
+    PORT=26767 npm run test:integration -w @getrambla/server
 
 e2e-cli:
-    PORT=26768 npm run test:local -w @getpaseo/cli
+    PORT=26768 npm run test:local -w @getrambla/cli
 
 e2e-app:
-    npm run test:e2e -w @getpaseo/app
+    npm run test:e2e -w @getrambla/app
 
 e2e-desktop:
-    npm run test:e2e:renderer -w @getpaseo/desktop
+    npm run test:e2e:renderer -w @getrambla/desktop
 
 start:
     systemctl --user start rambla

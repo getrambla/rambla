@@ -1,5 +1,5 @@
-const VOICE_PROMPT_BLOCK_START = "<paseo_voice_mode>";
-const VOICE_PROMPT_BLOCK_END = "</paseo_voice_mode>";
+const VOICE_PROMPT_BLOCK_START = "<rambla_voice_mode>";
+const VOICE_PROMPT_BLOCK_END = "</rambla_voice_mode>";
 
 const VOICE_AGENT_SYSTEM_INSTRUCTION = [
   "Rambla voice mode is now on.",

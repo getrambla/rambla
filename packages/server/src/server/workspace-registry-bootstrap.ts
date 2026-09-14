@@ -47,7 +47,7 @@ function resolveAgentUpdatedAt(record: StoredAgentRecord): string {
 
 export async function bootstrapWorkspaceRegistries(options: {
   serverId?: string;
-  paseoHome: string;
+  ramblaHome: string;
   agentStorage: AgentStorage;
   projectRegistry: ProjectRegistry;
   workspaceRegistry: WorkspaceRegistry;
@@ -209,8 +209,8 @@ export async function bootstrapWorkspaceRegistries(options: {
 
   options.logger.info(
     {
-      projectsFile: path.join(options.paseoHome, "projects", "projects.json"),
-      workspacesFile: path.join(options.paseoHome, "projects", "workspaces.json"),
+      projectsFile: path.join(options.ramblaHome, "projects", "projects.json"),
+      workspacesFile: path.join(options.ramblaHome, "projects", "workspaces.json"),
       materializedProjects: projectRanges.size,
       materializedWorkspaces: recordsByDirectoryKey.size,
     },

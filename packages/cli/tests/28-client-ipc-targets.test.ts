@@ -17,33 +17,33 @@ console.log("=== CLI IPC Target Helpers ===\n");
 
 {
   console.log("Test 1: unix hosts resolve to ws+unix URLs");
-  const target = resolveDaemonTarget("unix:///tmp/paseo.sock");
+  const target = resolveDaemonTarget("unix:///tmp/rambla.sock");
   assert.deepStrictEqual(target, {
     type: "ipc",
-    url: "ws+unix:///tmp/paseo.sock:/ws",
-    socketPath: "/tmp/paseo.sock",
+    url: "ws+unix:///tmp/rambla.sock:/ws",
+    socketPath: "/tmp/rambla.sock",
   });
   console.log("✓ unix hosts resolve to ws+unix URLs\n");
 }
 
 {
   console.log("Test 1b: bare unix socket paths resolve at the connection boundary");
-  const target = resolveDaemonTarget("/tmp/paseo.sock");
+  const target = resolveDaemonTarget("/tmp/rambla.sock");
   assert.deepStrictEqual(target, {
     type: "ipc",
-    url: "ws+unix:///tmp/paseo.sock:/ws",
-    socketPath: "/tmp/paseo.sock",
+    url: "ws+unix:///tmp/rambla.sock:/ws",
+    socketPath: "/tmp/rambla.sock",
   });
   console.log("✓ bare unix socket paths resolve at the connection boundary\n");
 }
 
 {
   console.log("Test 2: pipe hosts preserve the Node socketPath transport form");
-  const target = resolveDaemonTarget("pipe://\\\\.\\pipe\\paseo-managed-test");
+  const target = resolveDaemonTarget("pipe://\\\\.\\pipe\\rambla-managed-test");
   assert.deepStrictEqual(target, {
     type: "ipc",
     url: "ws://localhost/ws",
-    socketPath: "\\\\.\\pipe\\paseo-managed-test",
+    socketPath: "\\\\.\\pipe\\rambla-managed-test",
   });
   console.log("✓ pipe hosts preserve Node socketPath transport form\n");
 }
@@ -69,58 +69,58 @@ console.log("=== CLI IPC Target Helpers ===\n");
 
 {
   console.log("Test 5: local unix socket paths normalize into IPC daemon targets");
-  assert.strictEqual(normalizeDaemonHost("/tmp/paseo.sock"), "unix:///tmp/paseo.sock");
+  assert.strictEqual(normalizeDaemonHost("/tmp/rambla.sock"), "unix:///tmp/rambla.sock");
   console.log("✓ local unix socket paths normalize into IPC daemon targets\n");
 }
 
 {
   console.log("Test 5b: Windows absolute paths are NOT treated as unix sockets");
-  assert.strictEqual(normalizeDaemonHost("C:\\Users\\foo\\.rambla\\paseo.sock"), null);
+  assert.strictEqual(normalizeDaemonHost("C:\\Users\\foo\\.rambla\\rambla.sock"), null);
   assert.strictEqual(normalizeDaemonHost("D:\\project\\socket"), null);
   console.log("✓ Windows absolute paths are not treated as unix sockets\n");
 }
 
 {
   console.log("Test 6: default host resolution tries local IPC first, then localhost fallback");
-  const paseoHome = mkdtempSync(path.join(os.tmpdir(), "paseo-client-targets-"));
+  const ramblaHome = mkdtempSync(path.join(os.tmpdir(), "rambla-client-targets-"));
   try {
-    mkdirSync(paseoHome, { recursive: true });
+    mkdirSync(ramblaHome, { recursive: true });
     writeFileSync(
-      path.join(paseoHome, "rambla.pid"),
-      JSON.stringify({ pid: process.pid, listen: "/tmp/paseo-from-pid.sock" }),
+      path.join(ramblaHome, "rambla.pid"),
+      JSON.stringify({ pid: process.pid, listen: "/tmp/rambla-from-pid.sock" }),
     );
-    assert.deepStrictEqual(resolveDefaultDaemonHosts({ RAMBLA_HOME: paseoHome }), [
-      "unix:///tmp/paseo-from-pid.sock",
+    assert.deepStrictEqual(resolveDefaultDaemonHosts({ RAMBLA_HOME: ramblaHome }), [
+      "unix:///tmp/rambla-from-pid.sock",
       "localhost:6767",
     ]);
     const previousHome = process.env.RAMBLA_HOME;
     const previousHost = process.env.RAMBLA_HOST;
-    process.env.RAMBLA_HOME = paseoHome;
+    process.env.RAMBLA_HOME = ramblaHome;
     delete process.env.RAMBLA_HOST;
-    assert.strictEqual(getDaemonHost(), "unix:///tmp/paseo-from-pid.sock");
+    assert.strictEqual(getDaemonHost(), "unix:///tmp/rambla-from-pid.sock");
     if (previousHome === undefined) delete process.env.RAMBLA_HOME;
     else process.env.RAMBLA_HOME = previousHome;
     if (previousHost === undefined) delete process.env.RAMBLA_HOST;
     else process.env.RAMBLA_HOST = previousHost;
   } finally {
-    rmSync(paseoHome, { recursive: true, force: true });
+    rmSync(ramblaHome, { recursive: true, force: true });
   }
   console.log("✓ default host resolution tries local IPC first, then localhost fallback\n");
 }
 
 {
   console.log("Test 7: configured TCP host is preserved before the localhost fallback");
-  const paseoHome = mkdtempSync(path.join(os.tmpdir(), "paseo-client-targets-tcp-"));
+  const ramblaHome = mkdtempSync(path.join(os.tmpdir(), "rambla-client-targets-tcp-"));
   try {
     assert.deepStrictEqual(
       resolveDefaultDaemonHosts({
-        RAMBLA_HOME: paseoHome,
+        RAMBLA_HOME: ramblaHome,
         RAMBLA_LISTEN: "127.0.0.1:7777",
       }),
       ["127.0.0.1:7777", "localhost:6767"],
     );
   } finally {
-    rmSync(paseoHome, { recursive: true, force: true });
+    rmSync(ramblaHome, { recursive: true, force: true });
   }
   console.log("✓ configured TCP host is preserved before the localhost fallback\n");
 }
@@ -133,22 +133,22 @@ console.log("=== CLI IPC Target Helpers ===\n");
 
 {
   console.log("Test 9: local IPC still takes priority over configured TCP hosts");
-  const paseoHome = mkdtempSync(path.join(os.tmpdir(), "paseo-client-targets-order-"));
+  const ramblaHome = mkdtempSync(path.join(os.tmpdir(), "rambla-client-targets-order-"));
   try {
-    mkdirSync(paseoHome, { recursive: true });
+    mkdirSync(ramblaHome, { recursive: true });
     writeFileSync(
-      path.join(paseoHome, "rambla.pid"),
-      JSON.stringify({ pid: process.pid, listen: "/tmp/paseo-priority.sock" }),
+      path.join(ramblaHome, "rambla.pid"),
+      JSON.stringify({ pid: process.pid, listen: "/tmp/rambla-priority.sock" }),
     );
     assert.deepStrictEqual(
       resolveDefaultDaemonHosts({
-        RAMBLA_HOME: paseoHome,
+        RAMBLA_HOME: ramblaHome,
         RAMBLA_LISTEN: "127.0.0.1:7777",
       }),
-      ["unix:///tmp/paseo-priority.sock", "127.0.0.1:7777", "localhost:6767"],
+      ["unix:///tmp/rambla-priority.sock", "127.0.0.1:7777", "localhost:6767"],
     );
   } finally {
-    rmSync(paseoHome, { recursive: true, force: true });
+    rmSync(ramblaHome, { recursive: true, force: true });
   }
   console.log("✓ local IPC still takes priority over configured TCP hosts\n");
 }

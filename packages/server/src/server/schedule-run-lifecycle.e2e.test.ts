@@ -46,7 +46,7 @@ function createGitRepo(): string {
   const tempRoot = makeTempDir("schedule-run-worktree-");
   const repoDir = path.join(tempRoot, "repo");
   execFileSync("git", ["init", "-b", "main", repoDir], { stdio: "pipe" });
-  execFileSync("git", ["config", "user.email", "test@getpaseo.local"], {
+  execFileSync("git", ["config", "user.email", "test@getrambla.local"], {
     cwd: repoDir,
     stdio: "pipe",
   });
@@ -275,7 +275,7 @@ test("worktree isolation creates a run worktree and archiveOnFinish removes it",
   const repoDir = createGitRepo();
   const expectedRoot = await getRamblaWorktreesRoot(
     repoDir,
-    realpathSync(ctx.daemon.paseoHome),
+    realpathSync(ctx.daemon.ramblaHome),
     ctx.daemon.config.worktreesRoot,
   );
   const schedule = await createNewAgentSchedule({
@@ -323,7 +323,7 @@ test("update_schedule patches thinking, archive behavior, and isolation for the 
   const repoDir = createGitRepo();
   const expectedRoot = await getRamblaWorktreesRoot(
     repoDir,
-    realpathSync(ctx.daemon.paseoHome),
+    realpathSync(ctx.daemon.ramblaHome),
     ctx.daemon.config.worktreesRoot,
   );
   const schedule = await createNewAgentSchedule({

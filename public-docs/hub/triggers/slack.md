@@ -29,7 +29,7 @@ steps:
     prompt:
       - text: |
           Answer with hub.reply, then call hub.finish_execution.
-          ${{ paseo.prompt }}
+          ${{ rambla.prompt }}
     allow_outputs:
       - { type: slack.reply, max: 1, required: true }
 ```
@@ -44,7 +44,7 @@ Leading declared inputs follow the mention:
 @Rambla repo=project agent=claude investigate the failed sync
 ```
 
-Hub consumes consecutive declared headers and exposes the remainder as `${{ paseo.prompt }}`. See [Workflows](/docs/hub/workflows).
+Hub consumes consecutive declared headers and exposes the remainder as `${{ rambla.prompt }}`. See [Workflows](/docs/hub/workflows).
 
 ## Find your Slack IDs
 

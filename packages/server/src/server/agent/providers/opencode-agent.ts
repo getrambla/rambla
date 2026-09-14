@@ -1567,7 +1567,7 @@ export class OpenCodeAgentClient implements AgentClient {
     return this.bridge.bindSession({
       sessionId,
       env: launchContext.env ?? {},
-      tools: launchContext.paseoTools,
+      tools: launchContext.ramblaTools,
     });
   }
 

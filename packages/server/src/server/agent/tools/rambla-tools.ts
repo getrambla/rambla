@@ -4,7 +4,7 @@ import type { Logger } from "pino";
 
 import type { AgentMode, AgentProvider, AgentSessionConfig } from "../agent-sdk-types.js";
 import type { AgentManager } from "../agent-manager.js";
-import { AgentProfileSchema } from "@getpaseo/protocol/messages";
+import { AgentProfileSchema } from "@getrambla/protocol/messages";
 import type { DaemonConfigStore } from "../../daemon-config-store.js";
 import {
   AgentFeatureSchema,
@@ -34,7 +34,7 @@ import {
 import { createAgentCommand, type CreateAgentFromMcpInput } from "../create-agent/create.js";
 import type { VoiceCallerContext, VoiceSpeakHandler } from "../../voice-types.js";
 import type { FirstAgentContext } from "../../messages.js";
-import { everyMsToFiveFieldCron } from "@getpaseo/protocol/schedule/cadence";
+import { everyMsToFiveFieldCron } from "@getrambla/protocol/schedule/cadence";
 import { expandUserPath, isSameOrDescendantPath, resolvePathFromBase } from "../../path-utils.js";
 import type { TerminalManager } from "../../../terminal/terminal-manager.js";
 import type { CreateRamblaWorktreeWorkflowFn } from "../../worktree-session.js";
@@ -45,7 +45,7 @@ import {
   StoredScheduleSchema,
   type ScheduleCadence,
   type UpdateScheduleInput,
-} from "@getpaseo/protocol/schedule/types";
+} from "@getrambla/protocol/schedule/types";
 import type { ProviderSnapshotManager } from "../provider-snapshot-manager.js";
 import {
   AgentModelSchema,
@@ -92,8 +92,8 @@ import type {
   RamblaToolExecutionContext,
   RamblaToolResult,
 } from "./types.js";
-import type { ProviderRamblaToolsPolicy } from "@getpaseo/protocol/provider-config";
-import { isRamblaToolEnabled } from "../paseo-tool-policy.js";
+import type { ProviderRamblaToolsPolicy } from "@getrambla/protocol/provider-config";
+import { isRamblaToolEnabled } from "../rambla-tool-policy.js";
 
 export interface RamblaToolHostDependencies {
   agentManager: AgentManager;
@@ -130,8 +130,8 @@ export interface RamblaToolHostDependencies {
   ) => Promise<string>;
   browserToolsEnabled?: boolean;
   browserToolsBroker?: BrowserToolsBroker | null;
-  paseoToolPolicy?: ProviderRamblaToolsPolicy;
-  paseoHome?: string;
+  ramblaToolPolicy?: ProviderRamblaToolsPolicy;
+  ramblaHome?: string;
   worktreesRoot?: string;
   /**
    * ID of the agent that is using this tool catalog.
@@ -555,7 +555,7 @@ export function createRamblaToolCatalog(options: RamblaToolHostDependencies): Ra
     resolveCallerContext,
     logger,
   } = options;
-  const childLogger = logger.child({ module: "agent", component: "paseo-tool-catalog" });
+  const childLogger = logger.child({ module: "agent", component: "rambla-tool-catalog" });
   const callerContext = callerAgentId ? (resolveCallerContext?.(callerAgentId) ?? null) : null;
 
   const parseToolInput = async (tool: RamblaToolDefinition, input: unknown): Promise<unknown> => {
@@ -579,7 +579,7 @@ export function createRamblaToolCatalog(options: RamblaToolHostDependencies): Ra
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Tool handlers are schema-validated at registration boundaries.
     handler: (input: any, context: RamblaToolExecutionContext) => Promise<RamblaToolResult>,
   ) => {
-    if (!isRamblaToolEnabled(options.paseoToolPolicy, name)) {
+    if (!isRamblaToolEnabled(options.ramblaToolPolicy, name)) {
       return;
     }
     tools.set(name, {
@@ -1313,7 +1313,7 @@ export function createRamblaToolCatalog(options: RamblaToolHostDependencies): Ra
         });
         const result = await createRamblaWorktreeCommand(
           {
-            paseoHome: options.paseoHome,
+            ramblaHome: options.ramblaHome,
             worktreesRoot: options.worktreesRoot,
             createRamblaWorktreeWorkflow: options.createRamblaWorktree,
           },
@@ -1446,7 +1446,7 @@ export function createRamblaToolCatalog(options: RamblaToolHostDependencies): Ra
           agentManager,
           agentStorage,
           logger: childLogger,
-          paseoHome: options.paseoHome,
+          ramblaHome: options.ramblaHome,
           worktreesRoot: options.worktreesRoot,
           terminalManager,
           providerSnapshotManager,
@@ -2272,7 +2272,7 @@ export function createRamblaToolCatalog(options: RamblaToolHostDependencies): Ra
         "Start one configured workspace script through Rambla's managed workspace-script launcher.",
       inputSchema: {
         workspaceId: z.string().describe("Workspace ID containing the configured script."),
-        scriptName: z.string().min(1).describe("Configured paseo.json script name to start."),
+        scriptName: z.string().min(1).describe("Configured rambla.json script name to start."),
       },
       outputSchema: {
         script: WorkspaceScriptPayloadSchema,
@@ -2298,7 +2298,7 @@ export function createRamblaToolCatalog(options: RamblaToolHostDependencies): Ra
       description: "Stop a running workspace script through its supervised terminal lifecycle.",
       inputSchema: {
         workspaceId: z.string().describe("Workspace ID containing the running script."),
-        scriptName: z.string().min(1).describe("Configured paseo.json script name to stop."),
+        scriptName: z.string().min(1).describe("Configured rambla.json script name to stop."),
       },
       outputSchema: {
         script: WorkspaceScriptPayloadSchema,
@@ -3198,8 +3198,8 @@ function archiveWorktreeDependencies(
     throw new Error("Workspace archiving clearer is required to archive worktrees");
   }
   return {
-    paseoHome: options.paseoHome,
-    paseoWorktreesBaseRoot: options.worktreesRoot,
+    ramblaHome: options.ramblaHome,
+    ramblaWorktreesBaseRoot: options.worktreesRoot,
     github: options.github,
     workspaceGitService: options.workspaceGitService,
     agentManager: context.agentManager,

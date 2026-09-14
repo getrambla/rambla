@@ -12,7 +12,7 @@ import { formatFdroidChangelog, syncFdroidChangelogs } from "./sync-fdroid-chang
 const CHANGELOG_CHARACTER_LIMIT = 500;
 
 function withTempRepo(fn, { changelog, version = "0.2.3" }) {
-  const tempDir = mkdtempSync(path.join(tmpdir(), "paseo-fdroid-changelogs-"));
+  const tempDir = mkdtempSync(path.join(tmpdir(), "rambla-fdroid-changelogs-"));
   try {
     writeFileSync(path.join(tempDir, "package.json"), JSON.stringify({ version }));
     writeFileSync(path.join(tempDir, "CHANGELOG.md"), changelog);
@@ -247,7 +247,7 @@ test("renders the real 0.1.109 notice, which is the entry's whole point", () => 
     "",
     "### Fixed",
     "",
-    "- Rambla Desktop no longer gets stuck connecting or loses native window controls after updating ([#2111](https://github.com/getpaseo/paseo/pull/2111) by [@cleiter](https://github.com/cleiter))",
+    "- Rambla Desktop no longer gets stuck connecting or loses native window controls after updating ([#2111](https://github.com/getrambla/rambla/pull/2111) by [@cleiter](https://github.com/cleiter))",
     "",
   ].join("\n");
 

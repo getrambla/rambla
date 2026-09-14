@@ -4,7 +4,7 @@
 
 Rules for this fork. These override everything below.
 
-- **Never touch the `paseo` bin alias in `packages/cli/package.json`.** Do not remove it, do not rename it, do not "clean it up". Both `paseo` and `rambla` stay mapped to `bin/rambla`. This is not part of any rename, sweep, or refactor. If a task seems to require changing it, stop and ask.
+- **Never touch the `rambla` bin alias in `packages/cli/package.json`.** Do not remove it, do not rename it, do not "clean it up". Both `rambla` and `rambla` stay mapped to `bin/rambla`. This is not part of any rename, sweep, or refactor. If a task seems to require changing it, stop and ask.
 - **Reviewing is read-only.** When asked to review, assess, or whether something is ready, make no edits. Report and stop.
 
 Rambla is a mobile app for monitoring and controlling your local AI coding agents from anywhere. Your dev environment, in your pocket. Connects directly to your actual development environment — your code stays on your machine.
@@ -17,7 +17,7 @@ This is an npm workspace monorepo:
 
 - `packages/server` — Daemon: agent lifecycle, WebSocket API, MCP server
 - `packages/app` — Mobile + web client (Expo)
-- `packages/cli` — Docker-style CLI (`paseo run/ls/logs/wait`)
+- `packages/cli` — Docker-style CLI (`rambla run/ls/logs/wait`)
 - `packages/relay` — E2E encrypted relay for remote access
 - `packages/desktop` — Electron desktop wrapper
 - `packages/website` — Marketing site (rambla.sh)
@@ -110,7 +110,7 @@ npm run format                       # Auto-format with Biome
 npm run format:check                 # Check formatting without writing
 ```
 
-Repo dev commands use checkout-local state by default. In this checkout, `RAMBLA_HOME` resolves to `.dev/paseo-home`, and `npm run cli -- ...` targets that same dev home automatically. The packaged desktop app and production-style daemon keep using `~/.rambla` on port `6767`.
+Repo dev commands use checkout-local state by default. In this checkout, `RAMBLA_HOME` resolves to `.dev/rambla-home`, and `npm run cli -- ...` targets that same dev home automatically. The packaged desktop app and production-style daemon keep using `~/.rambla` on port `6767`.
 
 See [docs/development.md](docs/development.md) for full setup, build sync requirements, and debugging.
 

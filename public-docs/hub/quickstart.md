@@ -8,14 +8,14 @@ category: Hub
 
 # Hub quickstart
 
-Run Hub on your machine, connect it to Slack without a public server, and answer a mention with an agent in your repository. Hub's browser setup hands off to your terminal, and `paseo hub init` writes and deploys a starter trigger for you.
+Run Hub on your machine, connect it to Slack without a public server, and answer a mention with an agent in your repository. Hub's browser setup hands off to your terminal, and `rambla hub init` writes and deploys a starter trigger for you.
 
 You need [Rambla installed and running](/docs), Node.js, and a Slack workspace where you can create an app.
 
 ## 1. Start Hub
 
 ```sh
-npx @getpaseo/hub
+npx @getrambla/hub
 ```
 
 Open the address it prints, normally <http://localhost:3000>, and create the operator account Hub asks for.
@@ -39,7 +39,7 @@ GitHub and Discord can wait. Their setup stays available under **Apps**.
 **Connect a daemon** shows one command with this Hub's address already in it:
 
 ```sh
-paseo hub login http://localhost:3000
+rambla hub login http://localhost:3000
 ```
 
 Run it on the machine where your code lives, in the repository the agent should work in. Run the initializer below from that directory so it becomes the trigger's working directory.
@@ -53,7 +53,7 @@ After approving login, answer **Yes** to **Connect this daemon to Rambla Hub?** 
 Then run:
 
 ```sh
-paseo hub init
+rambla hub init
 ```
 
 Choose **Custom endpoint** and confirm `http://localhost:3000`. Setup reuses your login and daemon connection, then lists the app connections ready for this trigger. With one Slack workspace connected, it selects that connection automatically. With several usable connections, choose the **Trigger connection**. If none is ready, setup sends you to **Hub → Apps** and stops before selecting an agent or writing files.
@@ -74,7 +74,7 @@ Setup validates the trigger and writes:
     └── slack-help.yml
 ```
 
-If `slack-help.yml` already exists, setup asks before replacing that file. Other files remain in place. If you decline deployment, run `paseo hub deploy` from this repository when ready.
+If `slack-help.yml` already exists, setup asks before replacing that file. Other files remain in place. If you decline deployment, run `rambla hub deploy` from this repository when ready.
 
 ## 5. Mention the bot
 
@@ -93,4 +93,4 @@ Hub starts the agent on your daemon and posts its reply in the Slack thread. The
 - [Workflows](/docs/hub/workflows) — routing, prompts, and provider replies.
 - [Hub security](/docs/hub/security) — read this before widening `from_users` or giving an agent GitHub authority.
 
-Hub keeps its local state in your user data directory, normally `~/.local/share/paseo-hub`. [Self-hosting](/docs/hub/self-hosting) covers deployment and advanced configuration when you outgrow the local run.
+Hub keeps its local state in your user data directory, normally `~/.local/share/rambla-hub`. [Self-hosting](/docs/hub/self-hosting) covers deployment and advanced configuration when you outgrow the local run.

@@ -70,15 +70,15 @@ Claude Code has its own CLI, IDE integrations, web surface, scheduled tasks, and
 Rambla's CLI controls the same daemon as the app:
 
 ```bash
-paseo run --provider claude "implement OAuth"
-paseo run --provider codex --worktree refactor-auth "refactor auth"
-paseo run --host devbox:6767 "run the test suite"
-paseo ls
-paseo send <agent-id> "add tests"
-paseo schedule create --cron "0 9 * * 1" "audit the codebase"
+rambla run --provider claude "implement OAuth"
+rambla run --provider codex --worktree refactor-auth "refactor auth"
+rambla run --host devbox:6767 "run the test suite"
+rambla ls
+rambla send <agent-id> "add tests"
+rambla schedule create --cron "0 9 * * 1" "audit the codebase"
 ```
 
-`paseo run --host` connects to a remote daemon. `paseo schedule` runs an agent on a cron. The MCP server lets other agents create worktrees, launch agents, open terminals, and send prompts.
+`rambla run --host` connects to a remote daemon. `rambla schedule` runs an agent on a cron. The MCP server lets other agents create worktrees, launch agents, open terminals, and send prompts.
 
 ## Worktrees and services
 

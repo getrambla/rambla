@@ -35,7 +35,7 @@ This guide scaffolds a plugin, runs it, and adds a workspace panel to it.
 Use an absolute path on the daemon machine:
 
 ```bash
-paseo plugin init /absolute/path/to/workspace-plugin
+rambla plugin init /absolute/path/to/workspace-plugin
 cd /absolute/path/to/workspace-plugin
 npm install
 ```
@@ -49,7 +49,7 @@ greeting through an RPC.
 
 ```text
 workspace-plugin/
-  paseo-plugin.json      # plugin ID and supported Rambla versions
+  rambla-plugin.json      # plugin ID and supported Rambla versions
   index.client.tsx       # runs in the Rambla app
   index.server.ts        # runs in a daemon subprocess
   client/greeting.tsx    # the surface component
@@ -64,7 +64,7 @@ Each entry default-exports one function that registers contributions and returns
 function. `index.client.tsx` registers the surface and the sidebar item that opens it:
 
 ```tsx
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@getrambla/plugin/client";
 import { GreetingSurface } from "./client/greeting";
 
 export default function contribute(client: PluginClientContext) {
@@ -82,7 +82,7 @@ export default function contribute(client: PluginClientContext) {
 `index.server.ts` registers the handler for the contract in `shared/greeting.ts`:
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@getrambla/plugin/server";
 import { createGreeting } from "./server/greeting";
 import { greetingRpc } from "./shared/greeting";
 
@@ -111,23 +111,23 @@ means you trust that codebase, its dependencies, and its future updates.
 
 Turn on **Enable plugins** under **Settings → Plugins** on the daemon you are installing into. It is
 the global switch for every plugin on that daemon. It is also the root `pluginsEnabled` field in the
-daemon's `config.json`; after editing the file, apply it with `paseo reload --json`. An automated
+daemon's `config.json`; after editing the file, apply it with `rambla reload --json`. An automated
 tool must read the current value and get your explicit permission before turning it on.
 
 Then typecheck and install:
 
 ```bash
 npm run typecheck
-paseo plugin install /absolute/path/to/workspace-plugin
-paseo plugin ls
+rambla plugin install /absolute/path/to/workspace-plugin
+rambla plugin ls
 ```
 
-`paseo plugin ls` should report the plugin as `running`. Open Rambla, choose **Greeting** in the
+`rambla plugin ls` should report the plugin as `running`. Open Rambla, choose **Greeting** in the
 sidebar, and press **Create greeting**. The message comes back from the daemon subprocess through
 the RPC.
 
 If the sidebar item is missing, check that **Enable plugins** is on, the plugin is `running`, and
-the client is viewing the host you installed into. `paseo plugin logs workspace-plugin` shows the
+the client is viewing the host you installed into. `rambla plugin logs workspace-plugin` shows the
 daemon-side output, including load errors.
 
 ## Add a workspace panel
@@ -135,7 +135,7 @@ daemon-side output, including load errors.
 A workspace panel opens as a tab next to agents, terminals, and files. Create `client/overview.tsx`:
 
 ```tsx
-import { type PluginWorkspacePanelProps, useWorkspace } from "@getpaseo/plugin/client";
+import { type PluginWorkspacePanelProps, useWorkspace } from "@getrambla/plugin/client";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
@@ -207,11 +207,11 @@ Source changes take effect only when you reload the plugin:
 
 ```bash
 npm run typecheck
-paseo plugin reload workspace-plugin
+rambla plugin reload workspace-plugin
 ```
 
 A reload stops the old plugin, runs its cleanup, compiles the current source, and starts it again.
-A failed reload stays failed and reports its error in `paseo plugin ls`; fix the source and reload
+A failed reload stays failed and reports its error in `rambla plugin ls`; fix the source and reload
 again.
 
 Open a workspace, press **⌘K** on macOS or **Ctrl+K** on Windows and Linux, and choose **Open
@@ -222,19 +222,19 @@ workspace overview**. The panel opens as a workspace tab.
 Plugins published in a Git repository install by shorthand or URL:
 
 ```bash
-paseo plugin add owner/repository
-paseo plugin add https://gitlab.com/group/repository.git
-paseo plugin add owner/monorepo:plugins/workspace
-paseo plugin add owner/repository --ref main
+rambla plugin add owner/repository
+rambla plugin add https://gitlab.com/group/repository.git
+rambla plugin add owner/monorepo:plugins/workspace
+rambla plugin add owner/repository --ref main
 ```
 
 Append `:relative/path` when the plugin lives below the repository root. Without `--ref`, the
 default branch is tracked; a branch tracks updates, while a tag or commit stays pinned.
 
 ```bash
-paseo plugin ls
-paseo plugin update workspace-plugin
-paseo plugin update --all
+rambla plugin ls
+rambla plugin update workspace-plugin
+rambla plugin update --all
 ```
 
 `ls` reports runtime state, source details, and the installed commit without contacting the remote.
@@ -255,11 +255,11 @@ console.error("Issue refresh failed", error);
 Read the recent output from **Settings → Plugins → Logs** or the CLI:
 
 ```bash
-paseo plugin logs workspace-plugin
-paseo plugin logs workspace-plugin --json
+rambla plugin logs workspace-plugin
+rambla plugin logs workspace-plugin --json
 ```
 
-The tail includes `[paseo]` loading, ready, stopping, and stopped entries, plus compilation and load
+The tail includes `[rambla]` loading, ready, stopping, and stopped entries, plus compilation and load
 failures, and it survives reloads and crashes. Client-side output stays in the app. See
 [Debug backend output](/docs/plugins/v0.8/reference#debug-backend-output) for retention and what not to
 log.
@@ -272,5 +272,5 @@ log.
   modules, hosts, and the CLI.
 - [Migrate a plugin to runtime entries](/docs/plugins/v0.8/migration): move a plugin written against the
   single `index.ts` entry, step by step.
-- [TypeScript SDK](/docs/sdk): the workspace, agent, provider, and config API available as `paseo`
+- [TypeScript SDK](/docs/sdk): the workspace, agent, provider, and config API available as `rambla`
   in client and server code.

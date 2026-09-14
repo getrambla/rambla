@@ -2,9 +2,9 @@ import { resolve, dirname, basename } from "path";
 import { existsSync, realpathSync } from "fs";
 import { open as openFile, readFile, stat as statFile } from "fs/promises";
 import { TTLCache } from "@isaacs/ttlcache";
-import type { CheckoutCommit, CheckoutCommitFile } from "@getpaseo/protocol/messages";
-import { parseGitHubRemoteIdentity, parseGitRemoteLocation } from "@getpaseo/protocol/git-remote";
-import { maxBase64EncryptedPlaintextByteLength } from "@getpaseo/relay";
+import type { CheckoutCommit, CheckoutCommitFile } from "@getrambla/protocol/messages";
+import { parseGitHubRemoteIdentity, parseGitRemoteLocation } from "@getrambla/protocol/git-remote";
+import { maxBase64EncryptedPlaintextByteLength } from "@getrambla/relay";
 import type { Logger } from "pino";
 import type { ParsedDiffFile } from "../server/utils/diff-highlighter.js";
 import {
@@ -844,7 +844,7 @@ export interface MergeFromBaseOptions {
 }
 
 export interface CheckoutContext {
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesRoot?: string;
   logger?: Pick<Logger, "trace" | "warn">;
   facts?: CheckoutSnapshotFacts | null;
@@ -862,7 +862,7 @@ export type CheckoutSnapshotFacts =
       remoteUrl: string | null;
       absoluteGitDir: string | null;
       gitCommonDir: string | null;
-      paseoWorktree: RamblaWorktreeForCwd;
+      ramblaWorktree: RamblaWorktreeForCwd;
       storedBaseRef: string | null;
       resolvedBaseRef: string | null;
       mainRepoRoot: string | null;
@@ -1037,7 +1037,7 @@ async function getMainRepoRootFromCommonDir(
     (wt) =>
       !wt.isBare &&
       !isRamblaWorktreePath(wt.path, {
-        paseoHome: context?.paseoHome,
+        ramblaHome: context?.ramblaHome,
         worktreesRoot: context?.worktreesRoot,
       }),
   );
@@ -1055,9 +1055,9 @@ export interface GitWorktreeEntry {
 /** Check whether a path is under Rambla's worktree root. */
 export function isRamblaWorktreePath(
   p: string,
-  options?: { paseoHome?: string; worktreesRoot?: string },
+  options?: { ramblaHome?: string; worktreesRoot?: string },
 ): boolean {
-  if (options?.worktreesRoot || options?.paseoHome) {
+  if (options?.worktreesRoot || options?.ramblaHome) {
     return isDescendantPath(p, resolveRamblaWorktreesBaseRoot(options));
   }
   return /[/\\]\.rambla[/\\]worktrees[/\\]/.test(p);
@@ -1166,7 +1166,7 @@ async function getRamblaWorktreeForCwd(
   }
 
   const ownership = await isRamblaOwnedWorktreeCwd(cwd, {
-    paseoHome: options.context?.paseoHome,
+    ramblaHome: options.context?.ramblaHome,
     worktreesRoot: options.context?.worktreesRoot,
     knownGitCommonDir: options.knownGitCommonDir,
   });
@@ -1197,12 +1197,12 @@ async function getStoredBaseRefForCwd(
   if (context?.facts?.isGit) {
     return context.facts.storedBaseRef;
   }
-  const paseoWorktree = await getRamblaWorktreeForCwd(cwd, { context });
-  if (!paseoWorktree.isRamblaOwnedWorktree) {
+  const ramblaWorktree = await getRamblaWorktreeForCwd(cwd, { context });
+  if (!ramblaWorktree.isRamblaOwnedWorktree) {
     return null;
   }
 
-  return readRamblaWorktreeBaseRef(paseoWorktree.worktreeRoot);
+  return readRamblaWorktreeBaseRef(ramblaWorktree.worktreeRoot);
 }
 
 async function getResolvedBaseRefForCwd(
@@ -1709,7 +1709,7 @@ interface CheckoutInspectionContext {
   remoteUrl: string | null;
   absoluteGitDir: string | null;
   gitCommonDir: string | null;
-  paseoWorktree: RamblaWorktreeForCwd;
+  ramblaWorktree: RamblaWorktreeForCwd;
 }
 
 async function inspectCheckoutContext(
@@ -1727,7 +1727,7 @@ async function inspectCheckoutContext(
     resolveAbsoluteGitDir(cwd, context),
     resolveGitCommonDir(cwd, context),
   ]);
-  const paseoWorktree = await getRamblaWorktreeForCwd(cwd, {
+  const ramblaWorktree = await getRamblaWorktreeForCwd(cwd, {
     context,
     knownWorktreeRoot: root,
     knownGitCommonDir: gitCommonDir,
@@ -1739,7 +1739,7 @@ async function inspectCheckoutContext(
     remoteUrl,
     absoluteGitDir,
     gitCommonDir,
-    paseoWorktree,
+    ramblaWorktree,
   };
 }
 
@@ -1968,10 +1968,10 @@ export async function getCheckoutSnapshotFacts(
     return { isGit: false };
   }
 
-  const paseoWorktreeMetadata = inspected.paseoWorktree.isRamblaOwnedWorktree
-    ? readRamblaWorktreeMetadata(inspected.paseoWorktree.worktreeRoot)
+  const ramblaWorktreeMetadata = inspected.ramblaWorktree.isRamblaOwnedWorktree
+    ? readRamblaWorktreeMetadata(inspected.ramblaWorktree.worktreeRoot)
     : null;
-  const storedBaseRef = storedBaseRefFromMetadata(paseoWorktreeMetadata);
+  const storedBaseRef = storedBaseRefFromMetadata(ramblaWorktreeMetadata);
   const resolvedBaseRef = storedBaseRef ?? (await resolveBaseRef(cwd, context));
   const mainRepoRoot = await getMainRepoRootFromCommonDir(
     cwd,
@@ -2013,7 +2013,7 @@ export async function getCheckoutSnapshotFacts(
   let pullRequestLookupTarget = await resolveFactsPullRequestLookupTarget({
     cwd,
     inspected,
-    metadata: paseoWorktreeMetadata,
+    metadata: ramblaWorktreeMetadata,
     branchRemoteName,
     branchMergeRef,
     branchRemoteUrl,
@@ -2034,7 +2034,7 @@ export async function getCheckoutSnapshotFacts(
     remoteUrl: inspected.remoteUrl,
     absoluteGitDir: inspected.absoluteGitDir,
     gitCommonDir: inspected.gitCommonDir,
-    paseoWorktree: inspected.paseoWorktree,
+    ramblaWorktree: inspected.ramblaWorktree,
     storedBaseRef,
     resolvedBaseRef,
     mainRepoRoot,
@@ -2200,7 +2200,7 @@ export async function getCheckoutStatus(
   const worktreeRoot = facts.worktreeRoot;
   const currentBranch = facts.currentBranch;
   const remoteUrl = facts.remoteUrl;
-  const paseoWorktree = facts.paseoWorktree;
+  const ramblaWorktree = facts.ramblaWorktree;
   const isDirty = await isWorkingTreeDirty(cwd, context);
   const hasRemote = remoteUrl !== null;
   const baseRef = facts.resolvedBaseRef;
@@ -2219,7 +2219,7 @@ export async function getCheckoutStatus(
   const aheadOfOrigin = upstreamStatus?.aheadBehind.ahead ?? null;
   const behindOfOrigin = upstreamStatus?.aheadBehind.behind ?? null;
 
-  if (paseoWorktree.isRamblaOwnedWorktree && baseRef) {
+  if (ramblaWorktree.isRamblaOwnedWorktree && baseRef) {
     return {
       isGit: true,
       repoRoot: worktreeRoot,
@@ -4070,7 +4070,7 @@ function getUnavailablePullRequestStatus(
   }
   if (
     facts?.isGit === true &&
-    facts.paseoWorktree.isRamblaOwnedWorktree &&
+    facts.ramblaWorktree.isRamblaOwnedWorktree &&
     facts.pullRequestLookupTarget === null
   ) {
     return buildPullRequestStatusResult(null, "authenticated");

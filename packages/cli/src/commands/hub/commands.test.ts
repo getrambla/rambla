@@ -54,14 +54,14 @@ describe("Hub commands", () => {
       {
         env: {},
         credentials,
-        flow: { authorize: async () => "paseo_cli_prefix_durable-secret" },
+        flow: { authorize: async () => "rambla_cli_prefix_durable-secret" },
         reporter: quietReporter,
       },
     );
 
     assert.deepEqual(credentials.active(), {
       origin: "https://hub.test",
-      credential: "paseo_cli_prefix_durable-secret",
+      credential: "rambla_cli_prefix_durable-secret",
     });
     assert.deepEqual(result.data, { origin: "https://hub.test", status: "logged_in" });
     assert.equal(JSON.stringify(result).includes("durable-secret"), false);
@@ -80,7 +80,7 @@ describe("Hub commands", () => {
         flow: {
           authorize: async (origin) => {
             events.push(`authorize:${origin}`);
-            return "paseo_cli_prefix_durable-secret";
+            return "rambla_cli_prefix_durable-secret";
           },
         },
         reporter: { progress: (message) => events.push(`progress:${message}`) },
@@ -108,7 +108,7 @@ describe("Hub commands", () => {
         flow: {
           authorize: async () => {
             events.push("login");
-            return "paseo_cli_prefix_durable-secret";
+            return "rambla_cli_prefix_durable-secret";
           },
         },
         isInteractive: () => true,
@@ -139,7 +139,7 @@ describe("Hub commands", () => {
       await runHubLogin(undefined, options, {
         env: {},
         credentials,
-        flow: { authorize: async () => "paseo_cli_prefix_durable-secret" },
+        flow: { authorize: async () => "rambla_cli_prefix_durable-secret" },
         isInteractive: () => interactive,
         continueGuidedSetup: async () => {
           continuationCount += 1;
@@ -338,7 +338,7 @@ describe("Hub commands", () => {
       {
         code: "HUB_API_KEY_REQUIRED",
         message:
-          "No stored Hub login matches https://hub.rambla.sh. Run `paseo hub login https://hub.rambla.sh`, pass --api-key <secret>, or set RAMBLA_HUB_API_KEY.",
+          "No stored Hub login matches https://hub.rambla.sh. Run `rambla hub login https://hub.rambla.sh`, pass --api-key <secret>, or set RAMBLA_HUB_API_KEY.",
       },
     );
 
@@ -364,7 +364,7 @@ describe("Hub commands", () => {
             return [
               {
                 id: "a50e05af-4f20-4c8f-8dcc-58e5ea360663",
-                slug: "paseo",
+                slug: "rambla",
                 name: "Rambla",
               },
             ];
@@ -382,7 +382,7 @@ describe("Hub commands", () => {
       projects: [
         {
           id: "a50e05af-4f20-4c8f-8dcc-58e5ea360663",
-          slug: "paseo",
+          slug: "rambla",
           name: "Rambla",
         },
       ],

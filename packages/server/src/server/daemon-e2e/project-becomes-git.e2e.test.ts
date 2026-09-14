@@ -8,7 +8,7 @@ import { afterEach, expect, test } from "vitest";
 
 import { withTimeout } from "../../utils/promise-timeout.js";
 import { DaemonClient, type DaemonEvent } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import { type PersistedProjectRecord } from "../workspace-registry.js";
 
 const cleanupPaths = new Set<string>();
@@ -49,15 +49,15 @@ afterEach(async () => {
 
 test("an empty project becomes Git without changing its identity or creating a workspace", async () => {
   const projectRoot = realpathSync(
-    mkdtempSync(path.join(os.tmpdir(), "paseo-project-becomes-git-")),
+    mkdtempSync(path.join(os.tmpdir(), "rambla-project-becomes-git-")),
   );
-  const paseoHomeRoot = realpathSync(
-    mkdtempSync(path.join(os.tmpdir(), "paseo-project-becomes-git-home-")),
+  const ramblaHomeRoot = realpathSync(
+    mkdtempSync(path.join(os.tmpdir(), "rambla-project-becomes-git-home-")),
   );
   cleanupPaths.add(projectRoot);
-  cleanupPaths.add(paseoHomeRoot);
+  cleanupPaths.add(ramblaHomeRoot);
 
-  const daemon = await createTestRamblaDaemon({ paseoHomeRoot, cleanup: false });
+  const daemon = await createTestRamblaDaemon({ ramblaHomeRoot, cleanup: false });
   cleanupDaemons.add(daemon);
   const client = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
   cleanupClients.add(client);
@@ -108,7 +108,7 @@ test("an empty project becomes Git without changing its identity or creating a w
   });
 
   const persistedProjects = JSON.parse(
-    await readFile(path.join(daemon.paseoHome, "projects", "projects.json"), "utf8"),
+    await readFile(path.join(daemon.ramblaHome, "projects", "projects.json"), "utf8"),
   ) as PersistedProjectRecord[];
   expect(persistedProjects).toContainEqual({
     projectId: project.projectId,

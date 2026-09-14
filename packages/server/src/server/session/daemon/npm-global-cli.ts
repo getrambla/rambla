@@ -1,8 +1,8 @@
-import { getErrorMessage } from "@getpaseo/protocol/error-utils";
+import { getErrorMessage } from "@getrambla/protocol/error-utils";
 import { z } from "zod";
 import { execCommand } from "../../../utils/spawn.js";
 
-export const RAMBLA_CLI_PACKAGE = "@getpaseo/cli";
+export const RAMBLA_CLI_PACKAGE = "@getrambla/cli";
 
 const NPM_PROBE_TIMEOUT_MS = 10_000;
 const NPM_INSTALL_TIMEOUT_MS = 300_000;

@@ -1,8 +1,8 @@
-import { createRamblaApi, type RamblaApi } from "@getpaseo/client";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import { createRamblaApi, type RamblaApi } from "@getrambla/client";
+import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
 
 export interface PluginSurfaceRuntime {
-  paseo: RamblaApi;
+  rambla: RamblaApi;
   invoke(method: string, input: unknown): Promise<unknown>;
 }
 
@@ -12,7 +12,7 @@ export function createPluginSurfaceRuntime(
 ): PluginSurfaceRuntime | null {
   if (!client) return null;
   return {
-    paseo: createRamblaApi(client),
+    rambla: createRamblaApi(client),
     invoke: (method, input) => client.invokePluginRpc(pluginId, method, input),
   };
 }

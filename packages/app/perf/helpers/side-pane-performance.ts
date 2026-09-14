@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, type Locator, type Page } from "@playwright/test";
 
-const APP_SETTINGS_KEY = "@paseo:app-settings";
+const APP_SETTINGS_KEY = "@rambla:app-settings";
 
 export interface ProfileTarget {
   serverId: string;
@@ -69,7 +69,7 @@ export function resolveProfileTarget(): ProfileTarget {
   const repoRoot = resolve(process.cwd(), "../..");
   const serverId = (
     process.env.RAMBLA_PROFILE_SERVER_ID ??
-    readFileSync(resolve(repoRoot, ".dev/paseo-home/server-id"), "utf8")
+    readFileSync(resolve(repoRoot, ".dev/rambla-home/server-id"), "utf8")
   ).trim();
   const requestedName = process.env.RAMBLA_PROFILE_WORKSPACE_NAME?.trim() || "Rambla";
   const requestedWorkspaceId = process.env.RAMBLA_PROFILE_WORKSPACE_ID?.trim();

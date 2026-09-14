@@ -4,10 +4,10 @@ import os from "node:os";
 import path from "node:path";
 import { createPersistedWorkspaceRecord } from "./workspace-registry.js";
 import { afterEach, beforeEach, expect, test } from "vitest";
-import { CLIENT_CAPS } from "@getpaseo/protocol/client-capabilities";
-import type { SessionOutboundMessage } from "@getpaseo/protocol/messages";
+import { CLIENT_CAPS } from "@getrambla/protocol/client-capabilities";
+import type { SessionOutboundMessage } from "@getrambla/protocol/messages";
 import { DaemonClient } from "./test-utils/daemon-client.js";
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "./test-utils/rambla-daemon.js";
 import {
   MockLoadTestAgentClient,
   MockLoadTestAgentSession,
@@ -425,7 +425,7 @@ test("real WebSocket sessions enforce selective delivery, retained resets, downg
     ["A", "B", "C"].map((title) =>
       legacy.client.createAgent({
         provider: "codex",
-        cwd: daemon.paseoHome,
+        cwd: daemon.ramblaHome,
         title: `Selective ${title}`,
         workspaceId,
         modeId: "full-access",
@@ -560,7 +560,7 @@ test("real WebSocket sessions enforce selective delivery, retained resets, downg
 
 test("blocked setup remains readable on mixed-capability sockets sharing a session", async () => {
   await daemon.close();
-  const root = await mkdtemp(path.join(os.tmpdir(), "paseo-blocked-compat-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "rambla-blocked-compat-"));
   const projects = path.join(root, ".rambla", "projects");
   await mkdir(projects, { recursive: true });
   const workspace = createPersistedWorkspaceRecord({
@@ -579,7 +579,7 @@ test("blocked setup remains readable on mixed-capability sockets sharing a sessi
     },
   });
   await writeFile(path.join(projects, "workspaces.json"), JSON.stringify([workspace]));
-  daemon = await createTestRamblaDaemon({ paseoHomeRoot: root });
+  daemon = await createTestRamblaDaemon({ ramblaHomeRoot: root });
   const legacy = await connect({ clientId: "setup-shared", selective: false });
   const capable = await connect({
     clientId: "setup-shared",
@@ -730,7 +730,7 @@ test("plugin items are gated in provider child streams, child fetches, and rewin
 
 async function createAttentionWorkspace(client: DaemonClient): Promise<string> {
   const result = await client.createWorkspace({
-    source: { kind: "directory", path: daemon.paseoHome },
+    source: { kind: "directory", path: daemon.ramblaHome },
   });
   if (!result.workspace) throw new Error(result.error ?? "Expected workspace");
   return result.workspace.id;

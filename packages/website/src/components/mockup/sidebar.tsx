@@ -31,7 +31,7 @@ const NAV_EXTENDED_LAYOUT = { height: 127 };
 // --- data -------------------------------------------------------------------
 
 type Avatar =
-  | { kind: "paseo" }
+  | { kind: "rambla" }
   | { kind: "blank-page" }
   | { kind: "tile"; letter: string; tile: string };
 
@@ -47,7 +47,7 @@ interface WorkspaceRow {
   selected?: boolean;
 }
 
-const RAMBLA: Avatar = { kind: "paseo" };
+const RAMBLA: Avatar = { kind: "rambla" };
 const BLANK_PAGE: Avatar = { kind: "blank-page" };
 
 const PINNED_ROWS: WorkspaceRow[] = [
@@ -166,7 +166,7 @@ function NavItem({
 
 /** The rounded-square agent avatar, with a blue running dot on the corner. */
 function AvatarIcon({ avatar }: { avatar: Avatar }) {
-  if (avatar.kind === "paseo") {
+  if (avatar.kind === "rambla") {
     return (
       <span className="flex size-[16px] items-center justify-center rounded-[5px] bg-black text-white">
         <RamblaMark size={14} />

@@ -2,22 +2,22 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "vitest";
-import { createRamblaApi } from "@getpaseo/client";
+import { createRamblaApi } from "@getrambla/client";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 
 test("an RPC-only plugin receives no agent, project or provider data", async () => {
-  const directory = await mkdtemp(path.join(tmpdir(), "paseo-quiet-plugin-"));
-  await writeFile(path.join(directory, "paseo-plugin.json"), JSON.stringify({ id: "quiet" }));
+  const directory = await mkdtemp(path.join(tmpdir(), "rambla-quiet-plugin-"));
+  await writeFile(path.join(directory, "rambla-plugin.json"), JSON.stringify({ id: "quiet" }));
   await writeFile(
     path.join(directory, "index.server.ts"),
     `
-import { defineRpc } from "@getpaseo/plugin";
+import { defineRpc } from "@getrambla/plugin";
 import { z } from "zod";
 export default function contribute(server) {
   const counts = {};
   const observe = message => {
-    if (message.type !== "paseo_frame" || typeof message.data !== "string") return;
+    if (message.type !== "rambla_frame" || typeof message.data !== "string") return;
     const frame = JSON.parse(message.data);
     const type = frame.message?.type;
     if (type) counts[type] = (counts[type] ?? 0) + 1;

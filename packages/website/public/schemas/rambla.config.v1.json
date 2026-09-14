@@ -326,7 +326,7 @@
                       "type": "string"
                     }
                   },
-                  "paseoTools": {
+                  "ramblaTools": {
                     "type": "object",
                     "properties": {
                       "enabled": {

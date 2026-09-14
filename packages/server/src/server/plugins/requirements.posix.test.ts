@@ -16,12 +16,12 @@ async function directory() {
   roots.push(root);
   return root;
 }
-async function writePlugin(root: string, paseo?: string, build?: string[][]) {
+async function writePlugin(root: string, rambla?: string, build?: string[][]) {
   await writeFile(
-    path.join(root, "paseo-plugin.json"),
+    path.join(root, "rambla-plugin.json"),
     JSON.stringify({
       id: "example",
-      requirements: paseo === undefined ? undefined : { paseo },
+      requirements: rambla === undefined ? undefined : { rambla },
       build,
     }),
   );
@@ -69,7 +69,7 @@ it("rejects incompatible installs without persisting them, then accepts the corr
     status: "running",
   });
   expect(service.catalog()).toEqual([
-    { id: "example", requirements: { paseo: "^0.8.0" }, clientBundle: expect.any(String) },
+    { id: "example", requirements: { rambla: "^0.8.0" }, clientBundle: expect.any(String) },
   ]);
 });
 

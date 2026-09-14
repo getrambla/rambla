@@ -17,7 +17,7 @@ describe("agent provider runtime", () => {
       .mockImplementation(() => undefined);
     const close = vi.spyOn(OpenCodeBridge.prototype, "close").mockResolvedValue();
     const runtime = await createAgentProviderRuntime({
-      paseoHome: "/tmp/paseo-provider-runtime-test",
+      ramblaHome: "/tmp/rambla-provider-runtime-test",
       logger: createTestLogger(),
       snapshotManager: {},
     });
@@ -41,7 +41,7 @@ describe("agent provider runtime", () => {
 
     await expect(
       createAgentProviderRuntime({
-        paseoHome: "/tmp/paseo-provider-runtime-test",
+        ramblaHome: "/tmp/rambla-provider-runtime-test",
         logger: createTestLogger(),
         snapshotManager: {},
       }),

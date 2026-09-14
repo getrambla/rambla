@@ -1,6 +1,6 @@
 import { page } from "@vitest/browser/context";
 import { afterEach, describe, expect, it } from "vitest";
-import type { TerminalState } from "@getpaseo/protocol/messages";
+import type { TerminalState } from "@getrambla/protocol/messages";
 import { encodeTerminalOutput, TerminalEmulatorRuntime } from "./terminal-emulator-runtime";
 
 // Regression: "streaming pino log, resized the Rambla terminal, old logs stayed
@@ -61,7 +61,7 @@ function mount(width: number, height: number): Mounted {
     scrollback: 10_000,
     theme: { background: "#0b0b0b", foreground: "#e6e6e6", cursor: "#e6e6e6" },
   });
-  const terminal = window.__paseoTerminal as InspectableTerminal | undefined;
+  const terminal = window.__ramblaTerminal as InspectableTerminal | undefined;
   if (!terminal) {
     throw new Error("terminal did not mount");
   }

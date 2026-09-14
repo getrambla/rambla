@@ -12,7 +12,7 @@ Git worktrees are one kind of workspace.
 
 A [workspace](/docs/workspaces) is the place where a task happens. When that workspace is backed by a git worktree, Rambla creates a separate directory on a separate branch so parallel agents never step on each other.
 
-This page covers the git-specific details: where worktrees live, how branches are chosen, and how to configure setup hooks, scripts, terminals, and long-running services through `paseo.json`.
+This page covers the git-specific details: where worktrees live, how branches are chosen, and how to configure setup hooks, scripts, terminals, and long-running services through `rambla.json`.
 
 ## Layout and workflow
 
@@ -30,7 +30,7 @@ With a custom root, Rambla keeps the same hashed layout under that directory:
 ```json
 {
   "worktrees": {
-    "root": "/mnt/fast/paseo-worktrees"
+    "root": "/mnt/fast/rambla-worktrees"
   }
 }
 ```
@@ -47,7 +47,7 @@ The examples below use the current directory as the source checkout. Pass `--pat
 Branch off from a base branch:
 
 ```bash
-paseo workspace create \
+rambla workspace create \
   --isolation worktree \
   --mode branch-off \
   --new-branch feature/auth \
@@ -60,7 +60,7 @@ Use `origin/main` rather than `main`. Rambla fetches remote refs in the backgrou
 Check out an existing branch:
 
 ```bash
-paseo workspace create \
+rambla workspace create \
   --isolation worktree \
   --mode checkout-branch \
   --branch feature/existing \
@@ -70,7 +70,7 @@ paseo workspace create \
 Or open a pull request in its own workspace:
 
 ```bash
-paseo workspace create \
+rambla workspace create \
   --isolation worktree \
   --mode checkout-pr \
   --pr-number 2186
@@ -78,9 +78,9 @@ paseo workspace create \
 
 Add `--forge <name>` when Rambla cannot infer the forge from the source checkout.
 
-## paseo.json
+## rambla.json
 
-Drop a `paseo.json` in your repo root. Rambla reads it from the committed version of the base branch you picked, so uncommitted changes in other branches don't apply.
+Drop a `rambla.json` in your repo root. Rambla reads it from the committed version of the base branch you picked, so uncommitted changes in other branches don't apply.
 
 ```json
 {
@@ -116,7 +116,7 @@ Commands run with the worktree as `cwd`. Use `$RAMBLA_SOURCE_CHECKOUT_PATH` to r
 
 `scripts` are named commands you can run inside a worktree on demand. Mark one as a _service_ and Rambla supervises it as a long-running process, assigns it a port, and routes HTTP traffic to it through the daemon's reverse proxy.
 
-Run them from the app, or manage them from automation with [`paseo script`](/docs/cli#workspace-scripts) and the [workspace-script MCP tools](/docs/mcp#workspace-scripts).
+Run them from the app, or manage them from automation with [`rambla script`](/docs/cli#workspace-scripts) and the [workspace-script MCP tools](/docs/mcp#workspace-scripts).
 
 ### Plain scripts
 
@@ -153,7 +153,7 @@ Omit `port` to let Rambla auto-assign one. Bind your process to `$RAMBLA_PORT` r
 ### Dynamic port allocation
 
 By default, Rambla asks the OS for an available ephemeral port. Configure a range globally in
-`~/.rambla/config.json` or per project in `paseo.json`:
+`~/.rambla/config.json` or per project in `rambla.json`:
 
 ```json
 // ~/.rambla/config.json
@@ -165,7 +165,7 @@ By default, Rambla asks the OS for an available ephemeral port. Configure a rang
 ```
 
 ```json
-// paseo.json
+// rambla.json
 {
   "worktree": {
     "servicePorts": { "range": "3000-4000" }
@@ -255,10 +255,10 @@ Services additionally get:
 ## Manage the workspace
 
 ```bash
-paseo workspace ls
-paseo run --workspace <workspace-id> "implement auth"
-paseo workspace rename <workspace-id> "Auth rework"
-paseo workspace archive <workspace-id>
+rambla workspace ls
+rambla run --workspace <workspace-id> "implement auth"
+rambla workspace rename <workspace-id> "Auth rework"
+rambla workspace archive <workspace-id>
 ```
 
-For the common case, `paseo run --new-workspace worktree --worktree-mode branch-off --new-branch feature/auth --base origin/main "implement auth"` creates both the workspace and its first agent.
+For the common case, `rambla run --new-workspace worktree --worktree-mode branch-off --new-branch feature/auth --base origin/main "implement auth"` creates both the workspace and its first agent.

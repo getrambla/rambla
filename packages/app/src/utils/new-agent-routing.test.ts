@@ -16,13 +16,13 @@ describe("resolveNewAgentWorkingDir", () => {
     expect(resolveNewAgentWorkingDir("/repo/.rambla/worktrees/feature", null)).toBe("/repo");
   });
 
-  it("supports windows-style paseo worktree paths without checkout metadata", () => {
+  it("supports windows-style rambla worktree paths without checkout metadata", () => {
     expect(
       resolveNewAgentWorkingDir("C:\\Users\\me\\repo\\.rambla\\worktrees\\feature", null),
     ).toBe("C:\\Users\\me\\repo");
   });
 
-  it("returns the main repo root for paseo-owned worktrees", () => {
+  it("returns the main repo root for rambla-owned worktrees", () => {
     const checkout = {
       isRamblaOwnedWorktree: true,
       worktreeRoot: "/repo/.rambla/worktrees/feature",

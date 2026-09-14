@@ -1,7 +1,7 @@
 import type { ITheme } from "@xterm/xterm";
 import xtermCss from "@xterm/xterm/css/xterm.css";
-import type { TerminalState } from "@getpaseo/protocol/messages";
-import type { TerminalInputModeState } from "@getpaseo/protocol/terminal-input-mode";
+import type { TerminalState } from "@getrambla/protocol/messages";
+import type { TerminalInputModeState } from "@getrambla/protocol/terminal-input-mode";
 import type { PendingTerminalModifiers } from "@/utils/terminal-keys";
 import {
   encodeTerminalOutput,
@@ -100,7 +100,7 @@ const sendToNative = (message: OutboundMessage): void => {
   window.ReactNativeWebView?.postMessage?.(JSON.stringify(message));
 };
 
-const TERMINAL_BACKGROUND_CSS_VAR = "--paseo-terminal-background";
+const TERMINAL_BACKGROUND_CSS_VAR = "--rambla-terminal-background";
 const DEFAULT_TERMINAL_BACKGROUND = "#0b0b0b";
 const TERMINAL_TAP_MOVE_TOLERANCE_PX = 8;
 

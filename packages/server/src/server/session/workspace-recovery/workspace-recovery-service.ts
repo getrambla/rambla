@@ -59,7 +59,7 @@ type RecoveryPlan =
 type UnavailableRecoveryState = Extract<WorkspaceRecoveryState, { kind: "unavailable" }>;
 
 export function createWorkspaceRecoveryService(deps: {
-  paseoHome: string;
+  ramblaHome: string;
   worktreesRoot?: string;
   getWorkspace: (workspaceId: string) => Promise<PersistedWorkspaceRecord | null>;
   getProject: (projectId: string) => Promise<PersistedProjectRecord | null>;
@@ -176,7 +176,7 @@ export function createWorkspaceRecoveryService(deps: {
       // COMPAT(worktreeRestoreMissingWorktreeRoot): records created before v0.1.110
       // lack durable backing placement; remove filesystem discovery after 2027-01-17.
       const ownership = await isRamblaOwnedWorktreeCwd(workspace.cwd, {
-        paseoHome: deps.paseoHome,
+        ramblaHome: deps.ramblaHome,
         worktreesRoot: deps.worktreesRoot,
       });
       previousWorktreePath = ownership.allowed
@@ -191,7 +191,7 @@ export function createWorkspaceRecoveryService(deps: {
         worktreeSlug: basename(previousWorktreePath),
         source: { kind: "checkout-branch", branchName: branch },
         runSetup: false,
-        paseoHome: deps.paseoHome,
+        ramblaHome: deps.ramblaHome,
         worktreesRoot: deps.worktreesRoot,
       });
       recreatedWorktreePath = result.worktreePath;
@@ -223,7 +223,7 @@ export function createWorkspaceRecoveryService(deps: {
           cwd: sourceRepoRoot,
           worktreePath: recreatedWorktreePath,
           teardownCwds: [],
-          paseoHome: deps.paseoHome,
+          ramblaHome: deps.ramblaHome,
           worktreesBaseRoot: deps.worktreesRoot,
         },
         error,

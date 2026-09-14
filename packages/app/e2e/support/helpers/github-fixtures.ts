@@ -142,7 +142,7 @@ async function seedPr(args: {
   git(["clone", authedUrl, localPath, "--quiet", "-b", branch], basePath);
   // Clean remote URL (no embedded token) so gh can parse owner/repo
   git(["remote", "set-url", "origin", `https://github.com/${fullName}.git`], localPath);
-  git(["config", "user.email", "e2e@paseo.test"], localPath);
+  git(["config", "user.email", "e2e@rambla.test"], localPath);
   git(["config", "user.name", "Rambla E2E"], localPath);
   git(["config", "commit.gpgsign", "false"], localPath);
 
@@ -167,9 +167,9 @@ function seedIssue(args: { spec: IssueSpec; basePath: string }): GhIssueFixture 
 }
 
 // Single namespace for temporary GitHub repos created by Rambla tests.
-// Bulk cleanup relies on this prefix being unmistakable — never reuse `paseo-`
-// (collides with real repos like `paseo`, `paseo-website`).
-const TEMP_GITHUB_REPO_PREFIX = "paseotmp-";
+// Bulk cleanup relies on this prefix being unmistakable — never reuse `rambla-`
+// (collides with real repos like `rambla`, `rambla-website`).
+const TEMP_GITHUB_REPO_PREFIX = "ramblatmp-";
 
 export async function createTempGithubRepo(options: {
   category: string;
@@ -184,7 +184,7 @@ export async function createTempGithubRepo(options: {
   // Bootstrap local git repo
   const basePath = await mkdtemp(path.join("/tmp", `${repoName}-base-`));
   git(["init", "-b", defaultBranch], basePath);
-  git(["config", "user.email", "e2e@paseo.test"], basePath);
+  git(["config", "user.email", "e2e@rambla.test"], basePath);
   git(["config", "user.name", "Rambla E2E"], basePath);
   git(["config", "commit.gpgsign", "false"], basePath);
   await writeFile(path.join(basePath, "README.md"), "# E2E Test Repo\n");
@@ -276,7 +276,7 @@ export async function cloneGithubRepoDefaultBranchOnly(
     ["clone", "--quiet", "--single-branch", "--branch", repo.defaultBranch, authedUrl, clonePath],
     { stdio: ["ignore", "pipe", "pipe"] },
   );
-  git(["config", "user.email", "e2e@paseo.test"], clonePath);
+  git(["config", "user.email", "e2e@rambla.test"], clonePath);
   git(["config", "user.name", "Rambla E2E"], clonePath);
   git(["config", "commit.gpgsign", "false"], clonePath);
 
@@ -289,15 +289,15 @@ export async function cloneGithubRepoDefaultBranchOnly(
 }
 
 export async function createLocalGithubPrFixture(): Promise<LocalGhPrFixture> {
-  const fixtureRoot = await mkdtemp(path.join("/tmp", "paseo-e2e-local-github-pr-"));
+  const fixtureRoot = await mkdtemp(path.join("/tmp", "rambla-e2e-local-github-pr-"));
   const basePath = path.join(fixtureRoot, "base");
   const remotePath = path.join(fixtureRoot, "remote.git");
   const checkoutPath = path.join(fixtureRoot, "main-only");
-  const githubUrl = "https://github.com/paseo-e2e/local-fixture.git";
+  const githubUrl = "https://github.com/rambla-e2e/local-fixture.git";
   await mkdir(basePath);
 
   git(["init", "-b", "main"], basePath);
-  git(["config", "user.email", "e2e@paseo.test"], basePath);
+  git(["config", "user.email", "e2e@rambla.test"], basePath);
   git(["config", "user.name", "Rambla E2E"], basePath);
   git(["config", "commit.gpgsign", "false"], basePath);
   await writeFile(path.join(basePath, "README.md"), "# Local GitHub fixture\n");
@@ -320,7 +320,7 @@ export async function createLocalGithubPrFixture(): Promise<LocalGhPrFixture> {
   );
   git(["remote", "set-url", "origin", githubUrl], checkoutPath);
   git(["config", `url.${remotePath}.insteadOf`, githubUrl], checkoutPath);
-  git(["config", "user.email", "e2e@paseo.test"], checkoutPath);
+  git(["config", "user.email", "e2e@rambla.test"], checkoutPath);
   git(["config", "user.name", "Rambla E2E"], checkoutPath);
   git(["config", "commit.gpgsign", "false"], checkoutPath);
 
@@ -328,7 +328,7 @@ export async function createLocalGithubPrFixture(): Promise<LocalGhPrFixture> {
     pr: {
       number: 1,
       title: "Use pasted PR as start ref",
-      url: "https://github.com/paseo-e2e/local-fixture/pull/1",
+      url: "https://github.com/rambla-e2e/local-fixture/pull/1",
       branch: "pr-branch-1",
       localPath: basePath,
     },

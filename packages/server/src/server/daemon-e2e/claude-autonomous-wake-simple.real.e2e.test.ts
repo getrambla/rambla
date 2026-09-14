@@ -5,7 +5,7 @@ import path from "node:path";
 import pino from "pino";
 
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import {
   canRunRealProvider,
   createRealProviderClients,

@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 
 /**
- * Regression: `paseo daemon stop` must stop a reachable daemon even when the
+ * Regression: `rambla daemon stop` must stop a reachable daemon even when the
  * local pid file points at a dead supervisor owner.
  */
 
@@ -63,9 +63,9 @@ interface DaemonStatus {
   pid: number | null;
 }
 
-async function readDaemonStatus(paseoHome: string): Promise<DaemonStatus> {
+async function readDaemonStatus(ramblaHome: string): Promise<DaemonStatus> {
   const result =
-    await $`RAMBLA_HOME=${paseoHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx paseo daemon status --home ${paseoHome} --json`.nothrow();
+    await $`RAMBLA_HOME=${ramblaHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx rambla daemon status --home ${ramblaHome} --json`.nothrow();
   if (result.exitCode !== 0) {
     return { localDaemon: null, connectedDaemon: null, pid: null };
   }
@@ -101,10 +101,10 @@ function findUnusedPid(): number {
 console.log("=== Daemon Stop (stale pid, reachable worker regression) ===\n");
 
 const port = await getAvailablePort();
-const paseoHome = await mkdtemp(join(tmpdir(), "paseo-stop-stale-reachable-"));
+const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-stop-stale-reachable-"));
 const cliRoot = join(import.meta.dirname, "..");
 const host = `127.0.0.1:${port}`;
-const pidPath = join(paseoHome, "rambla.pid");
+const pidPath = join(ramblaHome, "rambla.pid");
 const stalePid = findUnusedPid();
 
 let workerProcess: ChildProcess | null = null;
@@ -135,7 +135,7 @@ try {
       env: {
         ...process.env,
         ...testEnv,
-        RAMBLA_HOME: paseoHome,
+        RAMBLA_HOME: ramblaHome,
         RAMBLA_LISTEN: host,
         RAMBLA_RELAY_ENABLED: "false",
         CI: "true",
@@ -146,23 +146,23 @@ try {
 
   await waitFor(
     async () => {
-      const status = await readDaemonStatus(paseoHome);
+      const status = await readDaemonStatus(ramblaHome);
       return status.localDaemon === "stale_pid" && status.connectedDaemon === "reachable";
     },
     120000,
     "daemon did not enter stale_pid + reachable state in time",
   );
 
-  const statusBeforeStop = await readDaemonStatus(paseoHome);
+  const statusBeforeStop = await readDaemonStatus(ramblaHome);
   assert.strictEqual(statusBeforeStop.pid, stalePid, "status should report the stale owner pid");
   assert(workerProcess.pid && isProcessRunning(workerProcess.pid), "worker should be running");
   console.log(`✓ fixture has stale pid ${stalePid} and live worker ${workerProcess.pid}\n`);
 
   console.log(
-    "Test 2: `paseo daemon stop` should stop reachable worker instead of saying not_running",
+    "Test 2: `rambla daemon stop` should stop reachable worker instead of saying not_running",
   );
   const stopResult =
-    await $`RAMBLA_HOME=${paseoHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx paseo daemon stop --home ${paseoHome} --json`.nothrow();
+    await $`RAMBLA_HOME=${ramblaHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx rambla daemon stop --home ${ramblaHome} --json`.nothrow();
   assert.strictEqual(stopResult.exitCode, 0, `stop should succeed: ${stopResult.stderr}`);
   const stopJson = JSON.parse(stopResult.stdout) as {
     action?: unknown;
@@ -200,8 +200,8 @@ try {
     });
   }
 
-  await $`RAMBLA_HOME=${paseoHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx paseo daemon stop --home ${paseoHome} --force`.nothrow();
-  await rm(paseoHome, { recursive: true, force: true });
+  await $`RAMBLA_HOME=${ramblaHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx rambla daemon stop --home ${ramblaHome} --force`.nothrow();
+  await rm(ramblaHome, { recursive: true, force: true });
 }
 
 console.log("=== Stale reachable stop regression test passed ===");

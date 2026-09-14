@@ -7,7 +7,7 @@ export PATH="$SCRIPT_DIR/../node_modules/.bin:$PATH"
 source "$SCRIPT_DIR/dev-home.sh"
 
 export RAMBLA_LISTEN="${RAMBLA_LISTEN:-127.0.0.1:6768}"
-configure_dev_paseo_home
+configure_dev_rambla_home
 
 if [ -z "${RAMBLA_LOCAL_MODELS_DIR}" ]; then
   export RAMBLA_LOCAL_MODELS_DIR="$HOME/.rambla/models/local-speech"

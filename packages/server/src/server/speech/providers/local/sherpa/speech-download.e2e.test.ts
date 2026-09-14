@@ -87,8 +87,8 @@ downloadTest(
   async () => {
     const logger = pino({ level: "silent" });
 
-    const paseoHomeRoot = mkdtempSync(path.join(tmpdir(), "paseo-speech-download-"));
-    const modelsDir = path.join(paseoHomeRoot, ".rambla", "models", "local-speech");
+    const ramblaHomeRoot = mkdtempSync(path.join(tmpdir(), "rambla-speech-download-"));
+    const modelsDir = path.join(ramblaHomeRoot, ".rambla", "models", "local-speech");
 
     await ensureSherpaOnnxModels({
       modelsDir,
@@ -97,7 +97,7 @@ downloadTest(
     });
 
     const ctx = await createDaemonTestContext({
-      paseoHomeRoot,
+      ramblaHomeRoot,
       dictationFinalTimeoutMs: 8000,
       speech: {
         providers: {

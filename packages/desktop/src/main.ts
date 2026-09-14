@@ -104,7 +104,7 @@ import {
   buildAgentDeepLinkRoute,
   parseAgentDeepLink,
   type AgentDeepLinkTarget,
-} from "@getpaseo/protocol/agent-deep-link";
+} from "@getrambla/protocol/agent-deep-link";
 import { AgentNavigationInbox, parseAgentDeepLinkFromArgv } from "./agent-navigation.js";
 
 const DEV_SERVER_URL = process.env.EXPO_DEV_URL ?? "http://localhost:8081";
@@ -308,7 +308,7 @@ if (forcedUserDataDir) {
       windowsHide: true,
     }).trim();
     devWorktreeName = path.basename(topLevel);
-    // Main checkout (e.g. "paseo") gets default userData — only worktrees diverge.
+    // Main checkout (e.g. "rambla") gets default userData — only worktrees diverge.
     const commonDir = path.resolve(
       topLevel,
       execFileSync("git", ["rev-parse", "--git-common-dir"], {
@@ -369,7 +369,7 @@ if (RAMBLA_DEBUG) {
 
 // The renderer pulls the pending path on mount via IPC — this avoids
 // a race where the push event arrives before React registers its listener.
-ipcMain.handle("paseo:get-pending-open-project", (event) => {
+ipcMain.handle("rambla:get-pending-open-project", (event) => {
   const webContentsId = event.sender.id;
   const result = desktopWindowOwner.takePendingProject(webContentsId);
   log.info("[open-project] renderer requested pending path:", {
@@ -379,11 +379,11 @@ ipcMain.handle("paseo:get-pending-open-project", (event) => {
   return result;
 });
 
-ipcMain.handle("paseo:agent-navigation:ready", (event) => {
+ipcMain.handle("rambla:agent-navigation:ready", (event) => {
   return agentNavigationInbox.windowReady(event.sender.id);
 });
 
-ipcMain.handle("paseo:browser:register-attached", (event, rawInput: unknown) => {
+ipcMain.handle("rambla:browser:register-attached", (event, rawInput: unknown) => {
   const input = readAttachedBrowserInput(rawInput);
   if (!input) {
     throw new Error("Invalid attached browser registration");
@@ -415,7 +415,7 @@ ipcMain.handle("paseo:browser:register-attached", (event, rawInput: unknown) => 
   }
 });
 
-ipcMain.handle("paseo:browser:unregister-workspace-browser", async (event, browserId: unknown) => {
+ipcMain.handle("rambla:browser:unregister-workspace-browser", async (event, browserId: unknown) => {
   if (typeof browserId === "string" && browserId.trim().length > 0) {
     const normalizedBrowserId = browserId.trim();
     const hasOtherHost = getRamblaBrowserWebviewRegistry().hasBrowserInOtherHostWindow(
@@ -444,14 +444,14 @@ ipcMain.handle("paseo:browser:unregister-workspace-browser", async (event, brows
   }
 });
 
-ipcMain.handle("paseo:browser:set-workspace-active-browser", (event, rawInput: unknown) => {
+ipcMain.handle("rambla:browser:set-workspace-active-browser", (event, rawInput: unknown) => {
   const input = readActiveBrowserInput(rawInput);
   if (input) {
     setWorkspaceActiveRamblaBrowserId({ ...input, hostWebContentsId: event.sender.id });
   }
 });
 
-ipcMain.handle("paseo:browser:focus", (event, browserId: unknown): boolean => {
+ipcMain.handle("rambla:browser:focus", (event, browserId: unknown): boolean => {
   if (typeof browserId !== "string" || browserId.trim().length === 0) {
     return false;
   }
@@ -463,7 +463,7 @@ ipcMain.handle("paseo:browser:focus", (event, browserId: unknown): boolean => {
   return true;
 });
 
-ipcMain.handle("paseo:browser:open-devtools", (event, browserId: unknown) => {
+ipcMain.handle("rambla:browser:open-devtools", (event, browserId: unknown) => {
   if (typeof browserId !== "string" || browserId.trim().length === 0) {
     const result = {
       ok: false,
@@ -504,7 +504,7 @@ ipcMain.handle("paseo:browser:open-devtools", (event, browserId: unknown) => {
   return result;
 });
 
-ipcMain.handle("paseo:browser:clear-profile", async (_event, rawLegacyBrowserIds: unknown) => {
+ipcMain.handle("rambla:browser:clear-profile", async (_event, rawLegacyBrowserIds: unknown) => {
   const profileSessions = getRamblaBrowserProfileSessions(
     session,
     readLegacyRamblaBrowserIds(rawLegacyBrowserIds),
@@ -542,11 +542,11 @@ const browserCapture = createBrowserCaptureService<Electron.NativeImage>({
   warn: (event, details) => log.warn(`[browser-capture] ${event}`, details),
 });
 
-ipcMain.handle("paseo:browser:capture-element", (event, browserId: unknown, rect: unknown) =>
+ipcMain.handle("rambla:browser:capture-element", (event, browserId: unknown, rect: unknown) =>
   browserCapture.capture({ browserId, hostWebContentsId: event.sender.id, rect }),
 );
 
-ipcMain.handle("paseo:browser:copy-element", (_event, payload: unknown) =>
+ipcMain.handle("rambla:browser:copy-element", (_event, payload: unknown) =>
   browserCapture.copy(payload),
 );
 
@@ -797,7 +797,7 @@ function ownedDesktopWindow(win: BrowserWindow): OwnedDesktopWindow<AgentDeepLin
     restore: () => win.restore(),
     show: () => win.show(),
     focus: () => win.focus(),
-    sendAgent: (target) => win.webContents.send("paseo:event:open-agent", target),
+    sendAgent: (target) => win.webContents.send("rambla:event:open-agent", target),
   };
 }
 
@@ -884,7 +884,7 @@ function setupSingleInstanceLock(): boolean {
       isDefaultApp: false,
     });
     log.info("[open-project] second-instance openProjectPath:", openProjectPath);
-    // Relaunching the app (CLI `paseo [path]`, double-click, etc.) opens a new
+    // Relaunching the app (CLI `rambla [path]`, double-click, etc.) opens a new
     // window rather than focusing the existing one. Wait for bootstrap (not just
     // app.whenReady) so the protocol + IPC handlers exist before the window loads.
     void bootstrapComplete
@@ -963,13 +963,13 @@ async function bootstrap(): Promise<void> {
   registerDialogHandlers();
   registerNotificationHandlers();
   const openExternalUrl = createExternalUrlOpener({ open: shell.openExternal });
-  ipcMain.handle("paseo:opener:openUrl", (_event, value: unknown) => openExternalUrl(value));
+  ipcMain.handle("rambla:opener:openUrl", (_event, value: unknown) => openExternalUrl(value));
   registerEditorTargetHandlers();
   registerBrowserAutomationIpc();
 
   // In-app "Open in new window": opens a window that lands on the given project
   // via the same open-project flow as a CLI launch (no move, no ownership).
-  ipcMain.handle("paseo:window:openNew", async (_event, options?: unknown) => {
+  ipcMain.handle("rambla:window:openNew", async (_event, options?: unknown) => {
     const pendingPath =
       options && typeof options === "object" && "pendingOpenProjectPath" in options
         ? (options as { pendingOpenProjectPath?: unknown }).pendingOpenProjectPath
@@ -1019,7 +1019,7 @@ void runDesktopStartup({
 
 function showDaemonShutdownDialog(): void {
   for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send("paseo:event:quitting", {});
+    win.webContents.send("rambla:event:quitting", {});
   }
 }
 

@@ -2,8 +2,8 @@ import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { defineSettings, type SettingsDefinition } from "@getpaseo/plugin";
-import { settingsRpc } from "@getpaseo/plugin";
+import { defineSettings, type SettingsDefinition } from "@getrambla/plugin";
+import { settingsRpc } from "@getrambla/plugin";
 
 const envelopeSchema = z.object({ version: z.number().int().positive(), values: z.json() });
 function message(error: unknown): string {

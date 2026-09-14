@@ -1,7 +1,7 @@
-import { isRamblaToolName } from "@getpaseo/protocol/tool-name-normalization";
+import { isRamblaToolName } from "@getrambla/protocol/tool-name-normalization";
 import { describeToolCall, type ToolCallRun } from "../grouping";
 
-const DIRECT_RAMBLA_TOOL_PREFIX = "paseo_";
+const DIRECT_RAMBLA_TOOL_PREFIX = "rambla_";
 const DIRECT_SEARCH_TOOL_SUFFIX_PATTERN = /(?:^|[_.:/])(?:web_search|llm_context)$/;
 
 export interface OverviewSummary {
@@ -10,7 +10,7 @@ export interface OverviewSummary {
   readFileCount: number;
   searchCount: number;
   otherToolCount: number;
-  paseoCallCount: number;
+  ramblaCallCount: number;
 }
 
 export interface OverviewToolCallGroup {
@@ -35,14 +35,14 @@ export function buildOverviewGroup(run: ToolCallRun): OverviewToolCallGroup {
   let commandCount = 0;
   let searchCount = 0;
   let otherToolCount = 0;
-  let paseoCallCount = 0;
+  let ramblaCallCount = 0;
 
   for (const call of run.calls) {
     const descriptor = describeToolCall(call);
     const normalizedName = descriptor.name.trim().toLowerCase();
     isLoading ||= descriptor.status === "running" || descriptor.status === "executing";
     if (isRamblaCall(descriptor.name, normalizedName)) {
-      paseoCallCount += 1;
+      ramblaCallCount += 1;
     } else if (descriptor.detail.type === "edit" || descriptor.detail.type === "write") {
       editedFiles.add(descriptor.detail.filePath);
     } else if (descriptor.detail.type === "shell") {
@@ -62,7 +62,7 @@ export function buildOverviewGroup(run: ToolCallRun): OverviewToolCallGroup {
     readFileCount: readFiles.size,
     searchCount,
     otherToolCount,
-    paseoCallCount,
+    ramblaCallCount,
   };
   return {
     mode: "overview",

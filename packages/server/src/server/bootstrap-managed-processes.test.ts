@@ -27,21 +27,21 @@ afterEach(async () => {
 
 describe("daemon managed process bootstrap", () => {
   test("reaps stale helper process records during daemon bootstrap", async () => {
-    tempRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-managed-bootstrap-"));
-    staticDir = await mkdtemp(path.join(os.tmpdir(), "paseo-static-"));
-    const paseoHome = path.join(tempRoot, ".rambla");
+    tempRoot = await mkdtemp(path.join(os.tmpdir(), "rambla-managed-bootstrap-"));
+    staticDir = await mkdtemp(path.join(os.tmpdir(), "rambla-static-"));
+    const ramblaHome = path.join(tempRoot, ".rambla");
     const managedProcesses = new FakeManagedProcesses();
     const daemon = await createRamblaDaemon(
       {
         listen: "127.0.0.1:0",
-        paseoHome,
+        ramblaHome,
         corsAllowedOrigins: [],
         hostnames: true,
         mcpEnabled: false,
         staticDir,
         mcpDebug: false,
         agentClients: createTestAgentClients(),
-        agentStoragePath: path.join(paseoHome, "agents"),
+        agentStoragePath: path.join(ramblaHome, "agents"),
         relayEnabled: false,
         appBaseUrl: "https://app.rambla.sh",
         managedProcesses,

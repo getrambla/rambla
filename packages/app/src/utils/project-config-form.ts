@@ -3,7 +3,7 @@ import type {
   RamblaMetadataGeneration,
   RamblaMetadataGenerationEntry,
   RamblaScriptEntryRaw,
-} from "@getpaseo/protocol/messages";
+} from "@getrambla/protocol/messages";
 
 export type LifecycleOriginalKind = "string" | "array" | "missing";
 

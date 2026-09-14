@@ -1,6 +1,6 @@
 ---
 title: SDK API reference
-description: Public configuration, methods, handles, results, defaults, and lifecycle behavior for @getpaseo/client.
+description: Public configuration, methods, handles, results, defaults, and lifecycle behavior for @getrambla/client.
 nav: API reference
 order: 58
 category: TypeScript SDK
@@ -8,7 +8,7 @@ category: TypeScript SDK
 
 # SDK API reference
 
-Import every supported runtime value and TypeScript type from `@getpaseo/client`.
+Import every supported runtime value and TypeScript type from `@getrambla/client`.
 
 ## `createRamblaClient(config)`
 
@@ -170,7 +170,7 @@ Terminal handles expose:
 
 Capture accepts optional `start`, `end`, `stripAnsi`, and `requestId`. Line bounds are zero-based and inclusive across scrollback and the viewport. Negative bounds count from the end; omitted bounds capture all lines. `stripAnsi` defaults to `true`. A missing terminal returns empty lines.
 
-Use `workspace.terminals.create(options?)` and `workspace.terminals.list(options?)` to supply the workspace ID from a handle. Creation accepts the same options except `workspaceId`; listing accepts only `requestId`. Plugins get these methods through `useRambla()` and the handler's `paseo` context.
+Use `workspace.terminals.create(options?)` and `workspace.terminals.list(options?)` to supply the workspace ID from a handle. Creation accepts the same options except `workspaceId`; listing accepts only `requestId`. Plugins get these methods through `useRambla()` and the handler's `rambla` context.
 
 ## `client.providers`
 

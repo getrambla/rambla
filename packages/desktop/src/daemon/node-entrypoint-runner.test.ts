@@ -21,7 +21,7 @@ describe("node-entrypoint-runner", () => {
     const originalRunAsNode = process.env.ELECTRON_RUN_AS_NODE;
     const originalNoAttachConsole = process.env.ELECTRON_NO_ATTACH_CONSOLE;
     const originalFixture = globalThis.__RAMBLA_NODE_ENTRYPOINT_RUNNER_FIXTURE__;
-    const fixtureDir = mkdtempSync(path.join(tmpdir(), "paseo-node-entrypoint-runner-"));
+    const fixtureDir = mkdtempSync(path.join(tmpdir(), "rambla-node-entrypoint-runner-"));
     const fixturePath = path.join(fixtureDir, "fixture.mjs");
     writeFileSync(
       fixturePath,

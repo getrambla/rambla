@@ -268,7 +268,7 @@ function DiscordDemo() {
             </p>
           </DemoMessage>
 
-          <DemoMessage author="paseo-bot" time="09:41" bot>
+          <DemoMessage author="rambla-bot" time="09:41" bot>
             <p>Three P0 issues are open:</p>
             <ul className="space-y-1">
               {DEMO_ISSUES.map((issue) => (
@@ -286,7 +286,7 @@ function DiscordDemo() {
             </p>
           </DemoMessage>
 
-          <DemoMessage author="paseo-bot" time="09:48" bot>
+          <DemoMessage author="rambla-bot" time="09:48" bot>
             <p>
               Ran on <span className="font-mono text-white/50">macbook-pro</span>. Opened{" "}
               <span className="text-white/80 underline decoration-white/20">
@@ -313,7 +313,7 @@ function DiscordDemo() {
 }
 
 function Mention() {
-  return <span className="rounded bg-indigo-400/15 px-1 py-0.5 text-indigo-200">@paseo-bot</span>;
+  return <span className="rounded bg-indigo-400/15 px-1 py-0.5 text-indigo-200">@rambla-bot</span>;
 }
 
 function DemoMessage({
@@ -543,9 +543,9 @@ function FaqSection() {
           </p>
         </FAQItem>
         <FAQItem question="Can I run it myself?">
-          Yes. Run <code>npx @getpaseo/hub</code> and complete setup in the browser. The source is
+          Yes. Run <code>npx @getrambla/hub</code> and complete setup in the browser. The source is
           available on{" "}
-          <a href="https://github.com/getpaseo/hub" className={LINK_CLASS}>
+          <a href="https://github.com/getrambla/hub" className={LINK_CLASS}>
             GitHub
           </a>
           , and the{" "}

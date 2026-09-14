@@ -4,8 +4,8 @@ import type {
   JsonValue,
   ProviderOptions,
   ToolPolicy,
-} from "@getpaseo/protocol/agent-types";
-import type { AgentAttachment } from "@getpaseo/protocol/messages";
+} from "@getrambla/protocol/agent-types";
+import type { AgentAttachment } from "@getrambla/protocol/messages";
 import type { RamblaToolCatalog } from "./tools/types.js";
 
 export type { AgentProviderNotice, AgentTaskItem };
@@ -636,7 +636,7 @@ export interface AgentLaunchContext {
    * Runtime-only internal Rambla tools. This must never be persisted into
    * AgentSessionConfig; providers may adapt it to their native tool surface.
    */
-  paseoTools?: RamblaToolCatalog;
+  ramblaTools?: RamblaToolCatalog;
 }
 
 export interface AgentCreateSessionOptions {

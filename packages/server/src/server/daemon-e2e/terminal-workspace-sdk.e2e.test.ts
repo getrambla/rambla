@@ -3,9 +3,9 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, expect, test } from "vitest";
-import { createRamblaClient, type RamblaClient } from "@getpaseo/client";
+import { createRamblaClient, type RamblaClient } from "@getrambla/client";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 
 let daemon: TestRamblaDaemon;
 let client: DaemonClient;
@@ -114,16 +114,16 @@ test("plugin handlers operate terminals through their host-owned Rambla API", as
   const pluginDirectory = path.join(cwd, "plugin");
   await mkdir(pluginDirectory);
   await writeFile(
-    path.join(pluginDirectory, "paseo-plugin.json"),
+    path.join(pluginDirectory, "rambla-plugin.json"),
     JSON.stringify({
       id: "terminal-sdk",
-      requirements: { paseo: `>=${resolveDaemonVersion(import.meta.url)}` },
+      requirements: { rambla: `>=${resolveDaemonVersion(import.meta.url)}` },
     }),
   );
   await writeFile(
     path.join(pluginDirectory, "index.server.ts"),
     `
-import { defineRpc } from "@getpaseo/plugin";
+import { defineRpc } from "@getrambla/plugin";
 import { z } from "zod";
 const operate = defineRpc({ name: "operate", input: z.object({ workspaceId: z.string(), command: z.string() }), output: z.object({ workspaceIds: z.array(z.string()), lines: z.array(z.string()), remaining: z.number() }) });
 async function waitForTerminalOutput(terminal, text) {
@@ -136,8 +136,8 @@ async function waitForTerminalOutput(terminal, text) {
   throw new Error("Timed out waiting for plugin terminal output: " + text);
 }
 export default function contribute(server) {
-  server.handle(operate, async ({ workspaceId, command }, { paseo }) => {
-    const workspace = paseo.workspaces.ref(workspaceId);
+  server.handle(operate, async ({ workspaceId, command }, { rambla }) => {
+    const workspace = rambla.workspaces.ref(workspaceId);
     const terminal = await workspace.terminals.create({ command, args: ["-e", "process.stdin.setRawMode(true); process.stdin.resume(); console.log('PLUGIN READY'); let hex = ''; process.stdin.on('data', data => { hex += data.toString('hex'); console.log('PLUGIN:' + hex); });"] });
     try {
       await waitForTerminalOutput(terminal, "PLUGIN READY");
@@ -146,7 +146,7 @@ export default function contribute(server) {
       terminal.sendKeys(["Enter"]);
       const lines = await waitForTerminalOutput(terminal, "PLUGIN:456e7465720d");
       const listed = await workspace.terminals.list();
-      await paseo.terminals.ref(terminal.id).kill();
+      await rambla.terminals.ref(terminal.id).kill();
       return { workspaceIds: listed.entries.map(entry => entry.workspaceId), lines, remaining: (await workspace.terminals.list()).entries.length };
     } finally {
       await terminal.kill();

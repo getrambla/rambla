@@ -10,11 +10,11 @@ import { ScrollView as GHScrollView } from "react-native-gesture-handler";
 import { StyleSheet } from "react-native-unistyles";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-import type { ToolCallDetail } from "@getpaseo/protocol/agent-types";
+import type { ToolCallDetail } from "@getrambla/protocol/agent-types";
 import {
   buildRamblaToolDetailSections,
   type RamblaToolDetailSection,
-} from "@getpaseo/protocol/paseo-tool-call-detail";
+} from "@getrambla/protocol/rambla-tool-call-detail";
 import { buildLineDiff, parseUnifiedDiff, type DiffLine } from "@/utils/tool-call-parsers";
 import { highlightDiffLines } from "@/utils/diff-highlight";
 import { hasMeaningfulToolCallDetail } from "@/utils/tool-call-detail-state";
@@ -633,18 +633,18 @@ function buildUnknownSections(detail: UnknownDetail, ds: DetailStyles, t: TFunct
 
 function RamblaDetailSection({ section }: { section: RamblaToolDetailSection }) {
   return (
-    <View style={styles.paseoSection}>
-      <Text style={styles.paseoSectionTitle}>{section.title}</Text>
+    <View style={styles.ramblaSection}>
+      <Text style={styles.ramblaSectionTitle}>{section.title}</Text>
       {section.kind === "prose" ? (
-        <Text selectable style={styles.paseoProse}>
+        <Text selectable style={styles.ramblaProse}>
           {section.text}
         </Text>
       ) : (
-        <View style={styles.paseoFields}>
+        <View style={styles.ramblaFields}>
           {section.fields.map((field) => (
-            <View key={field.label} style={styles.paseoFieldRow}>
-              <Text style={styles.paseoFieldLabel}>{field.label}</Text>
-              <Text selectable style={styles.paseoFieldValue}>
+            <View key={field.label} style={styles.ramblaFieldRow}>
+              <Text style={styles.ramblaFieldLabel}>{field.label}</Text>
+              <Text selectable style={styles.ramblaFieldValue}>
                 {field.value}
               </Text>
             </View>
@@ -856,39 +856,39 @@ const styles = StyleSheet.create((theme) => {
       fontSize: theme.fontSize.base,
       fontWeight: theme.fontWeight.normal,
     },
-    paseoSection: {
+    ramblaSection: {
       gap: theme.spacing[3],
       paddingHorizontal: theme.spacing[4],
       paddingVertical: theme.spacing[4],
       borderBottomWidth: theme.borderWidth[1],
       borderBottomColor: theme.colors.border,
     },
-    paseoSectionTitle: {
+    ramblaSectionTitle: {
       color: theme.colors.foreground,
       fontSize: theme.fontSize.base,
       fontWeight: theme.fontWeight.medium,
     },
-    paseoProse: {
+    ramblaProse: {
       color: theme.colors.foreground,
       fontSize: theme.fontSize.content,
       lineHeight: Math.round(theme.fontSize.content * 1.5),
       overflowWrap: "anywhere",
     },
-    paseoFields: {
+    ramblaFields: {
       gap: theme.spacing[3],
     },
-    paseoFieldRow: {
+    ramblaFieldRow: {
       flexDirection: "row",
       alignItems: "flex-start",
       gap: theme.spacing[4],
     },
-    paseoFieldLabel: {
+    ramblaFieldLabel: {
       width: 120,
       color: theme.colors.foregroundMuted,
       fontSize: theme.fontSize.sm,
       lineHeight: Math.round(theme.fontSize.base * 1.5),
     },
-    paseoFieldValue: {
+    ramblaFieldValue: {
       flex: 1,
       minWidth: 0,
       color: theme.colors.foreground,

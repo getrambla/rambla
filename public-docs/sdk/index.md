@@ -8,7 +8,7 @@ category: TypeScript SDK
 
 # TypeScript SDK
 
-`@getpaseo/client` is a TypeScript library that drives a Rambla daemon from your own program. You pick a provider and model, give an agent a prompt and a directory, and wait for the answer.
+`@getrambla/client` is a TypeScript library that drives a Rambla daemon from your own program. You pick a provider and model, give an agent a prompt and a directory, and wait for the answer.
 
 The daemon does the work: it launches the provider CLI, keeps the session alive, and streams it to the Rambla app. Your program is a client. Agents you create show up in Rambla next to the ones you started by hand, and they stay there after your program exits.
 
@@ -22,7 +22,7 @@ Use it to:
 ## Start a daemon
 
 ```bash
-npx @getpaseo/cli
+npx @getrambla/cli
 ```
 
 It listens on `ws://127.0.0.1:6767/ws`.
@@ -30,7 +30,7 @@ It listens on `ws://127.0.0.1:6767/ws`.
 ## Run an agent
 
 ```ts
-import { createRamblaClient } from "@getpaseo/client";
+import { createRamblaClient } from "@getrambla/client";
 
 const client = createRamblaClient({ url: "ws://127.0.0.1:6767/ws" });
 await client.connect();

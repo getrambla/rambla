@@ -1,6 +1,6 @@
 import { expect, type BrowserContext, type Page } from "@playwright/test";
-import type { CreateAgentRequestMessage } from "@getpaseo/protocol/messages";
-import type { DaemonClient as InternalDaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { CreateAgentRequestMessage } from "@getrambla/protocol/messages";
+import type { DaemonClient as InternalDaemonClient } from "@getrambla/client/internal/daemon-client";
 import { decodeWorkspaceIdFromPathSegment } from "@/utils/host-routes";
 import { connectDaemonClient } from "./daemon-client-loader";
 import { daemonWsRoutePattern } from "./daemon-port";

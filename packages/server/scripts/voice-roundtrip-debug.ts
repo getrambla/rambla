@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import pino from "pino";
 
-import { createTestRamblaDaemon } from "../src/server/test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../src/server/test-utils/rambla-daemon.js";
 import { DaemonClient } from "../src/server/test-utils/daemon-client.js";
 import { OpenAITTS } from "../src/server/speech/providers/openai/tts.js";
 import { withTimeout } from "../src/utils/promise-timeout.js";

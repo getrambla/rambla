@@ -8,10 +8,10 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { z } from "zod";
 
 import { AGENT_WAIT_TIMEOUT_MS } from "./mcp-shared.js";
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import { createTestAgentClients } from "../test-utils/fake-agent-client.js";
 import type { AgentClient, AgentProvider, AgentSessionConfig } from "./agent-sdk-types.js";
-import { PARENT_AGENT_ID_LABEL } from "@getpaseo/protocol/agent-labels";
+import { PARENT_AGENT_ID_LABEL } from "@getrambla/protocol/agent-labels";
 
 interface StructuredContent {
   [key: string]: unknown;
@@ -363,7 +363,7 @@ describe("Suite A: Core Fixes", () => {
     }
   });
 
-  test("agentManager.createAgent injects paseo MCP using the daemon listen target", async () => {
+  test("agentManager.createAgent injects rambla MCP using the daemon listen target", async () => {
     let agentId: string | null = null;
     try {
       const listenTarget = daemonHandle.daemon.getListenTarget();
@@ -392,15 +392,15 @@ describe("Suite A: Core Fixes", () => {
         ?.toReversed()
         .find((config) => config.cwd === cwd);
       expect(launchConfig?.mcpServers).toMatchObject({
-        paseo: {
+        rambla: {
           type: "http",
           url: expectedUrl,
         },
       });
-      expect(snapshot.config.mcpServers?.paseo).toBeUndefined();
+      expect(snapshot.config.mcpServers?.rambla).toBeUndefined();
 
       const liveAgent = daemonHandle.daemon.agentManager.getAgent(agentId);
-      expect(liveAgent?.config.mcpServers?.paseo).toBeUndefined();
+      expect(liveAgent?.config.mcpServers?.rambla).toBeUndefined();
     } finally {
       await archiveAgentIfPresent(agentId);
     }

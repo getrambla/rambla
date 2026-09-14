@@ -72,7 +72,7 @@ function createCheckoutFacts(
     remoteUrl: "https://github.com/acme/repo.git",
     absoluteGitDir: join(cwd, ".git"),
     gitCommonDir: join(cwd, ".git"),
-    paseoWorktree: { isRamblaOwnedWorktree: false },
+    ramblaWorktree: { isRamblaOwnedWorktree: false },
     storedBaseRef: null,
     resolvedBaseRef: "main",
     mainRepoRoot: null,
@@ -408,7 +408,7 @@ function buildServiceDeps(options?: CreateServiceOptions) {
 function createService(options?: CreateServiceOptions) {
   return new WorkspaceGitServiceImpl({
     logger: createLogger() as never,
-    paseoHome: "/tmp/paseo-test",
+    ramblaHome: "/tmp/rambla-test",
     deps: buildServiceDeps(options),
   });
 }
@@ -466,7 +466,7 @@ describe("WorkspaceGitServiceImpl primitive refresh entrypoint", () => {
         "-c",
         "user.name=Rambla Test",
         "-c",
-        "user.email=paseo@example.test",
+        "user.email=rambla@example.test",
         "commit",
         "-m",
         "initial",
@@ -1140,7 +1140,7 @@ describe("WorkspaceGitServiceImpl primitive refresh entrypoint", () => {
     const getCheckoutSnapshotFacts = vi.fn(async (cwd: string) =>
       createCheckoutFacts(cwd, {
         currentBranch: "fork-owner/open-button-targets-active-file",
-        branchRemoteName: "paseo-pr-1285",
+        branchRemoteName: "rambla-pr-1285",
         branchMergeRef: "refs/heads/open-button-targets-active-file",
         pullRequestLookupTarget: {
           headRef: "open-button-targets-active-file",
@@ -1151,7 +1151,7 @@ describe("WorkspaceGitServiceImpl primitive refresh entrypoint", () => {
     const getCheckoutStatus = vi.fn(async (cwd: string) =>
       createCheckoutStatus(cwd, {
         currentBranch: "fork-owner/open-button-targets-active-file",
-        remoteUrl: "git@github.com:getpaseo/paseo.git",
+        remoteUrl: "git@github.com:getrambla/rambla.git",
       }),
     );
     const service = createService({
@@ -1739,7 +1739,7 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
 
   test("listStashes cold-loads, warms, forces, and coalesces per cwd", async () => {
     let nowMs = 0;
-    const stashOutput = "stash@{0}\u0000paseo-auto-stash: feature\n";
+    const stashOutput = "stash@{0}\u0000rambla-auto-stash: feature\n";
     const stashDeferred = createDeferred<{
       stdout: string;
       stderr: string;
@@ -1762,8 +1762,8 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
       now: () => new Date(nowMs),
     });
 
-    const first = service.listStashes(REPO_CWD, { paseoOnly: true });
-    const second = service.listStashes(join(REPO_CWD, "."), { paseoOnly: true });
+    const first = service.listStashes(REPO_CWD, { ramblaOnly: true });
+    const second = service.listStashes(join(REPO_CWD, "."), { ramblaOnly: true });
     await flushPromises();
 
     expect(runGitCommand).toHaveBeenCalledTimes(1);
@@ -1775,15 +1775,15 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
       signal: null,
     });
     await expect(Promise.all([first, second])).resolves.toEqual([
-      [{ index: 0, message: "paseo-auto-stash: feature", branch: "feature", isRambla: true }],
-      [{ index: 0, message: "paseo-auto-stash: feature", branch: "feature", isRambla: true }],
+      [{ index: 0, message: "rambla-auto-stash: feature", branch: "feature", isRambla: true }],
+      [{ index: 0, message: "rambla-auto-stash: feature", branch: "feature", isRambla: true }],
     ]);
 
     nowMs = 1_000;
-    await service.listStashes(REPO_CWD, { paseoOnly: true });
+    await service.listStashes(REPO_CWD, { ramblaOnly: true });
     expect(runGitCommand).toHaveBeenCalledTimes(1);
 
-    await service.listStashes(REPO_CWD, { paseoOnly: true }, { force: true, reason: "test" });
+    await service.listStashes(REPO_CWD, { ramblaOnly: true }, { force: true, reason: "test" });
     expect(runGitCommand).toHaveBeenCalledTimes(2);
 
     service.dispose();
@@ -1793,7 +1793,7 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
     let nowMs = 0;
     const worktrees = [
       {
-        path: "/tmp/paseo-home/worktrees/repo/feature",
+        path: "/tmp/rambla-home/worktrees/repo/feature",
         createdAt: "2026-04-12T00:00:00.000Z",
         branchName: "feature",
       },
@@ -1828,7 +1828,7 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
 
     const worktrees = [
       {
-        path: join(tempDir, "paseo-home", "worktrees", "repo", "feature"),
+        path: join(tempDir, "rambla-home", "worktrees", "repo", "feature"),
         createdAt: "2026-04-12T00:00:00.000Z",
         branchName: "feature",
       },
@@ -1849,7 +1849,7 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
       expect(listRamblaWorktrees).toHaveBeenCalledTimes(1);
       expect(listRamblaWorktrees).toHaveBeenCalledWith({
         cwd: realpathSync.native(repoDir).replace(/\\/g, "/"),
-        paseoHome: "/tmp/paseo-test",
+        ramblaHome: "/tmp/rambla-test",
       });
     } finally {
       service.dispose();
@@ -1923,7 +1923,7 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
     let nowMs = 0;
     const getCheckoutStatus = vi.fn(async (cwd: string) =>
       createCheckoutStatus(cwd, {
-        remoteUrl: "https://github.com/getpaseo/paseo.git",
+        remoteUrl: "https://github.com/getrambla/rambla.git",
       }),
     );
     const service = createService({
@@ -1932,11 +1932,11 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
     });
 
     await expect(service.resolveRepoRemoteUrl(REPO_CWD)).resolves.toBe(
-      "https://github.com/getpaseo/paseo.git",
+      "https://github.com/getrambla/rambla.git",
     );
     nowMs = 1_000;
     await expect(service.resolveRepoRemoteUrl(join(REPO_CWD, "."))).resolves.toBe(
-      "https://github.com/getpaseo/paseo.git",
+      "https://github.com/getrambla/rambla.git",
     );
 
     expect(getCheckoutStatus).toHaveBeenCalledTimes(1);
@@ -1949,7 +1949,7 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
     const getCheckoutStatus = vi.fn(async (cwd: string) =>
       createCheckoutStatus(cwd, {
         currentBranch: "feature/service-metadata",
-        remoteUrl: "https://github.com/getpaseo/paseo.git",
+        remoteUrl: "https://github.com/getrambla/rambla.git",
         repoRoot: REPO_CWD,
       }),
     );
@@ -1958,7 +1958,7 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
       now: () => new Date(nowMs),
     });
 
-    await expect(service.getProjectSlug(REPO_CWD)).resolves.toBe("paseo");
+    await expect(service.getProjectSlug(REPO_CWD)).resolves.toBe("rambla");
 
     nowMs = 1_000;
     await service.getProjectSlug(join(REPO_CWD, "."));

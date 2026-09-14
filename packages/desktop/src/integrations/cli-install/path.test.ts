@@ -18,8 +18,8 @@ describe("cli-install-path", () => {
       resolveCliInstallSourcePath({
         platform: "linux",
         isPackaged: true,
-        executablePath: "/tmp/.mount_paseo123/paseo",
-        shimPath: "/tmp/.mount_paseo123/resources/bin/rambla",
+        executablePath: "/tmp/.mount_rambla123/rambla",
+        shimPath: "/tmp/.mount_rambla123/resources/bin/rambla",
         appImagePath: "/home/user/Applications/Rambla.AppImage",
       }),
     ).toBe("/home/user/Applications/Rambla.AppImage");
@@ -42,15 +42,15 @@ describe("cli-install-path", () => {
         platform: "win32",
         isPackaged: true,
         executablePath: "C:\\Users\\user\\AppData\\Local\\Programs\\Rambla\\Rambla.exe",
-        shimPath: "C:\\Users\\user\\AppData\\Local\\Programs\\Rambla\\resources\\bin\\paseo.cmd",
+        shimPath: "C:\\Users\\user\\AppData\\Local\\Programs\\Rambla\\resources\\bin\\rambla.cmd",
       }),
-    ).toBe("C:\\Users\\user\\AppData\\Local\\Programs\\Rambla\\resources\\bin\\paseo.cmd");
+    ).toBe("C:\\Users\\user\\AppData\\Local\\Programs\\Rambla\\resources\\bin\\rambla.cmd");
 
     expect(
       resolveCliInstallSourcePath({
         platform: "linux",
         isPackaged: false,
-        executablePath: "/opt/Rambla/paseo",
+        executablePath: "/opt/Rambla/rambla",
         shimPath: "/opt/Rambla/resources/bin/rambla",
       }),
     ).toBe("/opt/Rambla/resources/bin/rambla");

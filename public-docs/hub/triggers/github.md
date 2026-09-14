@@ -36,7 +36,7 @@ steps:
       - text: |
           Triage the new issue. Add the appropriate labels and leave a short comment
           explaining the result with gh. Use this event context:
-          ${{ paseo.context }}
+          ${{ rambla.context }}
           Call hub.finish_execution when done.
 ```
 
@@ -68,7 +68,7 @@ steps:
     prompt:
       - text: |
           Review the new pull request and submit your findings with gh. Use this event context:
-          ${{ paseo.context }}
+          ${{ rambla.context }}
           Call hub.finish_execution when done.
 ```
 
@@ -84,7 +84,7 @@ on: github.issue_comment_created
 max_runtime: 2h
 filters:
   repo: example/project
-  contains: "@paseo"
+  contains: "@rambla"
   from_users: [maintainer]
 steps:
   - id: respond
@@ -100,9 +100,9 @@ steps:
     prompt:
       - text: |
           Respond to the new issue comment with gh. Address this request:
-          ${{ paseo.prompt }}
+          ${{ rambla.prompt }}
           Use this event context:
-          ${{ paseo.context }}
+          ${{ rambla.context }}
           Call hub.finish_execution when done.
 ```
 
@@ -114,7 +114,7 @@ on: github.pull_request_comment_created
 max_runtime: 2h
 filters:
   repo: example/project
-  contains: "@paseo"
+  contains: "@rambla"
   from_users: [maintainer]
 steps:
   - id: respond
@@ -130,9 +130,9 @@ steps:
     prompt:
       - text: |
           Respond to the new pull-request conversation comment with gh. Address this request:
-          ${{ paseo.prompt }}
+          ${{ rambla.prompt }}
           Use this event context:
-          ${{ paseo.context }}
+          ${{ rambla.context }}
           Call hub.finish_execution when done.
 ```
 
@@ -169,7 +169,7 @@ steps:
       - text: |
           Implement the issue that was marked ready for an agent. Create a branch,
           push it, and open a pull request with gh. Use this event context:
-          ${{ paseo.context }}
+          ${{ rambla.context }}
           Call hub.finish_execution when done.
 ```
 

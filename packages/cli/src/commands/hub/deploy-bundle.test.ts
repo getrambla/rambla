@@ -27,11 +27,11 @@ describe("Hub deployment bundle discovery", () => {
         { path: ".rambla/hub.yml", content: hubResource },
         {
           path: ".rambla/workflows/answer.yml",
-          content: workflow("answer", "${{ paseo.inputs.agent }}", true),
+          content: workflow("answer", "${{ rambla.inputs.agent }}", true),
         },
         {
           path: ".rambla/workflows/partials/safety.md",
-          content: "Keep the request in paseo.prompt and evidence in paseo.context.\n",
+          content: "Keep the request in rambla.prompt and evidence in rambla.context.\n",
         },
         { path: ".rambla/workflows/z-last.yml", content: workflow("z-last", "codex-safe") },
       ],
@@ -90,7 +90,7 @@ describe("Hub deployment bundle discovery", () => {
     await writeFile(
       path.join(cwd, ".rambla", "workflows", "answer.yml"),
       workflow("answer", "codex-safe").replace(
-        "      - text: ${{ paseo.prompt }}",
+        "      - text: ${{ rambla.prompt }}",
         "      - include: ../secret.md",
       ),
     );
@@ -106,7 +106,7 @@ describe("Hub deployment bundle discovery", () => {
     await writeFile(
       path.join(cwd, ".rambla", "workflows", "answer.yml"),
       workflow("answer", "codex-safe").replace(
-        "      - text: ${{ paseo.prompt }}",
+        "      - text: ${{ rambla.prompt }}",
         "      - include: partials/missing.md",
       ),
     );
@@ -181,7 +181,7 @@ function workflow(name: string, agent: string, include = false): string {
     `name: ${name}`,
     "on: manual.run",
     "max_runtime: 1h",
-    ...(agent.includes("paseo.inputs")
+    ...(agent.includes("rambla.inputs")
       ? ["inputs:", "  agent:", "    type: string", "    choices: [codex-safe, claude]"]
       : []),
     "steps:",
@@ -192,7 +192,7 @@ function workflow(name: string, agent: string, include = false): string {
     `    agent: ${agent}`,
     "    prompt:",
     ...(include ? ["      - include: partials/safety.md"] : []),
-    "      - text: ${{ paseo.prompt }}",
+    "      - text: ${{ rambla.prompt }}",
     "",
   ].join("\n");
 }
@@ -204,17 +204,17 @@ async function canonicalProject(): Promise<string> {
   await writeFile(path.join(cwd, ".rambla", "hub.yml"), hubResource);
   await writeFile(
     path.join(workflows, "answer.yml"),
-    workflow("answer", "${{ paseo.inputs.agent }}", true),
+    workflow("answer", "${{ rambla.inputs.agent }}", true),
   );
   await writeFile(
     path.join(workflows, "partials", "safety.md"),
-    "Keep the request in paseo.prompt and evidence in paseo.context.\n",
+    "Keep the request in rambla.prompt and evidence in rambla.context.\n",
   );
   return cwd;
 }
 
 async function temporaryDirectory(): Promise<string> {
-  const directory = await mkdtemp(path.join(tmpdir(), "paseo-hub-bundle-"));
+  const directory = await mkdtemp(path.join(tmpdir(), "rambla-hub-bundle-"));
   temporaryDirectories.push(directory);
   return directory;
 }

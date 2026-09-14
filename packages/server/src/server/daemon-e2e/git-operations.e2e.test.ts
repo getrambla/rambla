@@ -342,7 +342,7 @@ test("returns isGit false for non-git directory", async () => {
   rmSync(cwd, { recursive: true, force: true });
 }, 60000); // 1 minute timeout
 
-test("runs paseo.json setup asynchronously and reports status via timeline tool_call", async () => {
+test("runs rambla.json setup asynchronously and reports status via timeline tool_call", async () => {
   const repoRoot = tmpCwd();
 
   const { execSync } = await import("child_process");
@@ -364,11 +364,11 @@ test("runs paseo.json setup asynchronously and reports status via timeline tool_
   const setupCommand =
     'while [ ! -f "$RAMBLA_WORKTREE_PATH/allow-setup" ]; do sleep 0.05; done; echo "done" > "$RAMBLA_WORKTREE_PATH/setup-done.txt"';
   writeFileSync(
-    path.join(repoRoot, "paseo.json"),
+    path.join(repoRoot, "rambla.json"),
     JSON.stringify({ worktree: { setup: [setupCommand] } }),
   );
-  execSync("git add paseo.json", { cwd: repoRoot, stdio: "pipe" });
-  execSync("git -c commit.gpgsign=false commit -m 'add paseo.json'", {
+  execSync("git add rambla.json", { cwd: repoRoot, stdio: "pipe" });
+  execSync("git -c commit.gpgsign=false commit -m 'add rambla.json'", {
     cwd: repoRoot,
     stdio: "pipe",
   });
@@ -400,7 +400,7 @@ test("runs paseo.json setup asynchronously and reports status via timeline tool_
   const completed = await waitForTimelineToolCall(
     collector.messages,
     agent.id,
-    (item) => item.name === "paseo_worktree_setup" && item.status === "completed",
+    (item) => item.name === "rambla_worktree_setup" && item.status === "completed",
     20000,
   );
 
@@ -439,7 +439,7 @@ test("bootstraps configured worktree terminals after setup succeeds", async () =
     const setupCommand =
       'while [ ! -f "$RAMBLA_WORKTREE_PATH/allow-setup" ]; do sleep 0.05; done; echo "done" > "$RAMBLA_WORKTREE_PATH/setup-done.txt"; echo "$RAMBLA_WORKTREE_PORT" > "$RAMBLA_WORKTREE_PATH/setup-port.txt"';
     writeFileSync(
-      path.join(repoRoot, "paseo.json"),
+      path.join(repoRoot, "rambla.json"),
       JSON.stringify({
         worktree: {
           setup: [setupCommand],
@@ -455,7 +455,7 @@ test("bootstraps configured worktree terminals after setup succeeds", async () =
         },
       }),
     );
-    execSync("git add paseo.json", { cwd: repoRoot, stdio: "pipe" });
+    execSync("git add rambla.json", { cwd: repoRoot, stdio: "pipe" });
     execSync("git -c commit.gpgsign=false commit -m 'add setup and terminals'", {
       cwd: repoRoot,
       stdio: "pipe",
@@ -490,13 +490,13 @@ test("bootstraps configured worktree terminals after setup succeeds", async () =
     await waitForTimelineToolCall(
       collector.messages,
       agent.id,
-      (item) => item.name === "paseo_worktree_setup" && item.status === "completed",
+      (item) => item.name === "rambla_worktree_setup" && item.status === "completed",
       20000,
     );
     const terminalsBootstrapToolCall = await waitForTimelineToolCall(
       collector.messages,
       agent.id,
-      (item) => item.name === "paseo_worktree_terminals" && item.status === "completed",
+      (item) => item.name === "rambla_worktree_terminals" && item.status === "completed",
       30000,
     );
     const bootstrappedTerminals = getWorktreeTerminalBootstrapEntries(terminalsBootstrapToolCall);
@@ -580,7 +580,7 @@ test("reports failures via timeline tool_call without deleting the created workt
   const setupCommand =
     'echo "started" > "$RAMBLA_WORKTREE_PATH/setup-start.txt"; sleep 0.1; echo "boom" 1>&2; exit 7';
   writeFileSync(
-    path.join(repoRoot, "paseo.json"),
+    path.join(repoRoot, "rambla.json"),
     JSON.stringify({
       worktree: {
         setup: [setupCommand],
@@ -593,7 +593,7 @@ test("reports failures via timeline tool_call without deleting the created workt
       },
     }),
   );
-  execSync("git add paseo.json", { cwd: repoRoot, stdio: "pipe" });
+  execSync("git add rambla.json", { cwd: repoRoot, stdio: "pipe" });
   execSync("git -c commit.gpgsign=false commit -m 'add failing setup'", {
     cwd: repoRoot,
     stdio: "pipe",
@@ -624,7 +624,7 @@ test("reports failures via timeline tool_call without deleting the created workt
   const started = await waitForTimelineToolCall(
     collector.messages,
     agent.id,
-    (item) => item.name === "paseo_worktree_setup" && item.status === "running",
+    (item) => item.name === "rambla_worktree_setup" && item.status === "running",
     10000,
   );
 
@@ -632,7 +632,7 @@ test("reports failures via timeline tool_call without deleting the created workt
     collector.messages,
     agent.id,
     (item) =>
-      item.name === "paseo_worktree_setup" &&
+      item.name === "rambla_worktree_setup" &&
       item.callId === started.callId &&
       item.status === "failed",
     20000,
@@ -687,7 +687,7 @@ test("creates agent in ~/.rambla/worktrees/{hash} when worktree is requested", a
   expect(agent.id).toBeTruthy();
   expect(agent.status).toBe("idle");
   expect(realpathSync(agent.cwd)).toBe(
-    realpathSync(path.join(ctx.daemon.paseoHome, "worktrees", projectHash, "worktree-test")),
+    realpathSync(path.join(ctx.daemon.ramblaHome, "worktrees", projectHash, "worktree-test")),
   );
   expect(existsSync(agent.cwd)).toBe(true);
 
@@ -716,7 +716,7 @@ test("archiving a worktree shuts down its terminals but leaves the worktree on d
 
   const teardownMarkerPath = path.join(repoRoot, "teardown-marker.txt");
   writeFileSync(
-    path.join(repoRoot, "paseo.json"),
+    path.join(repoRoot, "rambla.json"),
     JSON.stringify({
       worktree: {
         terminals: [
@@ -729,7 +729,7 @@ test("archiving a worktree shuts down its terminals but leaves the worktree on d
       },
     }),
   );
-  execSync("git add paseo.json", { cwd: repoRoot, stdio: "pipe" });
+  execSync("git add rambla.json", { cwd: repoRoot, stdio: "pipe" });
   execSync("git -c commit.gpgsign=false commit -m 'add worktree terminal + teardown'", {
     cwd: repoRoot,
     stdio: "pipe",

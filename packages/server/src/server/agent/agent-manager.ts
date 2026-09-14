@@ -1,23 +1,23 @@
 import type { PluginLifecycle } from "../plugins/lifecycle/index.js";
 import { describeHookAgent, publishAgentStream } from "../plugins/lifecycle/index.js";
-import type { PluginSessionOpenRequest } from "@getpaseo/plugin/server";
+import type { PluginSessionOpenRequest } from "@getrambla/plugin/server";
 import { randomUUID } from "node:crypto";
 import { basename, resolve } from "node:path";
 import { stat } from "node:fs/promises";
 import {
   AGENT_LIFECYCLE_STATUSES,
   type AgentLifecycleStatus,
-} from "@getpaseo/protocol/agent-lifecycle";
+} from "@getrambla/protocol/agent-lifecycle";
 import {
   getParentAgentIdFromLabels,
   hasOpenAgentTab,
   isDelegatedAgent,
   isOpenAgentTabLabel,
   PARENT_AGENT_ID_LABEL,
-} from "@getpaseo/protocol/agent-labels";
+} from "@getrambla/protocol/agent-labels";
 import type { Logger } from "pino";
-import type { ProviderOptions, ToolPolicy } from "@getpaseo/protocol/agent-types";
-import type { ProviderRamblaToolsPolicy } from "@getpaseo/protocol/provider-config";
+import type { ProviderOptions, ToolPolicy } from "@getrambla/protocol/agent-types";
+import type { ProviderRamblaToolsPolicy } from "@getrambla/protocol/provider-config";
 import { z } from "zod";
 import type { TerminalManager } from "../../terminal/terminal-manager.js";
 
@@ -81,7 +81,7 @@ import { isStaleProviderSessionError } from "./stale-provider-session-error.js";
 import { stripInternalRamblaMcpServer, withRuntimeRamblaMcpServer } from "./runtime-mcp-config.js";
 import { resolveCreateAgentTitles } from "./create-agent-title.js";
 import type { RamblaToolCatalogFactory } from "./tools/types.js";
-import { isRamblaToolPolicyEnabled } from "./paseo-tool-policy.js";
+import { isRamblaToolPolicyEnabled } from "./rambla-tool-policy.js";
 import {
   ProviderSubagentStore,
   type ProviderSubagentDescriptor,
@@ -140,7 +140,7 @@ export type AgentRunCancellationResult =
 interface PreparedSessionConfig {
   storedConfig: AgentSessionConfig;
   launchConfig: AgentSessionConfig;
-  paseoToolPolicy: ProviderRamblaToolsPolicy | undefined;
+  ramblaToolPolicy: ProviderRamblaToolsPolicy | undefined;
 }
 
 interface NormalizeConfigOptions {
@@ -301,8 +301,8 @@ export interface AgentManagerOptions {
   terminalManager?: TerminalManager | null;
   mcpBaseUrl?: string;
   mcpAuthToken?: string;
-  paseoToolsEnabled?: boolean;
-  paseoToolCatalogFactory?: RamblaToolCatalogFactory;
+  ramblaToolsEnabled?: boolean;
+  ramblaToolCatalogFactory?: RamblaToolCatalogFactory;
   resolveRamblaToolPolicy?: (provider: AgentProvider) => ProviderRamblaToolsPolicy | undefined;
   appendSystemPrompt?: string;
   agentStreamCoalesceWindowMs?: number;
@@ -715,9 +715,9 @@ export class AgentManager {
   private readonly agentStreamCoalescer: AgentStreamCoalescer;
   private mcpBaseUrl: string | null;
   private readonly mcpAuthToken: string | null;
-  private paseoToolsEnabled = true;
-  private paseoToolCatalogFactory: RamblaToolCatalogFactory | null = null;
-  private readonly paseoToolPolicies = new Map<string, ProviderRamblaToolsPolicy | undefined>();
+  private ramblaToolsEnabled = true;
+  private ramblaToolCatalogFactory: RamblaToolCatalogFactory | null = null;
+  private readonly ramblaToolPolicies = new Map<string, ProviderRamblaToolsPolicy | undefined>();
   private readonly resolveRamblaToolPolicy: (
     provider: AgentProvider,
   ) => ProviderRamblaToolsPolicy | undefined;
@@ -765,8 +765,8 @@ export class AgentManager {
   }
 
   private configureRamblaTools(options: AgentManagerOptions): void {
-    this.paseoToolsEnabled = options.paseoToolsEnabled ?? true;
-    this.paseoToolCatalogFactory = options.paseoToolCatalogFactory ?? null;
+    this.ramblaToolsEnabled = options.ramblaToolsEnabled ?? true;
+    this.ramblaToolCatalogFactory = options.ramblaToolCatalogFactory ?? null;
   }
 
   registerClient(provider: AgentProvider, client: AgentClient): void {
@@ -828,15 +828,15 @@ export class AgentManager {
   }
 
   setRamblaToolsEnabled(enabled: boolean): void {
-    this.paseoToolsEnabled = enabled;
+    this.ramblaToolsEnabled = enabled;
   }
 
   setRamblaToolCatalogFactory(factory: RamblaToolCatalogFactory | null): void {
-    this.paseoToolCatalogFactory = factory;
+    this.ramblaToolCatalogFactory = factory;
   }
 
   getRamblaToolPolicy(agentId: string): ProviderRamblaToolsPolicy | undefined {
-    return this.paseoToolPolicies.get(agentId);
+    return this.ramblaToolPolicies.get(agentId);
   }
 
   /**
@@ -1221,7 +1221,7 @@ export class AgentManager {
       options = { ...options, env: request.env };
     }
     await this.deleteAgentState(resolvedAgentId);
-    const { storedConfig, launchConfig, paseoToolPolicy } = await this.prepareSessionConfig(
+    const { storedConfig, launchConfig, ramblaToolPolicy } = await this.prepareSessionConfig(
       config,
       resolvedAgentId,
       options?.env,
@@ -1230,12 +1230,12 @@ export class AgentManager {
     const client = await this.requireAvailableClient({
       provider: storedConfig.provider,
     });
-    this.paseoToolPolicies.set(resolvedAgentId, paseoToolPolicy);
+    this.ramblaToolPolicies.set(resolvedAgentId, ramblaToolPolicy);
     const launchContext = await this.buildLaunchContext(
       resolvedAgentId,
       client,
       storedConfig.cwd,
-      paseoToolPolicy,
+      ramblaToolPolicy,
       options?.env,
       { reason: "create", purpose: "interactive", workspaceId: options.workspaceId ?? null },
     );
@@ -1312,7 +1312,7 @@ export class AgentManager {
       ...overrides,
       provider: handle.provider,
     } as AgentSessionConfig;
-    const { storedConfig, launchConfig, paseoToolPolicy } = await this.prepareSessionConfig(
+    const { storedConfig, launchConfig, ramblaToolPolicy } = await this.prepareSessionConfig(
       mergedConfig,
       resolvedAgentId,
     );
@@ -1324,12 +1324,12 @@ export class AgentManager {
         `Provider '${handle.provider}' is not available. Please ensure the CLI is installed.`,
       );
     }
-    this.paseoToolPolicies.set(resolvedAgentId, paseoToolPolicy);
+    this.ramblaToolPolicies.set(resolvedAgentId, ramblaToolPolicy);
     const launchContext = await this.buildLaunchContext(
       resolvedAgentId,
       client,
       storedConfig.cwd,
-      paseoToolPolicy,
+      ramblaToolPolicy,
       undefined,
       {
         reason: "resume",
@@ -1377,19 +1377,19 @@ export class AgentManager {
       throw new Error(`Provider '${input.provider}' does not support importing sessions`);
     }
 
-    const { storedConfig, launchConfig, paseoToolPolicy } = await this.prepareSessionConfig(
+    const { storedConfig, launchConfig, ramblaToolPolicy } = await this.prepareSessionConfig(
       {
         provider: input.provider,
         cwd: input.cwd,
       },
       resolvedAgentId,
     );
-    this.paseoToolPolicies.set(resolvedAgentId, paseoToolPolicy);
+    this.ramblaToolPolicies.set(resolvedAgentId, ramblaToolPolicy);
     const launchContext = await this.buildLaunchContext(
       resolvedAgentId,
       client,
       storedConfig.cwd,
-      paseoToolPolicy,
+      ramblaToolPolicy,
       undefined,
       { reason: "import", purpose: "interactive", workspaceId: input.workspaceId },
     );
@@ -1474,17 +1474,17 @@ export class AgentManager {
       ...overrides,
       provider,
     } as AgentSessionConfig;
-    const { storedConfig, launchConfig, paseoToolPolicy } = await this.prepareSessionConfig(
+    const { storedConfig, launchConfig, ramblaToolPolicy } = await this.prepareSessionConfig(
       refreshConfig,
       agentId,
     );
-    const hadPreviousRamblaToolPolicy = this.paseoToolPolicies.has(agentId);
-    const previousRamblaToolPolicy = this.paseoToolPolicies.get(agentId);
+    const hadPreviousRamblaToolPolicy = this.ramblaToolPolicies.has(agentId);
+    const previousRamblaToolPolicy = this.ramblaToolPolicies.get(agentId);
     const launchContext = await this.buildLaunchContext(
       agentId,
       client,
       storedConfig.cwd,
-      paseoToolPolicy,
+      ramblaToolPolicy,
       undefined,
       { reason: "refresh", purpose: "interactive", workspaceId: existing.workspaceId },
     );
@@ -1508,7 +1508,7 @@ export class AgentManager {
       await this.persistSnapshot(closedExisting);
       this.assertAcceptingAgentRegistrations();
 
-      this.paseoToolPolicies.set(agentId, paseoToolPolicy);
+      this.ramblaToolPolicies.set(agentId, ramblaToolPolicy);
       session = handle
         ? await client.resumeSession(handle, providerLaunchConfig, launchContext)
         : await client.createSession(providerLaunchConfig, launchContext);
@@ -1550,9 +1550,9 @@ export class AgentManager {
     } finally {
       if (!handedToRegistration) {
         if (hadPreviousRamblaToolPolicy) {
-          this.paseoToolPolicies.set(agentId, previousRamblaToolPolicy);
+          this.ramblaToolPolicies.set(agentId, previousRamblaToolPolicy);
         } else {
-          this.paseoToolPolicies.delete(agentId);
+          this.ramblaToolPolicies.delete(agentId);
         }
         if (session) {
           await this.closeUnregisteredSession(session);
@@ -3626,7 +3626,7 @@ export class AgentManager {
 
   private discardRetainedAgentState(agentId: string): void {
     this.timelineStore.delete(agentId);
-    this.paseoToolPolicies.delete(agentId);
+    this.ramblaToolPolicies.delete(agentId);
     for (const event of this.providerSubagents.deleteParent(agentId)) {
       this.dispatch({ type: "provider_subagent", event });
     }
@@ -5040,7 +5040,7 @@ export class AgentManager {
     env?: Record<string, string>,
   ): Promise<PreparedSessionConfig> {
     const storedConfig = await this.normalizeConfig(stripInternalRamblaMcpServer(config), { env });
-    const paseoToolPolicy = this.paseoToolsEnabled
+    const ramblaToolPolicy = this.ramblaToolsEnabled
       ? this.resolveRamblaToolPolicy(storedConfig.provider)
       : { enabled: false };
     const launchConfig = this.applyDaemonAppendSystemPrompt(
@@ -5048,13 +5048,13 @@ export class AgentManager {
         config: storedConfig,
         agentId,
         mcpBaseUrl:
-          this.paseoToolsEnabled && isRamblaToolPolicyEnabled(paseoToolPolicy)
+          this.ramblaToolsEnabled && isRamblaToolPolicyEnabled(ramblaToolPolicy)
             ? this.mcpBaseUrl
             : null,
         mcpAuthToken: this.mcpAuthToken,
       }),
     );
-    return { storedConfig, launchConfig, paseoToolPolicy };
+    return { storedConfig, launchConfig, ramblaToolPolicy };
   }
 
   private applyDaemonAppendSystemPrompt(config: AgentSessionConfig): AgentSessionConfig {
@@ -5074,7 +5074,7 @@ export class AgentManager {
     agentId: string,
     client: AgentClient,
     cwd: string,
-    paseoToolPolicy: ProviderRamblaToolsPolicy | undefined,
+    ramblaToolPolicy: ProviderRamblaToolsPolicy | undefined,
     env?: Record<string, string>,
     opening?: {
       reason: PluginSessionOpenRequest["reason"];
@@ -5104,14 +5104,14 @@ export class AgentManager {
       },
     };
     if (
-      this.paseoToolsEnabled &&
-      isRamblaToolPolicyEnabled(paseoToolPolicy) &&
+      this.ramblaToolsEnabled &&
+      isRamblaToolPolicyEnabled(ramblaToolPolicy) &&
       client.capabilities.supportsNativeRamblaTools &&
-      this.paseoToolCatalogFactory
+      this.ramblaToolCatalogFactory
     ) {
-      context.paseoTools = await this.paseoToolCatalogFactory({
+      context.ramblaTools = await this.ramblaToolCatalogFactory({
         callerAgentId: agentId,
-        paseoToolPolicy,
+        ramblaToolPolicy,
       });
     }
     return context;
@@ -5121,7 +5121,7 @@ export class AgentManager {
     launchConfig: AgentSessionConfig,
     launchContext: AgentLaunchContext,
   ): AgentSessionConfig {
-    return launchContext.paseoTools ? stripInternalRamblaMcpServer(launchConfig) : launchConfig;
+    return launchContext.ramblaTools ? stripInternalRamblaMcpServer(launchConfig) : launchConfig;
   }
 
   private async requireAvailableClient(options: { provider: AgentProvider }): Promise<AgentClient> {

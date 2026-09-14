@@ -18,8 +18,8 @@ import { isRamblaOwnedWorktreeCwd } from "../../utils/worktree.js";
 import type { WorkspaceArchiveContext } from "../workspace-registry.js";
 
 export interface AutoArchiveArchiveOptions {
-  paseoHome: string;
-  paseoWorktreesBaseRoot?: string;
+  ramblaHome: string;
+  ramblaWorktreesBaseRoot?: string;
   daemonConfigStore: DaemonConfigStore;
   workspaceGitService: WorkspaceGitServiceImpl;
   github: ForgeService;
@@ -70,8 +70,8 @@ export async function archiveIfSafe(input: {
   }
 
   const ownership = await deps.isRamblaOwnedWorktreeCwd(cwd, {
-    paseoHome: options.paseoHome,
-    worktreesRoot: options.paseoWorktreesBaseRoot,
+    ramblaHome: options.ramblaHome,
+    worktreesRoot: options.ramblaWorktreesBaseRoot,
   });
   if (!ownership.allowed) {
     return;
@@ -85,8 +85,8 @@ export async function archiveIfSafe(input: {
 
     await deps.archiveByScope(
       {
-        paseoHome: options.paseoHome,
-        paseoWorktreesBaseRoot: options.paseoWorktreesBaseRoot,
+        ramblaHome: options.ramblaHome,
+        ramblaWorktreesBaseRoot: options.ramblaWorktreesBaseRoot,
         github: options.github,
         workspaceGitService: options.workspaceGitService,
         agentManager: options.agentManager,

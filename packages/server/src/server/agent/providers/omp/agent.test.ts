@@ -124,7 +124,7 @@ describe("OMP agent client and session", () => {
     await omp.start({ modeId: "ask" }, createToolCatalog());
 
     expect(omp.launchConfiguration()).toEqual({
-      cwd: "/tmp/paseo-omp-agent-test",
+      cwd: "/tmp/rambla-omp-agent-test",
       protocolMode: "rpc-ui",
       modeId: "ask",
       argv: ["omp", "--mode", "rpc-ui", "--approval-mode", "always-ask"],
@@ -150,7 +150,7 @@ describe("OMP agent client and session", () => {
     await omp.start({ modeId: "write" });
 
     expect(omp.launchConfiguration()).toEqual({
-      cwd: "/tmp/paseo-omp-agent-test",
+      cwd: "/tmp/rambla-omp-agent-test",
       protocolMode: "rpc-ui",
       modeId: "write",
       argv: ["omp", "--mode", "rpc-ui", "--approval-mode", "write"],
@@ -500,7 +500,7 @@ describe("OMP agent client and session", () => {
       cwd: "/workspace/resumed",
       protocolMode: "rpc-ui",
       modeId: "ask",
-      session: expect.stringMatching(/[\\/]paseo-omp-resume-.*[\\/]session\.jsonl$/),
+      session: expect.stringMatching(/[\\/]rambla-omp-resume-.*[\\/]session\.jsonl$/),
       argv: [
         "omp",
         "--mode",
@@ -510,7 +510,7 @@ describe("OMP agent client and session", () => {
         "--thinking",
         "high",
         "--session",
-        expect.stringMatching(/[\\/]paseo-omp-resume-.*[\\/]session\.jsonl$/),
+        expect.stringMatching(/[\\/]rambla-omp-resume-.*[\\/]session\.jsonl$/),
       ],
     });
     await expect(omp.history()).resolves.toEqual([

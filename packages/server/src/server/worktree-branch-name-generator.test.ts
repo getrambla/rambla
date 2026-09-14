@@ -8,7 +8,7 @@ import type { StructuredAgentGenerationWithFallbackOptions } from "./agent/agent
 import {
   attemptFirstAgentBranchAutoName,
   type AttemptFirstAgentBranchAutoNameResult,
-} from "./paseo-worktree-service.js";
+} from "./rambla-worktree-service.js";
 import { createNoopWorkspaceGitService } from "./test-utils/workspace-git-service-stub.js";
 import { generateBranchNameFromFirstAgentContext } from "./worktree-branch-name-generator.js";
 import {
@@ -228,9 +228,9 @@ describe("generateBranchNameFromFirstAgentContext", () => {
   });
 
   test.each([
-    ["paseo.json missing", undefined],
-    ["paseo.json exists but invalid JSON", "{ nope"],
-    ["paseo.json valid but missing metadataGeneration", {}],
+    ["rambla.json missing", undefined],
+    ["rambla.json exists but invalid JSON", "{ nope"],
+    ["rambla.json valid but missing metadataGeneration", {}],
     [
       "metadataGeneration exists but missing branchName",
       { metadataGeneration: { commitMessage: { instructions: "Use Conventional Commits." } } },
@@ -291,8 +291,8 @@ describe("generateBranchNameFromFirstAgentContext", () => {
   });
 
   test("keeps the branch slug validator fallback when instructions are present", async () => {
-    const repoRoot = createTempDir("paseo-branch-config-");
-    const worktreeRoot = createTempDir("paseo-branch-worktree-");
+    const repoRoot = createTempDir("rambla-branch-config-");
+    const worktreeRoot = createTempDir("rambla-branch-worktree-");
     mkdirSync(path.join(worktreeRoot, ".git"));
     writeRamblaWorktreeMetadata(worktreeRoot, { baseRefName: "main" });
     writeRamblaWorktreeFirstAgentBranchAutoNameMetadata(worktreeRoot, {
@@ -338,9 +338,9 @@ describe("generateBranchNameFromFirstAgentContext", () => {
 });
 
 async function generateBranchPromptWithConfig(config: unknown): Promise<{ prompt: string }> {
-  const repoRoot = createTempDir("paseo-branch-config-");
+  const repoRoot = createTempDir("rambla-branch-config-");
   if (typeof config === "string") {
-    writeFileSync(path.join(repoRoot, "paseo.json"), config);
+    writeFileSync(path.join(repoRoot, "rambla.json"), config);
   } else if (config !== undefined) {
     writeConfig(repoRoot, config);
   }
@@ -373,5 +373,5 @@ function createTempDir(prefix: string): string {
 }
 
 function writeConfig(repoRoot: string, config: unknown): void {
-  writeFileSync(path.join(repoRoot, "paseo.json"), `${JSON.stringify(config)}\n`);
+  writeFileSync(path.join(repoRoot, "rambla.json"), `${JSON.stringify(config)}\n`);
 }

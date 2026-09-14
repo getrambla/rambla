@@ -23,7 +23,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 FLOW_TEMPLATE="$REPO_ROOT/packages/app/maestro/workspace-create-android-crash.yaml"
 FLOW_TEMPLATE_DIR="$REPO_ROOT/packages/app/maestro"
-OUT_DIR="/tmp/paseo-workspace-create-android-$(date +%s)"
+OUT_DIR="/tmp/rambla-workspace-create-android-$(date +%s)"
 CLIENT_EXPORTS="$REPO_ROOT/packages/client/dist/daemon-client.js"
 
 export RAMBLA_MAESTRO_APP_ID="${RAMBLA_MAESTRO_APP_ID:-sh.rambla.debug}"
@@ -71,14 +71,14 @@ fi
 mkdir -p "$OUT_DIR"
 
 if [ -z "${RAMBLA_MAESTRO_PROJECT_PATH:-}" ]; then
-  PROJECT_PARENT="$(mktemp -d /tmp/paseo-maestro-project-XXXXXX)"
+  PROJECT_PARENT="$(mktemp -d /tmp/rambla-maestro-project-XXXXXX)"
   PROJECT_BASENAME="aaa-workspace-create-android-$(basename "$PROJECT_PARENT")"
   export RAMBLA_MAESTRO_PROJECT_PATH="$PROJECT_PARENT/$PROJECT_BASENAME"
   mkdir -p "$RAMBLA_MAESTRO_PROJECT_PATH"
   git -C "$RAMBLA_MAESTRO_PROJECT_PATH" init >/dev/null
   git -C "$RAMBLA_MAESTRO_PROJECT_PATH" checkout -b main >/dev/null 2>&1 || true
   git -C "$RAMBLA_MAESTRO_PROJECT_PATH" config user.name "Rambla Maestro"
-  git -C "$RAMBLA_MAESTRO_PROJECT_PATH" config user.email "maestro@getpaseo.local"
+  git -C "$RAMBLA_MAESTRO_PROJECT_PATH" config user.email "maestro@getrambla.local"
   printf "# Workspace create Android repro\n" > "$RAMBLA_MAESTRO_PROJECT_PATH/README.md"
   git -C "$RAMBLA_MAESTRO_PROJECT_PATH" add README.md
   git -C "$RAMBLA_MAESTRO_PROJECT_PATH" commit -m "Initial commit" >/dev/null

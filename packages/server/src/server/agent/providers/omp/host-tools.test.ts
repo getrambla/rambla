@@ -123,7 +123,7 @@ class OmpHostToolHarness {
   }
 
   private routerInput() {
-    return { runtimeSession: this.runtimeSession, paseoTools: this.catalog, logger: this.logger };
+    return { runtimeSession: this.runtimeSession, ramblaTools: this.catalog, logger: this.logger };
   }
 }
 

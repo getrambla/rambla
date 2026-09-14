@@ -43,8 +43,8 @@ mise install        # java 21 + android-sdk 21.0 command-line tools
 sdkmanager --licenses
 sdkmanager "platform-tools" "emulator" "platforms;android-35" "build-tools;35.0.0" \
            "system-images;android-35;google_apis;arm64-v8a"
-avdmanager create avd -n paseo -k "system-images;android-35;google_apis;arm64-v8a" -d pixel_7
-emulator @paseo     # start it; leave running
+avdmanager create avd -n rambla -k "system-images;android-35;google_apis;arm64-v8a" -d pixel_7
+emulator @rambla     # start it; leave running
 ```
 
 On an Intel Mac, use the `x86_64` system image:
@@ -53,8 +53,8 @@ On an Intel Mac, use the `x86_64` system image:
 sdkmanager --licenses
 sdkmanager "platform-tools" "emulator" "platforms;android-35" "build-tools;35.0.0" \
            "system-images;android-35;google_apis;x86_64"
-avdmanager create avd -n paseo -k "system-images;android-35;google_apis;x86_64" -d pixel_7
-emulator @paseo     # start it; leave running
+avdmanager create avd -n rambla -k "system-images;android-35;google_apis;x86_64" -d pixel_7
+emulator @rambla     # start it; leave running
 ```
 
 Gradle auto-fetches the platform/build-tools it needs once licenses are accepted, so adjust `android-35` only if it asks for a different level.

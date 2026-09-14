@@ -17,7 +17,7 @@ import {
   buildStringCommandShellInvocation,
   createStringCommandShellEnv,
 } from "./string-command-shell.js";
-import { readRamblaConfigJson, resolveRamblaConfigPath } from "./paseo-config-file.js";
+import { readRamblaConfigJson, resolveRamblaConfigPath } from "./rambla-config-file.js";
 export {
   RamblaConfigRawSchema,
   RamblaLifecycleCommandRawSchema,
@@ -26,8 +26,8 @@ export {
   RamblaConfigSchema,
   type RamblaConfig,
   type RamblaConfigRaw,
-} from "@getpaseo/protocol/paseo-config-schema";
-import { RamblaConfigSchema, type RamblaConfig } from "@getpaseo/protocol/paseo-config-schema";
+} from "@getrambla/protocol/rambla-config-schema";
+import { RamblaConfigSchema, type RamblaConfig } from "@getrambla/protocol/rambla-config-schema";
 import {
   createRamblaWorktreeChangeRequestHint,
   normalizeBaseRefName,
@@ -39,13 +39,13 @@ import {
 } from "./worktree-metadata.js";
 import { runGitCommand } from "./run-git-command.js";
 import { spawnProcess } from "./spawn.js";
-import { resolveRamblaHome } from "../server/paseo-home.js";
-import { createExternalProcessEnv } from "../server/paseo-env.js";
+import { resolveRamblaHome } from "../server/rambla-home.js";
+import { createExternalProcessEnv } from "../server/rambla-env.js";
 import { parseGitRevParsePath, resolveGitRevParsePath } from "./git-rev-parse-path.js";
 import { expandTilde, getRealpathAwareRelativePath, isPathInsideRoot } from "./path.js";
 import { terminateWithTreeKill } from "./tree-kill.js";
 
-export { slugify, validateBranchSlug } from "@getpaseo/protocol/branch-slug";
+export { slugify, validateBranchSlug } from "@getrambla/protocol/branch-slug";
 
 const execFileAsync = promisify(execFile);
 const READ_ONLY_GIT_ENV = {
@@ -168,7 +168,7 @@ export interface RamblaWorktreeOwnershipOptions extends WorktreeRootOptions {
 }
 
 export interface WorktreeRootOptions {
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesRoot?: string;
 }
 
@@ -210,7 +210,7 @@ export interface CreateWorktreeOptions {
   worktreeSlug: string;
   source: WorktreeSource;
   runSetup: boolean;
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesRoot?: string;
 }
 
@@ -262,9 +262,9 @@ export function readRamblaConfig(repoRoot: string): ReadRamblaConfigResult {
   }
 }
 
-export function paseoConfigParseError(failure: { configPath: string; error: unknown }): Error {
+export function ramblaConfigParseError(failure: { configPath: string; error: unknown }): Error {
   const detail = failure.error instanceof Error ? failure.error.message : String(failure.error);
-  return new Error(`Failed to parse paseo.json at ${failure.configPath}: ${detail}`, {
+  return new Error(`Failed to parse rambla.json at ${failure.configPath}: ${detail}`, {
     cause: failure.error,
   });
 }
@@ -272,7 +272,7 @@ export function paseoConfigParseError(failure: { configPath: string; error: unkn
 function readRamblaConfigOrThrow(repoRoot: string): RamblaConfig | null {
   const result = readRamblaConfig(repoRoot);
   if (!result.ok) {
-    throw paseoConfigParseError(result);
+    throw ramblaConfigParseError(result);
   }
   return result.config;
 }
@@ -641,7 +641,7 @@ export async function runWorktreeSetupCommands(options: {
   signal?: AbortSignal;
   onEvent?: (event: WorktreeSetupCommandProgressEvent) => void;
 }): Promise<WorktreeSetupCommandResult[]> {
-  // Read paseo.json from the worktree (it will have the same content as the source repo)
+  // Read rambla.json from the worktree (it will have the same content as the source repo)
   const setupCommands = getWorktreeSetupCommands(options.worktreePath);
   if (setupCommands.length === 0) {
     return [];
@@ -804,8 +804,8 @@ export async function seedRamblaConfigFile(options: {
   sourceCwd: string;
   targetCwd: string;
 }): Promise<void> {
-  const sourceConfigPath = join(options.sourceCwd, "paseo.json");
-  const targetConfigPath = join(options.targetCwd, "paseo.json");
+  const sourceConfigPath = join(options.sourceCwd, "rambla.json");
+  const targetConfigPath = join(options.targetCwd, "rambla.json");
   await copyFile(sourceConfigPath, targetConfigPath, fsConstants.COPYFILE_EXCL).catch((error) => {
     const code = (error as NodeJS.ErrnoException).code;
     if (code !== "EEXIST" && code !== "ENOENT") throw error;
@@ -857,20 +857,20 @@ export function resolveRamblaWorktreesBaseRoot(options?: WorktreeRootOptions): s
     if (isAbsolute(expandedRoot)) {
       return resolve(expandedRoot);
     }
-    const home = options.paseoHome ? resolve(options.paseoHome) : resolveRamblaHome();
+    const home = options.ramblaHome ? resolve(options.ramblaHome) : resolveRamblaHome();
     return resolve(home, expandedRoot);
   }
 
-  const home = options?.paseoHome ? resolve(options.paseoHome) : resolveRamblaHome();
+  const home = options?.ramblaHome ? resolve(options.ramblaHome) : resolveRamblaHome();
   return join(home, "worktrees");
 }
 
 export async function getRamblaWorktreesRoot(
   cwd: string,
-  paseoHome?: string,
+  ramblaHome?: string,
   worktreesRoot?: string,
 ): Promise<string> {
-  const baseRoot = resolveRamblaWorktreesBaseRoot({ paseoHome, worktreesRoot });
+  const baseRoot = resolveRamblaWorktreesBaseRoot({ ramblaHome, worktreesRoot });
   const projectHash = await deriveWorktreeProjectHash(cwd);
   return join(baseRoot, projectHash);
 }
@@ -878,10 +878,10 @@ export async function getRamblaWorktreesRoot(
 export async function computeWorktreePath(
   cwd: string,
   slug: string,
-  paseoHome?: string,
+  ramblaHome?: string,
   worktreesRoot?: string,
 ): Promise<string> {
-  const projectWorktreesRoot = await getRamblaWorktreesRoot(cwd, paseoHome, worktreesRoot);
+  const projectWorktreesRoot = await getRamblaWorktreesRoot(cwd, ramblaHome, worktreesRoot);
   return join(projectWorktreesRoot, slug);
 }
 
@@ -1037,14 +1037,14 @@ function resolveWorktreeCreatedAtIso(worktreePath: string): string {
 
 export async function listRamblaWorktrees({
   cwd,
-  paseoHome,
+  ramblaHome,
   worktreesRoot,
 }: {
   cwd: string;
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesRoot?: string;
 }): Promise<RamblaWorktreeInfo[]> {
-  const projectWorktreesRoot = await getRamblaWorktreesRoot(cwd, paseoHome, worktreesRoot);
+  const projectWorktreesRoot = await getRamblaWorktreesRoot(cwd, ramblaHome, worktreesRoot);
   const { stdout } = await runGitCommand(["worktree", "list", "--porcelain"], {
     cwd,
     envOverlay: READ_ONLY_GIT_ENV,
@@ -1064,7 +1064,7 @@ export interface DeleteRamblaWorktreeOptions {
   teardownCwds?: string[];
   worktreeSlug?: string;
   worktreesRoot?: string;
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesBaseRoot?: string;
 }
 
@@ -1074,7 +1074,7 @@ export async function deleteRamblaWorktree({
   teardownCwds,
   worktreeSlug,
   worktreesRoot,
-  paseoHome,
+  ramblaHome,
   worktreesBaseRoot,
 }: DeleteRamblaWorktreeOptions): Promise<void> {
   if (!worktreePath && !worktreeSlug) {
@@ -1088,7 +1088,7 @@ export async function deleteRamblaWorktree({
   if (worktreesRoot) {
     resolvedWorktreesRoot = worktreesRoot;
   } else if (cwd) {
-    resolvedWorktreesRoot = await getRamblaWorktreesRoot(cwd, paseoHome, worktreesBaseRoot);
+    resolvedWorktreesRoot = await getRamblaWorktreesRoot(cwd, ramblaHome, worktreesBaseRoot);
   } else {
     throw new Error("cwd or worktreesRoot is required to delete a Rambla worktree");
   }
@@ -1096,7 +1096,7 @@ export async function deleteRamblaWorktree({
   const requestedPath = worktreePath ?? join(resolvedWorktreesRoot, worktreeSlug!);
   const resolvedRequested = normalizePathForOwnership(requestedPath);
   const ownership = await isRamblaOwnedWorktreeCwd(requestedPath, {
-    paseoHome,
+    ramblaHome,
     worktreesRoot: worktreesBaseRoot,
   });
   const resolvedWorktree =
@@ -1214,11 +1214,11 @@ export const createWorktree = async ({
   source,
   worktreeSlug,
   runSetup,
-  paseoHome,
+  ramblaHome,
   worktreesRoot,
 }: CreateWorktreeOptions): Promise<WorktreeConfig> => {
   const sourcePlan = await resolveWorktreeSourcePlan({ cwd, source, desiredSlug: worktreeSlug });
-  let worktreePath = join(await getRamblaWorktreesRoot(cwd, paseoHome, worktreesRoot), worktreeSlug);
+  let worktreePath = join(await getRamblaWorktreesRoot(cwd, ramblaHome, worktreesRoot), worktreeSlug);
   mkdirSync(dirname(worktreePath), { recursive: true });
 
   // Also handle worktree path collision
@@ -1389,7 +1389,7 @@ async function resolveWorktreeSourcePlan({
         : undefined;
       const remotePlan: Pick<WorktreeSourcePlan, "pushRemote" | "trackingRemote"> = {};
       if (source.pushRemoteUrl) {
-        const remoteName = `paseo-pr-${changeRequestNumber}`;
+        const remoteName = `rambla-pr-${changeRequestNumber}`;
         remotePlan.pushRemote = {
           name: remoteName,
           url: source.pushRemoteUrl,
@@ -1400,7 +1400,7 @@ async function resolveWorktreeSourcePlan({
         const originUrl = await getWorktreeRemotePushUrl(cwd, "origin");
         if (originUrl) {
           remotePlan.pushRemote = {
-            name: `paseo-pr-${changeRequestNumber}`,
+            name: `rambla-pr-${changeRequestNumber}`,
             url: originUrl,
             headRef: source.headRef,
             track: false,

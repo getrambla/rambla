@@ -6,7 +6,7 @@ import {
   getOrCreateServerId,
   loadConfig,
   resolveRamblaHome,
-} from "@getpaseo/server";
+} from "@getrambla/server";
 import { tryConnectToDaemon } from "../../utils/client.js";
 import { resolveLocalDaemonState } from "./local-daemon.js";
 import { addJsonOption } from "../../utils/command-options.js";
@@ -71,10 +71,10 @@ export function pairCommand(): Command {
 }
 
 export async function resolveLocalPairingOffer(options: {
-  paseoHome: string;
+  ramblaHome: string;
   enableRelay?: boolean;
 }): Promise<PairingOffer> {
-  const state = resolveLocalDaemonState({ home: options.paseoHome });
+  const state = resolveLocalDaemonState({ home: options.ramblaHome });
   const serverId = getOrCreateServerId(state.home);
   const daemonOffer = await resolveDaemonPairingOffer(state.listen, serverId, options.enableRelay);
   if (daemonOffer) return daemonOffer;
@@ -85,13 +85,13 @@ export async function resolveLocalPairingOffer(options: {
     );
   }
 
-  const config = loadConfig(options.paseoHome);
+  const config = loadConfig(options.ramblaHome);
   if (options.enableRelay && !config.relayEnabled) {
     throw new Error("Start the daemon before enabling relay for pairing.");
   }
 
   return generateLocalPairingOffer({
-    paseoHome: options.paseoHome,
+    ramblaHome: options.ramblaHome,
     relayEnabled: config.relayEnabled,
     relayEndpoint: config.relayEndpoint,
     relayPublicEndpoint: config.relayPublicEndpoint,
@@ -178,9 +178,9 @@ export async function runPairCommand(
     ...dependencyOverrides,
   };
 
-  const paseoHome = resolveRamblaHome();
+  const ramblaHome = resolveRamblaHome();
   let pairing = await dependencies.resolveOffer({
-    paseoHome,
+    ramblaHome,
     enableRelay: options.relay === true,
   });
 
@@ -193,7 +193,7 @@ export async function runPairCommand(
       dependencies.output.setExitCode(1);
       return;
     }
-    pairing = await dependencies.resolveOffer({ paseoHome, enableRelay: true });
+    pairing = await dependencies.resolveOffer({ ramblaHome, enableRelay: true });
     dependencies.output.success("Relay enabled");
   }
 
@@ -211,12 +211,12 @@ function outputPairingResult(
         `${JSON.stringify({
           code: "RELAY_DISABLED",
           message: "Relay pairing is disabled for this daemon.",
-          action: "Run paseo daemon pair --relay --json to enable it explicitly.",
+          action: "Run rambla daemon pair --relay --json to enable it explicitly.",
         })}\n`,
       );
     } else {
       output.writeStderr(`${chalk.red("Relay pairing is disabled for this daemon.")}\n`);
-      output.writeStderr(`${chalk.yellow("Run paseo daemon pair --relay to enable it.")}\n`);
+      output.writeStderr(`${chalk.yellow("Run rambla daemon pair --relay to enable it.")}\n`);
     }
     output.setExitCode(1);
     return;

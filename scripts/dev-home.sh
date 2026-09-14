@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-default_dev_paseo_root() {
+default_dev_rambla_root() {
   git rev-parse --show-toplevel 2>/dev/null || pwd
 }
 
@@ -30,7 +30,7 @@ has_files() {
   [ -d "$1" ] && [ -n "$(find "$1" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]
 }
 
-seed_worktree_paseo_home() {
+seed_worktree_rambla_home() {
   local source_home="${RAMBLA_DEV_SEED_HOME:-$HOME/.rambla}"
   local target_home="$1"
 
@@ -95,11 +95,11 @@ resolve_dev_daemon_endpoint() {
   esac
 }
 
-configure_dev_paseo_home() {
+configure_dev_rambla_home() {
   if [ -n "${RAMBLA_HOME:-}" ]; then
     export RAMBLA_HOME
     if [ -n "${RAMBLA_DEV_SEED_HOME:-}" ]; then
-      seed_worktree_paseo_home "$RAMBLA_HOME"
+      seed_worktree_rambla_home "$RAMBLA_HOME"
     fi
     mkdir -p "$RAMBLA_HOME"
     if [ "${RAMBLA_DEV_MANAGED_HOME:-0}" = "1" ] || [ -n "${RAMBLA_DEV_SEED_HOME:-}" ]; then
@@ -110,12 +110,12 @@ configure_dev_paseo_home() {
 
   export RAMBLA_HOME
   local dev_root
-  dev_root="${RAMBLA_DEV_ROOT:-$(default_dev_paseo_root)}"
-  RAMBLA_HOME="$dev_root/.dev/paseo-home"
+  dev_root="${RAMBLA_DEV_ROOT:-$(default_dev_rambla_root)}"
+  RAMBLA_HOME="$dev_root/.dev/rambla-home"
   export RAMBLA_DEV_MANAGED_HOME=1
 
   if [ -n "${RAMBLA_DEV_SEED_HOME:-}" ]; then
-    seed_worktree_paseo_home "$RAMBLA_HOME"
+    seed_worktree_rambla_home "$RAMBLA_HOME"
   fi
 
   mkdir -p "$RAMBLA_HOME"
@@ -131,7 +131,7 @@ configure_dev_command_env() {
     fi
   fi
 
-  configure_dev_paseo_home
+  configure_dev_rambla_home
 }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
@@ -140,5 +140,5 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
     exec "$@"
   fi
 
-  configure_dev_paseo_home
+  configure_dev_rambla_home
 fi

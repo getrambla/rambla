@@ -397,7 +397,7 @@ class AcpRuntime {
           runtime.connection.initialize({
             protocolVersion: PROTOCOL_VERSION,
             clientCapabilities: {},
-            clientInfo: { name: "paseo", version: "1" },
+            clientInfo: { name: "rambla", version: "1" },
           }),
         ),
         options.options.acpOptions?.startupTimeoutMs ?? 10_000,
@@ -463,7 +463,7 @@ class AcpRuntime {
     const mcpServers = toAcpMcpServers(input.config);
     const nativeSessionId = readNativeSessionId(input.persistence);
     const metadata = {
-      _paseo: {
+      _rambla: {
         systemPrompt: input.config.systemPrompt,
         providerOptions: input.config.providerOptions,
         toolPolicy: input.config.toolPolicy,

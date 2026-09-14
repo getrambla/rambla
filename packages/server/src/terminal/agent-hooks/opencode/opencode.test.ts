@@ -31,12 +31,12 @@ function createTempDir(prefix: string): string {
 
 describe("OpenCode terminal agent hooks", () => {
   it("installs a self-contained OpenCode plugin idempotently", () => {
-    const configDir = createTempDir("paseo-opencode-config-");
+    const configDir = createTempDir("rambla-opencode-config-");
 
     const firstInstall = installAgentHooks(opencodeAgentHookProvider, { configDir });
     const secondInstall = installAgentHooks(opencodeAgentHookProvider, { configDir });
 
-    expect(firstInstall.configPath).toBe(join(configDir, "plugins", "paseo-terminal-activity.js"));
+    expect(firstInstall.configPath).toBe(join(configDir, "plugins", "rambla-terminal-activity.js"));
     expect(firstInstall.changed).toBe(true);
     expect(secondInstall.changed).toBe(false);
     expect(readFileSync(firstInstall.configPath, "utf8")).toBe(OPENCODE_PLUGIN_SOURCE);
@@ -57,8 +57,8 @@ describe("OpenCode terminal agent hooks", () => {
       dispose();
 
       expect(commands).toEqual([
-        ["paseo", "hooks", "opencode", "session.status.busy"],
-        ["paseo", "hooks", "opencode", "session.status.idle"],
+        ["rambla", "hooks", "opencode", "session.status.busy"],
+        ["rambla", "hooks", "opencode", "session.status.idle"],
       ]);
     },
   );
@@ -78,13 +78,13 @@ describe("OpenCode terminal agent hooks", () => {
       await hooks.event({ event });
     }
 
-    expect(plugin.id).toBe("paseo-terminal-activity");
+    expect(plugin.id).toBe("rambla-terminal-activity");
     expect(commands).toEqual([
-      ["paseo", "hooks", "opencode", "session.status.busy"],
-      ["paseo", "hooks", "opencode", "permission.asked"],
-      ["paseo", "hooks", "opencode", "permission.replied"],
-      ["paseo", "hooks", "opencode", "session.status.retry"],
-      ["paseo", "hooks", "opencode", "session.status.idle"],
+      ["rambla", "hooks", "opencode", "session.status.busy"],
+      ["rambla", "hooks", "opencode", "permission.asked"],
+      ["rambla", "hooks", "opencode", "permission.replied"],
+      ["rambla", "hooks", "opencode", "session.status.retry"],
+      ["rambla", "hooks", "opencode", "session.status.idle"],
     ]);
   });
 
@@ -102,8 +102,8 @@ describe("OpenCode terminal agent hooks", () => {
     dispose();
 
     expect(commands).toEqual([
-      ["paseo", "hooks", "opencode", "permission.asked"],
-      ["paseo", "hooks", "opencode", "permission.replied"],
+      ["rambla", "hooks", "opencode", "permission.asked"],
+      ["rambla", "hooks", "opencode", "permission.replied"],
     ]);
   });
 
@@ -122,13 +122,13 @@ describe("OpenCode terminal agent hooks", () => {
       event: { type: "session.status", properties: { status: { type: "idle" } } },
     });
     await Promise.resolve();
-    expect(commands).toEqual([["paseo", "hooks", "opencode", "session.status.busy"]]);
+    expect(commands).toEqual([["rambla", "hooks", "opencode", "session.status.busy"]]);
 
     finishFirstHook();
     await Promise.all([working, idle]);
     expect(commands).toEqual([
-      ["paseo", "hooks", "opencode", "session.status.busy"],
-      ["paseo", "hooks", "opencode", "session.status.idle"],
+      ["rambla", "hooks", "opencode", "session.status.busy"],
+      ["rambla", "hooks", "opencode", "session.status.idle"],
     ]);
   });
 
@@ -163,7 +163,7 @@ describe("OpenCode terminal agent hooks", () => {
   });
 
   it("uninstalls the OpenCode plugin file", () => {
-    const configDir = createTempDir("paseo-opencode-config-uninstall-");
+    const configDir = createTempDir("rambla-opencode-config-uninstall-");
     const configPath = resolveAgentHookConfigPath(opencodeAgentHookProvider, { configDir });
     installAgentHooks(opencodeAgentHookProvider, { configDir });
 
@@ -175,21 +175,21 @@ describe("OpenCode terminal agent hooks", () => {
   });
 
   it("prefers OPENCODE_CONFIG_DIR over the XDG config home", () => {
-    const homeDir = createTempDir("paseo-home-");
-    const configDir = createTempDir("paseo-opencode-override-");
-    const xdgConfigHome = createTempDir("paseo-xdg-config-");
+    const homeDir = createTempDir("rambla-home-");
+    const configDir = createTempDir("rambla-opencode-override-");
+    const xdgConfigHome = createTempDir("rambla-xdg-config-");
 
     const configPath = resolveAgentHookConfigPath(opencodeAgentHookProvider, {
       env: { OPENCODE_CONFIG_DIR: configDir, XDG_CONFIG_HOME: xdgConfigHome },
       homeDir,
     });
 
-    expect(configPath).toBe(join(configDir, "plugins", "paseo-terminal-activity.js"));
+    expect(configPath).toBe(join(configDir, "plugins", "rambla-terminal-activity.js"));
   });
 
   it("uses the XDG config home for the default OpenCode config dir", () => {
-    const homeDir = createTempDir("paseo-home-");
-    const xdgConfigHome = createTempDir("paseo-xdg-config-");
+    const homeDir = createTempDir("rambla-home-");
+    const xdgConfigHome = createTempDir("rambla-xdg-config-");
 
     const configPath = resolveAgentHookConfigPath(opencodeAgentHookProvider, {
       env: { XDG_CONFIG_HOME: xdgConfigHome },
@@ -197,12 +197,12 @@ describe("OpenCode terminal agent hooks", () => {
     });
 
     expect(configPath).toBe(
-      join(xdgConfigHome, "opencode", "plugins", "paseo-terminal-activity.js"),
+      join(xdgConfigHome, "opencode", "plugins", "rambla-terminal-activity.js"),
     );
   });
 
   it("falls back to the home .config OpenCode dir without an XDG config home", () => {
-    const homeDir = createTempDir("paseo-home-");
+    const homeDir = createTempDir("rambla-home-");
 
     const configPath = resolveAgentHookConfigPath(opencodeAgentHookProvider, {
       env: {},
@@ -210,7 +210,7 @@ describe("OpenCode terminal agent hooks", () => {
     });
 
     expect(configPath).toBe(
-      join(homeDir, ".config", "opencode", "plugins", "paseo-terminal-activity.js"),
+      join(homeDir, ".config", "opencode", "plugins", "rambla-terminal-activity.js"),
     );
   });
 
@@ -245,7 +245,7 @@ interface InstalledPlugin {
 }
 
 function loadInstalledPlugin(terminalId = "terminal-1", exited = Promise.resolve(0)) {
-  const configDir = createTempDir("paseo-opencode-runtime-");
+  const configDir = createTempDir("rambla-opencode-runtime-");
   const { configPath } = installAgentHooks(opencodeAgentHookProvider, { configDir });
   const source = readFileSync(configPath, "utf8");
   const commands: string[][] = [];

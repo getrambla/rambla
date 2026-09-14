@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { forkRamblaHomeMetadata, resolveRamblaHomePath } from "./paseo-home-fork";
+import { forkRamblaHomeMetadata, resolveRamblaHomePath } from "./rambla-home-fork";
 import { startIsolatedHostDaemon } from "./isolated-host-daemon";
 
 export interface E2EWorker {
@@ -24,7 +24,7 @@ function resolveOptionalHome(value: string | undefined): string | null {
 }
 
 async function createFakeEditorBin(): Promise<string> {
-  const binDir = await mkdtemp(path.join(tmpdir(), "paseo-e2e-editor-bin-"));
+  const binDir = await mkdtemp(path.join(tmpdir(), "rambla-e2e-editor-bin-"));
   let realGhPath = "";
   try {
     const locator = process.platform === "win32" ? "where.exe" : "which";
@@ -66,7 +66,7 @@ if (recordPath) {
   const fakeGhSource = `#!/usr/bin/env node
 const { spawnSync } = require("child_process");
 const args = process.argv.slice(2);
-const fixtureRemote = "https://github.com/paseo-e2e/local-fixture.git";
+const fixtureRemote = "https://github.com/rambla-e2e/local-fixture.git";
 const origin = spawnSync("git", ["config", "--get", "remote.origin.url"], {
   encoding: "utf8",
   stdio: ["ignore", "pipe", "ignore"]
@@ -76,7 +76,7 @@ if (origin === fixtureRemote) {
   const command = args.slice(0, 2).join(" ");
   if (command === "auth status") process.exit(0);
   if (command === "repo view") {
-    process.stdout.write(JSON.stringify({ owner: { login: "paseo-e2e" }, name: "local-fixture", parent: null }));
+    process.stdout.write(JSON.stringify({ owner: { login: "rambla-e2e" }, name: "local-fixture", parent: null }));
     process.exit(0);
   }
   if (command === "issue list") {
@@ -88,7 +88,7 @@ if (origin === fixtureRemote) {
     const pr = {
       number: isFork ? 2 : 1,
       title: "Use pasted PR as start ref",
-      url: "https://github.com/paseo-e2e/local-fixture/pull/" + (isFork ? 2 : 1),
+      url: "https://github.com/rambla-e2e/local-fixture/pull/" + (isFork ? 2 : 1),
       state: "OPEN",
       body: null,
       labels: [],
@@ -107,9 +107,9 @@ if (origin === fixtureRemote) {
         baseRefName: "main",
         headRefName: isFork ? "pr-branch-2" : "pr-branch-1",
         isCrossRepository: isFork,
-        headRepositoryOwner: { login: isFork ? "fork-owner" : "paseo-e2e" },
+        headRepositoryOwner: { login: isFork ? "fork-owner" : "rambla-e2e" },
         headRepository: {
-          sshUrl: isFork ? "git@github.com:fork-owner/local-fixture.git" : "git@github.com:paseo-e2e/local-fixture.git",
+          sshUrl: isFork ? "git@github.com:fork-owner/local-fixture.git" : "git@github.com:rambla-e2e/local-fixture.git",
           url: isFork ? "https://github.com/fork-owner/local-fixture" : fixtureRemote
         }
       } } }
@@ -168,29 +168,29 @@ export async function startE2EWorker(
   options: E2EWorkerOptions = {},
 ): Promise<E2EWorker> {
   const requestedRoot = resolveOptionalHome(process.env.E2E_RAMBLA_HOME);
-  const paseoHome = requestedRoot
+  const ramblaHome = requestedRoot
     ? path.join(requestedRoot, `worker-${workerIndex}`)
-    : await mkdtemp(path.join(tmpdir(), `paseo-e2e-worker-${workerIndex}-`));
+    : await mkdtemp(path.join(tmpdir(), `rambla-e2e-worker-${workerIndex}-`));
   const preserveHome = Boolean(requestedRoot) || process.env.E2E_KEEP_RAMBLA_HOME === "1";
   const fakeEditorBin = await createFakeEditorBin();
-  const editorRecordPath = path.join(paseoHome, "editor-open-records.jsonl");
+  const editorRecordPath = path.join(ramblaHome, "editor-open-records.jsonl");
   const serverId = `srv_e2e_worker_${workerIndex}`;
 
   try {
-    await applyMetadataFork(paseoHome, options.forkProviders ?? []);
+    await applyMetadataFork(ramblaHome, options.forkProviders ?? []);
     // Worker-scoped fixture config lets a spec exercise provider discovery without
     // reading the developer's provider state or sharing configuration with other specs.
     if (options.daemonConfig) {
       await writeFile(
-        path.join(paseoHome, "config.json"),
+        path.join(ramblaHome, "config.json"),
         `${JSON.stringify(options.daemonConfig, null, 2)}\n`,
       );
     }
     if (options.injectRamblaTools) {
-      await enableRamblaTools(paseoHome);
+      await enableRamblaTools(ramblaHome);
     }
     const daemon = await startIsolatedHostDaemon(serverId, {
-      paseoHome,
+      ramblaHome,
       preserveHome,
       environment: {
         NODE_ENV: "development",
@@ -202,13 +202,13 @@ export async function startE2EWorker(
 
     process.env.E2E_DAEMON_PORT = String(daemon.port);
     process.env.E2E_SERVER_ID = daemon.serverId;
-    process.env.E2E_RAMBLA_HOME = daemon.paseoHome;
+    process.env.E2E_RAMBLA_HOME = daemon.ramblaHome;
     process.env.E2E_EDITOR_RECORD_PATH = editorRecordPath;
     delete process.env.E2E_RELAY_PORT;
     delete process.env.E2E_RELAY_DAEMON_PUBLIC_KEY;
 
     console.log(
-      `[e2e] Worker ${workerIndex} daemon started on port ${daemon.port}, home: ${daemon.paseoHome}`,
+      `[e2e] Worker ${workerIndex} daemon started on port ${daemon.port}, home: ${daemon.ramblaHome}`,
     );
     return {
       close: async () => {
@@ -219,13 +219,13 @@ export async function startE2EWorker(
     };
   } catch (error) {
     await rm(fakeEditorBin, { recursive: true, force: true });
-    if (!preserveHome) await rm(paseoHome, { recursive: true, force: true });
+    if (!preserveHome) await rm(ramblaHome, { recursive: true, force: true });
     throw error;
   }
 }
 
-async function enableRamblaTools(paseoHome: string): Promise<void> {
-  const configPath = path.join(paseoHome, "config.json");
+async function enableRamblaTools(ramblaHome: string): Promise<void> {
+  const configPath = path.join(ramblaHome, "config.json");
   const existing = existsSync(configPath)
     ? JSON.parse(await readFile(configPath, "utf8"))
     : { version: 1 };

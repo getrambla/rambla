@@ -46,10 +46,10 @@ than downloading a published desktop release.
 
 `RAMBLA_HOME` is the directory that holds runtime state (agents, worktrees, workspace config, sockets, daemon log). Resolution rules:
 
-- The **server itself** (e.g. when launched by the desktop app or `npm run start`) defaults to `~/.rambla` (see `packages/server/src/server/paseo-home.ts`).
-- **Repo dev scripts** default to `$ROOT/.dev/paseo-home`, where `$ROOT` is the current checkout or worktree root. This keeps all dev state scoped to the checkout instead of the packaged desktop app.
-- **`npm run cli -- ...`** runs through the same dev-home wrapper as the dev scripts, so the in-repo CLI automatically targets the current checkout's `.dev/paseo-home` and configured dev daemon endpoint.
-- **Rambla-created worktrees** seed `$RAMBLA_WORKTREE_PATH/.dev/paseo-home` from `$RAMBLA_SOURCE_CHECKOUT_PATH/.dev/paseo-home` by copying durable JSON metadata. Runtime files like pid files, sockets, and logs are not copied.
+- The **server itself** (e.g. when launched by the desktop app or `npm run start`) defaults to `~/.rambla` (see `packages/server/src/server/rambla-home.ts`).
+- **Repo dev scripts** default to `$ROOT/.dev/rambla-home`, where `$ROOT` is the current checkout or worktree root. This keeps all dev state scoped to the checkout instead of the packaged desktop app.
+- **`npm run cli -- ...`** runs through the same dev-home wrapper as the dev scripts, so the in-repo CLI automatically targets the current checkout's `.dev/rambla-home` and configured dev daemon endpoint.
+- **Rambla-created worktrees** seed `$RAMBLA_WORKTREE_PATH/.dev/rambla-home` from `$RAMBLA_SOURCE_CHECKOUT_PATH/.dev/rambla-home` by copying durable JSON metadata. Runtime files like pid files, sockets, and logs are not copied.
 - **This repo's worktree setup** also best-effort seeds `packages/app/ios` and the newest `.dev/ios-build` entry from the source checkout so iOS simulator services can reuse native project and Xcode cache state when it is safe enough to do so.
 
 Override knobs:
@@ -78,7 +78,7 @@ startup routing, remembered workspace restore, or active workspace selection.
 
 ### iOS simulator preview service
 
-Rambla worktrees expose the native iOS dev app through the `ios-simulator` service in `paseo.json`. The service URL serves the simulator preview at `/.sim`, so the preview link is `${RAMBLA_URL}/.sim`.
+Rambla worktrees expose the native iOS dev app through the `ios-simulator` service in `rambla.json`. The service URL serves the simulator preview at `/.sim`, so the preview link is `${RAMBLA_URL}/.sim`.
 
 **Prerequisites (macOS only).** The service shells out to the Apple toolchain, so beyond the `npm ci` that worktree setup runs you must install:
 
@@ -141,7 +141,7 @@ With desktop dev running, verify the real BrowserWindow, titlebar clearance, ful
 transition, and 751-pixel settings split with:
 
 ```bash
-npm run verify:electron-cdp --workspace=@getpaseo/desktop
+npm run verify:electron-cdp --workspace=@getrambla/desktop
 ```
 
 The verifier reads the same `EXPO_PORT` and
@@ -201,7 +201,7 @@ web, keep a daemon available, then run:
 RAMBLA_PROFILE_SERVER_ID=<server-id> \
 RAMBLA_PROFILE_WORKSPACE_ID=<workspace-path> \
 RAMBLA_PROFILE_AGENT_ID=<agent-id> \
-  npm run profile:workspace-tabs --workspace=@getpaseo/app
+  npm run profile:workspace-tabs --workspace=@getrambla/app
 ```
 
 This script opens the app with `?renderProfile=1`, creates a temporary terminal
@@ -222,7 +222,7 @@ daemon state:
 
 ```bash
 RAMBLA_PROFILE_APP_URL=http://localhost:19010 \
-  npm run profile:workspace-switching --workspace=@getpaseo/app
+  npm run profile:workspace-switching --workspace=@getrambla/app
 ```
 
 The benchmark first warms `Cmd+1` through `Cmd+7`, then records a rapid seven-workspace
@@ -245,7 +245,7 @@ the scenario report. This mode wraps `HTMLElement.focus`, so use it only for dia
 For the desktop Explorer sidebar toggle, run the app against the root checkout's daemon and use:
 
 ```bash
-npm run profile:explorer-toggle --workspace=@getpaseo/app
+npm run profile:explorer-toggle --workspace=@getrambla/app
 ```
 
 The harness verifies port `6768`, opens the Rambla workspace, creates and warms the Explorer pane,
@@ -260,7 +260,7 @@ daemon:
 
 ```bash
 RAMBLA_PROFILE_APP_URL=http://localhost:19010 \
-  npm run profile:composer-typing --workspace=@getpaseo/app
+  npm run profile:composer-typing --workspace=@getrambla/app
 ```
 
 The benchmark opens the first workspace, preserves its existing draft, and dispatches 300 printable
@@ -338,7 +338,7 @@ the daemon-global Git process limits in `$RAMBLA_HOME/config.json`:
 }
 ```
 
-Reload the daemon with `paseo reload`. Environment-variable overrides still require a restart because
+Reload the daemon with `rambla reload`. Environment-variable overrides still require a restart because
 the launch environment remains authoritative. Lower values reduce machine pressure but make Git-backed workspace state and
 Git RPCs wait longer. See [Git process limits](data-model.md#git-process-limits) for defaults,
 semantics, and environment-variable overrides.
@@ -348,7 +348,7 @@ semantics, and environment-variable overrides.
 Measure the MCP `tools/list` payload that Rambla injects into agents with:
 
 ```bash
-npm run measure:agent-tools --workspace=@getpaseo/server
+npm run measure:agent-tools --workspace=@getrambla/server
 ```
 
 The command reports compact JSON bytes, estimated tokens, field totals, largest
@@ -371,7 +371,7 @@ exact ref also resolves through its stored branch name.
 
 Worktrees inherit committed Git state only; uncommitted source-checkout changes are not copied.
 
-## paseo.json service scripts
+## rambla.json service scripts
 
 `worktree.setup` and `worktree.teardown` accept either a multiline shell script or an array
 of commands. Both run sequentially.
@@ -431,7 +431,7 @@ Service proxy hostnames use the double-dash shape: `web--feature-auth--project.l
 
 Service ports use OS ephemeral allocation by default. Set `worktrees.servicePorts` in
 `$RAMBLA_HOME/config.json`, or replace it for one project with `worktree.servicePorts` in
-`paseo.json`. The block accepts an inclusive `range` such as `"3000-4000"` or a `portScript`
+`rambla.json`. The block accepts an inclusive `range` such as `"3000-4000"` or a `portScript`
 executable. Since `portScript` is executed directly without a shell, it must point to a real executable (e.g., a binary or a script with a proper shebang like `#!/bin/sh`) rather than an inline shell command or shell pipeline. For inline shell commands or pipelines, wrap them in a small script. `portScript` runs in the workspace directory with four arguments: service name,
 workspace ID, branch name, and worktree path. A missing branch is passed as an empty string. The same
 values are available as `RAMBLA_SCRIPTNAME`, `RAMBLA_WORKSPACE_ID`, `RAMBLA_BRANCH_NAME`, and
@@ -447,13 +447,13 @@ The daemon can optionally serve the browser web client from the same HTTP server
 Enable it for a running daemon with:
 
 ```bash
-paseo daemon start --web-ui
+rambla daemon start --web-ui
 ```
 
 Or set the environment variable:
 
 ```bash
-RAMBLA_WEB_UI_ENABLED=true paseo daemon start
+RAMBLA_WEB_UI_ENABLED=true rambla daemon start
 ```
 
 Or persist it in `config.json`:
@@ -486,13 +486,13 @@ Measured bundle size for a standard Expo web export:
 - gzip: 2.55 MiB
 - brotli: 1.93 MiB
 
-The desktop-managed daemon disables the bundled web UI by default (`RAMBLA_WEB_UI_ENABLED=false`) because the desktop app already ships the renderer as `app-dist`. Shipping the same assets again inside `@getpaseo/server` would duplicate the ~10.8 MiB install. Desktop packaging also excludes `node_modules/@getpaseo/server/dist/server/web-ui/**` from the packaged app.
+The desktop-managed daemon disables the bundled web UI by default (`RAMBLA_WEB_UI_ENABLED=false`) because the desktop app already ships the renderer as `app-dist`. Shipping the same assets again inside `@getrambla/server` would duplicate the ~10.8 MiB install. Desktop packaging also excludes `node_modules/@getrambla/server/dist/server/web-ui/**` from the packaged app.
 
 ## Built workspace packages
 
 Package imports resolve through package exports to compiled `dist/` output, not sibling `src/` files. This is true in local dev and in published packages: the app, daemon, CLI, and SDK consumers should all exercise the same runtime paths.
 
-`npm run dev:server` builds the server-side workspace packages once, then keeps `@getpaseo/protocol` and `@getpaseo/client` fresh with TypeScript watch builds while the daemon runs. If you change protocol schemas or client code outside that watch workflow, rebuild the producer before trusting runtime behavior.
+`npm run dev:server` builds the server-side workspace packages once, then keeps `@getrambla/protocol` and `@getrambla/client` fresh with TypeScript watch builds while the daemon runs. If you change protocol schemas or client code outside that watch workflow, rebuild the producer before trusting runtime behavior.
 
 Use the named root build targets instead of remembering workspace dependency chains:
 
@@ -542,9 +542,9 @@ install.
 
 ## CLI reference
 
-Use `npm run cli` to run the in-repo CLI from source (`npx tsx packages/cli/src/index.ts`). The script wraps the CLI with `scripts/dev-home.sh`, so it automatically uses this checkout's `.dev/paseo-home` and dev daemon endpoint unless you pass an explicit override. The globally installed `paseo` binary on macOS is a symlink into the installed Rambla desktop app, not this checkout — use it to drive the desktop's built-in daemon, but use `npm run cli` when you want to talk to the CLI you are editing.
+Use `npm run cli` to run the in-repo CLI from source (`npx tsx packages/cli/src/index.ts`). The script wraps the CLI with `scripts/dev-home.sh`, so it automatically uses this checkout's `.dev/rambla-home` and dev daemon endpoint unless you pass an explicit override. The globally installed `rambla` binary on macOS is a symlink into the installed Rambla desktop app, not this checkout — use it to drive the desktop's built-in daemon, but use `npm run cli` when you want to talk to the CLI you are editing.
 
-Canonical automation uses `paseo project create/ls/rename/delete`, `paseo workspace create/ls/rename/archive`, `paseo heartbeat create/update/delete`, and the full `paseo schedule` group. MCP heartbeat automation is intentionally smaller: create and delete only. Detach remains an explicit user lifecycle action rather than an agent tool. `paseo run --new-workspace local|worktree` composes workspace creation with agent creation. The old `paseo worktree` and `paseo run --worktree` forms are hidden compatibility aliases.
+Canonical automation uses `rambla project create/ls/rename/delete`, `rambla workspace create/ls/rename/archive`, `rambla heartbeat create/update/delete`, and the full `rambla schedule` group. MCP heartbeat automation is intentionally smaller: create and delete only. Detach remains an explicit user lifecycle action rather than an agent tool. `rambla run --new-workspace local|worktree` composes workspace creation with agent creation. The old `rambla worktree` and `rambla run --worktree` forms are hidden compatibility aliases.
 
 ```bash
 npm run cli -- ls -a -g              # List all agents globally
@@ -570,7 +570,7 @@ In an SSH URI, the URL port is the SSH server port. The remote daemon defaults t
 
 Desktop integrations can focus an existing agent without creating one or
 sending a message. Use `rambla://h/<server-id>/agent/<agent-id>`, or run
-`paseo agent open <agent-id>`. The CLI reads the local daemon's server ID by
+`rambla agent open <agent-id>`. The CLI reads the local daemon's server ID by
 default; pass `--server <server-id>` when targeting another server.
 
 ## Agent state
@@ -618,7 +618,7 @@ Do NOT use browser history (back/forward). Always navigate by clicking UI elemen
 ## App web deploys
 
 `packages/app` exports a single-page Expo web app and deploys the `dist/`
-directory to Cloudflare Pages with `npm run deploy:web --workspace=@getpaseo/app`.
+directory to Cloudflare Pages with `npm run deploy:web --workspace=@getrambla/app`.
 
 PWA install metadata lives in `packages/app/public/manifest.json` and is linked
 from `packages/app/public/index.html`. Keep the install icons in `public/` so

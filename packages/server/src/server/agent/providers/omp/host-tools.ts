@@ -3,7 +3,7 @@ import type { Logger } from "pino";
 import {
   addModelVisibleStructuredContent,
   serializeRamblaToolInputParameters,
-} from "../../tools/paseo-tool-serialization.js";
+} from "../../tools/rambla-tool-serialization.js";
 import type { RamblaToolCatalog, RamblaToolResult } from "../../tools/types.js";
 import type { OmpRuntimeSession } from "./runtime.js";
 import {
@@ -56,7 +56,7 @@ export function handleOmpHostToolRuntimeEvent(
   event: unknown,
   input: {
     runtimeSession: OmpRuntimeSession;
-    paseoTools?: RamblaToolCatalog;
+    ramblaTools?: RamblaToolCatalog;
     logger: Logger;
   },
 ): boolean {
@@ -106,10 +106,10 @@ export async function waitForOmpHostToolsIdle(runtimeSession: OmpRuntimeSession)
 
 function getRouter(input: {
   runtimeSession: OmpRuntimeSession;
-  paseoTools?: RamblaToolCatalog;
+  ramblaTools?: RamblaToolCatalog;
   logger: Logger;
 }): OmpHostToolRouter | null {
-  if (!input.paseoTools) {
+  if (!input.ramblaTools) {
     return null;
   }
   const existing = routersByRuntimeSession.get(input.runtimeSession);
@@ -118,7 +118,7 @@ function getRouter(input: {
   }
   const router = new OmpHostToolRouter({
     runtimeSession: input.runtimeSession,
-    catalog: input.paseoTools,
+    catalog: input.ramblaTools,
     logger: input.logger,
   });
   routersByRuntimeSession.set(input.runtimeSession, router);

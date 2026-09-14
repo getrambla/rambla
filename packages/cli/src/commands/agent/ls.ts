@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import type { AgentSnapshotPayload } from "@getpaseo/protocol/messages";
+import type { AgentSnapshotPayload } from "@getrambla/protocol/messages";
 import { connectToDaemon, getDaemonHost } from "../../utils/client.js";
 import type { CommandOptions, ListResult, OutputSchema, CommandError } from "../../output/index.js";
 import { collectMultiple } from "../../utils/command-options.js";
@@ -113,7 +113,7 @@ function daemonConnectionFailure(host: string, cause: unknown): CommandError {
     details: isSsh
       ? "Start the Rambla daemon on the SSH host; SSH transport does not install or start it."
       : [
-          "Start a local daemon with: paseo daemon start",
+          "Start a local daemon with: rambla daemon start",
           "To use another daemon, pass --host <host:port> or set RAMBLA_HOST.",
         ].join("\n"),
   };
@@ -176,10 +176,10 @@ export function buildAgentLsFetchOptions(
 
 /**
  * Agent ls command semantics:
- * - `paseo agent ls`    → active non-archived agents
- * - `paseo agent ls -g` → global non-archived agents
- * - `paseo agent ls -a` → active agents, including archived
- * - `paseo agent ls -ag` → global agents, including archived
+ * - `rambla agent ls`    → active non-archived agents
+ * - `rambla agent ls -g` → global non-archived agents
+ * - `rambla agent ls -a` → active agents, including archived
+ * - `rambla agent ls -ag` → global agents, including archived
  */
 export async function runLsCommand(
   options: AgentLsOptions,

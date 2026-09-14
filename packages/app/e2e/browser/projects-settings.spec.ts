@@ -98,7 +98,7 @@ const test = base.extend<ProjectsSettingsFixtures>({
   editableProject: async ({ page: _page }, provide) => {
     const workspace = await seedWorkspace({
       repoPrefix: "projects-settings-",
-      repo: { paseoConfig: initialRamblaConfig },
+      repo: { ramblaConfig: initialRamblaConfig },
     });
 
     await provide({
@@ -115,7 +115,7 @@ const test = base.extend<ProjectsSettingsFixtures>({
     const workspace = await seedWorkspace({
       repoPrefix: "projects-settings-gitlab-",
       repo: {
-        paseoConfig: initialRamblaConfig,
+        ramblaConfig: initialRamblaConfig,
         originUrl: "https://gitlab.com/acme/app.git",
       },
     });
@@ -162,7 +162,7 @@ async function expectProjectConfigSaved(project: ProjectsSettingsProject): Promi
 }
 
 async function readProjectConfigFile(project: ProjectsSettingsProject): Promise<string> {
-  return readFile(path.join(project.path, "paseo.json"), "utf8");
+  return readFile(path.join(project.path, "rambla.json"), "utf8");
 }
 
 async function addProjectFromSidebar(page: Page, projectPath: string): Promise<string> {
@@ -377,7 +377,7 @@ test.describe("Projects settings — error UX", () => {
     await expectProjectSettingsFormVisible(page);
   });
 
-  test("invalid paseo.json shows read-error callout, reload after fix shows form", async ({
+  test("invalid rambla.json shows read-error callout, reload after fix shows form", async ({
     page,
     editableProject,
   }) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
 import { runArchiveCommandWithDeps } from "./archive.js";
 
 function createFakeDaemonClient(
@@ -30,7 +30,7 @@ function createFakeDaemonClient(
 
 describe("runArchiveCommand", () => {
   it("sends scope worktree when archiving by worktree path", async () => {
-    const worktreePath = "/tmp/paseo-home/worktrees/repo/feature";
+    const worktreePath = "/tmp/rambla-home/worktrees/repo/feature";
     const archiveCalls: Array<{
       input: Parameters<DaemonClient["archiveRamblaWorktree"]>[0];
     }> = [];
@@ -81,7 +81,7 @@ describe("runArchiveCommand", () => {
   });
 
   it("archives by matching branch name when no directory name matches", async () => {
-    const worktreePath = "/tmp/paseo-home/worktrees/repo/feature-branch";
+    const worktreePath = "/tmp/rambla-home/worktrees/repo/feature-branch";
     const archiveCalls: Array<{
       input: Parameters<DaemonClient["archiveRamblaWorktree"]>[0];
     }> = [];

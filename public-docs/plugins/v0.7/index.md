@@ -18,14 +18,14 @@ surfaces and their current status.
 
 Rambla plugins add native workspace panels, composer pills, Command Center items, global surfaces, app themes, daemon behavior, and composer attachment sources. They run on every Rambla client connected to the host, including mobile.
 
-> **Trust every plugin you add.** `paseo plugin add` and `paseo plugin install` mean “I trust this codebase.” Server code and Git preparation commands run unsandboxed with the daemon user's access on the daemon host; client contributions run inside Rambla. Dependencies and future updates are part of that decision. With `--host`, commands run on the remote daemon host.
+> **Trust every plugin you add.** `rambla plugin add` and `rambla plugin install` mean “I trust this codebase.” Server code and Git preparation commands run unsandboxed with the daemon user's access on the daemon host; client contributions run inside Rambla. Dependencies and future updates are part of that decision. With `--host`, commands run on the remote daemon host.
 
 On the target host, open **Settings → Plugins** and turn on **Enable plugins**. This is the global switch for every configured plugin on that daemon.
 
 You can also change the root `pluginsEnabled` field in the daemon's `config.json`, then apply it without restarting:
 
 ```bash
-paseo reload --json
+rambla reload --json
 ```
 
 Enabling starts configured plugins; disabling tears them down. Automation must inspect the current value first and obtain your explicit permission before changing a disabled or omitted value to `true`.
@@ -35,7 +35,7 @@ Enabling starts configured plugins; disabling tears them down. Automation must i
 Use an absolute path on the daemon machine:
 
 ```bash
-paseo plugin init /absolute/path/to/workspace-plugin
+rambla plugin init /absolute/path/to/workspace-plugin
 cd /absolute/path/to/workspace-plugin
 npm install
 ```
@@ -50,7 +50,7 @@ Plugins run on desktop, browser, iOS, and Android. Rambla ships several themes. 
 Replace `main.client.tsx` with:
 
 ```tsx
-import { type PluginWorkspacePanelProps, useWorkspace } from "@getpaseo/plugin";
+import { type PluginWorkspacePanelProps, useWorkspace } from "@getrambla/plugin";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
@@ -87,7 +87,7 @@ export function WorkspaceOverview({ theme, layout, workspaceId }: PluginWorkspac
 Replace `index.ts` with:
 
 ```ts
-import type { PluginContext } from "@getpaseo/plugin";
+import type { PluginContext } from "@getrambla/plugin";
 import { WorkspaceOverview } from "./main.client";
 
 export default function contribute(plugin: PluginContext) {
@@ -118,20 +118,20 @@ The icon is a [Lucide](https://lucide.dev/icons/) icon name. `*.client.tsx` file
 
 ```bash
 npm run typecheck
-paseo plugin install /absolute/path/to/workspace-plugin
-paseo plugin ls
+rambla plugin install /absolute/path/to/workspace-plugin
+rambla plugin ls
 ```
 
-Open a workspace, press **⌘K** on macOS or **Ctrl+K** on Windows and Linux, and choose **Open workspace overview**. It opens as a normal workspace tab. If the item does not appear, confirm that **Enable plugins** is on, the plugin status is `running` in `paseo plugin ls`, and the client is viewing the host where you installed it.
+Open a workspace, press **⌘K** on macOS or **Ctrl+K** on Windows and Linux, and choose **Open workspace overview**. It opens as a normal workspace tab. If the item does not appear, confirm that **Enable plugins** is on, the plugin status is `running` in `rambla plugin ls`, and the client is viewing the host where you installed it.
 
 To install a plugin published through GitHub or another Git host:
 
 ```bash
-paseo plugin add owner/repository
-paseo plugin add https://gitlab.com/group/repository.git
-paseo plugin add https://git.example.com/owner/repository.git
-paseo plugin add owner/monorepo:plugins/workspace
-paseo plugin add owner/repository --ref main
+rambla plugin add owner/repository
+rambla plugin add https://gitlab.com/group/repository.git
+rambla plugin add https://git.example.com/owner/repository.git
+rambla plugin add owner/monorepo:plugins/workspace
+rambla plugin add owner/repository --ref main
 ```
 
 Append `:relative/path` to the source when the plugin lives below the repository root.
@@ -140,8 +140,8 @@ An omitted `--ref` tracks the default branch. Explicit branches track updates; t
 pinned. Apply updates with:
 
 ```bash
-paseo plugin update workspace-plugin
-paseo plugin update --all
+rambla plugin update workspace-plugin
+rambla plugin update --all
 ```
 
 Most plugins should omit `build`. Rambla compiles TypeScript and TSX and supplies its runtime modules.
@@ -171,7 +171,7 @@ Source changes are explicit:
 
 ```bash
 npm run typecheck
-paseo plugin reload workspace-plugin
+rambla plugin reload workspace-plugin
 ```
 
 A reload stops the old plugin, runs its cleanup, compiles the current source, and starts it again. A failed reload stays failed and reports its load error; fix the source and reload again.
@@ -188,11 +188,11 @@ console.error("Issue refresh failed", error);
 Read recent stdout and stderr from **Settings → Plugins → Logs** or the CLI:
 
 ```bash
-paseo plugin logs workspace-plugin
-paseo plugin logs workspace-plugin --json
+rambla plugin logs workspace-plugin
+rambla plugin logs workspace-plugin --json
 ```
 
-The log tail includes `[paseo]` loading, ready, stopping, and stopped entries, plus compilation and
+The log tail includes `[rambla]` loading, ready, stopping, and stopped entries, plus compilation and
 load failures. It survives reloads and crashes. Inspect it when a plugin fails to start or an RPC
 rejects. See [Debug backend output](/docs/plugins/v0.7/reference#debug-backend-output) for retention and
 security behavior.

@@ -8,37 +8,37 @@ describe("starter trigger connections", () => {
         {
           github: [
             {
-              slug: "github-getpaseo",
-              accountLogin: "getpaseo",
+              slug: "github-getrambla",
+              accountLogin: "getrambla",
               accountType: "Organization",
-              repositories: ["getpaseo/paseo"],
+              repositories: ["getrambla/rambla"],
             },
           ],
-          slack: [{ slug: "paseo", teamName: "Rambla" }],
-          discord: [{ slug: "paseo-discord", guildName: "Rambla Discord" }],
+          slack: [{ slug: "rambla", teamName: "Rambla" }],
+          discord: [{ slug: "rambla-discord", guildName: "Rambla Discord" }],
           daemons: [],
           linear: [],
         },
-        "getpaseo/paseo",
+        "getrambla/rambla",
       ),
     ).toEqual([
       {
-        id: "github:getpaseo/paseo",
-        label: "GitHub — getpaseo/paseo",
+        id: "github:getrambla/rambla",
+        label: "GitHub — getrambla/rambla",
         provider: "github",
-        filters: { connection: "github-getpaseo", repo: "getpaseo/paseo" },
+        filters: { connection: "github-getrambla", repo: "getrambla/rambla" },
       },
       {
-        id: "slack:paseo",
+        id: "slack:rambla",
         label: "Slack — Rambla",
         provider: "slack",
-        filters: { connection: "paseo" },
+        filters: { connection: "rambla" },
       },
       {
-        id: "discord:paseo-discord",
+        id: "discord:rambla-discord",
         label: "Discord — Rambla Discord",
         provider: "discord",
-        filters: { connection: "paseo-discord" },
+        filters: { connection: "rambla-discord" },
       },
     ]);
   });
@@ -49,10 +49,10 @@ describe("starter trigger connections", () => {
         {
           github: [
             {
-              slug: "github-getpaseo",
-              accountLogin: "getpaseo",
+              slug: "github-getrambla",
+              accountLogin: "getrambla",
               accountType: "Organization",
-              repositories: ["getpaseo/hub"],
+              repositories: ["getrambla/hub"],
             },
           ],
           slack: [],
@@ -60,7 +60,7 @@ describe("starter trigger connections", () => {
           daemons: [],
           linear: [],
         },
-        "getpaseo/paseo",
+        "getrambla/rambla",
       ),
     ).toEqual([]);
   });

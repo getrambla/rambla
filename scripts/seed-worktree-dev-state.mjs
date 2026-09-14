@@ -18,8 +18,8 @@ seedRamblaHome();
 copyServerEnv();
 
 function seedRamblaHome() {
-  const source = process.env.RAMBLA_DEV_SEED_HOME || join(sourceRoot, ".dev/paseo-home");
-  const target = join(targetRoot, ".dev/paseo-home");
+  const source = process.env.RAMBLA_DEV_SEED_HOME || join(sourceRoot, ".dev/rambla-home");
+  const target = join(targetRoot, ".dev/rambla-home");
 
   if (!existsSync(source)) {
     console.log(`  Seed:    skipped (${source} missing)`);

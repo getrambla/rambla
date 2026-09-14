@@ -1,14 +1,14 @@
-import type { ProviderRamblaToolsPolicy } from "@getpaseo/protocol/provider-config";
+import type { ProviderRamblaToolsPolicy } from "@getrambla/protocol/provider-config";
 
 interface ProviderRamblaToolSettings {
-  paseoTools?: ProviderRamblaToolsPolicy;
+  ramblaTools?: ProviderRamblaToolsPolicy;
 }
 
 export function resolveRamblaToolPolicy(
   providerId: string,
   providerSettings: Readonly<Record<string, ProviderRamblaToolSettings>> | undefined,
 ): ProviderRamblaToolsPolicy | undefined {
-  return providerSettings?.[providerId]?.paseoTools;
+  return providerSettings?.[providerId]?.ramblaTools;
 }
 
 export function isRamblaToolEnabled(

@@ -24,7 +24,7 @@ test.describe("real Claude workflow subagent row", () => {
   test("shows a real Claude workflow running and completed through the generic subagent UI", async ({
     page,
   }, testInfo) => {
-    const cwd = realpathSync(mkdtempSync(path.join(tmpdir(), "paseo-claude-workflow-row-")));
+    const cwd = realpathSync(mkdtempSync(path.join(tmpdir(), "rambla-claude-workflow-row-")));
     const gatePath = path.join(cwd, "release-workflow");
     let handle: AgentHandle | undefined;
 

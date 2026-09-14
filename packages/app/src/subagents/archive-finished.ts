@@ -35,7 +35,7 @@ export interface ArchiveFinishedSubagents {
 }
 
 export function isFinishedSubagent(row: SubagentRow): boolean {
-  if (row.kind === "paseo") return row.status === "idle" || row.status === "error";
+  if (row.kind === "rambla") return row.status === "idle" || row.status === "error";
   return row.status === "completed" || row.status === "failed" || row.status === "canceled";
 }
 
@@ -56,11 +56,11 @@ function eligibleSignature(rows: readonly SubagentRow[]): string {
 }
 
 function managedRowIdentity(id: string): string {
-  return `paseo:${id}`;
+  return `rambla:${id}`;
 }
 
 function rowIdentity(row: SubagentRow): string {
-  return row.kind === "paseo" ? managedRowIdentity(row.id) : `provider:${row.id}`;
+  return row.kind === "rambla" ? managedRowIdentity(row.id) : `provider:${row.id}`;
 }
 
 function rowIdentities(rows: readonly SubagentRow[]): Set<string> {
@@ -169,7 +169,7 @@ async function runArchiveFinished(
   reportProgress: (completedCount: number) => void,
 ): Promise<{ outcome: ArchiveFinishedOutcome; retryableFailureIds: Set<string> }> {
   const providerIds = rows.filter((row) => row.kind === "provider").map((row) => row.id);
-  const paseoIds = rows.filter((row) => row.kind === "paseo").map((row) => row.id);
+  const ramblaIds = rows.filter((row) => row.kind === "rambla").map((row) => row.id);
   let completedCount = 0;
   const outcome = emptyOutcome();
   const retryableFailureIds = new Set<string>();
@@ -181,7 +181,7 @@ async function runArchiveFinished(
     reportProgress(completedCount);
   }
 
-  for (const id of paseoIds) {
+  for (const id of ramblaIds) {
     if (canArchiveManagedSubagent(deps.getManagedSubagent(id), deps.parentAgentId)) {
       try {
         await deps.archiveManagedSubagent(id);

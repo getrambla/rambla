@@ -68,7 +68,7 @@ private final class RamblaHardwareKeyboardRootViewController: UIViewController {
   }
 
   private func canSubmitCurrentTextInput() -> Bool {
-    guard let responder = UIResponder.paseoCurrentFirstResponder else {
+    guard let responder = UIResponder.ramblaCurrentFirstResponder else {
       return false
     }
     guard let textInput = responder as? UITextInput else {
@@ -81,7 +81,7 @@ private final class RamblaHardwareKeyboardRootViewController: UIViewController {
 private extension UIResponder {
   private static weak var currentFirstResponder: UIResponder?
 
-  static var paseoCurrentFirstResponder: UIResponder? {
+  static var ramblaCurrentFirstResponder: UIResponder? {
     currentFirstResponder = nil
     UIApplication.shared.sendAction(
       #selector(captureCurrentFirstResponder(_:)),

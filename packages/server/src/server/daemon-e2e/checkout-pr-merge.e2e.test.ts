@@ -11,7 +11,7 @@ import {
   type DaemonTestContext,
 } from "../test-utils/index.js";
 import { createWorktree as createWorktreePrimitive } from "../../utils/worktree.js";
-import type { PullRequestMergeable } from "@getpaseo/protocol/messages";
+import type { PullRequestMergeable } from "@getrambla/protocol/messages";
 
 const GhPrViewSchema = z.object({
   state: z.string(),
@@ -60,7 +60,7 @@ const testWithGitHubCliAuth = hasRequiredGitHubCliAuth ? test : test.skip;
 
 function initGitRepo(repoDir: string): void {
   execSync("git init -b main", { cwd: repoDir, stdio: "pipe" });
-  execSync("git config user.email 'paseo-test@example.com'", {
+  execSync("git config user.email 'rambla-test@example.com'", {
     cwd: repoDir,
     stdio: "pipe",
   });
@@ -216,7 +216,7 @@ describe("daemon checkout PR merge loop", () => {
             branchName: "merge-pr-squash",
           },
           runSetup: true,
-          paseoHome: ctx.daemon.paseoHome,
+          ramblaHome: ctx.daemon.ramblaHome,
         });
         worktreePath = worktree.worktreePath;
 

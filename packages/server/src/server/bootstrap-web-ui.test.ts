@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
 
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "./test-utils/rambla-daemon.js";
 
 interface InitialDaemonConnectionHint {
   listen: string;
@@ -58,7 +58,7 @@ describe("daemon web UI bootstrap", () => {
   let daemonHandle: TestRamblaDaemon | null = null;
 
   async function createWebUiDist(): Promise<string> {
-    tempRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-bootstrap-web-ui-"));
+    tempRoot = await mkdtemp(path.join(os.tmpdir(), "rambla-bootstrap-web-ui-"));
     const distDir = path.join(tempRoot, "dist");
     await mkdir(distDir, { recursive: true });
     await writeFile(

@@ -136,19 +136,19 @@ function buildLocalSpeechLanguageResolutionInput(params: {
 }
 
 function buildLocalSpeechResolutionInput(params: {
-  paseoHome: string;
+  ramblaHome: string;
   env: NodeJS.ProcessEnv;
   persisted: PersistedConfig;
   providers: RequestedSpeechProviders;
   includeProviderConfig: boolean;
 }): Record<string, unknown> {
-  const { paseoHome, env, persisted, providers, includeProviderConfig } = params;
+  const { ramblaHome, env, persisted, providers, includeProviderConfig } = params;
   return {
     includeProviderConfig,
     modelsDir: firstDefinedValue<string>([
       env.RAMBLA_LOCAL_MODELS_DIR,
       persisted.providers?.local?.modelsDir,
-      path.join(paseoHome, DEFAULT_LOCAL_MODELS_SUBDIR),
+      path.join(ramblaHome, DEFAULT_LOCAL_MODELS_SUBDIR),
     ]),
     dictationLocalSttModel: firstDefinedValue<string>([
       env.RAMBLA_DICTATION_LOCAL_STT_MODEL,
@@ -190,7 +190,7 @@ function buildLocalSpeechResolutionInput(params: {
 }
 
 export function resolveLocalSpeechConfig(params: {
-  paseoHome: string;
+  ramblaHome: string;
   env: NodeJS.ProcessEnv;
   persisted: PersistedConfig;
   providers: RequestedSpeechProviders;

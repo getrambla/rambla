@@ -1,4 +1,4 @@
-import { resolveRamblaHome } from "../src/server/paseo-home.js";
+import { resolveRamblaHome } from "../src/server/rambla-home.js";
 import { createRootLogger } from "../src/server/logger.js";
 import {
   DEFAULT_LOCAL_STT_MODEL,

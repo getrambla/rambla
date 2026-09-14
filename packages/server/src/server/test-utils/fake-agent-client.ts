@@ -22,7 +22,7 @@ import type {
   FetchCatalogOptions,
 } from "../agent/agent-sdk-types.js";
 import type { AgentPermissionRequest, AgentPermissionResponse } from "../agent/agent-sdk-types.js";
-import { isLikelyExternalToolName } from "@getpaseo/protocol/tool-name-normalization";
+import { isLikelyExternalToolName } from "@getrambla/protocol/tool-name-normalization";
 
 const TEST_CAPABILITIES: AgentCapabilityFlags = {
   supportsStreaming: true,
@@ -351,7 +351,7 @@ class FakeAgentSession implements AgentSession {
     this.onStartTurn = options.onStartTurn;
     this.historyPath = path.join(
       tmpdir(),
-      "paseo-fake-provider-history",
+      "rambla-fake-provider-history",
       this.providerName,
       `${this.id}.jsonl`,
     );

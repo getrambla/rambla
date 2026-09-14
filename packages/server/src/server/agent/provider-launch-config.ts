@@ -3,7 +3,7 @@ import {
   executableExists,
   findExecutable,
 } from "../../executable-resolution/executable-resolution.js";
-import { createExternalProcessEnv, type ProcessEnvRecord } from "../paseo-env.js";
+import { createExternalProcessEnv, type ProcessEnvRecord } from "../rambla-env.js";
 export {
   AgentProviderRuntimeSettingsMapSchema,
   ProviderCommandSchema,
@@ -17,7 +17,7 @@ export {
   type ProviderOverrides,
   type ProviderProfileModel,
   type ProviderRuntimeSettings,
-} from "@getpaseo/protocol/provider-config";
+} from "@getrambla/protocol/provider-config";
 import {
   ProviderOverrideSchema,
   ProviderOverridesSchema,
@@ -26,7 +26,7 @@ import {
   type ProviderOverride,
   type ProviderOverrides,
   type ProviderRuntimeSettings,
-} from "@getpaseo/protocol/provider-config";
+} from "@getrambla/protocol/provider-config";
 
 export interface ProviderCommandPrefix {
   command: string;

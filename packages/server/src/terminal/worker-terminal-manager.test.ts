@@ -15,8 +15,8 @@ import {
   resolveRamblaCliExecutablePath,
   type TerminalSession,
 } from "./terminal.js";
-import type { TerminalState } from "@getpaseo/protocol/messages";
-import type { TerminalActivity } from "@getpaseo/protocol/terminal-activity";
+import type { TerminalState } from "@getrambla/protocol/messages";
+import type { TerminalActivity } from "@getrambla/protocol/terminal-activity";
 import type {
   TerminalWorkerRequest,
   TerminalWorkerToParentMessage,
@@ -482,18 +482,18 @@ it("injects parent-minted terminal activity env through the worker", async () =>
     hookCli?: string;
     path?: string;
   };
-  const paseoCliBinDir = resolveRamblaCliBinDir();
-  const paseoCliPath = resolveRamblaCliExecutablePath();
-  expect(paseoCliBinDir).not.toBeNull();
-  expect(paseoCliPath).not.toBeNull();
+  const ramblaCliBinDir = resolveRamblaCliBinDir();
+  const ramblaCliPath = resolveRamblaCliExecutablePath();
+  expect(ramblaCliBinDir).not.toBeNull();
+  expect(ramblaCliPath).not.toBeNull();
   expect(env.terminalId).toBe(session.id);
   expect(env.token).toEqual(expect.any(String));
   expect(env.token).not.toBe("");
   expect(env.url).toBe(activityUrl);
-  expect(env.hookCli).toBe(paseoCliPath);
+  expect(env.hookCli).toBe(ramblaCliPath);
   expect(manager.validateTerminalActivityToken(session.id, env.token ?? "")).toBe("valid");
   await expect(manager.setTerminalActivity(session.id, "attention")).resolves.toBe(true);
-  expect(env.path?.split(delimiter)[0]).toBe(paseoCliBinDir);
+  expect(env.path?.split(delimiter)[0]).toBe(ramblaCliBinDir);
 });
 
 it("starts the default shell through the worker and accepts quoted commands", async () => {

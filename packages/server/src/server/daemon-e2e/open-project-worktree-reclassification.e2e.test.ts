@@ -6,7 +6,7 @@ import path from "node:path";
 import { afterEach, expect, test } from "vitest";
 
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import {
   createPersistedProjectRecord,
   createPersistedWorkspaceRecord,
@@ -33,19 +33,19 @@ test("openProject preserves a worktree's exact-root project without rehoming it"
   const previousSupervised = process.env.RAMBLA_SUPERVISED;
   process.env.RAMBLA_SUPERVISED = "0";
   try {
-    const repoRoot = realpathSync(mkdtempSync(path.join(os.tmpdir(), "paseo-open-project-repo-")));
+    const repoRoot = realpathSync(mkdtempSync(path.join(os.tmpdir(), "rambla-open-project-repo-")));
     const worktreeRoot = realpathSync(
-      mkdtempSync(path.join(os.tmpdir(), "paseo-open-project-worktree-")),
+      mkdtempSync(path.join(os.tmpdir(), "rambla-open-project-worktree-")),
     );
-    const paseoHomeRoot = realpathSync(
-      mkdtempSync(path.join(os.tmpdir(), "paseo-open-project-home-")),
+    const ramblaHomeRoot = realpathSync(
+      mkdtempSync(path.join(os.tmpdir(), "rambla-open-project-home-")),
     );
     cleanupPaths.add(repoRoot);
     cleanupPaths.add(worktreeRoot);
-    cleanupPaths.add(paseoHomeRoot);
+    cleanupPaths.add(ramblaHomeRoot);
 
     execSync("git init -b main", { cwd: repoRoot, stdio: "pipe" });
-    execSync("git config user.email 'test@getpaseo.dev'", { cwd: repoRoot, stdio: "pipe" });
+    execSync("git config user.email 'test@getrambla.dev'", { cwd: repoRoot, stdio: "pipe" });
     execSync("git config user.name 'Rambla Test'", { cwd: repoRoot, stdio: "pipe" });
     writeFileSync(path.join(repoRoot, "README.md"), "# repo\n", "utf8");
     execSync("git add README.md", { cwd: repoRoot, stdio: "pipe" });
@@ -56,9 +56,9 @@ test("openProject preserves a worktree's exact-root project without rehoming it"
       stdio: "pipe",
     });
 
-    const paseoHome = path.join(paseoHomeRoot, ".rambla");
-    const projectsPath = path.join(paseoHome, "projects", "projects.json");
-    const workspacesPath = path.join(paseoHome, "projects", "workspaces.json");
+    const ramblaHome = path.join(ramblaHomeRoot, ".rambla");
+    const projectsPath = path.join(ramblaHome, "projects", "projects.json");
+    const workspacesPath = path.join(ramblaHome, "projects", "workspaces.json");
     const timestamp = "2026-04-24T09:46:43.146Z";
 
     await mkdir(path.dirname(projectsPath), { recursive: true });
@@ -101,7 +101,7 @@ test("openProject preserves a worktree's exact-root project without rehoming it"
       }),
     ]);
 
-    const daemon = await createTestRamblaDaemon({ paseoHomeRoot, cleanup: false });
+    const daemon = await createTestRamblaDaemon({ ramblaHomeRoot, cleanup: false });
     cleanupDaemons.add(daemon);
     const client = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
     cleanupClients.add(client);

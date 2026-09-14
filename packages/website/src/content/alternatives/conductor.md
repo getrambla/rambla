@@ -52,14 +52,14 @@ Rambla's app handles commit, push, opening PRs, watching checks and reviews, and
 Rambla has a CLI that mirrors the app:
 
 ```bash
-paseo run --provider codex "implement OAuth"
-paseo run --host devbox:6767 "run the test suite"
-paseo ls
-paseo send <agent-id> "add tests"
-paseo schedule create --cron "0 9 * * 1" "audit the codebase"
+rambla run --provider codex "implement OAuth"
+rambla run --host devbox:6767 "run the test suite"
+rambla ls
+rambla send <agent-id> "add tests"
+rambla schedule create --cron "0 9 * * 1" "audit the codebase"
 ```
 
-`paseo run --host` connects to a remote daemon. `paseo schedule` runs an agent on a cron.
+`rambla run --host` connects to a remote daemon. `rambla schedule` runs an agent on a cron.
 
 Conductor lists its API as a Pro feature but does not document a user-facing CLI comparable to Rambla's.
 

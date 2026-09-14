@@ -18,7 +18,7 @@ const COMPACT = { width: 390, height: 844 };
 function clientSource(workspaceId: string, agentId: string): string {
   return `import React from "react";
 import { Text, View, Pressable } from "react-native";
-import { useWorkspace, useRpc } from "@getpaseo/plugin/client";
+import { useWorkspace, useRpc } from "@getrambla/plugin/client";
 import { useQuery } from "@tanstack/react-query";
 import { summary } from "./shared/rpc";
 
@@ -83,7 +83,7 @@ export default function contribute(client) {
   command("icon-only", "Use icon-only header", () => deploy.update({ label: undefined }));
   command("hide-menu", "Hide composer menu", () => pillMenu.update({ visible: false }));
   command("show-menu", "Show composer menu", () => pillMenu.update({ visible: true }));
-  const unsubscribe = client.paseo.workspaces.ref(workspaceId).subscribe((update) => {
+  const unsubscribe = client.rambla.workspaces.ref(workspaceId).subscribe((update) => {
     if (update.kind !== "upsert") return;
     deploy.update({ visible: update.workspace.name !== "Compact checks" });
     pillMenu.update({ visible: update.workspace.name !== "Hide composer menu" });
@@ -95,16 +95,16 @@ export default function contribute(client) {
 async function installShowcase(workspaceId: string, agentId: string) {
   const client = await connectNewWorkspaceDaemonClient({ ownProjects: false });
   const config = await client.getDaemonConfig();
-  const directory = await mkdtemp(path.join(tmpdir(), "paseo-buttons-"));
+  const directory = await mkdtemp(path.join(tmpdir(), "rambla-buttons-"));
   await mkdir(path.join(directory, "shared"));
   await writeFile(
-    path.join(directory, "paseo-plugin.json"),
+    path.join(directory, "rambla-plugin.json"),
     JSON.stringify({ id: PLUGIN_ID, requirements: pluginRequirements }),
   );
   await writeFile(path.join(directory, "index.client.tsx"), clientSource(workspaceId, agentId));
   await writeFile(
     path.join(directory, "shared/rpc.ts"),
-    `import { defineRpc } from "@getpaseo/plugin"; import { z } from "zod"; export const summary = defineRpc({ name: "summary", input: z.object({}), output: z.object({ message: z.string() }) });`,
+    `import { defineRpc } from "@getrambla/plugin"; import { z } from "zod"; export const summary = defineRpc({ name: "summary", input: z.object({}), output: z.object({ message: z.string() }) });`,
   );
   await writeFile(
     path.join(directory, "index.server.ts"),

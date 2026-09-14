@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import type { RamblaConfigRaw } from "@getpaseo/protocol/paseo-config-schema";
+import type { RamblaConfigRaw } from "@getrambla/protocol/rambla-config-schema";
 import { hasUncommittedWorktreeSetupChanges } from "./worktree-setup-commit-status.js";
 
 const tempDirs: string[] = [];
@@ -28,7 +28,7 @@ function makeGitRepo(config?: RamblaConfigRaw): string {
 }
 
 function writeConfig(repoRoot: string, config: RamblaConfigRaw): void {
-  writeFileSync(join(repoRoot, "paseo.json"), `${JSON.stringify(config, null, 2)}\n`);
+  writeFileSync(join(repoRoot, "rambla.json"), `${JSON.stringify(config, null, 2)}\n`);
 }
 
 describe("worktree setup commit status", () => {
@@ -50,7 +50,7 @@ describe("worktree setup commit status", () => {
       true,
     );
 
-    execFileSync("git", ["add", "paseo.json"], { cwd: repoRoot });
+    execFileSync("git", ["add", "rambla.json"], { cwd: repoRoot });
     await expect(hasUncommittedWorktreeSetupChanges({ repoRoot, currentConfig })).resolves.toBe(
       true,
     );
@@ -81,12 +81,12 @@ describe("worktree setup commit status", () => {
     );
   });
 
-  test("resolves paseo.json relative to a nested project root", async () => {
+  test("resolves rambla.json relative to a nested project root", async () => {
     const repoRoot = makeGitRepo();
     const projectRoot = join(repoRoot, "packages", "app");
     mkdirSync(projectRoot, { recursive: true });
     writeConfig(projectRoot, { worktree: { setup: "npm ci" } });
-    execFileSync("git", ["add", "packages/app/paseo.json"], { cwd: repoRoot });
+    execFileSync("git", ["add", "packages/app/rambla.json"], { cwd: repoRoot });
     execFileSync("git", ["commit", "-m", "add nested config"], { cwd: repoRoot });
     const currentConfig = { worktree: { setup: "npm install" } };
     writeConfig(projectRoot, currentConfig);

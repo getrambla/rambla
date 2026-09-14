@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { AgentSkillSelection } from "@getpaseo/protocol/messages";
+import type { AgentSkillSelection } from "@getrambla/protocol/messages";
 import { listFilesRecursive, removeSkill, syncSkills } from "./sync.js";
 
 export type SkillsState = "not-installed" | "up-to-date" | "drift";
@@ -37,10 +37,10 @@ export interface SkillTargets {
 // Names the bundle used to ship. They are never selectable, but every scan still
 // covers them so an older install's copies get cleaned up.
 export const LEGACY_SKILL_NAMES = [
-  "paseo-chat",
-  "paseo-epic",
-  "paseo-orchestrate",
-  "paseo-orchestrator",
+  "rambla-chat",
+  "rambla-epic",
+  "rambla-orchestrate",
+  "rambla-orchestrator",
 ] as const;
 
 type SkillFiles = Map<string, string>;

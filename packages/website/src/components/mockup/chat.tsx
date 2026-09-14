@@ -100,11 +100,11 @@ interface PluginToolCall {
 }
 
 const PLUGIN_TOOL_CALLS: PluginToolCall[] = [
-  { kind: "read", label: "Read", detail: "paseo-plugin/SKILL.md" },
+  { kind: "read", label: "Read", detail: "rambla-plugin/SKILL.md" },
   {
     kind: "shell",
     label: "Shell",
-    detail: "paseo plugin init ~/dev/release-radar",
+    detail: "rambla plugin init ~/dev/release-radar",
   },
   {
     kind: "write",
@@ -124,7 +124,7 @@ const PLUGIN_TOOL_CALLS: PluginToolCall[] = [
   {
     kind: "shell",
     label: "Shell",
-    detail: "paseo plugin install ~/dev/release-radar",
+    detail: "rambla plugin install ~/dev/release-radar",
   },
 ];
 

@@ -13,34 +13,34 @@ describe("provider Rambla-tool policy", () => {
       disabledTools: ["future_tool", "browser_future_tool"],
     });
     expect(ProviderRamblaToolsPolicySchema.parse({})).toEqual({});
-    expect(ProviderOverrideSchema.parse({}).paseoTools).toBeUndefined();
+    expect(ProviderOverrideSchema.parse({}).ramblaTools).toBeUndefined();
   });
 
-  test("accepts paseoTools on persisted provider overrides", () => {
+  test("accepts ramblaTools on persisted provider overrides", () => {
     expect(
       ProviderOverrideSchema.parse({
         extends: "claude",
-        paseoTools: {
+        ramblaTools: {
           enabled: false,
           disabledTools: ["create_workspace"],
         },
-      }).paseoTools,
+      }).ramblaTools,
     ).toEqual({
       enabled: false,
       disabledTools: ["create_workspace"],
     });
   });
 
-  test("accepts paseoTools when reading and patching mutable daemon providers", () => {
+  test("accepts ramblaTools when reading and patching mutable daemon providers", () => {
     expect(
       MutableDaemonConfigSchema.parse({
         mcp: { injectIntoAgents: true },
         providers: {
           codex: {
-            paseoTools: { enabled: false, disabledTools: ["future_tool"] },
+            ramblaTools: { enabled: false, disabledTools: ["future_tool"] },
           },
         },
-      }).providers.codex?.paseoTools,
+      }).providers.codex?.ramblaTools,
     ).toEqual({
       enabled: false,
       disabledTools: ["future_tool"],
@@ -50,10 +50,10 @@ describe("provider Rambla-tool policy", () => {
       MutableDaemonConfigPatchSchema.parse({
         providers: {
           codex: {
-            paseoTools: { disabledTools: ["browser_future_tool"] },
+            ramblaTools: { disabledTools: ["browser_future_tool"] },
           },
         },
-      }).providers?.codex?.paseoTools,
+      }).providers?.codex?.ramblaTools,
     ).toEqual({ disabledTools: ["browser_future_tool"] });
   });
 });

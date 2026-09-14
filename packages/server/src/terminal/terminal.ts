@@ -6,17 +6,17 @@ import { tmpdir, userInfo } from "node:os";
 import { basename, delimiter, dirname, extname, join, resolve as resolvePath } from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { createExternalProcessEnv } from "../server/paseo-env.js";
+import { createExternalProcessEnv } from "../server/rambla-env.js";
 import { writePrivateFileAtomicSync } from "../server/private-files.js";
 import { findExecutable } from "../executable-resolution/executable-resolution.js";
-import type { TerminalCell, TerminalState } from "@getpaseo/protocol/messages";
-import { TerminalInputModeTracker } from "@getpaseo/protocol/terminal-input-mode";
+import type { TerminalCell, TerminalState } from "@getrambla/protocol/messages";
+import { TerminalInputModeTracker } from "@getrambla/protocol/terminal-input-mode";
 import { TerminalActivityTracker } from "./activity/terminal-activity-tracker.js";
-import type { TerminalActivity, TerminalActivityState } from "@getpaseo/protocol/terminal-activity";
+import type { TerminalActivity, TerminalActivityState } from "@getrambla/protocol/terminal-activity";
 
 const { Terminal } = xterm;
 const require = createRequire(import.meta.url);
-const RAMBLA_CLI_BIN_ENTRY = "@getpaseo/cli/bin/rambla";
+const RAMBLA_CLI_BIN_ENTRY = "@getrambla/cli/bin/rambla";
 let nodePtySpawnHelperChecked = false;
 const TERMINAL_TITLE_DEBOUNCE_MS = 150;
 const TERMINAL_EXIT_OUTPUT_LINE_LIMIT = 12;
@@ -157,8 +157,8 @@ interface BuildTerminalEnvironmentInput {
   shell: string;
   env: Record<string, string>;
   zshShellIntegrationDir?: string;
-  paseoCliBinDir?: string | null;
-  paseoHookCliPath?: string | null;
+  ramblaCliBinDir?: string | null;
+  ramblaHookCliPath?: string | null;
 }
 
 interface EnsureNodePtySpawnHelperExecutableOptions {
@@ -450,7 +450,7 @@ function hasRamblaCliShim(binDir: string): boolean {
 }
 
 function resolveRamblaCliShim(binDir: string): string | null {
-  for (const name of paseoCliShimNames()) {
+  for (const name of ramblaCliShimNames()) {
     const candidate = join(binDir, name);
     if (existsSync(candidate)) {
       return candidate;
@@ -459,8 +459,8 @@ function resolveRamblaCliShim(binDir: string): string | null {
   return null;
 }
 
-function paseoCliShimNames(): string[] {
-  return process.platform === "win32" ? ["paseo.cmd", "paseo.exe", "paseo"] : ["paseo"];
+function ramblaCliShimNames(): string[] {
+  return process.platform === "win32" ? ["rambla.cmd", "rambla.exe", "rambla"] : ["rambla"];
 }
 
 function resolveZshShellIntegrationRuntimeDir(): string {
@@ -470,7 +470,7 @@ function resolveZshShellIntegrationRuntimeDir(): string {
   } catch {
     // keep fallback
   }
-  return join(tmpdir(), `${username}-paseo-zsh-${process.pid}`);
+  return join(tmpdir(), `${username}-rambla-zsh-${process.pid}`);
 }
 
 function prepareZshShellIntegrationRuntimeDir(sourceDir = resolveZshShellIntegrationDir()): string {
@@ -483,8 +483,8 @@ function prepareZshShellIntegrationRuntimeDir(sourceDir = resolveZshShellIntegra
     readFileSync(join(readableSourceDir, ".zshenv")),
   );
   writePrivateFileAtomicSync(
-    join(runtimeDir, "paseo-integration.zsh"),
-    readFileSync(join(readableSourceDir, "paseo-integration.zsh")),
+    join(runtimeDir, "rambla-integration.zsh"),
+    readFileSync(join(readableSourceDir, "rambla-integration.zsh")),
   );
   return runtimeDir;
 }
@@ -498,11 +498,11 @@ export function buildTerminalEnvironment(
   });
   const envWithAgentHooks = prependRamblaCliToPath(
     baseEnv,
-    input.paseoCliBinDir === undefined ? resolveRamblaCliBinDir() : input.paseoCliBinDir,
+    input.ramblaCliBinDir === undefined ? resolveRamblaCliBinDir() : input.ramblaCliBinDir,
   );
   const envWithHookCli = injectRamblaHookCli(
     envWithAgentHooks,
-    input.paseoHookCliPath === undefined ? resolveRamblaCliExecutablePath() : input.paseoHookCliPath,
+    input.ramblaHookCliPath === undefined ? resolveRamblaCliExecutablePath() : input.ramblaHookCliPath,
   );
 
   if (basename(input.shell) !== "zsh") {

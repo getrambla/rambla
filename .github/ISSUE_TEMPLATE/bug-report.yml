@@ -54,10 +54,10 @@ body:
       required: true
 
   - type: input
-    id: paseo-version
+    id: rambla-version
     attributes:
       label: Rambla version
-      description: Settings → About in the app, or `paseo --version` from the CLI.
+      description: Settings → About in the app, or `rambla --version` from the CLI.
       placeholder: "0.1.71"
     validations:
       required: true

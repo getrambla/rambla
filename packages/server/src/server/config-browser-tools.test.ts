@@ -8,12 +8,12 @@ import { loadConfig } from "./config.js";
 const roots: string[] = [];
 
 async function createRamblaHome(config: unknown): Promise<string> {
-  const root = await mkdtemp(path.join(os.tmpdir(), "paseo-config-browser-tools-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "rambla-config-browser-tools-"));
   roots.push(root);
-  const paseoHome = path.join(root, ".rambla");
-  await mkdir(paseoHome, { recursive: true });
-  await writeFile(path.join(paseoHome, "config.json"), JSON.stringify(config, null, 2));
-  return paseoHome;
+  const ramblaHome = path.join(root, ".rambla");
+  await mkdir(ramblaHome, { recursive: true });
+  await writeFile(path.join(ramblaHome, "config.json"), JSON.stringify(config, null, 2));
+  return ramblaHome;
 }
 
 describe("daemon browser tools config", () => {

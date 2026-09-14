@@ -19,7 +19,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, "..", "..", "..");
 
 // npm workspace scripts only add the local node_modules/.bin to PATH; hoisted
-// packages live in the root. Prepend it so `npx paseo` resolves locally.
+// packages live in the root. Prepend it so `npx rambla` resolves locally.
 const rootNodeModulesBin = join(repoRoot, "node_modules", ".bin");
 const args = process.argv.slice(2);
 const testEnvDefaults = {
@@ -104,7 +104,7 @@ async function writeJsonSummary({
     JSON.stringify(
       {
         suite: "cli-local",
-        command: "npm run test:local --workspace=@getpaseo/cli",
+        command: "npm run test:local --workspace=@getrambla/cli",
         counts: {
           passed,
           failed,
@@ -195,7 +195,7 @@ async function runSingleTest(testFile: string): Promise<TestOutcome> {
   const testPath = join(__dirname, testFile);
   const testName = testFile.replace(/\.test\.ts$/, "");
   const startedAt = Date.now();
-  const npmCache = await mkdtemp(join(tmpdir(), "paseo-cli-test-npm-cache-"));
+  const npmCache = await mkdtemp(join(tmpdir(), "rambla-cli-test-npm-cache-"));
 
   try {
     return await new Promise<TestOutcome>((resolve) => {

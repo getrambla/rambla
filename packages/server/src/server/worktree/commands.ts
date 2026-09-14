@@ -10,7 +10,7 @@ import {
 import type {
   CreateRamblaWorktreeInput,
   CreateRamblaWorktreeResult,
-} from "../paseo-worktree-service.js";
+} from "../rambla-worktree-service.js";
 import { toWorktreeWireError, type WorktreeWireError } from "../worktree-errors.js";
 import type { WorkspaceGitService, WorkspaceGitWorktreeInfo } from "../workspace-git-service.js";
 
@@ -40,16 +40,16 @@ type CreateRamblaWorktreeWorkflow<Result extends CreateRamblaWorktreeResult> = (
 export interface CreateRamblaWorktreeCommandDependencies<
   Result extends CreateRamblaWorktreeResult = CreateRamblaWorktreeResult,
 > {
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesRoot?: string;
   createRamblaWorktreeWorkflow?: CreateRamblaWorktreeWorkflow<Result>;
 }
 
 export type CreateRamblaWorktreeCommandInput = Omit<
   CreateRamblaWorktreeInput,
-  "paseoHome" | "runSetup"
+  "ramblaHome" | "runSetup"
 > & {
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesRoot?: string;
 };
 
@@ -76,7 +76,7 @@ export async function createRamblaWorktreeCommand<Result extends CreateRamblaWor
     const createdWorktree = await dependencies.createRamblaWorktreeWorkflow({
       ...input,
       runSetup: false,
-      paseoHome: input.paseoHome ?? dependencies.paseoHome,
+      ramblaHome: input.ramblaHome ?? dependencies.ramblaHome,
       worktreesRoot: input.worktreesRoot ?? dependencies.worktreesRoot,
     });
     return { ok: true, createdWorktree };
@@ -125,8 +125,8 @@ export async function archiveCommand(
   const targetPath = await resolveArchiveTarget(dependencies, input);
   const scope = input.scope ?? "workspace";
   const ownership = await isRamblaOwnedWorktreeCwd(targetPath, {
-    paseoHome: dependencies.paseoHome,
-    worktreesRoot: dependencies.paseoWorktreesBaseRoot,
+    ramblaHome: dependencies.ramblaHome,
+    worktreesRoot: dependencies.ramblaWorktreesBaseRoot,
   });
 
   if (scope === "worktree") {
@@ -210,8 +210,8 @@ async function resolveWorktreeSlugPath(
 ): Promise<string> {
   const worktreesRoot = await getRamblaWorktreesRoot(
     repoRoot,
-    dependencies.paseoHome,
-    dependencies.paseoWorktreesBaseRoot,
+    dependencies.ramblaHome,
+    dependencies.ramblaWorktreesBaseRoot,
   );
   return join(worktreesRoot, worktreeSlug);
 }

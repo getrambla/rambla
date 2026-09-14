@@ -14,7 +14,7 @@ export interface AgentProviderRuntime {
 }
 
 interface CreateAgentProviderRuntimeOptions {
-  paseoHome: string;
+  ramblaHome: string;
   logger: Logger;
   snapshotManager: Omit<ProviderSnapshotManagerOptions, "logger" | "openCodeBridge">;
 }
@@ -22,7 +22,7 @@ interface CreateAgentProviderRuntimeOptions {
 export async function createAgentProviderRuntime(
   options: CreateAgentProviderRuntimeOptions,
 ): Promise<AgentProviderRuntime> {
-  const bridge = new OpenCodeBridge({ paseoHome: options.paseoHome, logger: options.logger });
+  const bridge = new OpenCodeBridge({ ramblaHome: options.ramblaHome, logger: options.logger });
   try {
     await bridge.start();
     const snapshotManager = new ProviderSnapshotManager({

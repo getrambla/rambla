@@ -57,7 +57,7 @@ jobs:
           RAMBLA_HOME="$(mktemp -d)"
           export RAMBLA_LISTEN=127.0.0.1:6767
 
-          WRAPPER_LOG="$RAMBLA_HOME/paseo-server-wrapper.log"
+          WRAPPER_LOG="$RAMBLA_HOME/rambla-server-wrapper.log"
 
           cleanup() {
             if [[ -n "${DAEMON_PID:-}" ]] && kill -0 "$DAEMON_PID" 2>/dev/null; then
@@ -93,11 +93,11 @@ jobs:
           cat "$RAMBLA_HOME/daemon.log" 2>/dev/null || echo "<missing>"
           echo "::endgroup::"
 
-          echo "::group::paseo-server stdout/stderr"
+          echo "::group::rambla-server stdout/stderr"
           cat "$WRAPPER_LOG" 2>/dev/null || echo "<missing>"
           echo "::endgroup::"
 
-          echo "::group::paseo daemon status"
+          echo "::group::rambla daemon status"
           ./result/bin/rambla daemon status || true
           echo "::endgroup::"
 

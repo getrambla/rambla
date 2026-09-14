@@ -17,7 +17,7 @@ import { AgentStorage } from "./agent-storage.js";
 import { InMemoryAgentTimelineStore } from "./agent-timeline-store.js";
 import { toAgentPayload } from "./agent-projections.js";
 import { projectTimelineRows } from "./timeline-projection.js";
-import { getOpenAgentTabLabel, PARENT_AGENT_ID_LABEL } from "@getpaseo/protocol/agent-labels";
+import { getOpenAgentTabLabel, PARENT_AGENT_ID_LABEL } from "@getrambla/protocol/agent-labels";
 import { formatSystemNotificationPrompt, startAgentRun } from "./agent-prompt.js";
 import { StaleProviderSessionError } from "./stale-provider-session-error.js";
 import { ensureAgentLoaded, ensureUnarchivedAgentLoaded } from "./agent-loading.js";
@@ -2806,7 +2806,7 @@ test("createAgent persists workspaceId on the stored record and emits it in the 
   }
 });
 
-test("createAgent injects paseo MCP server only into provider launch config", async () => {
+test("createAgent injects rambla MCP server only into provider launch config", async () => {
   const workdir = mkdtempSync(join(tmpdir(), "agent-manager-test-"));
   const storagePath = join(workdir, "agents");
   const storage = new AgentStorage(storagePath, logger);
@@ -2853,7 +2853,7 @@ test("createAgent injects paseo MCP server only into provider launch config", as
     },
   });
   expect(client.lastConfig?.mcpServers).toEqual({
-    paseo: {
+    rambla: {
       type: "http",
       url: `http://127.0.0.1:6767/mcp/agents?callerAgentId=${snapshot.id}`,
     },
@@ -3000,12 +3000,12 @@ test("reloadAgentSession preserves the live session when its replacement cannot 
     }
   }
 
-  let paseoToolPolicy = { disabledTools: ["list_agents"] };
+  let ramblaToolPolicy = { disabledTools: ["list_agents"] };
   const manager = new AgentManager({
     clients: { codex: new UnsupportedReloadClient() },
     registry: new AgentStorage(join(workdir, "agents"), logger),
     logger,
-    resolveRamblaToolPolicy: () => paseoToolPolicy,
+    resolveRamblaToolPolicy: () => ramblaToolPolicy,
   });
 
   try {
@@ -3014,7 +3014,7 @@ test("reloadAgentSession preserves the live session when its replacement cannot 
       "00000000-0000-4000-8000-000000000109",
       { workspaceId: undefined },
     );
-    paseoToolPolicy = { disabledTools: ["create_agent"] };
+    ramblaToolPolicy = { disabledTools: ["create_agent"] };
 
     await expect(
       manager.reloadAgentSession(created.id, {
@@ -3041,7 +3041,7 @@ test("createAgent passes native Rambla tools through launch context without inte
   const storagePath = join(workdir, "agents");
   const storage = new AgentStorage(storagePath, logger);
 
-  const paseoTools: RamblaToolCatalog = {
+  const ramblaTools: RamblaToolCatalog = {
     tools: new Map(),
     getTool: () => undefined,
     executeTool: async () => {
@@ -3076,7 +3076,7 @@ test("createAgent passes native Rambla tools through launch context without inte
     registry: storage,
     logger,
     mcpBaseUrl: "http://127.0.0.1:6767/mcp/agents",
-    paseoToolCatalogFactory: () => paseoTools,
+    ramblaToolCatalogFactory: () => ramblaTools,
     idFactory: () => "00000000-0000-4000-8000-000000000106",
   });
 
@@ -3095,7 +3095,7 @@ test("createAgent passes native Rambla tools through launch context without inte
     { workspaceId: undefined },
   );
 
-  expect(client.lastLaunchContext?.paseoTools).toBe(paseoTools);
+  expect(client.lastLaunchContext?.ramblaTools).toBe(ramblaTools);
   expect(client.lastConfig?.mcpServers).toEqual({
     custom: {
       type: "stdio",
@@ -3154,7 +3154,7 @@ test("createAgent allows best-effort internal MCP when the provider session repo
   );
 
   expect(manager.getMcpAuthToken()).toBe("cap-token");
-  expect(client.lastConfig?.mcpServers?.paseo).toEqual({
+  expect(client.lastConfig?.mcpServers?.rambla).toEqual({
     type: "http",
     url: `http://127.0.0.1:6767/mcp/agents?callerAgentId=${snapshot.id}`,
     headers: { Authorization: "Bearer cap-token" },
@@ -3192,8 +3192,8 @@ test("uses each provider's current policy for new sessions and snapshots it by a
 
   const codex = new CaptureClient("codex");
   const claude = new CaptureClient("claude");
-  const policyInputs: Array<{ callerAgentId?: string; paseoToolPolicy?: unknown }> = [];
-  const paseoTools: RamblaToolCatalog = {
+  const policyInputs: Array<{ callerAgentId?: string; ramblaToolPolicy?: unknown }> = [];
+  const ramblaTools: RamblaToolCatalog = {
     tools: new Map(),
     getTool: () => undefined,
     executeTool: async () => {
@@ -3206,9 +3206,9 @@ test("uses each provider's current policy for new sessions and snapshots it by a
     logger,
     mcpBaseUrl: "http://127.0.0.1:6767/mcp/agents",
     resolveRamblaToolPolicy: (provider) => policies.get(provider),
-    paseoToolCatalogFactory: async (context) => {
+    ramblaToolCatalogFactory: async (context) => {
       policyInputs.push(context);
-      return paseoTools;
+      return ramblaTools;
     },
   });
 
@@ -3224,11 +3224,11 @@ test("uses each provider's current policy for new sessions and snapshots it by a
   );
 
   expect(policyInputs).toEqual([
-    { callerAgentId: codexAgent.id, paseoToolPolicy: { disabledTools: ["list_agents"] } },
+    { callerAgentId: codexAgent.id, ramblaToolPolicy: { disabledTools: ["list_agents"] } },
   ]);
-  expect(codex.launchContexts[0]?.paseoTools).toBe(paseoTools);
-  expect(claude.launchContexts[0]?.paseoTools).toBeUndefined();
-  expect(codex.configs[0]?.mcpServers?.paseo).toBeUndefined();
+  expect(codex.launchContexts[0]?.ramblaTools).toBe(ramblaTools);
+  expect(claude.launchContexts[0]?.ramblaTools).toBeUndefined();
+  expect(codex.configs[0]?.mcpServers?.rambla).toBeUndefined();
   expect(claude.configs[0]?.mcpServers).toBeUndefined();
   expect(manager.getRamblaToolPolicy(codexAgent.id)).toEqual({
     disabledTools: ["list_agents"],
@@ -3249,10 +3249,10 @@ test("uses each provider's current policy for new sessions and snapshots it by a
     disabledTools: ["create_agent"],
   });
   expect(policyInputs).toEqual([
-    { callerAgentId: codexAgent.id, paseoToolPolicy: { disabledTools: ["list_agents"] } },
+    { callerAgentId: codexAgent.id, ramblaToolPolicy: { disabledTools: ["list_agents"] } },
     {
       callerAgentId: nextCodexAgent.id,
-      paseoToolPolicy: { disabledTools: ["create_agent"] },
+      ramblaToolPolicy: { disabledTools: ["create_agent"] },
     },
   ]);
 
@@ -3293,7 +3293,7 @@ test("keeps the global Rambla-tools gate outside provider policy and MCP injecti
     { workspaceId: undefined },
   );
 
-  expect(enabledClient.lastConfig?.mcpServers?.paseo).toEqual({
+  expect(enabledClient.lastConfig?.mcpServers?.rambla).toEqual({
     type: "http",
     url: `http://127.0.0.1:6767/mcp/agents?callerAgentId=${enabledAgent.id}`,
   });
@@ -3305,11 +3305,11 @@ test("keeps the global Rambla-tools gate outside provider policy and MCP injecti
     registry: storage,
     logger,
     mcpBaseUrl: "http://127.0.0.1:6767/mcp/agents",
-    paseoToolsEnabled: false,
+    ramblaToolsEnabled: false,
     resolveRamblaToolPolicy: () => ({ enabled: true }),
-    paseoToolCatalogFactory: () => {
+    ramblaToolCatalogFactory: () => {
       catalogFactoryCalls += 1;
-      return paseoTools;
+      return ramblaTools;
     },
   });
   const disabledAgent = await disabledManager.createAgent(
@@ -3325,7 +3325,7 @@ test("keeps the global Rambla-tools gate outside provider policy and MCP injecti
   rmSync(workdir, { recursive: true, force: true });
 });
 
-test("resumeAgentFromPersistence replaces stored internal paseo MCP with current runtime URL", async () => {
+test("resumeAgentFromPersistence replaces stored internal rambla MCP with current runtime URL", async () => {
   const workdir = mkdtempSync(join(tmpdir(), "agent-manager-test-"));
   const storagePath = join(workdir, "agents");
   const storage = new AgentStorage(storagePath, logger);
@@ -3350,7 +3350,7 @@ test("resumeAgentFromPersistence replaces stored internal paseo MCP with current
   const snapshot = await manager.resumeAgentFromPersistence(handle, {
     cwd: workdir,
     mcpServers: {
-      paseo: {
+      rambla: {
         type: "http",
         url: "http://127.0.0.1:6767/mcp/agents?callerAgentId=stale-agent",
       },
@@ -3362,7 +3362,7 @@ test("resumeAgentFromPersistence replaces stored internal paseo MCP with current
   });
 
   expect(client.resumeOverrides[0]?.mcpServers).toEqual({
-    paseo: {
+    rambla: {
       type: "http",
       url: `http://127.0.0.1:6768/mcp/agents?callerAgentId=${snapshot.id}`,
     },
@@ -3379,7 +3379,7 @@ test("resumeAgentFromPersistence replaces stored internal paseo MCP with current
   });
 });
 
-test("resumeAgentFromPersistence drops stored internal paseo MCP when runtime injection is disabled", async () => {
+test("resumeAgentFromPersistence drops stored internal rambla MCP when runtime injection is disabled", async () => {
   const workdir = mkdtempSync(join(tmpdir(), "agent-manager-test-"));
   const storagePath = join(workdir, "agents");
   const storage = new AgentStorage(storagePath, logger);
@@ -3402,7 +3402,7 @@ test("resumeAgentFromPersistence drops stored internal paseo MCP when runtime in
   const snapshot = await manager.resumeAgentFromPersistence(handle, {
     cwd: workdir,
     mcpServers: {
-      paseo: {
+      rambla: {
         type: "http",
         url: "http://127.0.0.1:6767/mcp/agents?callerAgentId=stale-agent",
       },
@@ -3413,7 +3413,7 @@ test("resumeAgentFromPersistence drops stored internal paseo MCP when runtime in
   expect(snapshot.config.mcpServers).toBeUndefined();
 });
 
-test("createAgent preserves a user-provided paseo MCP config", async () => {
+test("createAgent preserves a user-provided rambla MCP config", async () => {
   const workdir = mkdtempSync(join(tmpdir(), "agent-manager-test-"));
   const storagePath = join(workdir, "agents");
   const storage = new AgentStorage(storagePath, logger);
@@ -3443,9 +3443,9 @@ test("createAgent preserves a user-provided paseo MCP config", async () => {
       provider: "codex",
       cwd: workdir,
       mcpServers: {
-        paseo: {
+        rambla: {
           type: "http",
-          url: "https://example.com/custom-paseo",
+          url: "https://example.com/custom-rambla",
         },
       },
     },
@@ -3454,9 +3454,9 @@ test("createAgent preserves a user-provided paseo MCP config", async () => {
   );
 
   expect(snapshot.config.mcpServers).toEqual({
-    paseo: {
+    rambla: {
       type: "http",
-      url: "https://example.com/custom-paseo",
+      url: "https://example.com/custom-rambla",
     },
   });
   expect(client.lastConfig?.mcpServers).toEqual(snapshot.config.mcpServers);
@@ -4024,30 +4024,30 @@ test("resumeAgentFromPersistence keeps metadata config, applies overrides, and p
     cwd: workdir,
     systemPrompt: "new prompt",
     mcpServers: {
-      paseo: {
+      rambla: {
         type: "stdio",
         command: "node",
-        args: ["/tmp/mcp-bridge.mjs", "--socket", "/tmp/paseo.sock"],
+        args: ["/tmp/mcp-bridge.mjs", "--socket", "/tmp/rambla.sock"],
       },
     },
   });
 
   expect(resumed.config.systemPrompt).toBe("new prompt");
   expect(resumed.config.mcpServers).toEqual({
-    paseo: {
+    rambla: {
       type: "stdio",
       command: "node",
-      args: ["/tmp/mcp-bridge.mjs", "--socket", "/tmp/paseo.sock"],
+      args: ["/tmp/mcp-bridge.mjs", "--socket", "/tmp/rambla.sock"],
     },
   });
   expect(client.lastResumeOverrides).toMatchObject({
     model: "gpt-5.4",
     systemPrompt: "new prompt",
     mcpServers: {
-      paseo: {
+      rambla: {
         type: "stdio",
         command: "node",
-        args: ["/tmp/mcp-bridge.mjs", "--socket", "/tmp/paseo.sock"],
+        args: ["/tmp/mcp-bridge.mjs", "--socket", "/tmp/rambla.sock"],
       },
     },
   });
@@ -10757,7 +10757,7 @@ test("listImportableSessions searches every provider result before global rankin
   ]);
 });
 
-test("user_message events wrapping a paseo-system envelope are not added to the timeline", async () => {
+test("user_message events wrapping a rambla-system envelope are not added to the timeline", async () => {
   const workdir = mkdtempSync(join(tmpdir(), "agent-manager-envelope-live-"));
   const storagePath = join(workdir, "agents");
   const storage = new AgentStorage(storagePath, logger);
@@ -10792,7 +10792,7 @@ test("user_message events wrapping a paseo-system envelope are not added to the 
   expect(userMessages[0].text).toBe("plain user message");
 });
 
-test("user_message events wrapping a paseo-system envelope are not restored during history replay", async () => {
+test("user_message events wrapping a rambla-system envelope are not restored during history replay", async () => {
   const workdir = mkdtempSync(join(tmpdir(), "agent-manager-envelope-history-"));
   const storagePath = join(workdir, "agents");
   const storage = new AgentStorage(storagePath, logger);

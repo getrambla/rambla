@@ -79,7 +79,7 @@ function Sponsor() {
           </a>
 
           <a
-            href="https://opencollective.com/paseo-ai/donate?interval=month&amount=10&contributeAs=me"
+            href="https://opencollective.com/rambla-ai/donate?interval=month&amount=10&contributeAs=me"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-5 hover:border-white/20 hover:bg-white/[0.05] transition-colors"
@@ -106,7 +106,7 @@ function Sponsor() {
           </a>
 
           <a
-            href="https://buymeacoffee.com/paseo"
+            href="https://buymeacoffee.com/rambla"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-5 hover:border-white/20 hover:bg-white/[0.05] transition-colors"

@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { runLocalRambla } from "./helpers/local-cli.js";
 
-const cwd = await mkdtemp(path.join(tmpdir(), "paseo-hub-installed-"));
+const cwd = await mkdtemp(path.join(tmpdir(), "rambla-hub-installed-"));
 const requests: Array<{ url: string | undefined; body: unknown }> = [];
 const server = createServer((request, response) => {
   let body = "";
@@ -47,7 +47,7 @@ try {
     {
       path: ".rambla/workflows/run.yml",
       content:
-        "name: run\non: manual.run\nmax_runtime: 1h\ninputs:\n  repo:\n    type: string\n    choices: [studio]\n  agent:\n    type: string\n    choices: [codex-safe]\nsteps:\n  - id: work\n    environment: ${{ paseo.inputs.repo }}\n    max_runtime: 30m\n    idle_timeout: 5m\n    agent: ${{ paseo.inputs.agent }}\n    prompt:\n      - include: partials/instructions.md\n      - text: ${{ paseo.prompt }}\n",
+        "name: run\non: manual.run\nmax_runtime: 1h\ninputs:\n  repo:\n    type: string\n    choices: [studio]\n  agent:\n    type: string\n    choices: [codex-safe]\nsteps:\n  - id: work\n    environment: ${{ rambla.inputs.repo }}\n    max_runtime: 30m\n    idle_timeout: 5m\n    agent: ${{ rambla.inputs.agent }}\n    prompt:\n      - include: partials/instructions.md\n      - text: ${{ rambla.prompt }}\n",
     },
     {
       path: ".rambla/workflows/partials/instructions.md",

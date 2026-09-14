@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import pino from "pino";
 
-import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
 import { canRunRealProvider, createRealProviderClients } from "./real-provider-test-config.js";
 
@@ -46,7 +46,7 @@ describe("daemon E2E (real opencode) - custom agent discovery", () => {
       path.join(cwd, "opencode.json"),
       JSON.stringify({
         agent: {
-          "paseo-e2e-custom": {
+          "rambla-e2e-custom": {
             description: "Custom agent for Rambla daemon E2E test",
             mode: "primary",
           },
@@ -73,7 +73,7 @@ describe("daemon E2E (real opencode) - custom agent discovery", () => {
       expect(snapshot.availableModes.some((m) => m.id === "build")).toBe(true);
       expect(snapshot.availableModes.some((m) => m.id === "plan")).toBe(true);
 
-      const custom = snapshot.availableModes.find((m) => m.id === "paseo-e2e-custom");
+      const custom = snapshot.availableModes.find((m) => m.id === "rambla-e2e-custom");
       expect(custom).toBeDefined();
       expect(custom!.description).toBe("Custom agent for Rambla daemon E2E test");
 

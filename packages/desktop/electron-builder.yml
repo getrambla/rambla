@@ -5,7 +5,7 @@ executableName: Rambla
 protocols:
   - name: Rambla agent link
     schemes:
-      - paseo
+      - rambla
 afterPack: ./scripts/after-pack.js
 afterSign: ./scripts/after-sign.js
 directories:
@@ -13,19 +13,19 @@ directories:
 files:
   - dist/**/*
   - "!**/*.map"
-  - "!node_modules/@getpaseo/*/src/**"
-  - "!node_modules/@getpaseo/**/*.test.*"
-  - "!node_modules/@getpaseo/**/*.spec.*"
-  - "!node_modules/@getpaseo/server/dist/server/web-ui/**"
+  - "!node_modules/@getrambla/*/src/**"
+  - "!node_modules/@getrambla/**/*.test.*"
+  - "!node_modules/@getrambla/**/*.spec.*"
+  - "!node_modules/@getrambla/server/dist/server/web-ui/**"
   # Workspace packages are symlinked, so anything a dev generates inside them
   # lands in the asar. CI never has these; a local .debug run adds gigabytes.
-  - "!node_modules/@getpaseo/*/.debug/**"
-  - "!node_modules/@getpaseo/*/.tasks/**"
-  - "!node_modules/@getpaseo/*/conversations/**"
-  - "!node_modules/@getpaseo/*/test-results/**"
+  - "!node_modules/@getrambla/*/.debug/**"
+  - "!node_modules/@getrambla/*/.tasks/**"
+  - "!node_modules/@getrambla/*/conversations/**"
+  - "!node_modules/@getrambla/*/test-results/**"
 asarUnpack:
   - dist/daemon/node-entrypoint-runner.js
-  - node_modules/@getpaseo/server/dist/server/terminal/shell-integration/**/*
+  - node_modules/@getrambla/server/dist/server/terminal/shell-integration/**/*
 extraResources:
   - from: ../app/dist
     to: app-dist
@@ -33,8 +33,8 @@ extraResources:
     to: editor-target-icons
 publish:
   provider: github
-  owner: getpaseo
-  repo: paseo
+  owner: getrambla
+  repo: rambla
 mac:
   artifactName: "Rambla-${version}-${arch}.${ext}"
   minimumSystemVersion: "13.0.0"

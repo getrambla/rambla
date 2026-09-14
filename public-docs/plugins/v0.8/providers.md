@@ -12,8 +12,8 @@ category: Plugins
 > [plugin quickstart](/docs/plugins/v0.8) if you have not built a Rambla plugin before.
 
 A provider plugin connects a coding agent to Rambla without adding it to Rambla core. Publish the
-plugin in a Git repository and users can install and update it with `paseo plugin add` and
-`paseo plugin update`.
+plugin in a Git repository and users can install and update it with `rambla plugin add` and
+`rambla plugin update`.
 
 Choose one implementation path:
 
@@ -34,7 +34,7 @@ Add a server entry:
 
 ```ts
 // index.server.ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@getrambla/plugin/server";
 import { createProvider } from "./server/provider";
 
 export default function contribute(server: PluginServerContext) {
@@ -49,7 +49,7 @@ export default function contribute(server: PluginServerContext) {
 import {
   negotiateProviderCapabilities,
   type ProviderRegistration,
-} from "@getpaseo/plugin/server/provider";
+} from "@getrambla/plugin/server/provider";
 
 const supported = ["prompt.message"] as const;
 
@@ -304,7 +304,7 @@ emit({
 Register the renderer independently in `index.client.tsx`:
 
 ```tsx
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@getrambla/plugin/client";
 import { z } from "zod";
 import { ReviewVerdict } from "./client/review-verdict";
 
@@ -332,8 +332,8 @@ daemon timeline append. A renderer does not require a provider implementation.
 Use the ACP shim when the agent already speaks ACP:
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
-import { runAcpProvider } from "@getpaseo/plugin/server/acp";
+import type { PluginServerContext } from "@getrambla/plugin/server";
+import { runAcpProvider } from "@getrambla/plugin/server/acp";
 
 export default function contribute(server: PluginServerContext) {
   server.registerProvider(
@@ -355,7 +355,7 @@ Use `transformers` only for vendor differences ACP cannot describe. Validate ven
 Zod and leave malformed or unrelated values unchanged:
 
 ```ts
-import type { AcpTransformer } from "@getpaseo/plugin/server/acp";
+import type { AcpTransformer } from "@getrambla/plugin/server/acp";
 import { z } from "zod";
 
 const editSchema = z.object({
@@ -396,8 +396,8 @@ Test the provider against the real agent, not only mocked frames:
 Push the plugin to a Git repository. Users install it with:
 
 ```bash
-paseo plugin add owner/repository
-paseo plugin update my-provider-plugin
+rambla plugin add owner/repository
+rambla plugin update my-provider-plugin
 ```
 
 Keep vendor compatibility and releases in that repository. Rambla core should only change when the

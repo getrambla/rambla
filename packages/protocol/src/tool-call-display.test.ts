@@ -59,7 +59,7 @@ describe("shared tool-call display mapping", () => {
 
   it("builds display model for worktree setup detail", () => {
     const display = buildToolCallDisplayModel({
-      name: "paseo_worktree_setup",
+      name: "rambla_worktree_setup",
       status: "running",
       error: null,
       detail: {
@@ -137,7 +137,7 @@ describe("shared tool-call display mapping", () => {
 
   it("humanizes Rambla MCP tool names (Claude Code format)", () => {
     const display = buildToolCallDisplayModel({
-      name: "mcp__paseo__create_agent",
+      name: "mcp__rambla__create_agent",
       status: "running",
       error: null,
       detail: { type: "unknown", input: null, output: null },
@@ -147,7 +147,7 @@ describe("shared tool-call display mapping", () => {
 
   it("humanizes Rambla MCP tool names (Codex format)", () => {
     const display = buildToolCallDisplayModel({
-      name: "paseo.create_agent",
+      name: "rambla.create_agent",
       status: "running",
       error: null,
       detail: { type: "unknown", input: null, output: null },
@@ -157,7 +157,7 @@ describe("shared tool-call display mapping", () => {
 
   it("humanizes list_agents Rambla tool", () => {
     const display = buildToolCallDisplayModel({
-      name: "mcp__paseo__list_agents",
+      name: "mcp__rambla__list_agents",
       status: "running",
       error: null,
       detail: { type: "unknown", input: null, output: null },

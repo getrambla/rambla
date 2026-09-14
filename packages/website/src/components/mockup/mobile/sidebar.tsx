@@ -141,7 +141,7 @@ const WORKING: RowData[] = [
 
 const READY: RowData[] = [
   {
-    key: "paseo-homepage",
+    key: "rambla-homepage",
     icon: <WorkspaceGlyph />,
     title: "Rambla homepage",
     time: "now",

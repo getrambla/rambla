@@ -1,6 +1,6 @@
 import type { AgentSessionConfig, McpServerConfig } from "./agent-sdk-types.js";
 
-const RAMBLA_MCP_SERVER_NAME = "paseo";
+const RAMBLA_MCP_SERVER_NAME = "rambla";
 const RAMBLA_MCP_PATHNAME = "/mcp/agents";
 
 export function stripInternalRamblaMcpServer(config: AgentSessionConfig): AgentSessionConfig {
@@ -9,8 +9,8 @@ export function stripInternalRamblaMcpServer(config: AgentSessionConfig): AgentS
     return config;
   }
 
-  const paseoServer = mcpServers[RAMBLA_MCP_SERVER_NAME];
-  if (!paseoServer || !isInternalRamblaMcpServer(paseoServer)) {
+  const ramblaServer = mcpServers[RAMBLA_MCP_SERVER_NAME];
+  if (!ramblaServer || !isInternalRamblaMcpServer(ramblaServer)) {
     return config;
   }
 

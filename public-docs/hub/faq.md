@@ -28,7 +28,7 @@ Yes. Both run. Repositories are not owned by a project.
 
 ## Can the configuration live somewhere other than the repository being watched?
 
-Yes. `filters.repo` can name any repository the organization can reach, so a private repository can hold the `.paseo` bundle for workflows that watch public repositories. Protect push access because the bundle selects the organization's connections, daemons, agents, and outputs.
+Yes. `filters.repo` can name any repository the organization can reach, so a private repository can hold the `.rambla` bundle for workflows that watch public repositories. Protect push access because the bundle selects the organization's connections, daemons, agents, and outputs.
 
 ## Where do triggers go now?
 
@@ -48,7 +48,7 @@ Dispatch fails and the event is recorded as failed. Nothing is queued, so trigge
 
 ## Does logging out disconnect my daemon?
 
-No. The stored CLI login is a human organization credential; the enrolled daemon has its own relationship credential. Interactive `paseo hub logout` offers to disconnect a daemon related to the same Hub. Declining is normal, and JSON or noninteractive logout never disconnects unless you pass `--disconnect-daemon`.
+No. The stored CLI login is a human organization credential; the enrolled daemon has its own relationship credential. Interactive `rambla hub logout` offers to disconnect a daemon related to the same Hub. Declining is normal, and JSON or noninteractive logout never disconnects unless you pass `--disconnect-daemon`.
 
 ## Can an agent reply back to Slack or Discord?
 

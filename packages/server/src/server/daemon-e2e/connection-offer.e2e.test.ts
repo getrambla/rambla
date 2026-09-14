@@ -8,7 +8,7 @@ import { Writable } from "node:stream";
 import { spawn } from "node:child_process";
 
 import { generateLocalPairingOffer } from "../pairing-offer.js";
-import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 
 function createCapturingLogger() {
   const lines: string[] = [];
@@ -23,14 +23,14 @@ function createCapturingLogger() {
 }
 
 async function getPairingOfferUrl(args: {
-  paseoHome: string;
+  ramblaHome: string;
   relayEnabled?: boolean;
   relayEndpoint?: string;
   relayPublicEndpoint?: string;
   appBaseUrl?: string;
 }): Promise<string> {
   const pairing = await generateLocalPairingOffer({
-    paseoHome: args.paseoHome,
+    ramblaHome: args.ramblaHome,
     relayEnabled: args.relayEnabled,
     relayEndpoint: args.relayEndpoint,
     relayPublicEndpoint: args.relayPublicEndpoint,
@@ -89,7 +89,7 @@ describe("ConnectionOfferV2 (daemon E2E)", () => {
 
     try {
       const offerUrl = await getPairingOfferUrl({
-        paseoHome: daemon.paseoHome,
+        ramblaHome: daemon.ramblaHome,
         relayEnabled: daemon.config.relayEnabled,
         relayEndpoint: daemon.config.relayEndpoint,
         relayPublicEndpoint: daemon.config.relayPublicEndpoint,
@@ -122,14 +122,14 @@ describe("ConnectionOfferV2 (daemon E2E)", () => {
   test("persists serverId and daemon keypair across daemon restarts", async () => {
     process.env.RAMBLA_PRIMARY_LAN_IP = "192.168.1.12";
 
-    const tempHomeRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-offer-home-"));
+    const tempHomeRoot = await mkdtemp(path.join(os.tmpdir(), "rambla-offer-home-"));
 
     const { logger: logger1 } = createCapturingLogger();
     const daemon1 = await createTestRamblaDaemon({
       listen: "0.0.0.0",
       logger: logger1,
       relayEnabled: true,
-      paseoHomeRoot: tempHomeRoot,
+      ramblaHomeRoot: tempHomeRoot,
       cleanup: false,
     });
 
@@ -138,7 +138,7 @@ describe("ConnectionOfferV2 (daemon E2E)", () => {
 
     try {
       const offerUrl1 = await getPairingOfferUrl({
-        paseoHome: daemon1.paseoHome,
+        ramblaHome: daemon1.ramblaHome,
         relayEnabled: daemon1.config.relayEnabled,
         relayEndpoint: daemon1.config.relayEndpoint,
         relayPublicEndpoint: daemon1.config.relayPublicEndpoint,
@@ -157,14 +157,14 @@ describe("ConnectionOfferV2 (daemon E2E)", () => {
         listen: "0.0.0.0",
         logger: logger2,
         relayEnabled: true,
-        paseoHomeRoot: tempHomeRoot,
+        ramblaHomeRoot: tempHomeRoot,
         cleanup: false,
       });
       staticDir2 = daemon2.staticDir;
 
       try {
         const offerUrl2 = await getPairingOfferUrl({
-          paseoHome: daemon2.paseoHome,
+          ramblaHome: daemon2.ramblaHome,
           relayEnabled: daemon2.config.relayEnabled,
           relayEndpoint: daemon2.config.relayEndpoint,
           relayPublicEndpoint: daemon2.config.relayPublicEndpoint,
@@ -198,7 +198,7 @@ describe("ConnectionOfferV2 (daemon E2E)", () => {
   test("respects --no-relay (CLI) by not emitting a pairing offer", async () => {
     process.env.RAMBLA_PRIMARY_LAN_IP = "192.168.1.12";
 
-    const tempHome = await mkdtemp(path.join(os.tmpdir(), "paseo-offer-e2e-"));
+    const tempHome = await mkdtemp(path.join(os.tmpdir(), "rambla-offer-e2e-"));
     const port = await getAvailablePort();
 
     const serverRoot = path.resolve(import.meta.dirname, "../../..");

@@ -1,5 +1,5 @@
 {
-  "name": "@getpaseo/protocol",
+  "name": "@getrambla/protocol",
   "version": "0.8.0",
   "description": "Rambla shared protocol schemas and wire types",
   "files": [

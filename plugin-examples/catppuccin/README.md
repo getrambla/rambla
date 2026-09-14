@@ -14,13 +14,13 @@ Register it in `$RAMBLA_HOME/config.json`:
   "plugins": {
     "catppuccin": {
       "source": "directory",
-      "path": "/absolute/path/to/paseo/plugin-examples/catppuccin"
+      "path": "/absolute/path/to/rambla/plugin-examples/catppuccin"
     }
   }
 }
 ```
 
-Then run `paseo reload` and pick **Catppuccin Mocha** in Settings → Appearance.
+Then run `rambla reload` and pick **Catppuccin Mocha** in Settings → Appearance.
 
 The colors come straight from the [Catppuccin Mocha](https://catppuccin.com/palette/) palette:
 `base`, `text`, `surface0`, `surface1`, `mauve`, `subtext0`, and `overlay0`. Rambla expands them

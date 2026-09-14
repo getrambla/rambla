@@ -19,22 +19,22 @@ const FDROID_ABI_VERSION_CODE_ENTRIES = Object.entries(FDROID_ABI_VERSION_CODE_S
   .join("\n");
 
 const FDROID_ABI_VERSION_CODE_BLOCK = `// Rambla F-Droid single-ABI version codes
-def paseoAbiVersionCodes = [
+def ramblaAbiVersionCodes = [
 ${FDROID_ABI_VERSION_CODE_ENTRIES}
 ]
-def paseoArchitectures = (findProperty("reactNativeArchitectures") ?: "")
+def ramblaArchitectures = (findProperty("reactNativeArchitectures") ?: "")
     .toString()
     .split(",")
     .collect { it.trim() }
     .findAll { !it.isEmpty() }
 
-if (paseoArchitectures.size() == 1) {
-    def paseoAbi = paseoArchitectures[0]
-    def paseoAbiVersionCode = paseoAbiVersionCodes[paseoAbi]
-    if (paseoAbiVersionCode == null) {
-        throw new GradleException("Unsupported Rambla Android ABI: " + paseoAbi)
+if (ramblaArchitectures.size() == 1) {
+    def ramblaAbi = ramblaArchitectures[0]
+    def ramblaAbiVersionCode = ramblaAbiVersionCodes[ramblaAbi]
+    if (ramblaAbiVersionCode == null) {
+        throw new GradleException("Unsupported Rambla Android ABI: " + ramblaAbi)
     }
-    android.defaultConfig.versionCode = android.defaultConfig.versionCode * 10 + paseoAbiVersionCode
+    android.defaultConfig.versionCode = android.defaultConfig.versionCode * 10 + ramblaAbiVersionCode
 }
 `;
 

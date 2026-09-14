@@ -46,9 +46,9 @@ See the [MCP reference](/docs/mcp) for tool configuration and the full catalog. 
 Agents with shell access can also use the Rambla CLI. This route does not require enabling tool injection. With Rambla installed, a running host, and Codex configured:
 
 ```bash
-paseo run --provider codex --background \
+rambla run --provider codex --background \
   "Review this branch without changing files"
-paseo ls -a
+rambla ls -a
 ```
 
 The first command starts a worker and returns immediately; the second lists agents from active workspaces, including archived agents. When a Rambla agent runs the command, the worker becomes its subagent in the same workspace. From your own terminal, it starts in a new local workspace.

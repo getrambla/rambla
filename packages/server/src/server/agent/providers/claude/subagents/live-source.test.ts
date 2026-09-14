@@ -314,7 +314,7 @@ describe("ClaudeTaskProtocolSource", () => {
         taskStarted({
           task_type: "local_workflow",
           subagent_type: undefined,
-          workflow_name: "paseo-workflow-one-child",
+          workflow_name: "rambla-workflow-one-child",
           description: "Runs one deterministic child and returns its structured result",
           prompt: "export const meta = {};",
         }),

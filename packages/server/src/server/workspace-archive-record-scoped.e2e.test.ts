@@ -42,7 +42,7 @@ function createGitRepo(): string {
   const tempRoot = makeTempDir("workspace-archive-repo-");
   const repoDir = path.join(tempRoot, "repo");
   execFileSync("git", ["init", "-b", "main", repoDir], { stdio: "pipe" });
-  execFileSync("git", ["config", "user.email", "test@getpaseo.local"], {
+  execFileSync("git", ["config", "user.email", "test@getrambla.local"], {
     cwd: repoDir,
     stdio: "pipe",
   });
@@ -307,7 +307,7 @@ test.skipIf(process.platform === "win32")(
     const setupStartedPath = path.join(repoDir, "setup-started");
     const stopSetupPath = path.join(repoDir, "stop-setup");
     writeFileSync(
-      path.join(repoDir, "paseo.json"),
+      path.join(repoDir, "rambla.json"),
       JSON.stringify({
         worktree: {
           setup: [
@@ -316,7 +316,7 @@ test.skipIf(process.platform === "win32")(
         },
       }),
     );
-    execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+    execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
     execFileSync(
       "git",
       ["-c", "commit.gpgsign=false", "commit", "-m", "add active worktree setup"],

@@ -27,10 +27,10 @@ Only direct `.yml` children of `.rambla/workflows/` are workflows. Each file con
 
 ```yaml
 environments:
-  paseo:
+  rambla:
     kind: daemon
     daemon: laptop
-    cwd: /Users/you/code/paseo
+    cwd: /Users/you/code/rambla
   hub:
     kind: daemon
     daemon: devbox
@@ -72,17 +72,17 @@ environments:
     cwd: /workspace/project
     worktree:
       mode: branch-off
-      newBranch: trigger-${{ paseo.execution.id }}
+      newBranch: trigger-${{ rambla.execution.id }}
       base: origin/main
 ```
 
-`newBranch` is a branch-name string. Embed `${{ paseo.execution.id }}`, which renders the execution's UUID, so every execution branches off `base` on its own branch and keeps it when Hub retries or recovers that execution.
+`newBranch` is a branch-name string. Embed `${{ rambla.execution.id }}`, which renders the execution's UUID, so every execution branches off `base` on its own branch and keeps it when Hub retries or recovers that execution.
 
 One execution is one step run, so two steps selecting the same environment get separate branches.
 
-`${{ paseo.execution.id }}` is the only expression `newBranch` accepts. `paseo.prompt`, `paseo.context`, `paseo.inputs.*`, `values.*`, `steps.<id>.outputs.*`, and provider event fields are unavailable here, and each one fails bundle activation at the authored field, such as `.rambla/hub.yml.environments.review.worktree.newBranch`.
+`${{ rambla.execution.id }}` is the only expression `newBranch` accepts. `rambla.prompt`, `rambla.context`, `rambla.inputs.*`, `values.*`, `steps.<id>.outputs.*`, and provider event fields are unavailable here, and each one fails bundle activation at the authored field, such as `.rambla/hub.yml.environments.review.worktree.newBranch`.
 
-`${{ paseo.execution.id }}` fails activation the same way anywhere else in a bundle. `branch` and `prNumber` take literal values.
+`${{ rambla.execution.id }}` fails activation the same way anywhere else in a bundle. `branch` and `prNumber` take literal values.
 
 An environment is a complete named object. A step selects its name; objects are not inherited, merged, or partially overridden.
 
@@ -116,15 +116,15 @@ inputs:
   repo:
     type: string
     required: true
-    choices: [paseo, hub]
+    choices: [rambla, hub]
 steps:
   - id: inspect
-    environment: ${{ paseo.inputs.repo }}
+    environment: ${{ rambla.inputs.repo }}
     max_runtime: 30m
     idle_timeout: 5m
     agent: codex-safe
     prompt:
-      - text: ${{ paseo.prompt }}
+      - text: ${{ rambla.prompt }}
 ```
 
 | Field         | Required | Notes                                                     |
@@ -182,7 +182,7 @@ values:
   selected_agent: ${{ steps.classify.outputs.agent }}
 ```
 
-Expressions may read declared `paseo.inputs`, earlier `steps.<id>.outputs`, and `values`. The grammar supports paths, JSON literals, parentheses, `!`, `==`, `!=`, `&&`, `||`, and `??`.
+Expressions may read declared `rambla.inputs`, earlier `steps.<id>.outputs`, and `values`. The grammar supports paths, JSON literals, parentheses, `!`, `==`, `!=`, `&&`, `||`, and `??`.
 
 An environment or dynamic named-agent expression must have a finite set of possible string results at activation. Every result must name a configured resource. Runtime selection never falls back to another environment or agent.
 
@@ -224,13 +224,13 @@ prompt:
   - include: partials/review.md
   - text: |
       <user-prompt>
-      ${{ paseo.prompt }}
+      ${{ rambla.prompt }}
       </user-prompt>
 ```
 
-`${{ paseo.prompt }}` is the normalized request after the provider marker and declared leading `key=value` inputs are removed. It is not rewritten or augmented with event context.
+`${{ rambla.prompt }}` is the normalized request after the provider marker and declared leading `key=value` inputs are removed. It is not rewritten or augmented with event context.
 
-`${{ paseo.context }}` opts that step into provider context materialization and renders the result as JSON in the prompt. It is available only in prompt text. Hub does not inject it unless the workflow authors that expression.
+`${{ rambla.context }}` opts that step into provider context materialization and renders the result as JSON in the prompt. It is available only in prompt text. Hub does not inject it unless the workflow authors that expression.
 
 Includes resolve relative to `.rambla/workflows/`, so shared partials use `partials/<name>.md`. Missing files, absolute or traversing paths, symlinks, content mismatches, and files outside the partial tree are rejected.
 
@@ -264,7 +264,7 @@ Self-contained dashboard trigger documents accept `run.continuation`:
 | Value                                                    | Behavior                                                                                                                |
 | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `{mode: conversation}`                                   | Default. Reuse the project's agent for the event's conversation; create a new agent when the event has no conversation. |
-| `{mode: key, key: "support-${{ paseo.inputs.ticket }}"}` | Reuse the project's agent for the evaluated custom key.                                                                 |
+| `{mode: key, key: "support-${{ rambla.inputs.ticket }}"}` | Reuse the project's agent for the evaluated custom key.                                                                 |
 | `{mode: new}`                                            | Create a new agent for each arrival.                                                                                    |
 
 Keys use the existing expression syntax and must resolve to a non-empty string of at most 512 characters. Custom keys and provider conversation identities occupy separate namespaces. The same key in different projects does not share an agent.

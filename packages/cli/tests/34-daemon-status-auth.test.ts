@@ -14,7 +14,7 @@ try {
   {
     console.log("Test 1: status reports password requirement without marking daemon unreachable");
     const result = await runLocalRambla(["daemon", "status", "--json"], {
-      RAMBLA_HOME: daemon.paseoHome,
+      RAMBLA_HOME: daemon.ramblaHome,
       RAMBLA_HOST: "",
       RAMBLA_PASSWORD: "",
     });
@@ -34,7 +34,7 @@ try {
   {
     console.log("Test 2: status reports rejected supplied password separately");
     const result = await runLocalRambla(["daemon", "status", "--json"], {
-      RAMBLA_HOME: daemon.paseoHome,
+      RAMBLA_HOME: daemon.ramblaHome,
       RAMBLA_HOST: "",
       RAMBLA_PASSWORD: "wrong-secret",
     });
@@ -52,7 +52,7 @@ try {
   {
     console.log("Test 3: status reaches the same daemon when password is supplied");
     const result = await runLocalRambla(["daemon", "status", "--json"], {
-      RAMBLA_HOME: daemon.paseoHome,
+      RAMBLA_HOME: daemon.ramblaHome,
       RAMBLA_HOST: "",
       RAMBLA_PASSWORD: "shared-secret",
     });

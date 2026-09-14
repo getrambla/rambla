@@ -103,7 +103,7 @@ async function connectClient(
     clientType: "cli",
     protocolVersion: 1,
   });
-  expect(hello.clientId).toEqual(expect.stringMatching(/^paseo-sdk-/));
+  expect(hello.clientId).toEqual(expect.stringMatching(/^rambla-sdk-/));
   ws.message(
     sessionMessage({
       type: "status",
@@ -226,9 +226,9 @@ test("createRamblaApi borrows daemon capabilities without exposing connection ow
     reconnect: { enabled: false },
   });
 
-  const paseo = createRamblaApi(daemonClient);
+  const rambla = createRamblaApi(daemonClient);
 
-  expect(Object.keys(paseo).sort()).toEqual([
+  expect(Object.keys(rambla).sort()).toEqual([
     "agents",
     "config",
     "projects",
@@ -236,9 +236,9 @@ test("createRamblaApi borrows daemon capabilities without exposing connection ow
     "terminals",
     "workspaces",
   ]);
-  expect("connect" in paseo).toBe(false);
-  expect("close" in paseo).toBe(false);
-  expect("skills" in paseo.agents).toBe(false);
+  expect("connect" in rambla).toBe(false);
+  expect("close" in rambla).toBe(false);
+  expect("skills" in rambla.agents).toBe(false);
 });
 
 test("agent handles send permission responses for their agent", async () => {

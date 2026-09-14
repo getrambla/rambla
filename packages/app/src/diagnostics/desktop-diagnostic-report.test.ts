@@ -12,13 +12,13 @@ function makeSources(): DesktopDiagnosticSources {
       listen: "127.0.0.1:6767",
       hostname: "host",
       pid: 4242,
-      home: "/paseo/home",
+      home: "/rambla/home",
       version: "1.2.3",
       desktopManaged: true,
       error: null,
     }),
     getDaemonLogs: async () => ({
-      logPath: "/paseo/home/daemon.log",
+      logPath: "/rambla/home/daemon.log",
       contents: "daemon line one\ndaemon line two",
     }),
     getAppLogs: async () => ({
@@ -110,7 +110,7 @@ describe("desktop diagnostic report", () => {
     const report = result.sections.join("\n\n");
 
     expect(result.status).toBe("done");
-    expect(report).toContain("  Log path: /paseo/home/daemon.log");
+    expect(report).toContain("  Log path: /rambla/home/daemon.log");
     expect(report).toContain("  App log path: /logs/Rambla/main.log");
     expect(report).toContain("Desktop daemon log tail\n  daemon line one\n  daemon line two");
     expect(report).toContain(

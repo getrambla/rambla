@@ -128,19 +128,19 @@ export function createCli(): Command {
   addJsonOption(
     program
       .command("status")
-      .description('Show local daemon status (alias for "paseo daemon status")'),
+      .description('Show local daemon status (alias for "rambla daemon status")'),
   )
     .option("--home <path>", "Rambla home directory (default: ~/.rambla)")
     .action(withOutput(runDaemonStatusCommand));
 
   addJsonAndDaemonHostOptions(
-    program.command("reload").description('Reload daemon config (alias for "paseo daemon reload")'),
+    program.command("reload").description('Reload daemon config (alias for "rambla daemon reload")'),
   ).action(withOutput(runDaemonReloadCommand));
 
   addJsonOption(
     program
       .command("restart")
-      .description('Restart local daemon (alias for "paseo daemon restart")'),
+      .description('Restart local daemon (alias for "rambla daemon restart")'),
   )
     .option("--home <path>", "Rambla home directory (default: ~/.rambla)")
     .option("--timeout <seconds>", "Wait timeout before force step (default: 15)")

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { FetchAgentsEntry } from "@getpaseo/client/internal/daemon-client";
-import type { AgentSnapshotPayload } from "@getpaseo/protocol/messages";
+import type { FetchAgentsEntry } from "@getrambla/client/internal/daemon-client";
+import type { AgentSnapshotPayload } from "@getrambla/protocol/messages";
 import { reconcileAgentDirectory } from "./agent-directory-reconciliation";
 
 function snapshot(id: string, status: AgentSnapshotPayload["status"]): AgentSnapshotPayload {

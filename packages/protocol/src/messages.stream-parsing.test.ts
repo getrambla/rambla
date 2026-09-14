@@ -98,7 +98,7 @@ describe("shared messages stream parsing", () => {
             item: {
               type: "tool_call",
               callId: "setup-1",
-              name: "paseo_worktree_setup",
+              name: "rambla_worktree_setup",
               status: "completed",
               detail: {
                 type: "worktree_setup",
@@ -367,8 +367,8 @@ describe("shared messages stream parsing", () => {
     const responseParsed = SessionOutboundMessageSchema.safeParse({
       type: "directory_suggestions_response",
       payload: {
-        directories: ["/Users/test/projects/paseo"],
-        entries: [{ path: "/Users/test/projects/paseo", kind: "directory" }],
+        directories: ["/Users/test/projects/rambla"],
+        entries: [{ path: "/Users/test/projects/rambla", kind: "directory" }],
         error: null,
         requestId: "req-dir-1",
       },

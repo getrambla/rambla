@@ -17,22 +17,22 @@ import { createRamblaDaemon } from "./bootstrap.js";
 import { DaemonClient } from "./test-utils/daemon-client.js";
 
 const logger = pino({ level: "warn" });
-const paseoHomeRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-test-"));
-const paseoHome = path.join(paseoHomeRoot, ".rambla");
-await mkdir(paseoHome, { recursive: true });
-const staticDir = await mkdtemp(path.join(os.tmpdir(), "paseo-static-"));
+const ramblaHomeRoot = await mkdtemp(path.join(os.tmpdir(), "rambla-test-"));
+const ramblaHome = path.join(ramblaHomeRoot, ".rambla");
+await mkdir(ramblaHome, { recursive: true });
+const staticDir = await mkdtemp(path.join(os.tmpdir(), "rambla-static-"));
 
 const daemon = await createRamblaDaemon(
   {
     listen: "127.0.0.1:0", // OS picks a free port
-    paseoHome,
+    ramblaHome,
     corsAllowedOrigins: [],
     hostnames: true,
     mcpEnabled: false,
     staticDir,
     mcpDebug: false,
     agentClients: {},
-    agentStoragePath: path.join(paseoHome, "agents"),
+    agentStoragePath: path.join(ramblaHome, "agents"),
     relayEnabled: false,
     relayEndpoint: "relay.rambla.sh:443",
     appBaseUrl: "https://app.rambla.sh",
@@ -57,7 +57,7 @@ await client.fetchAgents({ subscribe: { subscriptionId: "test" } });
 
 await client.close();
 await daemon.stop();
-await rm(paseoHomeRoot, { recursive: true, force: true });
+await rm(ramblaHomeRoot, { recursive: true, force: true });
 await rm(staticDir, { recursive: true, force: true });
 ```
 
@@ -72,7 +72,7 @@ npx tsx packages/server/src/server/your-script.ts
 For simpler cases, `createTestRamblaDaemon` + `DaemonClient` handles temp dirs and port selection:
 
 ```typescript
-import { createTestRamblaDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "./test-utils/rambla-daemon.js";
 import { DaemonClient } from "./test-utils/daemon-client.js";
 
 const daemon = await createTestRamblaDaemon();
@@ -156,7 +156,7 @@ try {
 } finally {
   await client.close();
   await daemon.stop().catch(() => undefined);
-  await rm(paseoHomeRoot, { recursive: true, force: true });
+  await rm(ramblaHomeRoot, { recursive: true, force: true });
 }
 ```
 

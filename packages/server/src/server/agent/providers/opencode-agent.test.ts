@@ -646,8 +646,8 @@ describe("OpenCodeAgentClient adapter smoke tests", () => {
       ],
     };
     runtime.enqueueClient(openCodeClient);
-    const paseoHome = tmpCwd();
-    const opencodeHome = path.join(paseoHome, "opencode-home");
+    const ramblaHome = tmpCwd();
+    const opencodeHome = path.join(ramblaHome, "opencode-home");
     const client = new OpenCodeAgentClient(logger, undefined, {
       serverManager: runtime,
       createClient: runtime.createClient,
@@ -688,13 +688,13 @@ describe("OpenCodeAgentClient adapter smoke tests", () => {
       },
     });
     expect(openCodeClient.calls.providerList).toEqual([{ directory: opencodeHome }]);
-    rmSync(paseoHome, { recursive: true, force: true });
+    rmSync(ramblaHome, { recursive: true, force: true });
   }, 60_000);
 
   test("fetchCatalog releases the acquired server when opencode-home cannot be created", async () => {
     const runtime = new TestOpenCodeHarness();
-    const paseoHome = tmpCwd();
-    const opencodeHome = path.join(paseoHome, "opencode-home");
+    const ramblaHome = tmpCwd();
+    const opencodeHome = path.join(ramblaHome, "opencode-home");
     writeFileSync(opencodeHome, "not a directory");
     const client = new OpenCodeAgentClient(logger, undefined, {
       serverManager: runtime,
@@ -706,7 +706,7 @@ describe("OpenCodeAgentClient adapter smoke tests", () => {
 
     expect(runtime.acquisitions).toEqual([{ kind: "current", releaseCount: 1 }]);
     expect(runtime.clientCreations).toEqual([]);
-    rmSync(paseoHome, { recursive: true, force: true });
+    rmSync(ramblaHome, { recursive: true, force: true });
   });
 
   test("fetchCatalog releases the acquired server when opencode-home cannot be resolved", async () => {
@@ -832,7 +832,7 @@ describe("OpenCodeAgentClient adapter smoke tests", () => {
     openCodeClient.appAgentsResponse = {
       data: [
         {
-          name: "paseo-test-custom",
+          name: "rambla-test-custom",
           description: "Custom agent defined for Rambla integration test",
           mode: "primary",
         },
@@ -851,9 +851,9 @@ describe("OpenCodeAgentClient adapter smoke tests", () => {
 
     const modes = await session.getAvailableModes();
 
-    expect(modes.map((mode) => mode.id)).toEqual(["paseo-test-custom"]);
+    expect(modes.map((mode) => mode.id)).toEqual(["rambla-test-custom"]);
 
-    const custom = modes.find((mode) => mode.id === "paseo-test-custom");
+    const custom = modes.find((mode) => mode.id === "rambla-test-custom");
     expect(custom).toBeDefined();
     expect(custom!.label).toBe("Rambla-test-custom");
     expect(custom!.description).toBe("Custom agent defined for Rambla integration test");
@@ -1222,7 +1222,7 @@ describe("OpenCode adapter normalization", () => {
         mimeType: "application/github-issue",
         number: 55,
         title: "Improve startup error details",
-        url: "https://github.com/getpaseo/paseo/issues/55",
+        url: "https://github.com/getrambla/rambla/issues/55",
         body: "Issue body",
       },
     ]);
@@ -1290,7 +1290,7 @@ describe("OpenCode adapter startTurn error handling", () => {
         provider: "opencode",
         cwd,
         mcpServers: {
-          paseo: {
+          rambla: {
             type: "http",
             url: "http://127.0.0.1:6767/mcp/agents?callerAgentId=test-agent",
           },
@@ -1302,7 +1302,7 @@ describe("OpenCode adapter startTurn error handling", () => {
       expect(openCodeClient.calls.mcpAdd).toEqual([
         {
           directory: cwd,
-          name: "paseo",
+          name: "rambla",
           config: {
             type: "remote",
             url: "http://127.0.0.1:6767/mcp/agents?callerAgentId=test-agent",
@@ -1323,7 +1323,7 @@ describe("OpenCode adapter startTurn error handling", () => {
     const openCodeClient = new TestOpenCodeClient();
     openCodeClient.mcpAddResponse = {
       data: {
-        paseo: {
+        rambla: {
           status: "failed",
           error: "SSE error: Non-200 status code (400)",
         },
@@ -1341,7 +1341,7 @@ describe("OpenCode adapter startTurn error handling", () => {
         provider: "opencode",
         cwd,
         mcpServers: {
-          paseo: {
+          rambla: {
             type: "http",
             url: "http://127.0.0.1:6767/mcp/agents?callerAgentId=test-agent",
           },
@@ -1349,7 +1349,7 @@ describe("OpenCode adapter startTurn error handling", () => {
       });
 
       await expect(collectTurnEvents(streamSession(session, "hello"))).rejects.toThrow(
-        /Failed to add OpenCode MCP server 'paseo': SSE error/,
+        /Failed to add OpenCode MCP server 'rambla': SSE error/,
       );
 
       await session.close();

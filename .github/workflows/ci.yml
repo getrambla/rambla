@@ -121,9 +121,9 @@ jobs:
 
       - name: Verify public package contents
         run: |
-          npm pack --dry-run --ignore-scripts --workspace=@getpaseo/protocol
-          npm pack --dry-run --ignore-scripts --workspace=@getpaseo/client
-          npm pack --dry-run --ignore-scripts --workspace=@getpaseo/server
+          npm pack --dry-run --ignore-scripts --workspace=@getrambla/protocol
+          npm pack --dry-run --ignore-scripts --workspace=@getrambla/client
+          npm pack --dry-run --ignore-scripts --workspace=@getrambla/server
 
   server-tests-ubuntu:
     name: server-tests (ubuntu-latest)
@@ -156,7 +156,7 @@ jobs:
 
       - name: Run server tests
         if: ${{ needs.changes.outputs.full != 'false' || needs.changes.outputs.server != 'false' }}
-        run: npm run test --workspace=@getpaseo/server
+        run: npm run test --workspace=@getrambla/server
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -164,7 +164,7 @@ jobs:
 
       - name: Run Hub CLI/daemon contract
         if: ${{ needs.changes.outputs.full == 'false' && needs.changes.outputs.server == 'false' && needs.changes.outputs.hub != 'false' }}
-        run: npm run test:hub-cli-contract --workspace=@getpaseo/server
+        run: npm run test:hub-cli-contract --workspace=@getrambla/server
 
   server-tests-windows:
     name: server-tests (windows-latest)
@@ -196,7 +196,7 @@ jobs:
         run: npm run build:server
 
       - name: Run desktop tests
-        run: npm run test --workspace=@getpaseo/desktop
+        run: npm run test --workspace=@getrambla/desktop
 
       - name: Install virtual display
         if: ${{ runner.os == 'Linux' }}
@@ -208,11 +208,11 @@ jobs:
 
       - name: Run desktop renderer E2E
         if: ${{ runner.os == 'Linux' }}
-        run: npm run test:e2e:renderer --workspace=@getpaseo/desktop
+        run: npm run test:e2e:renderer --workspace=@getrambla/desktop
 
       - name: Run desktop browser E2E
         if: ${{ runner.os == 'Linux' }}
-        run: npm run test:e2e:browser-tabs --workspace=@getpaseo/desktop
+        run: npm run test:e2e:browser-tabs --workspace=@getrambla/desktop
         env:
           RAMBLA_DESKTOP_BROWSER_E2E_ARTIFACT_DIR: ${{ runner.temp }}/desktop-browser-e2e
 
@@ -276,7 +276,7 @@ jobs:
         run: npm run build:app-deps
 
       - name: Run app unit tests
-        run: npm run test --workspace=@getpaseo/app
+        run: npm run test --workspace=@getrambla/app
 
   sdk-tests:
     name: sdk-tests
@@ -301,22 +301,22 @@ jobs:
         run: npm run build:plugin
 
       - name: Run plugin SDK tests
-        run: npm run test --workspace=@getpaseo/plugin
+        run: npm run test --workspace=@getrambla/plugin
 
       - name: Typecheck plugin examples
-        run: npm run typecheck --workspace=@getpaseo/plugin
+        run: npm run typecheck --workspace=@getrambla/plugin
 
       - name: Run protocol tests
-        run: npm run test --workspace=@getpaseo/protocol
+        run: npm run test --workspace=@getrambla/protocol
 
       - name: Run client tests
-        run: npm run test --workspace=@getpaseo/client
+        run: npm run test --workspace=@getrambla/client
 
       - name: Run highlight tests
-        run: npm run test --workspace=@getpaseo/highlight
+        run: npm run test --workspace=@getrambla/highlight
 
       - name: Typecheck client examples
-        run: npm run typecheck:examples --workspace=@getpaseo/client
+        run: npm run typecheck:examples --workspace=@getrambla/client
 
   playwright-1:
     name: playwright (shard 1/4)
@@ -345,13 +345,13 @@ jobs:
         run: npm run build:server
 
       - name: Build native app dependency
-        run: npm run build --workspace=@getpaseo/expo-two-way-audio
+        run: npm run build --workspace=@getrambla/expo-two-way-audio
 
       - name: Install agent CLIs for provider tests
         run: node scripts/npm-retry.mjs install -g @anthropic-ai/claude-code @openai/codex@0.105.0 opencode-ai
 
       - name: Run Playwright E2E tests
-        run: npm run test:e2e --workspace=@getpaseo/app -- --shard=${{ env.PLAYWRIGHT_SHARD }}
+        run: npm run test:e2e --workspace=@getrambla/app -- --shard=${{ env.PLAYWRIGHT_SHARD }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
@@ -415,7 +415,7 @@ jobs:
         run: npm run build:relay
 
       - name: Run relay tests
-        run: npm run test --workspace=@getpaseo/relay
+        run: npm run test --workspace=@getrambla/relay
 
   cli-tests-1:
     name: cli-tests (shard 1/3)
@@ -446,7 +446,7 @@ jobs:
         run: node scripts/npm-retry.mjs install -g @anthropic-ai/claude-code @openai/codex@0.105.0 opencode-ai
 
       - name: Run CLI tests
-        run: npm run test --workspace=@getpaseo/cli
+        run: npm run test --workspace=@getrambla/cli
 
   cli-tests-2:
     name: cli-tests (shard 2/3)

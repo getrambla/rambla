@@ -8,7 +8,7 @@ category: Hub
 
 # Hub configuration
 
-Each organization trigger is one self-contained YAML file. Keep triggers in your repository and deploy them with `paseo hub deploy`:
+Each organization trigger is one self-contained YAML file. Keep triggers in your repository and deploy them with `rambla hub deploy`:
 
 ```text
 .rambla/
@@ -18,7 +18,7 @@ Each organization trigger is one self-contained YAML file. Keep triggers in your
 
 ## Generated starter trigger
 
-Run `paseo hub init` from the repository the agent should work in. Setup selects an app connection and an available agent runtime, asks which user may trigger it, validates the result, and writes one file. It then asks whether to deploy. Interactive `paseo hub login` connects the daemon and points to this command; it does not write trigger files.
+Run `rambla hub init` from the repository the agent should work in. Setup selects an app connection and an available agent runtime, asks which user may trigger it, validates the result, and writes one file. It then asks whether to deploy. Interactive `rambla hub login` connects the daemon and points to this command; it does not write trigger files.
 
 For a Slack connection named `my-team`, the generated document looks like this:
 
@@ -48,7 +48,7 @@ run:
     Answer with hub.reply, then complete this request and call hub.finish_execution when done.
 
     <user-prompt>
-    ${{ paseo.prompt }}
+    ${{ rambla.prompt }}
     </user-prompt>
   outputs:
     slack.reply:
@@ -60,7 +60,7 @@ run:
 
 `continuation.mode: conversation` keeps follow-ups in the same provider conversation on the same agent. The prompt asks the agent to reply and then call `hub.finish_execution`; replying alone does not finish the execution.
 
-A Discord starter uses `discord.mention`, your Discord user ID, and `discord.reply`. A GitHub starter uses `github.issue_comment`, restricts the repository to the current GitHub remote, and requires both `@paseo` and your GitHub username. GitHub's starter has no explicit reply output declaration.
+A Discord starter uses `discord.mention`, your Discord user ID, and `discord.reply`. A GitHub starter uses `github.issue_comment`, restricts the repository to the current GitHub remote, and requires both `@rambla` and your GitHub username. GitHub's starter has no explicit reply output declaration.
 
 Setup asks before replacing the selected trigger file. It preserves other triggers and any existing legacy bundle. Read [Hub security](/docs/hub/security) before widening `from_users` or the agent's authority.
 
@@ -86,9 +86,9 @@ Use a positive duration in `ms`, `s`, `m`, or `h`, up to `24h`. Omitting the fie
 Run from the repository root:
 
 ```sh
-paseo hub login https://hub.example.com
-paseo hub deploy --dry-run
-paseo hub deploy
+rambla hub login https://hub.example.com
+rambla hub deploy --dry-run
+rambla hub deploy
 ```
 
 Both deploy commands discover direct `.rambla/triggers/*.yml` files in deterministic path order. The CLI rejects nested files, `.yaml` extensions, symlinked trigger paths, and unreadable files. It does not search parent directories.
@@ -117,11 +117,11 @@ Existing project bundles use `.rambla/hub.yml`, direct `.rambla/workflows/*.yml`
 Select the legacy deployment path explicitly:
 
 ```sh
-paseo hub deploy --project my-project --dry-run
-paseo hub deploy --project my-project
+rambla hub deploy --project my-project --dry-run
+rambla hub deploy --project my-project
 ```
 
-These commands send the complete bundle through the project configuration API. Dry-run validates without recording or activating a revision. `paseo hub init` does not create or migrate these bundles.
+These commands send the complete bundle through the project configuration API. Dry-run validates without recording or activating a revision. `rambla hub init` does not create or migrate these bundles.
 
 The following source and revision behavior applies to legacy project bundles.
 

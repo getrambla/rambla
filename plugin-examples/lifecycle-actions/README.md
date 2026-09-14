@@ -12,14 +12,14 @@ This is a demonstration plugin: installing it enables all these behaviors on its
 alongside `lifecycle-logger` on a test daemon with plugins enabled:
 
 ```bash
-paseo plugin install /absolute/path/to/plugin-examples/lifecycle-actions
-paseo plugin install /absolute/path/to/plugin-examples/lifecycle-logger
-paseo plugin logs lifecycle-logger
+rambla plugin install /absolute/path/to/plugin-examples/lifecycle-actions
+rambla plugin install /absolute/path/to/plugin-examples/lifecycle-logger
+rambla plugin logs lifecycle-logger
 ```
 
-Outside the Rambla repository, `server/inspect.ts` needs `@getpaseo/protocol` installed for its
+Outside the Rambla repository, `server/inspect.ts` needs `@getrambla/protocol` installed for its
 type imports. Add it to your plugin development dependencies at the same version as
-`@getpaseo/plugin` before installing this example.
+`@getrambla/plugin` before installing this example.
 
 Copy the callbacks you need into your own plugin. The follow-up example sends a new message; it does
 not replay attachments or undo previous tool effects. If the provider keeps returning the matching

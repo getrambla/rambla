@@ -184,7 +184,7 @@ describe("BrowserKeyboard", () => {
 
     expect(host.sent).toEqual([
       {
-        channel: "paseo:event:browser-shortcut-input",
+        channel: "rambla:event:browser-shortcut-input",
         payload: {
           alt: false,
           browserId: "browser-a",
@@ -248,15 +248,15 @@ describe("BrowserKeyboard", () => {
 
     expect(guest.sent).toEqual([
       {
-        channel: "paseo:browser-keyboard-policy",
+        channel: "rambla:browser-keyboard-policy",
         payload: { ...initialPolicy, browserId: "browser-a" },
       },
       {
-        channel: "paseo:browser-keyboard-policy",
+        channel: "rambla:browser-keyboard-policy",
         payload: { ...latestPolicy, browserId: "browser-a" },
       },
       {
-        channel: "paseo:browser-keyboard-policy",
+        channel: "rambla:browser-keyboard-policy",
         payload: { ...latestPolicy, browserId: "browser-a" },
       },
     ]);
@@ -277,7 +277,7 @@ describe("BrowserKeyboard", () => {
 
     expect(guest.sent).toEqual([
       {
-        channel: "paseo:browser-keyboard-policy",
+        channel: "rambla:browser-keyboard-policy",
         payload: { browserId: "browser-a", menuPrefixes: [], prefixes: [] },
       },
     ]);
@@ -302,7 +302,7 @@ describe("BrowserKeyboard", () => {
     expect(guest.ignoredMenuShortcuts).toEqual([false, false, true]);
     expect(host.sent).toEqual([
       {
-        channel: "paseo:event:browser-shortcut",
+        channel: "rambla:event:browser-shortcut",
         payload: { action: "focus-url", browserId: "browser-a" },
       },
     ]);

@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promis
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "vitest";
-import type { ProviderSnapshotEntry } from "@getpaseo/protocol/agent-types";
+import type { ProviderSnapshotEntry } from "@getrambla/protocol/agent-types";
 import type { HubCredentialStore, StoredHubCredential } from "./credentials.js";
 import type { HubDaemonClient, HubStatus } from "./daemon-client.js";
 import type { HubHttpClient } from "./hub-client/index.js";
@@ -35,7 +35,7 @@ describe("Hub guided setup continuation", () => {
       {
         env: {},
         credentials,
-        flow: { authorize: async () => "paseo_cli_prefix_durable-secret" },
+        flow: { authorize: async () => "rambla_cli_prefix_durable-secret" },
         isInteractive: () => true,
         continueGuidedSetup: (origin) => continueHubGuidedSetup(origin, environment),
         reporter: { progress() {} },
@@ -48,8 +48,8 @@ describe("Hub guided setup continuation", () => {
     ]);
     assert.deepEqual(prompts.selections, []);
     assert.deepEqual(prompts.messages, [
-      "Daemon connected with no permissions.\n\nEnable Hub automations later:\n  paseo hub permissions grant hub.execute",
-      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: paseo hub init",
+      "Daemon connected with no permissions.\n\nEnable Hub automations later:\n  rambla hub permissions grant hub.execute",
+      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: rambla hub init",
     ]);
     assert.deepEqual(calls, [{ operation: "token", origin: "https://hub.test" }]);
     assert.equal(daemon.connections, 1);
@@ -69,8 +69,8 @@ describe("Hub guided setup continuation", () => {
       setupEnvironment(cwd, credentials, daemon, connectDeclined, []),
     );
     assert.deepEqual(connectDeclined.messages, [
-      "Skipped daemon connection. Connect later with: paseo hub connect https://hub.test",
-      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: paseo hub init",
+      "Skipped daemon connection. Connect later with: rambla hub connect https://hub.test",
+      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: rambla hub init",
     ]);
   });
 
@@ -90,7 +90,7 @@ describe("Hub guided setup continuation", () => {
     assert.deepEqual(prompts.confirmations, []);
     assert.deepEqual(prompts.messages, [
       "This daemon is already connected to https://hub.test. Permissions: None.",
-      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: paseo hub init",
+      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: rambla hub init",
     ]);
   });
 
@@ -106,7 +106,7 @@ describe("Hub guided setup continuation", () => {
       {
         env: {},
         credentials,
-        flow: { authorize: async () => "paseo_cli_prefix_durable-secret" },
+        flow: { authorize: async () => "rambla_cli_prefix_durable-secret" },
         isInteractive: () => true,
         continueGuidedSetup: (origin) =>
           continueHubGuidedSetup(
@@ -126,8 +126,8 @@ describe("Hub guided setup continuation", () => {
     );
 
     assert.deepEqual(prompts.messages, [
-      "Skipped daemon connection. Connect later with: paseo hub connect https://hub.test",
-      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: paseo hub init",
+      "Skipped daemon connection. Connect later with: rambla hub connect https://hub.test",
+      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: rambla hub init",
     ]);
   });
 
@@ -346,7 +346,7 @@ function setupEnvironment(
           daemons: [{ id: "daemon-1", slug: "macbook" }],
           github: [],
           discord: [],
-          slack: [{ slug: "paseo", teamName: "Rambla" }],
+          slack: [{ slug: "rambla", teamName: "Rambla" }],
           linear: [],
         }
       );
@@ -378,7 +378,7 @@ function setupEnvironment(
     env: {},
     credentials,
     hub,
-    login: { authorize: async () => "paseo_cli_prefix_durable-secret" },
+    login: { authorize: async () => "rambla_cli_prefix_durable-secret" },
     daemon: { connect: async () => daemon },
     reporter: { progress() {} },
     cwd: () => cwd,
@@ -536,7 +536,7 @@ function disconnectedStatus(): HubStatus {
 }
 
 async function temporaryDirectory(): Promise<string> {
-  const directory = await mkdtemp(path.join(tmpdir(), "paseo-hub-init-flow-"));
+  const directory = await mkdtemp(path.join(tmpdir(), "rambla-hub-init-flow-"));
   directories.push(directory);
   return directory;
 }

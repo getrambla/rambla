@@ -9,7 +9,7 @@ category: TypeScript SDK
 # SDK quickstart
 
 ```bash
-npm install @getpaseo/client
+npm install @getrambla/client
 ```
 
 Requires Node.js 22 or newer.
@@ -17,7 +17,7 @@ Requires Node.js 22 or newer.
 ## Connect
 
 ```ts
-import { createRamblaClient } from "@getpaseo/client";
+import { createRamblaClient } from "@getrambla/client";
 
 const client = createRamblaClient({ url: "ws://127.0.0.1:6767/ws" });
 await client.connect();

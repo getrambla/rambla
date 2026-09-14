@@ -28,9 +28,9 @@ export type ActiveWorkspaceRef = Pick<
 >;
 
 export interface ArchiveDependencies {
-  paseoHome?: string;
+  ramblaHome?: string;
   // Base directory that may hold worktrees across repositories.
-  paseoWorktreesBaseRoot?: string;
+  ramblaWorktreesBaseRoot?: string;
   github: ForgeService;
   workspaceGitService: Pick<WorkspaceGitService, "getSnapshot">;
   agentManager: Pick<AgentManager, "listAgents" | "getAgent" | "archiveAgent" | "archiveSnapshot">;
@@ -93,7 +93,7 @@ interface BackingDirectory {
   path: string;
   isRamblaOwnedWorktree: boolean;
   mainRepoRoot: string | null;
-  paseoWorktreesRoot: string | null;
+  ramblaWorktreesRoot: string | null;
 }
 
 interface ArchiveTarget {
@@ -269,14 +269,14 @@ async function stopWorkspaceSetups(
 
 async function resolveWorkspaceBackingDirectory(
   workspace: ActiveWorkspaceRef,
-  dependencies: Pick<ArchiveDependencies, "paseoHome" | "paseoWorktreesBaseRoot">,
+  dependencies: Pick<ArchiveDependencies, "ramblaHome" | "ramblaWorktreesBaseRoot">,
 ): Promise<BackingDirectory> {
   if (workspace.isRamblaOwnedWorktree && workspace.worktreeRoot && workspace.mainRepoRoot) {
     return {
       path: resolve(workspace.worktreeRoot),
       isRamblaOwnedWorktree: true,
       mainRepoRoot: workspace.mainRepoRoot,
-      paseoWorktreesRoot: null,
+      ramblaWorktreesRoot: null,
     };
   }
   if (workspace.kind !== "worktree") {
@@ -284,7 +284,7 @@ async function resolveWorkspaceBackingDirectory(
       path: resolve(workspace.cwd),
       isRamblaOwnedWorktree: false,
       mainRepoRoot: workspace.mainRepoRoot ?? null,
-      paseoWorktreesRoot: null,
+      ramblaWorktreesRoot: null,
     };
   }
 
@@ -299,18 +299,18 @@ async function resolveWorkspaceBackingDirectory(
 
 async function resolveBackingDirectory(
   cwd: string,
-  dependencies: Pick<ArchiveDependencies, "paseoHome" | "paseoWorktreesBaseRoot">,
+  dependencies: Pick<ArchiveDependencies, "ramblaHome" | "ramblaWorktreesBaseRoot">,
 ): Promise<BackingDirectory> {
   const options = {
-    paseoHome: dependencies.paseoHome,
-    worktreesRoot: dependencies.paseoWorktreesBaseRoot,
+    ramblaHome: dependencies.ramblaHome,
+    worktreesRoot: dependencies.ramblaWorktreesBaseRoot,
   };
   const ownership = await isRamblaOwnedWorktreeCwd(cwd, options);
   return {
     path: resolve(ownership.allowed && ownership.worktreePath ? ownership.worktreePath : cwd),
     isRamblaOwnedWorktree: ownership.allowed,
     mainRepoRoot: ownership.repoRoot ?? null,
-    paseoWorktreesRoot: ownership.worktreeRoot ?? null,
+    ramblaWorktreesRoot: ownership.worktreeRoot ?? null,
   };
 }
 
@@ -404,9 +404,9 @@ async function maybeRemoveDirectory(
       cwd: backing.mainRepoRoot,
       worktreePath: backing.path,
       teardownCwds: [],
-      worktreesRoot: backing.paseoWorktreesRoot ?? undefined,
-      paseoHome: dependencies.paseoHome,
-      worktreesBaseRoot: dependencies.paseoWorktreesBaseRoot,
+      worktreesRoot: backing.ramblaWorktreesRoot ?? undefined,
+      ramblaHome: dependencies.ramblaHome,
+      worktreesBaseRoot: dependencies.ramblaWorktreesBaseRoot,
     });
     dependencies.github.invalidate({ cwd: backing.path });
     return true;
@@ -519,7 +519,7 @@ async function isDirectoryUnreferenced(
   activeWorkspaces: ActiveWorkspaceRef[],
   targetDir: string,
   archivedWorkspaceIds: ReadonlySet<string>,
-  dependencies: Pick<ArchiveDependencies, "paseoHome" | "paseoWorktreesBaseRoot">,
+  dependencies: Pick<ArchiveDependencies, "ramblaHome" | "ramblaWorktreesBaseRoot">,
 ): Promise<boolean> {
   const target = resolve(targetDir);
   const matchesTarget = createRealpathAwarePathMatcher(target);

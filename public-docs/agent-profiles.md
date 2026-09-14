@@ -49,6 +49,6 @@ After [enabling Rambla tools](/docs/orchestration#get-started), ask:
 
 The orchestrator reads the profiles, selects settings for each task, and launches the workers. Notes guide that choice; put the worker's actual assignment in its task prompt.
 
-The bundled [Rambla skill](/docs/skills#paseo-paseo-reference) instructs agents to check profiles and read their notes before delegating. If none fit, it directs the agent to discover configured providers and models and tell you about the fallback.
+The bundled [Rambla skill](/docs/skills#rambla-rambla-reference) instructs agents to check profiles and read their notes before delegating. If none fit, it directs the agent to discover configured providers and models and tell you about the fallback.
 
 See [Common workflows](/docs/orchestration-workflows) for delegation examples or the [MCP reference](/docs/mcp#agent-profiles) for the tool interface.

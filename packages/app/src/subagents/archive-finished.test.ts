@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { createArchiveFinishedSubagents, type ManagedSubagentSnapshot } from "./archive-finished";
 import type { RamblaSubagentRow, ProviderSubagentRow } from "./select";
 
-function paseo(id: string, status: RamblaSubagentRow["status"] = "idle"): RamblaSubagentRow {
+function rambla(id: string, status: RamblaSubagentRow["status"] = "idle"): RamblaSubagentRow {
   return {
-    kind: "paseo",
+    kind: "rambla",
     id,
     provider: "codex",
     title: id,
@@ -73,7 +73,7 @@ describe("createArchiveFinishedSubagents", () => {
     ]);
     const events: string[] = [];
     const archive = createArchiveFinishedSubagents(
-      [provider("native"), paseo("first"), paseo("second", "error"), paseo("resumed")],
+      [provider("native"), rambla("first"), rambla("second", "error"), rambla("resumed")],
       {
         parentAgentId: "parent",
         getManagedSubagent: (id) => current.get(id),
@@ -128,7 +128,7 @@ describe("createArchiveFinishedSubagents", () => {
     ]);
     const responses = [first.promise, second.promise, retry.promise];
     const calls: string[] = [];
-    const archive = createArchiveFinishedSubagents([paseo("first"), paseo("second")], {
+    const archive = createArchiveFinishedSubagents([rambla("first"), rambla("second")], {
       parentAgentId: "parent",
       getManagedSubagent: (id) => current.get(id),
       archiveManagedSubagent: (id) => {
@@ -141,7 +141,7 @@ describe("createArchiveFinishedSubagents", () => {
     });
 
     const firstAttempt = archive.archiveFinished();
-    archive.setRows([paseo("second")]);
+    archive.setRows([rambla("second")]);
     const firstError = new Error("first failed");
     first.reject(firstError);
     await Promise.resolve();
@@ -158,7 +158,7 @@ describe("createArchiveFinishedSubagents", () => {
       eligibleCount: 0,
       status: { kind: "failed", failedCount: 1, totalCount: 1 },
     });
-    archive.setRows([paseo("first")]);
+    archive.setRows([rambla("first")]);
 
     expect(archive.getState()).toEqual({
       eligibleCount: 1,
@@ -166,7 +166,7 @@ describe("createArchiveFinishedSubagents", () => {
     });
     expect(calls).toEqual(["first", "second"]);
 
-    archive.setRows([paseo("first", "error")]);
+    archive.setRows([rambla("first", "error")]);
     expect(archive.getState()).toEqual({
       eligibleCount: 1,
       status: { kind: "failed", failedCount: 1, totalCount: 1 },
@@ -191,7 +191,7 @@ describe("createArchiveFinishedSubagents", () => {
       eligibleCount: 1,
       status: { kind: "failed", failedCount: 1, totalCount: 1 },
     });
-    archive.setRows([paseo("first"), paseo("later")]);
+    archive.setRows([rambla("first"), rambla("later")]);
     expect(archive.getState()).toEqual({ eligibleCount: 2, status: { kind: "idle" } });
   });
 
@@ -202,7 +202,7 @@ describe("createArchiveFinishedSubagents", () => {
       ["first", managed("first")],
       ["second", managed("second")],
     ]);
-    const archive = createArchiveFinishedSubagents([paseo("first"), paseo("second")], {
+    const archive = createArchiveFinishedSubagents([rambla("first"), rambla("second")], {
       parentAgentId: "parent",
       getManagedSubagent: (id) => current.get(id),
       archiveManagedSubagent: async (id) => {
@@ -214,21 +214,21 @@ describe("createArchiveFinishedSubagents", () => {
     const operation = archive.archiveFinished();
     archive.setRows([]);
     await operation;
-    archive.setRows([paseo("first"), paseo("second")]);
+    archive.setRows([rambla("first"), rambla("second")]);
 
-    archive.setRows([paseo("second", "error"), paseo("first", "error")]);
+    archive.setRows([rambla("second", "error"), rambla("first", "error")]);
     expect(archive.getState()).toEqual({
       eligibleCount: 2,
       status: { kind: "failed", failedCount: 2, totalCount: 2 },
     });
 
-    archive.setRows([paseo("second", "error")]);
+    archive.setRows([rambla("second", "error")]);
     expect(archive.getState()).toEqual({ eligibleCount: 1, status: { kind: "idle" } });
   });
 
   it("clears retry state when the authoritative failed child is running", async () => {
     const current = new Map([["failed", managed("failed")]]);
-    const archive = createArchiveFinishedSubagents([paseo("failed")], {
+    const archive = createArchiveFinishedSubagents([rambla("failed")], {
       parentAgentId: "parent",
       getManagedSubagent: (id) => current.get(id),
       archiveManagedSubagent: async () => {
@@ -241,7 +241,7 @@ describe("createArchiveFinishedSubagents", () => {
     const operation = archive.archiveFinished();
     archive.setRows([]);
     await operation;
-    archive.setRows([paseo("failed", "running")]);
+    archive.setRows([rambla("failed", "running")]);
 
     expect(archive.getState()).toEqual({ eligibleCount: 0, status: { kind: "idle" } });
     await expect(archive.archiveFinished()).resolves.toEqual({
@@ -254,7 +254,7 @@ describe("createArchiveFinishedSubagents", () => {
 
   it("clears retry state when the authoritative failed child is initializing", async () => {
     const current = new Map([["failed", managed("failed")]]);
-    const archive = createArchiveFinishedSubagents([paseo("failed")], {
+    const archive = createArchiveFinishedSubagents([rambla("failed")], {
       parentAgentId: "parent",
       getManagedSubagent: (id) => current.get(id),
       archiveManagedSubagent: async () => {
@@ -267,7 +267,7 @@ describe("createArchiveFinishedSubagents", () => {
     const operation = archive.archiveFinished();
     archive.setRows([]);
     await operation;
-    archive.setRows([paseo("failed", "initializing")]);
+    archive.setRows([rambla("failed", "initializing")]);
 
     expect(archive.getState()).toEqual({ eligibleCount: 0, status: { kind: "idle" } });
     await expect(archive.archiveFinished()).resolves.toEqual({
@@ -295,7 +295,7 @@ describe("createArchiveFinishedSubagents", () => {
     async (_label, updateSnapshot) => {
       const error = new Error("archive failed");
       const current = new Map([["failed", managed("failed")]]);
-      const archive = createArchiveFinishedSubagents([paseo("failed")], {
+      const archive = createArchiveFinishedSubagents([rambla("failed")], {
         parentAgentId: "parent",
         getManagedSubagent: (id) => current.get(id),
         archiveManagedSubagent: async () => {
@@ -323,7 +323,7 @@ describe("createArchiveFinishedSubagents", () => {
       ["second", managed("second")],
     ]);
     const calls: string[] = [];
-    const archive = createArchiveFinishedSubagents([paseo("first"), paseo("second")], {
+    const archive = createArchiveFinishedSubagents([rambla("first"), rambla("second")], {
       parentAgentId: "parent",
       getManagedSubagent: (id) => current.get(id),
       archiveManagedSubagent: async (id) => {
@@ -348,7 +348,7 @@ describe("createArchiveFinishedSubagents", () => {
         { id: "second", error: secondError },
       ],
     });
-    archive.setRows([paseo("first"), paseo("second", "running")]);
+    archive.setRows([rambla("first"), rambla("second", "running")]);
 
     expect(archive.getState()).toEqual({
       eligibleCount: 1,
@@ -365,13 +365,13 @@ describe("createArchiveFinishedSubagents", () => {
 
   it("rechecks each managed child and skips resumed, missing, archived, reparented, running, and initializing rows", async () => {
     const rows = [
-      paseo("first"),
-      paseo("resumed"),
-      paseo("missing"),
-      paseo("archived"),
-      paseo("reparented"),
-      paseo("running"),
-      paseo("initializing"),
+      rambla("first"),
+      rambla("resumed"),
+      rambla("missing"),
+      rambla("archived"),
+      rambla("reparented"),
+      rambla("running"),
+      rambla("initializing"),
     ];
     const current = new Map<string, ManagedSubagentSnapshot>([
       ["first", managed("first")],

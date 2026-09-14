@@ -9,7 +9,7 @@ const BASE_CONFIG: AgentSessionConfig = {
 };
 
 describe("withRuntimeRamblaMcpServer", () => {
-  test("injects the paseo MCP server with a bearer header when a token is provided", () => {
+  test("injects the rambla MCP server with a bearer header when a token is provided", () => {
     const result = withRuntimeRamblaMcpServer({
       config: BASE_CONFIG,
       agentId: "agent-1",
@@ -17,7 +17,7 @@ describe("withRuntimeRamblaMcpServer", () => {
       mcpAuthToken: "cap-token",
     });
 
-    expect(result.mcpServers?.paseo).toEqual({
+    expect(result.mcpServers?.rambla).toEqual({
       type: "http",
       url: "http://127.0.0.1:6767/mcp/agents?callerAgentId=agent-1",
       headers: { Authorization: "Bearer cap-token" },
@@ -32,7 +32,7 @@ describe("withRuntimeRamblaMcpServer", () => {
       mcpAuthToken: null,
     });
 
-    expect(result.mcpServers?.paseo).toEqual({
+    expect(result.mcpServers?.rambla).toEqual({
       type: "http",
       url: "http://127.0.0.1:6767/mcp/agents?callerAgentId=agent-1",
     });

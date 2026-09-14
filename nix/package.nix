@@ -111,33 +111,33 @@ buildNpmPackage rec {
     # assets read at runtime. The trace script is the single source of
     # truth for what the daemon needs at $out — auditable in plain JS, no
     # npm hoisting / .bin / workspace-symlink footguns.
-    mkdir -p $out/lib/paseo
+    mkdir -p $out/lib/rambla
     node scripts/trace-daemon.mjs > daemon-files.txt
 
     while IFS= read -r path; do
       [ -z "$path" ] && continue
-      mkdir -p "$out/lib/paseo/$(dirname "$path")"
-      cp -a "$path" "$out/lib/paseo/$path"
+      mkdir -p "$out/lib/rambla/$(dirname "$path")"
+      cp -a "$path" "$out/lib/rambla/$path"
     done < daemon-files.txt
 
     # Root package.json lets node resolve the workspace layout when the
     # CLI/server bin starts from $out.
-    cp package.json $out/lib/paseo/
+    cp package.json $out/lib/rambla/
 
     # Web UI Assets
-    cp -r packages/server/dist/server/web-ui $out/lib/paseo/packages/server/dist/server/
+    cp -r packages/server/dist/server/web-ui $out/lib/rambla/packages/server/dist/server/
 
     # Create wrapper for the server entry point (for systemd / direct use)
     mkdir -p $out/bin
     # Keep Rambla's runtime mode separate from NODE_ENV, which belongs to spawned agents.
     makeWrapper ${nodejs}/bin/node $out/bin/rambla-server \
-      --add-flags "$out/lib/paseo/packages/server/dist/scripts/supervisor-entrypoint.js" \
+      --add-flags "$out/lib/rambla/packages/server/dist/scripts/supervisor-entrypoint.js" \
       --set RAMBLA_NODE_ENV production
 
     # Create wrapper for the CLI
     makeWrapper ${nodejs}/bin/node $out/bin/rambla \
-      --add-flags "$out/lib/paseo/packages/cli/dist/index.js" \
-      --set NODE_PATH "$out/lib/paseo/node_modules"
+      --add-flags "$out/lib/rambla/packages/cli/dist/index.js" \
+      --set NODE_PATH "$out/lib/rambla/node_modules"
 
     runHook postInstall
   '';

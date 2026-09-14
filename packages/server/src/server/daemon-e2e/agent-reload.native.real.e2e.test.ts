@@ -14,7 +14,7 @@ import {
   getRealProviderRuntimeSettings,
 } from "./real-provider-test-config.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 
 type NativeProvider = "claude" | "codex" | "opencode";
 
@@ -28,7 +28,7 @@ async function withNativeConversation(
   run: (conversation: ReloadConversation) => Promise<void>,
 ): Promise<void> {
   const secret = `RELOAD_${provider.toUpperCase()}_7F31`;
-  const root = mkdtempSync(path.join(tmpdir(), `paseo-reload-${provider}-`));
+  const root = mkdtempSync(path.join(tmpdir(), `rambla-reload-${provider}-`));
   const cwd = path.join(root, "workspace");
   mkdirSync(cwd);
   const logger = pino({ level: "warn" });

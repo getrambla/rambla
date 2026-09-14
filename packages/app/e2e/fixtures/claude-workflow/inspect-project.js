@@ -1,5 +1,5 @@
 export const meta = {
-  name: "paseo-project-inspection",
+  name: "rambla-project-inspection",
   description: "Inspect Rambla and explain what the project does",
   whenToUse: "Rambla real-provider workflow detail QA",
   phases: [{ title: "Inspect", detail: "Read the product and architecture sources" }],

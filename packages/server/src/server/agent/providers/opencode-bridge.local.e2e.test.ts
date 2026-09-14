@@ -12,11 +12,11 @@ import { OpenCodeBridge } from "./opencode/bridge.js";
 import { OpenCodeServerManager } from "./opencode/server-manager.js";
 
 test("real OpenCode server shares one process while shell.env stays session-scoped", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "paseo-opencode-real-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "rambla-opencode-real-"));
   const firstCwd = path.join(root, "first");
   const secondCwd = path.join(root, "second");
   const logger = createTestLogger();
-  const bridge = new OpenCodeBridge({ paseoHome: root, logger });
+  const bridge = new OpenCodeBridge({ ramblaHome: root, logger });
   await bridge.start();
   const firstTools = createCallerCatalog("real-agent-one");
   const secondTools = createCallerCatalog("real-agent-two");
@@ -44,7 +44,7 @@ test("real OpenCode server shares one process while shell.env stays session-scop
       {
         agentId: "real-agent-one",
         env: { RAMBLA_AGENT_ID: "real-agent-one", RAMBLA_AGENT_CWD: firstCwd },
-        paseoTools: firstTools,
+        ramblaTools: firstTools,
       },
       { persistSession: false },
     );
@@ -53,7 +53,7 @@ test("real OpenCode server shares one process while shell.env stays session-scop
       {
         agentId: "real-agent-two",
         env: { RAMBLA_AGENT_ID: "real-agent-two", RAMBLA_AGENT_CWD: secondCwd },
-        paseoTools: secondTools,
+        ramblaTools: secondTools,
       },
       { persistSession: false },
     );
@@ -100,7 +100,7 @@ test("real OpenCode server shares one process while shell.env stays session-scop
 
     const callerResult = await first.run(
       [
-        "Use the paseo_report_caller_agent_id tool to read your Rambla caller agent ID.",
+        "Use the rambla_report_caller_agent_id tool to read your Rambla caller agent ID.",
         "Then report that ID in your response.",
       ].join("\n"),
     );
@@ -108,7 +108,7 @@ test("real OpenCode server shares one process while shell.env stays session-scop
       expect.arrayContaining([
         expect.objectContaining({
           type: "tool_call",
-          name: "paseo_report_caller_agent_id",
+          name: "rambla_report_caller_agent_id",
           status: "completed",
         }),
       ]),

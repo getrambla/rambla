@@ -724,7 +724,7 @@ export const zhCN: TranslationResources = {
       },
       routes: {
         public: "反向代理",
-        paseo: "Memorable",
+        rambla: "Memorable",
         direct: "直接地址",
       },
       states: {
@@ -1299,7 +1299,7 @@ export const zhCN: TranslationResources = {
       fullStatus: {
         title: "完整状态",
         modalTitle: "Daemon 状态",
-        hint: "运行 `paseo daemon status` 并显示输出",
+        hint: "运行 `rambla daemon status` 并显示输出",
         view: "查看状态",
         copied: "状态已复制到剪贴板。",
         fetchFailed: "获取 daemon 状态失败：{{message}}",
@@ -1840,7 +1840,7 @@ export const zhCN: TranslationResources = {
       one: "使用了 {{count}} 个其他工具",
       other: "使用了 {{count}} 个其他工具",
     },
-    paseoCalls: {
+    ramblaCalls: {
       one: "调用了 Rambla {{count}} 次",
       other: "调用了 Rambla {{count}} 次",
     },
@@ -2561,13 +2561,13 @@ export const zhCN: TranslationResources = {
         savedToast: "Project 已更新",
       },
       readFailures: {
-        invalidTitle: "无法解析 paseo.json",
+        invalidTitle: "无法解析 rambla.json",
         invalidDescription: "修复磁盘上的文件，然后重新加载。",
         missingTitle: "这个 Host 没有这个 Project",
         missingSingleHost: "所选 Host 没有这个 Project 的记录。",
-        transportTitle: "无法加载 paseo.json",
+        transportTitle: "无法加载 rambla.json",
         transportFallback: "Host 没有响应。",
-        failedTitle: "无法加载 paseo.json",
+        failedTitle: "无法加载 rambla.json",
         failedDescription: "重新加载以重试。",
       },
       worktree: {
@@ -2577,7 +2577,7 @@ export const zhCN: TranslationResources = {
         docsTooltip: "查看命令可用的环境变量和更多细节",
         setup: "Setup",
         setupAccessibility: "Worktree setup 命令",
-        uncommittedTitle: "提交 paseo.json 更改",
+        uncommittedTitle: "提交 rambla.json 更改",
         uncommittedDescription: "新工作树使用所选基础分支中的设置脚本。",
         teardown: "Teardown",
         teardownAccessibility: "Worktree teardown 命令",
@@ -2620,8 +2620,8 @@ export const zhCN: TranslationResources = {
       },
       writeFailures: {
         staleTitle: "磁盘上的配置已变更",
-        staleDescription: "保存前请重新加载最新的 paseo.json。",
-        failedTitle: "无法保存 paseo.json",
+        staleDescription: "保存前请重新加载最新的 rambla.json。",
+        failedTitle: "无法保存 rambla.json",
         failedDescription: "重试，或从磁盘重新加载最新版本。",
       },
       actions: {

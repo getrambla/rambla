@@ -37,19 +37,19 @@ async function createWorkspaceJourney() {
   cleanupPaths.push(tempDir);
   const repoDir = path.join(tempDir, "repo");
   run(tempDir, ["init", "-b", "main", repoDir]);
-  run(repoDir, ["config", "user.email", "test@getpaseo.local"]);
+  run(repoDir, ["config", "user.email", "test@getrambla.local"]);
   run(repoDir, ["config", "user.name", "Rambla Test"]);
   writeFileSync(path.join(repoDir, "README.md"), "workspace journey\n");
   run(repoDir, ["add", "README.md"]);
   run(repoDir, ["-c", "commit.gpgsign=false", "commit", "-m", "initial"]);
 
-  const paseoHome = path.join(tempDir, ".rambla");
+  const ramblaHome = path.join(tempDir, ".rambla");
   const worktree = await createWorktree({
     cwd: repoDir,
     worktreeSlug: "workspace",
     source: { kind: "branch-off", baseBranch: "main", branchName: "workspace" },
     runSetup: false,
-    paseoHome,
+    ramblaHome,
   });
   const workspaceId = "workspace-under-test";
   let active = true;

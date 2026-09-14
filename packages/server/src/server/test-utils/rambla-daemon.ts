@@ -12,7 +12,7 @@ import {
 import type { AgentClient, AgentProvider } from "../agent/agent-sdk-types.js";
 import { createTestAgentClients } from "./fake-agent-client.js";
 import type { PushNotificationSender } from "../push/index.js";
-import type { AgentProfile } from "@getpaseo/protocol/messages";
+import type { AgentProfile } from "@getrambla/protocol/messages";
 
 interface TestRamblaDaemonOptions {
   daemonVersion?: string;
@@ -32,7 +32,7 @@ interface TestRamblaDaemonOptions {
   relayConfigCapability?: boolean;
   agentClients?: Partial<Record<AgentProvider, AgentClient>>;
   providerOverrides?: RamblaDaemonConfig["providerOverrides"];
-  paseoHomeRoot?: string;
+  ramblaHomeRoot?: string;
   staticDir?: string;
   cleanup?: boolean;
   openai?: RamblaOpenAIConfig;
@@ -56,7 +56,7 @@ export interface TestRamblaDaemon {
   config: RamblaDaemonConfig;
   daemon: Awaited<ReturnType<typeof createRamblaDaemon>>;
   port: number;
-  paseoHome: string;
+  ramblaHome: string;
   staticDir: string;
   close: () => Promise<void>;
 }
@@ -97,7 +97,7 @@ export async function createTestRamblaDaemon(
   let lastError: unknown;
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const { config, paseoHomeRoot, paseoHome, staticDir } = await prepareTestDaemonConfig(options);
+    const { config, ramblaHomeRoot, ramblaHome, staticDir } = await prepareTestDaemonConfig(options);
     const logger = options.logger ?? pino({ level: "silent" });
     const daemon = await createRamblaDaemon(config, logger, {
       serverFeatureOverrides: {
@@ -118,7 +118,7 @@ export async function createTestRamblaDaemon(
         if (options.cleanup ?? true) {
           await new Promise((r) => setTimeout(r, 50));
           await Promise.all([
-            rm(paseoHomeRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }),
+            rm(ramblaHomeRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }),
             rm(staticDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }),
           ]);
         }
@@ -128,7 +128,7 @@ export async function createTestRamblaDaemon(
         config,
         daemon,
         port: listenTarget.port,
-        paseoHome,
+        ramblaHome,
         staticDir,
         close,
       };
@@ -136,7 +136,7 @@ export async function createTestRamblaDaemon(
       lastError = error;
       await daemon.stop().catch(() => undefined);
       await Promise.all([
-        rm(paseoHomeRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }),
+        rm(ramblaHomeRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }),
         rm(staticDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }),
       ]);
 
@@ -154,23 +154,23 @@ export async function createTestRamblaDaemon(
 
 interface PreparedTestDaemonConfig {
   config: RamblaDaemonConfig;
-  paseoHomeRoot: string;
-  paseoHome: string;
+  ramblaHomeRoot: string;
+  ramblaHome: string;
   staticDir: string;
 }
 
 async function prepareTestDaemonConfig(
   options: TestRamblaDaemonOptions,
 ): Promise<PreparedTestDaemonConfig> {
-  const paseoHomeRoot =
-    options.paseoHomeRoot ?? (await mkdtemp(path.join(os.tmpdir(), "paseo-home-")));
-  const paseoHome = path.join(paseoHomeRoot, ".rambla");
-  await mkdir(paseoHome, { recursive: true });
-  const staticDir = options.staticDir ?? (await mkdtemp(path.join(os.tmpdir(), "paseo-static-")));
+  const ramblaHomeRoot =
+    options.ramblaHomeRoot ?? (await mkdtemp(path.join(os.tmpdir(), "rambla-home-")));
+  const ramblaHome = path.join(ramblaHomeRoot, ".rambla");
+  await mkdir(ramblaHome, { recursive: true });
+  const staticDir = options.staticDir ?? (await mkdtemp(path.join(os.tmpdir(), "rambla-static-")));
   const listenHost = options.listen ?? "127.0.0.1";
   const config: RamblaDaemonConfig = {
     listen: `${listenHost}:0`,
-    paseoHome,
+    ramblaHome,
     daemonVersion: options.daemonVersion,
     desktopManaged: options.desktopManaged,
     corsAllowedOrigins: options.corsAllowedOrigins ?? [],
@@ -181,7 +181,7 @@ async function prepareTestDaemonConfig(
     isDev: options.isDev,
     agentClients: options.agentClients ?? createTestAgentClients(),
     providerOverrides: options.providerOverrides,
-    agentStoragePath: path.join(paseoHome, "agents"),
+    agentStoragePath: path.join(ramblaHome, "agents"),
     relayEnabled: options.relayEnabled ?? false,
     relayEndpoint: options.relayEndpoint ?? "relay.rambla.sh:443",
     relayUseTls: options.relayUseTls,
@@ -204,7 +204,7 @@ async function prepareTestDaemonConfig(
     pluginsEnabled: options.pluginsEnabled,
     plugins: options.plugins,
   };
-  return { config, paseoHomeRoot, paseoHome, staticDir };
+  return { config, ramblaHomeRoot, ramblaHome, staticDir };
 }
 
 function isAddressInUseError(error: unknown): boolean {

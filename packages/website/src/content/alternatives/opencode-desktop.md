@@ -66,15 +66,15 @@ OpenCode has its own terminal interface, CLI, IDE extension, GitHub and GitLab i
 Rambla's CLI controls the same daemon as the app:
 
 ```bash
-paseo run --provider opencode "implement OAuth"
-paseo run --provider claude --worktree refactor-auth "refactor auth"
-paseo run --host devbox:6767 "run the test suite"
-paseo ls
-paseo send <agent-id> "add tests"
-paseo schedule create --cron "0 9 * * 1" "audit the codebase"
+rambla run --provider opencode "implement OAuth"
+rambla run --provider claude --worktree refactor-auth "refactor auth"
+rambla run --host devbox:6767 "run the test suite"
+rambla ls
+rambla send <agent-id> "add tests"
+rambla schedule create --cron "0 9 * * 1" "audit the codebase"
 ```
 
-`paseo run --host` connects to a remote daemon. `paseo schedule` runs an agent on a cron. The MCP server lets other agents create worktrees, launch agents, open terminals, and send prompts.
+`rambla run --host` connects to a remote daemon. `rambla schedule` runs an agent on a cron. The MCP server lets other agents create worktrees, launch agents, open terminals, and send prompts.
 
 ## Worktrees and services
 

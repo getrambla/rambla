@@ -1,4 +1,4 @@
-import type { RamblaTerminal } from "@getpaseo/client";
+import type { RamblaTerminal } from "@getrambla/client";
 import type { OutputSchema } from "../../output/index.js";
 
 export type TerminalRow = RamblaTerminal;

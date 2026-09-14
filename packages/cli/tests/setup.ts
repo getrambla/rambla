@@ -51,13 +51,13 @@ export interface TestContext {
   /** Random port for test daemon (never 6767) */
   port: number;
   /** Temp directory for RAMBLA_HOME */
-  paseoHome: string;
+  ramblaHome: string;
   /** Temp directory for agent working directory */
   workDir: string;
   /** Running daemon process */
   daemon: ProcessPromise | null;
-  /** Run a paseo CLI command against the test daemon */
-  paseo: (args: string[]) => ProcessPromise;
+  /** Run a rambla CLI command against the test daemon */
+  rambla: (args: string[]) => ProcessPromise;
   /** Clean up all resources */
   cleanup: () => Promise<void>;
 }
@@ -73,19 +73,19 @@ export function getRandomPort(): number {
 /**
  * Create isolated temp directories for testing
  */
-export async function createTempDirs(): Promise<{ paseoHome: string; workDir: string }> {
-  const paseoHome = await mkdtemp(join(tmpdir(), "paseo-test-home-"));
-  const workDir = await mkdtemp(join(tmpdir(), "paseo-test-work-"));
-  return { paseoHome, workDir };
+export async function createTempDirs(): Promise<{ ramblaHome: string; workDir: string }> {
+  const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-test-home-"));
+  const workDir = await mkdtemp(join(tmpdir(), "rambla-test-work-"));
+  return { ramblaHome, workDir };
 }
 
 /**
  * Wait for daemon to be ready by testing WebSocket connection
- * Uses `paseo agent ls` which connects via WebSocket
+ * Uses `rambla agent ls` which connects via WebSocket
  */
 async function probeDaemon(port: number): Promise<boolean> {
   try {
-    const result = await $`RAMBLA_HOST=localhost:${port} paseo agent ls`.nothrow();
+    const result = await $`RAMBLA_HOST=localhost:${port} rambla agent ls`.nothrow();
     return result.exitCode === 0;
   } catch {
     return false;
@@ -108,10 +108,10 @@ export async function waitForDaemon(port: number, timeout = 30000): Promise<void
 /**
  * Start an isolated test daemon
  */
-export async function startDaemon(port: number, paseoHome: string): Promise<ProcessPromise> {
+export async function startDaemon(port: number, ramblaHome: string): Promise<ProcessPromise> {
   $.verbose = false;
   const daemon =
-    $`RAMBLA_HOME=${paseoHome} RAMBLA_LISTEN=127.0.0.1:${port} RAMBLA_RELAY_ENABLED=false RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${TEST_ENV_DEFAULTS.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${TEST_ENV_DEFAULTS.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${TEST_ENV_DEFAULTS.RAMBLA_VOICE_MODE_ENABLED} CI=true paseo daemon start --foreground`.nothrow();
+    $`RAMBLA_HOME=${ramblaHome} RAMBLA_LISTEN=127.0.0.1:${port} RAMBLA_RELAY_ENABLED=false RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${TEST_ENV_DEFAULTS.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${TEST_ENV_DEFAULTS.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${TEST_ENV_DEFAULTS.RAMBLA_VOICE_MODE_ENABLED} CI=true rambla daemon start --foreground`.nothrow();
   return daemon;
 }
 
@@ -120,12 +120,12 @@ export async function startDaemon(port: number, paseoHome: string): Promise<Proc
  */
 export async function createTestContext(): Promise<TestContext> {
   const port = getRandomPort();
-  const { paseoHome, workDir } = await createTempDirs();
+  const { ramblaHome, workDir } = await createTempDirs();
 
   // Helper to run CLI commands against test daemon
-  const paseo = (args: string[]): ProcessPromise => {
+  const rambla = (args: string[]): ProcessPromise => {
     $.verbose = false;
-    return $`RAMBLA_HOST=localhost:${port} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${TEST_ENV_DEFAULTS.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${TEST_ENV_DEFAULTS.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${TEST_ENV_DEFAULTS.RAMBLA_VOICE_MODE_ENABLED} paseo ${args}`.nothrow();
+    return $`RAMBLA_HOST=localhost:${port} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${TEST_ENV_DEFAULTS.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${TEST_ENV_DEFAULTS.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${TEST_ENV_DEFAULTS.RAMBLA_VOICE_MODE_ENABLED} rambla ${args}`.nothrow();
   };
 
   // Cleanup function
@@ -139,16 +139,16 @@ export async function createTestContext(): Promise<TestContext> {
         ctx.daemon.kill();
       }
     }
-    await rm(paseoHome, { recursive: true, force: true });
+    await rm(ramblaHome, { recursive: true, force: true });
     await rm(workDir, { recursive: true, force: true });
   };
 
   const ctx: TestContext = {
     port,
-    paseoHome,
+    ramblaHome,
     workDir,
     daemon: null,
-    paseo,
+    rambla,
     cleanup,
   };
 
@@ -161,7 +161,7 @@ export async function createTestContext(): Promise<TestContext> {
  */
 export async function createTestContextWithDaemon(): Promise<TestContext> {
   const ctx = await createTestContext();
-  ctx.daemon = await startDaemon(ctx.port, ctx.paseoHome);
+  ctx.daemon = await startDaemon(ctx.port, ctx.ramblaHome);
   await waitForDaemon(ctx.port);
   return ctx;
 }

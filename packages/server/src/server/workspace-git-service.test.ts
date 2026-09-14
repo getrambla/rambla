@@ -153,7 +153,7 @@ function createCheckoutSnapshotFacts(cwd: string): CheckoutSnapshotFacts {
     remoteUrl: "https://github.com/acme/repo.git",
     absoluteGitDir: join(cwd, ".git"),
     gitCommonDir: join(cwd, ".git"),
-    paseoWorktree: { isRamblaOwnedWorktree: false },
+    ramblaWorktree: { isRamblaOwnedWorktree: false },
     storedBaseRef: null,
     resolvedBaseRef: "main",
     mainRepoRoot: null,
@@ -318,7 +318,7 @@ function createService(options?: CreateServiceTestOptions) {
     });
   return new WorkspaceGitServiceImpl({
     logger: createLogger() as unknown as pino.Logger,
-    paseoHome: "/tmp/paseo-test",
+    ramblaHome: "/tmp/rambla-test",
     deps,
   });
 }
@@ -437,7 +437,7 @@ describe("WorkspaceGitServiceImpl", () => {
   test("getSnapshot keeps plain git classification when shortstat lookup fails", async () => {
     const getCheckoutShortstat = vi.fn(async () => {
       throw new Error(
-        "Missing Rambla worktree base metadata: /tmp/repo/.git/worktrees/feature/paseo/worktree.json",
+        "Missing Rambla worktree base metadata: /tmp/repo/.git/worktrees/feature/rambla/worktree.json",
       );
     });
     const service = createService({
@@ -1399,7 +1399,7 @@ describe("WorkspaceGitServiceImpl", () => {
 
     expect(getCheckoutWorktreeState).toHaveBeenCalledWith(
       REPO_CWD,
-      expect.objectContaining({ paseoHome: "/tmp/paseo-test" }),
+      expect.objectContaining({ ramblaHome: "/tmp/rambla-test" }),
     );
     expect(workspaceListener).toHaveBeenCalledWith(
       createSnapshot(REPO_CWD, {

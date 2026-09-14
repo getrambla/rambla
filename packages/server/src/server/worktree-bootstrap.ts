@@ -6,7 +6,7 @@ import {
   getScriptConfigs,
   getWorktreeTerminalSpecs,
   isServiceScript,
-  paseoConfigParseError,
+  ramblaConfigParseError,
   processCarriageReturns,
   readRamblaConfig,
   resolveWorktreeRuntimeEnv,
@@ -30,7 +30,7 @@ import {
   requirePlannedWorkspaceServicePort,
   refreshWorkspaceServicePort,
 } from "./workspace-service-port-registry.js";
-import type { RamblaServicePortAllocation } from "@getpaseo/protocol/paseo-config-schema";
+import type { RamblaServicePortAllocation } from "@getrambla/protocol/rambla-config-schema";
 
 export interface WorktreeBootstrapTerminalResult {
   name: string | null;
@@ -357,7 +357,7 @@ function buildSetupTimelineItem(input: {
   if (input.status === "running") {
     return {
       type: "tool_call",
-      name: "paseo_worktree_setup",
+      name: "rambla_worktree_setup",
       callId: input.callId,
       status: "running",
       detail,
@@ -368,7 +368,7 @@ function buildSetupTimelineItem(input: {
   if (input.status === "completed") {
     return {
       type: "tool_call",
-      name: "paseo_worktree_setup",
+      name: "rambla_worktree_setup",
       callId: input.callId,
       status: "completed",
       detail,
@@ -378,7 +378,7 @@ function buildSetupTimelineItem(input: {
 
   return {
     type: "tool_call",
-    name: "paseo_worktree_setup",
+    name: "rambla_worktree_setup",
     callId: input.callId,
     status: "failed",
     detail,
@@ -405,7 +405,7 @@ function buildTerminalTimelineItem(input: {
   if (input.status === "running") {
     return {
       type: "tool_call",
-      name: "paseo_worktree_terminals",
+      name: "rambla_worktree_terminals",
       callId: input.callId,
       status: "running",
       detail: {
@@ -420,7 +420,7 @@ function buildTerminalTimelineItem(input: {
   if (input.status === "completed") {
     return {
       type: "tool_call",
-      name: "paseo_worktree_terminals",
+      name: "rambla_worktree_terminals",
       callId: input.callId,
       status: "completed",
       detail: {
@@ -434,7 +434,7 @@ function buildTerminalTimelineItem(input: {
 
   return {
     type: "tool_call",
-    name: "paseo_worktree_terminals",
+    name: "rambla_worktree_terminals",
     callId: input.callId,
     status: "failed",
     detail: {
@@ -905,12 +905,12 @@ export async function spawnWorkspaceScript(
   } = options;
   const configResult = readRamblaConfig(repoRoot);
   if (!configResult.ok) {
-    throw paseoConfigParseError(configResult);
+    throw ramblaConfigParseError(configResult);
   }
   const scriptConfigs = getScriptConfigs(configResult.config);
   const config = scriptConfigs.get(scriptName);
   if (!config) {
-    throw new Error(`Script '${scriptName}' is not configured in paseo.json`);
+    throw new Error(`Script '${scriptName}' is not configured in rambla.json`);
   }
 
   const serviceScript = isServiceScript(config);

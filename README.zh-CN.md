@@ -78,8 +78,8 @@ Rambla 会运行一个名为 daemon 的本地服务，用来管理你的 coding 
 安装 CLI 并启动 Rambla：
 
 ```bash
-npm install -g @getpaseo/cli
-paseo
+npm install -g @getrambla/cli
+rambla
 ```
 
 终端中会显示一个二维码。你可以从任意客户端连接。这个方式适合服务器和远程机器。
@@ -94,15 +94,15 @@ paseo
 你能在 app 中完成的事情，也都可以在终端中完成。
 
 ```bash
-paseo run --provider claude/opus-4.6 "implement user authentication"
-paseo run --provider codex/gpt-5.4 --worktree feature-x "implement feature X"
+rambla run --provider claude/opus-4.6 "implement user authentication"
+rambla run --provider codex/gpt-5.4 --worktree feature-x "implement feature X"
 
-paseo ls                           # 列出正在运行的 agents
-paseo attach abc123                # 实时流式查看输出
-paseo send abc123 "also add tests" # 发送后续任务
+rambla ls                           # 列出正在运行的 agents
+rambla attach abc123                # 实时流式查看输出
+rambla send abc123 "also add tests" # 发送后续任务
 
 # 在远程 daemon 上运行
-paseo --host workstation.local:6767 run "run the full test suite"
+rambla --host workstation.local:6767 run "run the full test suite"
 ```
 
 更多内容见[完整 CLI 参考](https://rambla.sh/docs/cli)。
@@ -117,9 +117,9 @@ npx skills add getrambla/rambla
 
 然后在任意 agent 对话中使用：
 
-- `/paseo-handoff` — 在 agents 之间交接工作。我会用它先和 Claude 规划，再交给 Codex 实现。
-- `/paseo-advisor` — 启动单个 agent 作为 advisor，提供第二意见，但不把工作委托出去。
-- `/paseo-committee` — 组建两个风格互补的 agents，让它们后退一步做根因分析并产出计划。
+- `/rambla-handoff` — 在 agents 之间交接工作。我会用它先和 Claude 规划，再交给 Codex 实现。
+- `/rambla-advisor` — 启动单个 agent 作为 advisor，提供第二意见，但不把工作委托出去。
+- `/rambla-committee` — 组建两个风格互补的 agents，让它们后退一步做根因分析并产出计划。
 
 ## 开发
 
@@ -127,7 +127,7 @@ Monorepo 包结构速览：
 
 - `packages/server`：Rambla daemon（agent 进程编排、WebSocket API、MCP server）
 - `packages/app`：Expo 客户端（iOS、Android、Web）
-- `packages/cli`：用于 daemon 和 agent 工作流的 `paseo` CLI
+- `packages/cli`：用于 daemon 和 agent 工作流的 `rambla` CLI
 - `packages/desktop`：Electron 桌面 app
 - `packages/relay`：用于远程连接的 relay 包
 - `packages/website`：营销站点和文档（`rambla.sh`）
@@ -153,8 +153,8 @@ npm run typecheck
 
 ## 相关项目
 
-- [getpaseo/paseo-relay](https://github.com/getpaseo/paseo-relay) — 官方分布式 relay，使用 Elixir 编写
-- [paseo-vscode](https://marketplace.visualstudio.com/items?itemName=hinnes.paseo-vscode) — VS Code 扩展
+- [getrambla/rambla-relay](https://github.com/getrambla/rambla-relay) — 官方分布式 relay，使用 Elixir 编写
+- [rambla-vscode](https://marketplace.visualstudio.com/items?itemName=hinnes.rambla-vscode) — VS Code 扩展
 
 ### 自托管 relay TLS
 
@@ -164,7 +164,7 @@ npm run typecheck
 RAMBLA_RELAY_ENDPOINT=127.0.0.1:8080 \
 RAMBLA_RELAY_PUBLIC_ENDPOINT=relay.example.com:443 \
 RAMBLA_RELAY_USE_TLS=true \
-paseo daemon start
+rambla daemon start
 ```
 
 等价配置：

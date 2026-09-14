@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { RamblaConfigRawSchema } from "@getpaseo/protocol/paseo-config-schema";
-import type { RamblaConfigRaw } from "@getpaseo/protocol/messages";
+import { RamblaConfigRawSchema } from "@getrambla/protocol/rambla-config-schema";
+import type { RamblaConfigRaw } from "@getrambla/protocol/messages";
 import { applyDraftToConfig, configToDraft, type ProjectConfigDraft } from "./project-config-form";
 
 function emptyDraft(): ProjectConfigDraft {

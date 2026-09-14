@@ -45,10 +45,10 @@ if (process.platform !== "win32") {
 
 console.log("=== Windows Daemon Status Process Lookup ===\n");
 
-const paseoHome = await mkdtemp(join(tmpdir(), "paseo-windows-status-home-"));
+const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-windows-status-home-"));
 const port = await getAvailablePort();
 const env = {
-  RAMBLA_HOME: paseoHome,
+  RAMBLA_HOME: ramblaHome,
   RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD: "0",
   RAMBLA_DICTATION_ENABLED: "0",
   RAMBLA_VOICE_MODE_ENABLED: "0",
@@ -63,7 +63,7 @@ try {
   );
 
   const statusResult = await runLocalRambla(
-    ["daemon", "status", "--home", paseoHome, "--json"],
+    ["daemon", "status", "--home", ramblaHome, "--json"],
     env,
   );
   assert.strictEqual(
@@ -90,8 +90,8 @@ try {
   );
   console.log("✓ daemon status resolves daemonNode on Windows\n");
 } finally {
-  await runLocalRambla(["daemon", "stop", "--home", paseoHome, "--force"], env);
-  await rm(paseoHome, { recursive: true, force: true });
+  await runLocalRambla(["daemon", "stop", "--home", ramblaHome, "--force"], env);
+  await rm(ramblaHome, { recursive: true, force: true });
 }
 
 console.log("=== Windows daemon status process lookup passed ===");

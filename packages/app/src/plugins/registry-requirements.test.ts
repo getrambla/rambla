@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from "vitest";
-import { createRamblaApi } from "@getpaseo/client";
-import { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import { createRamblaApi } from "@getrambla/client";
+import { DaemonClient } from "@getrambla/client/internal/daemon-client";
 import { PluginRegistry } from "./registry";
 
 const client = new DaemonClient({ url: "ws://unused.test", clientId: "plugin-requirements-test" });
@@ -13,7 +13,7 @@ function registry(version: string) {
     createRuntime() {
       starts++;
       return {
-        paseo: createRamblaApi(client),
+        rambla: createRamblaApi(client),
         rpc: async () => {
           throw new Error("No RPC in this plugin");
         },
@@ -43,7 +43,7 @@ it("checks the app version before creating a runtime or evaluating plugin code",
     [
       {
         id: "example",
-        requirements: { paseo: ">=0.9.0" },
+        requirements: { rambla: ">=0.9.0" },
         clientBundle: "throw new Error('executed')",
       },
     ],
@@ -67,8 +67,8 @@ it("rejects catalogs without requirements from pre-0.8 daemons", () => {
 
 it("unloads on a requirement-only edit and recovers after correction", () => {
   const { result, starts, cleanups } = registry("0.8.0");
-  const install = (paseo: string) =>
-    result.installCatalog("host", [{ id: "example", clientBundle, requirements: { paseo } }], {
+  const install = (rambla: string) =>
+    result.installCatalog("host", [{ id: "example", clientBundle, requirements: { rambla } }], {
       client,
     });
   install("^0.8.0");

@@ -8,8 +8,8 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { Buffer } from "node:buffer";
 
 import { generateLocalPairingOffer } from "../pairing-offer.js";
-import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
-import { createClientChannel, type Transport } from "@getpaseo/relay/e2ee";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
+import { createClientChannel, type Transport } from "@getrambla/relay/e2ee";
 import {
   deriveSharedKey,
   decrypt,
@@ -17,10 +17,10 @@ import {
   exportPublicKey,
   generateKeyPair,
   importPublicKey,
-} from "@getpaseo/relay";
-import { buildRelayWebSocketUrl } from "@getpaseo/protocol/daemon-endpoints";
-import { ConnectionOfferSchema } from "@getpaseo/protocol/connection-offer";
-import { WSOutboundMessageSchema } from "@getpaseo/protocol/messages";
+} from "@getrambla/relay";
+import { buildRelayWebSocketUrl } from "@getrambla/protocol/daemon-endpoints";
+import { ConnectionOfferSchema } from "@getrambla/protocol/connection-offer";
+import { WSOutboundMessageSchema } from "@getrambla/protocol/messages";
 
 const nodeMajor = Number((process.versions.node ?? "0").split(".")[0] ?? "0");
 const shouldRunRelayE2e = process.env.FORCE_RELAY_E2E === "1" || nodeMajor < 25;
@@ -38,14 +38,14 @@ function createCapturingLogger() {
 }
 
 async function getPairingOfferUrl(args: {
-  paseoHome: string;
+  ramblaHome: string;
   relayEnabled?: boolean;
   relayEndpoint?: string;
   relayPublicEndpoint?: string;
   appBaseUrl?: string;
 }): Promise<string> {
   const pairing = await generateLocalPairingOffer({
-    paseoHome: args.paseoHome,
+    ramblaHome: args.ramblaHome,
     relayEnabled: args.relayEnabled,
     relayEndpoint: args.relayEndpoint,
     relayPublicEndpoint: args.relayPublicEndpoint,
@@ -256,7 +256,7 @@ async function waitForCapturedLog(
 
     try {
       const offerUrl = await getPairingOfferUrl({
-        paseoHome: daemon.paseoHome,
+        ramblaHome: daemon.ramblaHome,
         relayEnabled: daemon.config.relayEnabled,
         relayEndpoint: daemon.config.relayEndpoint,
         relayPublicEndpoint: daemon.config.relayPublicEndpoint,
@@ -397,7 +397,7 @@ async function waitForCapturedLog(
 
     try {
       const offerUrl = await getPairingOfferUrl({
-        paseoHome: daemon.paseoHome,
+        ramblaHome: daemon.ramblaHome,
         relayEnabled: daemon.config.relayEnabled,
         relayEndpoint: daemon.config.relayEndpoint,
         relayPublicEndpoint: daemon.config.relayPublicEndpoint,
@@ -513,7 +513,7 @@ async function waitForCapturedLog(
 
     try {
       const offerUrl = await getPairingOfferUrl({
-        paseoHome: daemon.paseoHome,
+        ramblaHome: daemon.ramblaHome,
         relayEnabled: daemon.config.relayEnabled,
         relayEndpoint: daemon.config.relayEndpoint,
         relayPublicEndpoint: daemon.config.relayPublicEndpoint,
@@ -659,7 +659,7 @@ async function waitForCapturedLog(
 
     try {
       const offerUrl = await getPairingOfferUrl({
-        paseoHome: daemon.paseoHome,
+        ramblaHome: daemon.ramblaHome,
         relayEnabled: daemon.config.relayEnabled,
         relayEndpoint: daemon.config.relayEndpoint,
         relayPublicEndpoint: daemon.config.relayPublicEndpoint,

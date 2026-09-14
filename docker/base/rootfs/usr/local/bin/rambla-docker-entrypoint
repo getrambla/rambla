@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE_HOME="/home/paseo"
+IMAGE_HOME="/home/rambla"
 
 : "${HOME:=$IMAGE_HOME}"
 : "${RAMBLA_HOME:=${HOME}/.rambla}"
@@ -36,7 +36,7 @@ ensure_dir() {
     local owner
     owner="$(stat -c "%u" "$dir")"
     if [[ "$owner" == "0" ]]; then
-      chown paseo:paseo "$dir"
+      chown rambla:rambla "$dir"
     fi
   fi
 }
@@ -52,27 +52,27 @@ ensure_dir "$XDG_CACHE_HOME"
 
 if [[ "$#" -gt 0 ]]; then
   if [[ "$(id -u)" == "0" ]]; then
-    exec gosu paseo "$@"
+    exec gosu rambla "$@"
   fi
   exec "$@"
 fi
 
 if [[ -z "${RAMBLA_PASSWORD:-}" ]]; then
   {
-    echo "[paseo] WARNING: RAMBLA_PASSWORD is not set."
-    echo "[paseo] The daemon accepts unauthenticated control connections from any client that can reach it."
-    echo "[paseo] Set RAMBLA_PASSWORD for any published port or network-reachable deployment."
+    echo "[rambla] WARNING: RAMBLA_PASSWORD is not set."
+    echo "[rambla] The daemon accepts unauthenticated control connections from any client that can reach it."
+    echo "[rambla] Set RAMBLA_PASSWORD for any published port or network-reachable deployment."
   } >&2
 fi
 
-if [[ ! -f /etc/paseo-server-entry ]]; then
-  echo "[paseo] FATAL: /etc/paseo-server-entry is missing." >&2
+if [[ ! -f /etc/rambla-server-entry ]]; then
+  echo "[rambla] FATAL: /etc/rambla-server-entry is missing." >&2
   exit 1
 fi
 
-entry="$(cat /etc/paseo-server-entry)"
-echo "[paseo] starting daemon on ${RAMBLA_LISTEN} with web UI ${RAMBLA_WEB_UI_ENABLED}"
+entry="$(cat /etc/rambla-server-entry)"
+echo "[rambla] starting daemon on ${RAMBLA_LISTEN} with web UI ${RAMBLA_WEB_UI_ENABLED}"
 if [[ "$(id -u)" == "0" ]]; then
-  exec gosu paseo node "$entry"
+  exec gosu rambla node "$entry"
 fi
 exec node "$entry"

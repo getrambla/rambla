@@ -6,8 +6,8 @@ import type {
   ServerRequest,
 } from "@modelcontextprotocol/sdk/types.js";
 
-import { addModelVisibleStructuredContent } from "./tools/paseo-tool-serialization.js";
-import { createRamblaToolCatalog, type RamblaToolHostDependencies } from "./tools/paseo-tools.js";
+import { addModelVisibleStructuredContent } from "./tools/rambla-tool-serialization.js";
+import { createRamblaToolCatalog, type RamblaToolHostDependencies } from "./tools/rambla-tools.js";
 import type { RamblaToolResult } from "./tools/types.js";
 
 export type AgentMcpServerOptions = RamblaToolHostDependencies;

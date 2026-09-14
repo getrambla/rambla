@@ -8,7 +8,7 @@ export PATH="$ROOT_DIR/node_modules/.bin:$PATH"
 source "$SCRIPT_DIR/dev-home.sh"
 
 export RAMBLA_LISTEN="${RAMBLA_LISTEN:-127.0.0.1:6768}"
-configure_dev_paseo_home
+configure_dev_rambla_home
 
 EXPO_PORT="${EXPO_PORT:-8081}"
 DAEMON_ENDPOINT="$(resolve_dev_daemon_endpoint)"
@@ -27,4 +27,4 @@ exec cross-env \
   APP_VARIANT=development \
   EXPO_PUBLIC_RAMBLA_DEV_BUILD_LABEL="$DEV_BUILD_LABEL" \
   EXPO_PUBLIC_LOCAL_DAEMON="$DAEMON_ENDPOINT" \
-  npm run start:expo --workspace=@getpaseo/app -- --port "$EXPO_PORT"
+  npm run start:expo --workspace=@getrambla/app -- --port "$EXPO_PORT"

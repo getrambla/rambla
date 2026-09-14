@@ -6,8 +6,8 @@ import {
   type SqliteValue,
 } from "@/runtime/replica-cache/row-store-sqlite";
 import { afterEach, describe, expect, it } from "vitest";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
-import type { SessionOutboundMessage } from "@getpaseo/protocol/messages";
+import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
+import type { SessionOutboundMessage } from "@getrambla/protocol/messages";
 import {
   normalizeProjectDescriptor,
   normalizeWorkspaceDescriptor,
@@ -362,9 +362,9 @@ describe("DirectorySync session readiness", () => {
           {
             scriptName: "web",
             type: "service",
-            hostname: "web.paseo.localhost",
+            hostname: "web.rambla.localhost",
             port: 3000,
-            proxyUrl: "http://web.paseo.localhost:6767",
+            proxyUrl: "http://web.rambla.localhost:6767",
             lifecycle: "running",
             health: "healthy",
             exitCode: null,

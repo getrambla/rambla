@@ -73,7 +73,7 @@ function destroyWebviewSelector(webview: ElementSelectorWebview, sessionToken: s
   const token = JSON.stringify(sessionToken);
   void executeWebviewJavaScript(
     webview,
-    `if (window.__paseoSelector?.sessionToken === ${token}) window.__paseoSelector.destroy();`,
+    `if (window.__ramblaSelector?.sessionToken === ${token}) window.__ramblaSelector.destroy();`,
   ).catch(ignoreWebviewJavaScriptError);
 }
 
@@ -81,7 +81,7 @@ function clearWebviewSelector(webview: ElementSelectorWebview, sessionToken: str
   const token = JSON.stringify(sessionToken);
   void executeWebviewJavaScript(
     webview,
-    `if (window.__paseoSelector?.sessionToken === ${token}) window.__paseoSelector.destroy(); if (window.__paseoSelectorResult?.__paseoSessionToken === ${token}) window.__paseoSelectorResult = null;`,
+    `if (window.__ramblaSelector?.sessionToken === ${token}) window.__ramblaSelector.destroy(); if (window.__ramblaSelectorResult?.__ramblaSessionToken === ${token}) window.__ramblaSelectorResult = null;`,
   ).catch(ignoreWebviewJavaScriptError);
 }
 
@@ -121,7 +121,7 @@ function startSelectorResultPolling(input: {
       try {
         const raw = await executeWebviewJavaScript(
           webview,
-          `JSON.stringify(window.__paseoSelectorResult?.__paseoSessionToken === ${token} ? window.__paseoSelectorResult : null)`,
+          `JSON.stringify(window.__ramblaSelectorResult?.__ramblaSessionToken === ${token} ? window.__ramblaSelectorResult : null)`,
         );
         const result = typeof raw === "string" ? JSON.parse(raw) : null;
         if (!result) {
@@ -131,11 +131,11 @@ function startSelectorResultPolling(input: {
         stopped = true;
         await executeWebviewJavaScript(
           webview,
-          `if (window.__paseoSelectorResult?.__paseoSessionToken === ${token}) window.__paseoSelectorResult = null;`,
+          `if (window.__ramblaSelectorResult?.__ramblaSessionToken === ${token}) window.__ramblaSelectorResult = null;`,
         ).catch(ignoreWebviewJavaScriptError);
         const cancelled = result.__cancelled === true;
         delete result.__cancelled;
-        delete result.__paseoSessionToken;
+        delete result.__ramblaSessionToken;
         onResult(cancelled ? null : (result as BrowserElementSelection));
       } catch {
         schedule();
@@ -160,26 +160,26 @@ function buildElementSelectorScript(sessionToken: string): string {
       if (document.readyState === 'loading' || !document.head || !document.documentElement) {
         return { installed: false, reason: 'document-loading', sessionToken: sessionToken };
       }
-      if (window.__paseoSelector) { window.__paseoSelector.destroy(); }
-      window.__paseoSelectorResult = null;
+      if (window.__ramblaSelector) { window.__ramblaSelector.destroy(); }
+      window.__ramblaSelectorResult = null;
       var style = document.createElement('style');
       style.textContent = [
-        '.__paseo-hover { outline: 2px solid #3b82f6 !important; outline-offset: 2px !important; cursor: crosshair !important; }',
-        '.__paseo-select-mode, .__paseo-select-mode * { cursor: crosshair !important; pointer-events: auto !important; user-select: none !important; }',
-        '.__paseo-select-mode *, .__paseo-select-mode *::before, .__paseo-select-mode *::after { animation: none !important; transition: none !important; }',
-        '.__paseo-select-mode a, .__paseo-select-mode button, .__paseo-select-mode input, .__paseo-select-mode select, .__paseo-select-mode textarea, .__paseo-select-mode [role="button"], .__paseo-select-mode [onclick] { pointer-events: none !important; }',
-        '.__paseo-select-mode iframe, .__paseo-select-mode video, .__paseo-select-mode audio { pointer-events: none !important; }',
-        '.__paseo-hover-label { position: fixed; z-index: 2147483647; pointer-events: none; max-width: 360px; padding: 4px 8px; border-radius: 6px; background: rgba(24,24,27,0.96); color: #fff; font: 500 11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace; box-shadow: 0 2px 10px rgba(0,0,0,0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
-        '.__paseo-hover-label .__paseo-tag { color: #93c5fd; }',
-        '.__paseo-hover-label .__paseo-id { color: #fca5a5; }',
-        '.__paseo-hover-label .__paseo-cls { color: #fcd34d; }',
-        '.__paseo-hover-label .__paseo-dim { color: #a1a1aa; margin-left: 6px; }',
-        '.__paseo-hover-label .__paseo-comp { color: #86efac; margin-left: 6px; }',
+        '.__rambla-hover { outline: 2px solid #3b82f6 !important; outline-offset: 2px !important; cursor: crosshair !important; }',
+        '.__rambla-select-mode, .__rambla-select-mode * { cursor: crosshair !important; pointer-events: auto !important; user-select: none !important; }',
+        '.__rambla-select-mode *, .__rambla-select-mode *::before, .__rambla-select-mode *::after { animation: none !important; transition: none !important; }',
+        '.__rambla-select-mode a, .__rambla-select-mode button, .__rambla-select-mode input, .__rambla-select-mode select, .__rambla-select-mode textarea, .__rambla-select-mode [role="button"], .__rambla-select-mode [onclick] { pointer-events: none !important; }',
+        '.__rambla-select-mode iframe, .__rambla-select-mode video, .__rambla-select-mode audio { pointer-events: none !important; }',
+        '.__rambla-hover-label { position: fixed; z-index: 2147483647; pointer-events: none; max-width: 360px; padding: 4px 8px; border-radius: 6px; background: rgba(24,24,27,0.96); color: #fff; font: 500 11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace; box-shadow: 0 2px 10px rgba(0,0,0,0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+        '.__rambla-hover-label .__rambla-tag { color: #93c5fd; }',
+        '.__rambla-hover-label .__rambla-id { color: #fca5a5; }',
+        '.__rambla-hover-label .__rambla-cls { color: #fcd34d; }',
+        '.__rambla-hover-label .__rambla-dim { color: #a1a1aa; margin-left: 6px; }',
+        '.__rambla-hover-label .__rambla-comp { color: #86efac; margin-left: 6px; }',
       ].join('\\n');
       document.head.appendChild(style);
-      document.documentElement.classList.add('__paseo-select-mode');
+      document.documentElement.classList.add('__rambla-select-mode');
       var hoverLabel = document.createElement('div');
-      hoverLabel.className = '__paseo-hover-label';
+      hoverLabel.className = '__rambla-hover-label';
       hoverLabel.style.display = 'none';
       document.documentElement.appendChild(hoverLabel);
       var last = null;
@@ -190,23 +190,23 @@ function buildElementSelectorScript(sessionToken: string): string {
       }
       function describeElement(el) {
         var tag = el.tagName ? el.tagName.toLowerCase() : 'node';
-        var parts = ['<span class="__paseo-tag">' + escapeHtml(tag) + '</span>'];
+        var parts = ['<span class="__rambla-tag">' + escapeHtml(tag) + '</span>'];
         if (el.id) {
-          parts.push('<span class="__paseo-id">#' + escapeHtml(el.id) + '</span>');
+          parts.push('<span class="__rambla-id">#' + escapeHtml(el.id) + '</span>');
         }
         if (el.classList && el.classList.length) {
           var cls = Array.prototype.slice.call(el.classList, 0, 2)
-            .filter(function(c) { return c.indexOf('__paseo') !== 0; })
+            .filter(function(c) { return c.indexOf('__rambla') !== 0; })
             .map(function(c) { return '.' + escapeHtml(c); })
             .join('');
-          if (cls) parts.push('<span class="__paseo-cls">' + cls + '</span>');
+          if (cls) parts.push('<span class="__rambla-cls">' + cls + '</span>');
         }
         var comp = getReactSource(el);
         if (comp && comp.componentName) {
-          parts.push('<span class="__paseo-comp">&lt;' + escapeHtml(comp.componentName) + '&gt;</span>');
+          parts.push('<span class="__rambla-comp">&lt;' + escapeHtml(comp.componentName) + '&gt;</span>');
         }
         var rect = el.getBoundingClientRect();
-        parts.push('<span class="__paseo-dim">' + Math.round(rect.width) + '×' + Math.round(rect.height) + '</span>');
+        parts.push('<span class="__rambla-dim">' + Math.round(rect.width) + '×' + Math.round(rect.height) + '</span>');
         return { html: parts.join(''), rect: rect };
       }
       function positionLabel(rect, e) {
@@ -224,9 +224,9 @@ function buildElementSelectorScript(sessionToken: string): string {
       function onMove(e) {
         e.preventDefault();
         e.stopPropagation();
-        if (last) last.classList.remove('__paseo-hover');
+        if (last) last.classList.remove('__rambla-hover');
         var el = e.target;
-        el.classList.add('__paseo-hover');
+        el.classList.add('__rambla-hover');
         last = el;
         try {
           var info = describeElement(el);
@@ -311,7 +311,7 @@ function buildElementSelectorScript(sessionToken: string): string {
         e.stopPropagation();
         e.stopImmediatePropagation();
         var el = e.target;
-        if (last) last.classList.remove('__paseo-hover');
+        if (last) last.classList.remove('__rambla-hover');
         hoverLabel.style.display = 'none';
         var attrs = {};
         for (var i = 0; i < el.attributes.length; i++) {
@@ -326,19 +326,19 @@ function buildElementSelectorScript(sessionToken: string): string {
           url: location.href,
           outerHTML: el.outerHTML.substring(0, 2000),
           computedStyles: getRelevantStyles(el),
-          __paseoSessionToken: sessionToken,
+          __ramblaSessionToken: sessionToken,
           boundingRect: { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height) },
           reactSource: getReactSource(el),
           parentChain: getParentChain(el, 5),
           children: getChildSummary(el, 8)
         };
         destroy();
-        window.__paseoSelectorResult = result;
+        window.__ramblaSelectorResult = result;
       }
       function onKey(e) {
         if (e.key === 'Escape') {
           destroy();
-          window.__paseoSelectorResult = { __cancelled: true, __paseoSessionToken: sessionToken };
+          window.__ramblaSelectorResult = { __cancelled: true, __ramblaSessionToken: sessionToken };
         }
       }
       function blockEvent(e) {
@@ -358,11 +358,11 @@ function buildElementSelectorScript(sessionToken: string): string {
         document.removeEventListener('touchend', blockEvent, true);
         document.removeEventListener('focus', blockEvent, true);
         document.removeEventListener('submit', blockEvent, true);
-        document.documentElement.classList.remove('__paseo-select-mode');
-        if (last) last.classList.remove('__paseo-hover');
+        document.documentElement.classList.remove('__rambla-select-mode');
+        if (last) last.classList.remove('__rambla-hover');
         if (hoverLabel.parentNode) hoverLabel.parentNode.removeChild(hoverLabel);
         style.remove();
-        window.__paseoSelector = null;
+        window.__ramblaSelector = null;
       }
       document.addEventListener('mousemove', onMove, true);
       document.addEventListener('click', onClick, true);
@@ -375,7 +375,7 @@ function buildElementSelectorScript(sessionToken: string): string {
       document.addEventListener('touchend', blockEvent, true);
       document.addEventListener('focus', blockEvent, true);
       document.addEventListener('submit', blockEvent, true);
-      window.__paseoSelector = { destroy: destroy, sessionToken: sessionToken };
+      window.__ramblaSelector = { destroy: destroy, sessionToken: sessionToken };
       return { installed: true, sessionToken: sessionToken };
     })()
   `;

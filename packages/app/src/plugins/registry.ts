@@ -1,7 +1,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { QueryClient } from "@tanstack/react-query";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
-import { assertPluginCompatibility } from "@getpaseo/protocol/plugin-requirements";
+import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
+import { assertPluginCompatibility } from "@getrambla/protocol/plugin-requirements";
 import { resolveAppVersion } from "@/utils/app-version";
 import { createPluginClientRuntime } from "./client-runtime";
 import { runPluginClientBundle } from "./evaluate";
@@ -52,7 +52,7 @@ export class PluginRegistry {
           plugin.id !== options.replacePluginId &&
           plugin.id === entry.id &&
           plugin.clientBundle === entry.clientBundle &&
-          plugin.requirements?.paseo === entry.requirements?.paseo,
+          plugin.requirements?.rambla === entry.requirements?.rambla,
       );
       return existing ? [existing] : [];
     });

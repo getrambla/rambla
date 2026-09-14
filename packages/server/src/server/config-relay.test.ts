@@ -8,12 +8,12 @@ import { loadConfig, resolveConfigFromPersisted } from "./config.js";
 const roots: string[] = [];
 
 async function createRamblaHome(config: unknown): Promise<string> {
-  const root = await mkdtemp(path.join(os.tmpdir(), "paseo-config-relay-"));
+  const root = await mkdtemp(path.join(os.tmpdir(), "rambla-config-relay-"));
   roots.push(root);
-  const paseoHome = path.join(root, ".rambla");
-  await mkdir(paseoHome, { recursive: true });
-  await writeFile(path.join(paseoHome, "config.json"), JSON.stringify(config, null, 2));
-  return paseoHome;
+  const ramblaHome = path.join(root, ".rambla");
+  await mkdir(ramblaHome, { recursive: true });
+  await writeFile(path.join(ramblaHome, "config.json"), JSON.stringify(config, null, 2));
+  return ramblaHome;
 }
 
 describe("daemon relay config", () => {
@@ -288,11 +288,11 @@ describe("daemon worktree root config", () => {
   test("keeps absolute worktrees.root absolute", async () => {
     const home = await createRamblaHome({
       version: 1,
-      worktrees: { root: path.join(os.tmpdir(), "paseo-custom-worktrees") },
+      worktrees: { root: path.join(os.tmpdir(), "rambla-custom-worktrees") },
     });
 
     expect(loadConfig(home, { env: {} }).worktreesRoot).toBe(
-      path.join(os.tmpdir(), "paseo-custom-worktrees"),
+      path.join(os.tmpdir(), "rambla-custom-worktrees"),
     );
   });
 });

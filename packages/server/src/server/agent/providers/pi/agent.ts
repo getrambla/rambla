@@ -91,8 +91,8 @@ import {
 const PI_PROVIDER = "pi";
 const DEFAULT_PI_THINKING_LEVEL: PiThinkingLevel = "medium";
 const PI_BINARY_COMMAND = process.env.PI_COMMAND ?? process.env.PI_ACP_PI_COMMAND ?? "pi";
-const RAMBLA_PI_TREE_EXTENSION_COMMAND = "paseo_tree";
-const RAMBLA_PI_CAPTURE_EXTENSION_COMMAND = "paseo_capture_entries";
+const RAMBLA_PI_TREE_EXTENSION_COMMAND = "rambla_tree";
+const RAMBLA_PI_CAPTURE_EXTENSION_COMMAND = "rambla_capture_entries";
 const RAMBLA_PI_ENTRY_CAPTURE_MARKER = "RAMBLA_ENTRY_CAPTURE";
 const RAMBLA_PI_SUBMITTED_USER_ENTRY_MARKER = "RAMBLA_SUBMITTED_USER_ENTRY";
 const RAMBLA_PI_COMMAND_RESULT_MARKER = "RAMBLA_COMMAND_RESULT";
@@ -515,7 +515,7 @@ function buildResumeStartInput(input: {
   sessionFile: string;
   launchContext: AgentLaunchContext | undefined;
   mcpConfig: PiMcpConfigFile | null;
-  paseoExtension: PiTempFile | null;
+  ramblaExtension: PiTempFile | null;
 }): PiStartSessionInput {
   return {
     cwd: input.resumeConfig.cwd,
@@ -524,7 +524,7 @@ function buildResumeStartInput(input: {
     model: input.resumeConfig.model,
     thinkingOptionId: normalizePiThinkingOption(input.resumeConfig.thinkingOptionId) ?? undefined,
     mcpConfigPath: input.mcpConfig?.path,
-    extensionPaths: input.paseoExtension ? [input.paseoExtension.path] : undefined,
+    extensionPaths: input.ramblaExtension ? [input.ramblaExtension.path] : undefined,
   };
 }
 
@@ -600,7 +600,7 @@ function createPiMcpConfigFile(
     mcpServers[name] = toPiMcpConfig(serverConfig);
   }
 
-  const dir = mkdtempSync(join(tmpdir(), "paseo-pi-mcp-"));
+  const dir = mkdtempSync(join(tmpdir(), "rambla-pi-mcp-"));
   const filePath = join(dir, "mcp.json");
   const mergedConfig: Record<string, unknown> = { ...globalConfig, mcpServers };
   delete mergedConfig["mcp-servers"];
@@ -615,8 +615,8 @@ function createPiMcpConfigFile(
 }
 
 function createPiRamblaExtensionFile(systemPrompt?: string): PiTempFile {
-  const dir = mkdtempSync(join(tmpdir(), "paseo-pi-extension-"));
-  const filePath = join(dir, "paseo-integration.mjs");
+  const dir = mkdtempSync(join(tmpdir(), "rambla-pi-extension-"));
+  const filePath = join(dir, "rambla-integration.mjs");
   writeFileSync(
     filePath,
     `
@@ -667,7 +667,7 @@ function createPiRamblaExtensionFile(systemPrompt?: string): PiTempFile {
 	  );
 	}
 
-	export default function paseoIntegration(pi) {
+	export default function ramblaIntegration(pi) {
 	  const submittedUserMessages = [];
 
 	  function emitSubmittedUserEntries(ctx) {
@@ -2534,7 +2534,7 @@ export class PiRpcAgentClient implements AgentClient {
       ...launchContext?.env,
     };
     const mcpConfig = await this.prepareMcpConfig(config.cwd, config.mcpServers, mcpEnv);
-    const paseoExtension = createPiRamblaExtensionFile(
+    const ramblaExtension = createPiRamblaExtensionFile(
       composeSystemPromptParts(config.systemPrompt, config.daemonAppendSystemPrompt),
     );
     let runtimeSession: PiRuntimeSession;
@@ -2547,11 +2547,11 @@ export class PiRpcAgentClient implements AgentClient {
         noSession: config.internal === true,
         env: launchContext?.env,
         mcpConfigPath: mcpConfig?.path,
-        extensionPaths: paseoExtension ? [paseoExtension.path] : undefined,
+        extensionPaths: ramblaExtension ? [ramblaExtension.path] : undefined,
       });
     } catch (error) {
       mcpConfig?.cleanup();
-      paseoExtension?.cleanup();
+      ramblaExtension?.cleanup();
       throw error;
     }
     try {
@@ -2560,7 +2560,7 @@ export class PiRpcAgentClient implements AgentClient {
         config,
         initialState: await runtimeSession.getState(),
         capabilities: capabilitiesForSession(mcpConfig !== null),
-        cleanup: combineCleanup([mcpConfig?.cleanup, paseoExtension?.cleanup]),
+        cleanup: combineCleanup([mcpConfig?.cleanup, ramblaExtension?.cleanup]),
         extensionTimeoutMs: this.providerParams.extensionTimeoutMs,
         logger: this.logger,
         usagePollScheduler: this.usagePollScheduler,
@@ -2568,7 +2568,7 @@ export class PiRpcAgentClient implements AgentClient {
     } catch (error) {
       await runtimeSession.close().catch(() => undefined);
       mcpConfig?.cleanup();
-      paseoExtension?.cleanup();
+      ramblaExtension?.cleanup();
       throw error;
     }
   }
@@ -2595,7 +2595,7 @@ export class PiRpcAgentClient implements AgentClient {
       resumeConfig.config.mcpServers,
       mcpEnv,
     );
-    const paseoExtension = createPiRamblaExtensionFile(
+    const ramblaExtension = createPiRamblaExtensionFile(
       composeSystemPromptParts(
         resumeConfig.config.systemPrompt,
         resumeConfig.config.daemonAppendSystemPrompt,
@@ -2609,12 +2609,12 @@ export class PiRpcAgentClient implements AgentClient {
           sessionFile,
           launchContext,
           mcpConfig,
-          paseoExtension,
+          ramblaExtension,
         }),
       );
     } catch (error) {
       mcpConfig?.cleanup();
-      paseoExtension?.cleanup();
+      ramblaExtension?.cleanup();
       throw error;
     }
     try {
@@ -2623,7 +2623,7 @@ export class PiRpcAgentClient implements AgentClient {
         config: resumeConfig.config,
         initialState: await runtimeSession.getState(),
         capabilities: capabilitiesForSession(mcpConfig !== null),
-        cleanup: combineCleanup([mcpConfig?.cleanup, paseoExtension?.cleanup]),
+        cleanup: combineCleanup([mcpConfig?.cleanup, ramblaExtension?.cleanup]),
         extensionTimeoutMs: this.providerParams.extensionTimeoutMs,
         logger: this.logger,
         usagePollScheduler: this.usagePollScheduler,
@@ -2631,7 +2631,7 @@ export class PiRpcAgentClient implements AgentClient {
     } catch (error) {
       await runtimeSession.close().catch(() => undefined);
       mcpConfig?.cleanup();
-      paseoExtension?.cleanup();
+      ramblaExtension?.cleanup();
       throw error;
     }
   }

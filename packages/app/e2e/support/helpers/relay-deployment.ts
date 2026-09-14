@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { parseConnectionOfferFromUrl } from "@getpaseo/protocol/connection-offer";
+import { parseConnectionOfferFromUrl } from "@getrambla/protocol/connection-offer";
 import type { LocalElixirRelay } from "./local-elixir-relay";
 import type { PackagedWebDaemon } from "./packaged-web-daemon";
 import { expectRunningAgentChrome } from "./agent-stream";
@@ -57,8 +57,8 @@ export async function connectDaemonWebAppOnlyThroughRelay(
   });
   await page.addInitScript(
     ({ storedHost, preferences }) => {
-      localStorage.setItem("@paseo:daemon-registry", JSON.stringify([storedHost]));
-      localStorage.setItem("@paseo:create-agent-preferences", JSON.stringify(preferences));
+      localStorage.setItem("@rambla:daemon-registry", JSON.stringify([storedHost]));
+      localStorage.setItem("@rambla:create-agent-preferences", JSON.stringify(preferences));
     },
     { storedHost: host, preferences: buildCreateAgentPreferences() },
   );

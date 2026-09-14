@@ -7,9 +7,9 @@ import { spawn, spawnSync } from "node:child_process";
 const rootDir = resolvePath(import.meta.dirname, "..");
 const appDir = join(rootDir, "packages/app");
 const appProductName = "RamblaDebug";
-const appScheme = "paseo";
+const appScheme = "rambla";
 const preferredSimulatorType = process.env.RAMBLA_IOS_DEVICE_TYPE || "iPhone 16 Pro";
-const paseoPort = requiredEnv("RAMBLA_PORT");
+const ramblaPort = requiredEnv("RAMBLA_PORT");
 const worktreePath = process.env.RAMBLA_WORKTREE_PATH || rootDir;
 const worktreeName = process.env.RAMBLA_BRANCH_NAME || basename(worktreePath);
 const worktreeHash = createHash("sha1").update(worktreePath).digest("hex").slice(0, 8);
@@ -52,8 +52,8 @@ async function main() {
   hideNativeSimulatorApp();
 
   metro = startMetro();
-  await waitForUrl(`http://127.0.0.1:${paseoPort}/.sim`);
-  console.log(`iOS preview: ${process.env.RAMBLA_URL || `http://127.0.0.1:${paseoPort}`}/.sim`);
+  await waitForUrl(`http://127.0.0.1:${ramblaPort}/.sim`);
+  console.log(`iOS preview: ${process.env.RAMBLA_URL || `http://127.0.0.1:${ramblaPort}`}/.sim`);
 
   console.log("Building app dependencies...");
   try {
@@ -106,7 +106,7 @@ function installApp(nativeProject) {
 }
 
 function launchApp() {
-  const metroUrl = encodeURIComponent(`http://127.0.0.1:${paseoPort}`);
+  const metroUrl = encodeURIComponent(`http://127.0.0.1:${ramblaPort}`);
   run(
     "xcrun",
     ["simctl", "openurl", simulatorUdid, `${appScheme}://expo-development-client/?url=${metroUrl}`],
@@ -115,7 +115,7 @@ function launchApp() {
 }
 
 function startMetro() {
-  const child = spawn("npx", ["expo", "start", "--port", paseoPort, "--localhost"], {
+  const child = spawn("npx", ["expo", "start", "--port", ramblaPort, "--localhost"], {
     cwd: appDir,
     env: {
       ...env,

@@ -27,7 +27,7 @@ steps:
     agent: codex
     prompt:
       - text: Call hub.finish_execution when the step is complete.
-      - text: ${{ paseo.prompt }}
+      - text: ${{ rambla.prompt }}
 ```
 
 Field-by-field detail is in the [configuration reference](/docs/hub/configuration/hub-yml).

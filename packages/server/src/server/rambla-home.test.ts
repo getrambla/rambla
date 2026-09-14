@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 
-import { resolveRamblaHome } from "./paseo-home.js";
+import { resolveRamblaHome } from "./rambla-home.js";
 import { PRIVATE_DIRECTORY_MODE } from "./private-files.js";
 
 const MODE_MASK = 0o777;
@@ -14,11 +14,11 @@ function modeOf(filePath: string): number {
 
 describe.skipIf(process.platform === "win32")("resolveRamblaHome permissions", () => {
   test("creates RAMBLA_HOME with private permissions", () => {
-    const parent = mkdtempSync(path.join(tmpdir(), "paseo-home-parent-"));
-    const paseoHome = path.join(parent, "home");
+    const parent = mkdtempSync(path.join(tmpdir(), "rambla-home-parent-"));
+    const ramblaHome = path.join(parent, "home");
     try {
-      expect(resolveRamblaHome({ RAMBLA_HOME: paseoHome })).toBe(paseoHome);
-      expect(modeOf(paseoHome)).toBe(PRIVATE_DIRECTORY_MODE);
+      expect(resolveRamblaHome({ RAMBLA_HOME: ramblaHome })).toBe(ramblaHome);
+      expect(modeOf(ramblaHome)).toBe(PRIVATE_DIRECTORY_MODE);
     } finally {
       rmSync(parent, { recursive: true, force: true });
     }

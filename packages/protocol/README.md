@@ -1,4 +1,4 @@
-# @getpaseo/protocol
+# @getrambla/protocol
 
 Shared Rambla protocol schemas, codecs, and wire types.
 

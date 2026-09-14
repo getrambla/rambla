@@ -1,5 +1,5 @@
 {
-  "name": "@getpaseo/relay",
+  "name": "@getrambla/relay",
   "version": "0.8.0",
   "description": "Rambla relay for bridging daemon and client connections",
   "files": [

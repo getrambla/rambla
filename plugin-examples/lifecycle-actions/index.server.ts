@@ -1,4 +1,4 @@
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@getrambla/plugin/server";
 import { latestOutputText, shellCommand } from "./server/inspect";
 
 export default function contribute(server: PluginServerContext) {
@@ -23,7 +23,7 @@ export default function contribute(server: PluginServerContext) {
     }
     const text = latestOutputText(event.timeline);
     if (/out of credits/i.test(text)) {
-      const agent = context.paseo.agents.ref(event.agent.id);
+      const agent = context.rambla.agents.ref(event.agent.id);
       console.log("Sending a follow-up after out of credits", event.agent.id);
       await agent.send("Try again.");
     }
@@ -35,7 +35,7 @@ export default function contribute(server: PluginServerContext) {
       return;
     }
 
-    const agent = context.paseo.agents.ref(event.agent.id);
+    const agent = context.rambla.agents.ref(event.agent.id);
     if (/\brm\s+-rf\b/.test(command)) {
       await agent.respondToPermission({
         requestId: event.request.id,

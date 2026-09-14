@@ -437,10 +437,10 @@ describe("file explorer request compatibility", () => {
   });
 });
 
-describe("paseo worktree archive request compatibility", () => {
+describe("rambla worktree archive request compatibility", () => {
   test("omitted scope defaults to workspace", () => {
     const parsed = RamblaWorktreeArchiveRequestSchema.parse({
-      type: "paseo_worktree_archive_request",
+      type: "rambla_worktree_archive_request",
       worktreePath: "/repo/app",
       requestId: "req-old-scope",
     });
@@ -449,7 +449,7 @@ describe("paseo worktree archive request compatibility", () => {
 
   test("scope worktree parses", () => {
     const parsed = RamblaWorktreeArchiveRequestSchema.parse({
-      type: "paseo_worktree_archive_request",
+      type: "rambla_worktree_archive_request",
       worktreePath: "/repo/app",
       scope: "worktree",
       requestId: "req-worktree-scope",
@@ -459,7 +459,7 @@ describe("paseo worktree archive request compatibility", () => {
 
   test("unknown extra field is still accepted", () => {
     const parsed = RamblaWorktreeArchiveRequestSchema.parse({
-      type: "paseo_worktree_archive_request",
+      type: "rambla_worktree_archive_request",
       worktreePath: "/repo/app",
       requestId: "req-extra",
       extraField: "ignored",

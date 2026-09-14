@@ -144,11 +144,11 @@ describe.skipIf(!claudeAvailability.available)(
       const recorder = await createActivityRecorder();
       const terminalId = "real-claude-terminal";
       const token = "real-claude-token";
-      const configDir = createTempDir("paseo-real-claude-config-");
-      const cwd = createTempDir("paseo-real-claude-cwd-");
-      const paseoCliBinDir = resolveRamblaCliBinDir();
-      if (!paseoCliBinDir) {
-        throw new Error("Could not resolve paseo CLI bin directory");
+      const configDir = createTempDir("rambla-real-claude-config-");
+      const cwd = createTempDir("rambla-real-claude-cwd-");
+      const ramblaCliBinDir = resolveRamblaCliBinDir();
+      if (!ramblaCliBinDir) {
+        throw new Error("Could not resolve rambla CLI bin directory");
       }
 
       installRegisteredAgentHooks({ configDir });
@@ -167,7 +167,7 @@ describe.skipIf(!claudeAvailability.available)(
               RAMBLA_TERMINAL_ID: terminalId,
               RAMBLA_ACTIVITY_TOKEN: token,
               RAMBLA_TERMINAL_ACTIVITY_URL: recorder.url,
-              PATH: [paseoCliBinDir, process.env.PATH].filter(isString).join(delimiter),
+              PATH: [ramblaCliBinDir, process.env.PATH].filter(isString).join(delimiter),
             },
           },
         );
@@ -196,10 +196,10 @@ describe.skipIf(!claudeAvailability.available)(
         if (post.state === "idle") session?.setActivity("idle");
         if (post.state === "needs-input") session?.setActivity("attention");
       });
-      const configDir = createTempDir("paseo-real-claude-interrupt-config-");
-      const paseoCliBinDir = resolveRamblaCliBinDir();
-      if (!paseoCliBinDir) {
-        throw new Error("Could not resolve paseo CLI bin directory");
+      const configDir = createTempDir("rambla-real-claude-interrupt-config-");
+      const ramblaCliBinDir = resolveRamblaCliBinDir();
+      if (!ramblaCliBinDir) {
+        throw new Error("Could not resolve rambla CLI bin directory");
       }
 
       installRegisteredAgentHooks({ configDir });
@@ -216,7 +216,7 @@ describe.skipIf(!claudeAvailability.available)(
             RAMBLA_TERMINAL_ID: terminalId,
             RAMBLA_ACTIVITY_TOKEN: token,
             RAMBLA_TERMINAL_ACTIVITY_URL: recorder.url,
-            PATH: [paseoCliBinDir, process.env.PATH].filter(isString).join(delimiter),
+            PATH: [ramblaCliBinDir, process.env.PATH].filter(isString).join(delimiter),
           },
         });
 

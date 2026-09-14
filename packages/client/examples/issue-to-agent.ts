@@ -1,4 +1,4 @@
-import { createRamblaClient, type RamblaClient } from "@getpaseo/client";
+import { createRamblaClient, type RamblaClient } from "@getrambla/client";
 
 interface Issue {
   id: string;

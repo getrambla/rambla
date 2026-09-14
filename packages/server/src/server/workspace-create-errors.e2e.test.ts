@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { DaemonClient } from "./test-utils/index.js";
-import { createTestRamblaDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "./test-utils/rambla-daemon.js";
 
 // workspace.create has four reject branches before it ever touches the
 // registries; this pins each one's errorCode (or, for project-not-found, its
@@ -12,7 +12,7 @@ import { createTestRamblaDaemon } from "./test-utils/paseo-daemon.js";
 // stays covered.
 test("workspace.create surfaces each early-reject error branch", async () => {
   const daemon = await createTestRamblaDaemon();
-  const missingDir = path.join(tmpdir(), `paseo-workspace-create-missing-${Date.now()}`);
+  const missingDir = path.join(tmpdir(), `rambla-workspace-create-missing-${Date.now()}`);
   const client = new DaemonClient({
     url: `ws://127.0.0.1:${daemon.port}/ws`,
     appVersion: "0.1.82",

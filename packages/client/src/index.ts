@@ -1,5 +1,5 @@
 import type { DaemonClientConfig } from "./daemon-client.js";
-import type { AgentPermissionResponse } from "@getpaseo/protocol/agent-types";
+import type { AgentPermissionResponse } from "@getrambla/protocol/agent-types";
 import type {
   AgentSnapshotPayload,
   CreateAgentRequestMessage,
@@ -25,7 +25,7 @@ import type {
   SessionOutboundMessage,
   WorkspaceDescriptorPayload,
   WorkspaceCreateRequest,
-} from "@getpaseo/protocol/messages";
+} from "@getrambla/protocol/messages";
 import { DaemonClient } from "./daemon-client.js";
 import {
   createTerminalActions,
@@ -43,7 +43,7 @@ export type {
   RamblaTerminalCaptureResult,
   RamblaWorkspaceTerminalActions,
 } from "./terminals/index.js";
-import type { PluginTimelineItem } from "@getpaseo/protocol/agent-types";
+import type { PluginTimelineItem } from "@getrambla/protocol/agent-types";
 import type {
   FetchAgentsEntry,
   FetchAgentsOptions,
@@ -927,5 +927,5 @@ function createGeneratedClientId(): string {
     typeof globalThis.crypto?.randomUUID === "function"
       ? globalThis.crypto.randomUUID()
       : Math.random().toString(36).slice(2);
-  return `paseo-sdk-${randomId}`;
+  return `rambla-sdk-${randomId}`;
 }

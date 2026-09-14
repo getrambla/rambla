@@ -57,7 +57,7 @@ test("Hub MCP configuration reaches the provider alongside Rambla MCP without en
     payload: { success: true, agent: { provider: "codex" }, error: null },
   });
   expect(hub.latestProviderCreateConfig()?.mcpServers).toMatchObject({
-    paseo: { type: "http" },
+    rambla: { type: "http" },
     hub: {
       type: "http",
       url: "https://hub.test/mcp/executions/mcp-execution",
@@ -159,7 +159,7 @@ test("new Hub executions cannot override the daemon-owned Rambla MCP server", as
   const hub = await launchRelationship();
   hub.beginOwnedCreate("reserved-mcp-create", "reserved-mcp-execution", {
     mcpServers: {
-      paseo: { type: "http", url: "https://hub.test/replace-paseo" },
+      rambla: { type: "http", url: "https://hub.test/replace-rambla" },
     },
   });
 
@@ -191,7 +191,7 @@ test("reserved Rambla MCP input does not invalidate replay of an owned execution
 
   hub.beginOwnedCreate("replay-create", "replayed-execution", {
     mcpServers: {
-      paseo: { type: "http", url: "https://hub.test/replace-paseo" },
+      rambla: { type: "http", url: "https://hub.test/replace-rambla" },
     },
   });
   const replay = await hub.ownedCreateResult("replay-create");

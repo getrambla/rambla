@@ -23,7 +23,7 @@ const queryFactory = vi.fn();
 const testTempDirs: string[] = [];
 
 function writeWorkflowOutput(): string {
-  const directory = mkdtempSync(path.join(tmpdir(), "paseo-workflow-output-"));
+  const directory = mkdtempSync(path.join(tmpdir(), "rambla-workflow-output-"));
   testTempDirs.push(directory);
   const outputPath = path.join(directory, "workflow.output");
   writeFileSync(

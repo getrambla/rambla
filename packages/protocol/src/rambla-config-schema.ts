@@ -67,7 +67,7 @@ export const RamblaMetadataGenerationSchema = z
     pullRequest: RamblaMetadataGenerationEntrySchema.optional(),
   })
   // COMPAT(projectMetadataAgentTitle): `agentTitle` project metadata prompts were removed
-  // in v0.1.96; keep legacy paseo.json parseable until 2026-12-16.
+  // in v0.1.96; keep legacy rambla.json parseable until 2026-12-16.
   .passthrough()
   .catch({});
 

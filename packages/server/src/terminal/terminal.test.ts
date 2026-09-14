@@ -891,7 +891,7 @@ describe.skipIf(isPlatform("win32"))("terminal title", () => {
       fakeAppRoot,
       "app.asar",
       "node_modules",
-      "@getpaseo",
+      "@getrambla",
       "server",
       "dist",
       "server",
@@ -903,7 +903,7 @@ describe.skipIf(isPlatform("win32"))("terminal title", () => {
       fakeAppRoot,
       "app.asar.unpacked",
       "node_modules",
-      "@getpaseo",
+      "@getrambla",
       "server",
       "dist",
       "server",
@@ -1268,7 +1268,7 @@ describe.runIf(isPlatform("win32"))(".cmd shim argv round-trip on Windows", () =
   const argvMarker = "__RAMBLA_ARGV__";
 
   function writeArgvEchoShim(): { dir: string; cmdPath: string } {
-    const dir = mkdtempSync(join(tmpdir(), "paseo-cmd-shim-"));
+    const dir = mkdtempSync(join(tmpdir(), "rambla-cmd-shim-"));
     temporaryDirs.push(dir);
     const cmdPath = join(dir, "echoargv.cmd");
     const scriptPath = join(dir, "echoargv.js");

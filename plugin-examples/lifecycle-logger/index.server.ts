@@ -1,4 +1,4 @@
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@getrambla/plugin/server";
 import { logHook } from "./server/log";
 
 export default function contribute(server: PluginServerContext) {

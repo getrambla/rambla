@@ -21,12 +21,12 @@ These are the canonical reference endpoints for the hosted Rambla Hub. A self-ho
 
 ## Authentication
 
-Run `paseo hub login [origin]` for interactive CLI access. After browser approval, Rambla stores a durable, revocable organization credential under `RAMBLA_HOME` for that exact origin. Without an explicit origin, the CLI uses `RAMBLA_HUB_URL`, then the active stored login, then `https://hub.rambla.sh`.
+Run `rambla hub login [origin]` for interactive CLI access. After browser approval, Rambla stores a durable, revocable organization credential under `RAMBLA_HOME` for that exact origin. Without an explicit origin, the CLI uses `RAMBLA_HUB_URL`, then the active stored login, then `https://hub.rambla.sh`.
 
 For automation, create an organization API key from the Hub dashboard under **API keys**. Both credential types are bearer tokens:
 
 ```http
-Authorization: Bearer paseo_pk_...
+Authorization: Bearer rambla_pk_...
 Content-Type: application/json
 ```
 
@@ -48,7 +48,7 @@ Each key has one or more selectable scopes:
 API keys do not grant dashboard access. They cannot manage connections,
 projects, or organization members.
 
-CLI credentials have the current CLI operation scopes and remain revocable independently of daemon relationships. `paseo hub logout` deletes the active local CLI credential; it does not revoke or disconnect the daemon identity.
+CLI credentials have the current CLI operation scopes and remain revocable independently of daemon relationships. `rambla hub logout` deletes the active local CLI credential; it does not revoke or disconnect the daemon identity.
 
 API failures use RFC 9457 problem details. Missing, invalid, or revoked credentials return `401` with `application/problem+json`:
 
@@ -67,7 +67,7 @@ A valid key without the scope required by an endpoint returns `403` in the same 
 
 ## Trigger validation and installation
 
-`paseo hub deploy --dry-run` validates each `.rambla/triggers/*.yml` file through `POST /api/v1/triggers/validate`. `paseo hub deploy` validates all files first, then installs each through `POST /api/v1/triggers/install`.
+`rambla hub deploy --dry-run` validates each `.rambla/triggers/*.yml` file through `POST /api/v1/triggers/validate`. `rambla hub deploy` validates all files first, then installs each through `POST /api/v1/triggers/install`.
 
 Both endpoints accept one self-contained document:
 
@@ -95,7 +95,7 @@ Invalid YAML or an unknown organization resource returns `422` with field issues
 
 ## Project list
 
-`GET /api/v1/projects` returns active projects in the bearer credential's organization. `paseo hub projects` renders the projects as a table. With `--json`, it returns `{ "origin": "...", "projects": [...] }` so even an empty result records the resolved Hub.
+`GET /api/v1/projects` returns active projects in the bearer credential's organization. `rambla hub projects` renders the projects as a table. With `--json`, it returns `{ "origin": "...", "projects": [...] }` so even an empty result records the resolved Hub.
 
 ```json
 {
@@ -122,7 +122,7 @@ On success, Hub returns `200`:
 }
 ```
 
-`paseo hub deploy --project <slug> --dry-run` calls this endpoint with the identical locally resolved payload that a deployment would send.
+`rambla hub deploy --project <slug> --dry-run` calls this endpoint with the identical locally resolved payload that a deployment would send.
 
 ## Legacy configuration install
 
@@ -185,7 +185,7 @@ curl --fail-with-body -sS -X POST "$RAMBLA_HUB_URL/api/v1/configurations/install
   --data @configuration-install.json
 ```
 
-`paseo hub deploy -p <project>` selects this legacy endpoint with the discovered local bundle. The command uses an exact-origin stored login when flags and environment credentials are absent. See [Deploy from the CLI](/docs/hub/configuration#deploy-from-the-cli).
+`rambla hub deploy -p <project>` selects this legacy endpoint with the discovered local bundle. The command uses an exact-origin stored login when flags and environment credentials are absent. See [Deploy from the CLI](/docs/hub/configuration#deploy-from-the-cli).
 
 ## Manual run dispatch
 
@@ -211,7 +211,7 @@ Request body:
 ```
 
 - `expectedVersionId` is optional. When supplied, Hub rejects the dispatch if that revision is no longer active.
-- `input` is the same string a provider message uses: leading `key=value` tokens are parsed as declared inputs, and the remainder becomes `${{ paseo.prompt }}`.
+- `input` is the same string a provider message uses: leading `key=value` tokens are parsed as declared inputs, and the remainder becomes `${{ rambla.prompt }}`.
 - `deliveryKey` should be unique and stable per dispatch. Hub uses it for durable deduplication, but does not promise exactly-once dispatch or replay of an earlier response.
 
 On success, Hub returns `200`:
@@ -267,7 +267,7 @@ No request body is required. On success, Hub returns `201`:
 
 The token expires after 10 minutes and is consumed when the daemon enrolls.
 
-`paseo hub connect [origin]` performs this request with `--api-key`, `RAMBLA_HUB_API_KEY`, or the matching stored login, then passes the one-time token to the daemon's enrollment operation. The daemon generates and keeps its own relationship credential.
+`rambla hub connect [origin]` performs this request with `--api-key`, `RAMBLA_HUB_API_KEY`, or the matching stored login, then passes the one-time token to the daemon's enrollment operation. The daemon generates and keeps its own relationship credential.
 
 ```bash
 curl --fail-with-body -sS -X POST \

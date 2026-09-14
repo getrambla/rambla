@@ -10,14 +10,14 @@ import { writeFileAtomic } from "../../../atomic-file.js";
 import {
   addModelVisibleStructuredContent,
   serializeRamblaToolInputParameters,
-} from "../../tools/paseo-tool-serialization.js";
+} from "../../tools/rambla-tool-serialization.js";
 import type { RamblaToolCatalog } from "../../tools/types.js";
 
 const INTERNAL_PREFIX = "/_internal/opencode";
 const MAX_REQUEST_BYTES = 1024 * 1024;
 
 interface OpenCodeBridgeOptions {
-  paseoHome: string;
+  ramblaHome: string;
   logger: Logger;
 }
 
@@ -41,7 +41,7 @@ interface OpenCodeConfig {
 }
 
 export class OpenCodeBridge {
-  private readonly paseoHome: string;
+  private readonly ramblaHome: string;
   private readonly logger: Logger;
   private readonly token = randomBytes(32).toString("hex");
   private readonly sessions = new Map<string, OpenCodeSessionBinding>();
@@ -51,7 +51,7 @@ export class OpenCodeBridge {
   private manifestCatalog: RamblaToolCatalog | null = null;
 
   constructor(options: OpenCodeBridgeOptions) {
-    this.paseoHome = options.paseoHome;
+    this.ramblaHome = options.ramblaHome;
     this.logger = options.logger.child({ module: "agent", component: "opencode-bridge" });
   }
 
@@ -104,7 +104,7 @@ export class OpenCodeBridge {
     const plugins = config.plugin ?? [];
     const withoutBridge = plugins.filter((entry) => {
       const specifier = Array.isArray(entry) ? entry[0] : entry;
-      return !specifier.includes("/paseo-") || !specifier.endsWith(".mjs");
+      return !specifier.includes("/rambla-") || !specifier.endsWith(".mjs");
     });
     return {
       ...env,
@@ -126,7 +126,7 @@ export class OpenCodeBridge {
   private async materializePlugin(): Promise<string> {
     const artifact = await loadOpenCodeBridgePluginArtifact(import.meta.url);
     const digest = createHash("sha256").update(artifact).digest("hex");
-    const destination = path.join(this.paseoHome, "runtime", "opencode", `paseo-${digest}.mjs`);
+    const destination = path.join(this.ramblaHome, "runtime", "opencode", `rambla-${digest}.mjs`);
     await writeFileAtomic(destination, artifact);
     return pathToFileURL(destination).href;
   }

@@ -7,7 +7,7 @@ import {
   readRamblaConfigForEdit,
   writeRamblaConfigForEdit,
   type ProjectConfigRpcError,
-} from "../../../utils/paseo-config-file.js";
+} from "../../../utils/rambla-config-file.js";
 import { hasUncommittedWorktreeSetupChanges } from "./worktree-setup-commit-status.js";
 
 export interface ProjectConfigSessionHost {
@@ -21,7 +21,7 @@ export interface ProjectConfigSessionOptions {
 }
 
 /**
- * A client's read/write surface for a project's on-disk paseo.json. Resolves the
+ * A client's read/write surface for a project's on-disk rambla.json. Resolves the
  * request's repoRoot against the known (non-archived) project roots — accepting a
  * trailing slash or a symlink via realpath — then reads or writes the config
  * substrate and emits the matching response. Reaches no state beyond the injected

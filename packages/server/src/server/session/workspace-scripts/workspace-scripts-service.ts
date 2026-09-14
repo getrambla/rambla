@@ -25,7 +25,7 @@ import {
   readRamblaConfigForProjection,
 } from "../../script-status-projection.js";
 import { deriveProjectServiceSlug, deriveProjectSlug } from "../../workspace-git-metadata.js";
-import type { RamblaServicePortAllocation } from "@getpaseo/protocol/paseo-config-schema";
+import type { RamblaServicePortAllocation } from "@getrambla/protocol/rambla-config-schema";
 
 type WorkspaceScriptsPayload = WorkspaceDescriptorPayload["scripts"];
 
@@ -118,7 +118,7 @@ export function createWorkspaceScriptsService(deps: {
     return buildWorkspaceScriptPayloads({
       workspaceId: workspace.workspaceId,
       workspaceDirectory: workspace.cwd,
-      paseoConfig: readRamblaConfigForProjection(workspace.cwd, logger),
+      ramblaConfig: readRamblaConfigForProjection(workspace.cwd, logger),
       serviceProxy,
       runtimeStore: scriptRuntimeStore,
       daemonPort: getDaemonTcpPort?.() ?? null,

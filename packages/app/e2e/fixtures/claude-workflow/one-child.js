@@ -1,5 +1,5 @@
 export const meta = {
-  name: "paseo-workflow-row-qa",
+  name: "rambla-workflow-row-qa",
   description: "Verify the workflow row lifecycle",
   whenToUse: "Rambla real-provider QA only",
   phases: [{ title: "Verify", detail: "one child returns a fixed marker" }],

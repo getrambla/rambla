@@ -51,7 +51,7 @@ interface CatalogMeasurement {
 
 const DEFAULT_TOP_COUNT = 15;
 const MEASUREMENT_AGENT_ID = "agent-tools-measurement";
-const MEASUREMENT_CWD = "/tmp/paseo-agent-tools-measurement";
+const MEASUREMENT_CWD = "/tmp/rambla-agent-tools-measurement";
 const MEASUREMENT_WORKSPACE_ID = "workspace_agent_tools_measurement";
 const FIELD_NAMES = [
   "name",
@@ -189,7 +189,7 @@ async function measureCatalog(params: {
     callerAgentId: params.scope === "agent" ? MEASUREMENT_AGENT_ID : undefined,
     logger: pino({ level: "silent" }),
   });
-  const client = new Client({ name: "paseo-agent-tools-measurement", version: "0.0.0" });
+  const client = new Client({ name: "rambla-agent-tools-measurement", version: "0.0.0" });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 
   await server.connect(serverTransport);

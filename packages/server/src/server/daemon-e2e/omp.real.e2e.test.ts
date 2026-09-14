@@ -14,7 +14,7 @@ import {
   formatOmpVersionSupport,
 } from "../agent/providers/omp/agent.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import { createRealProviderClients, getRealProviderConfig } from "./real-provider-test-config.js";
 
 const execFileAsync = promisify(execFile);
@@ -27,7 +27,7 @@ interface Harness {
   daemon: TestRamblaDaemon;
   client: DaemonClient;
   cwd: string;
-  paseoHomeRoot: string;
+  ramblaHomeRoot: string;
   staticDir: string;
 }
 
@@ -50,16 +50,16 @@ async function preflight(): Promise<void> {
 }
 
 async function createHarness(): Promise<Harness> {
-  const cwd = mkdtempSync(path.join(tmpdir(), "paseo-real-omp-"));
-  const paseoHomeRoot = mkdtempSync(path.join(tmpdir(), "paseo-real-omp-home-"));
-  const staticDir = mkdtempSync(path.join(tmpdir(), "paseo-real-omp-static-"));
-  for (const root of [cwd, paseoHomeRoot, staticDir]) roots.add(root);
+  const cwd = mkdtempSync(path.join(tmpdir(), "rambla-real-omp-"));
+  const ramblaHomeRoot = mkdtempSync(path.join(tmpdir(), "rambla-real-omp-home-"));
+  const staticDir = mkdtempSync(path.join(tmpdir(), "rambla-real-omp-static-"));
+  for (const root of [cwd, ramblaHomeRoot, staticDir]) roots.add(root);
   const logger = pino({ level: process.env.OMP_E2E_LOG_LEVEL ?? "silent" });
   const daemon = await createTestRamblaDaemon({
     agentClients: createRealProviderClients(["omp"], logger),
     providerOverrides: { omp: { enabled: true } },
     logger,
-    paseoHomeRoot,
+    ramblaHomeRoot,
     staticDir,
     cleanup: false,
   });
@@ -71,13 +71,13 @@ async function createHarness(): Promise<Harness> {
   await client.fetchAgents({
     subscribe: { subscriptionId: `omp-real-${randomUUID()}` },
   });
-  return { daemon, client, cwd, paseoHomeRoot, staticDir };
+  return { daemon, client, cwd, ramblaHomeRoot, staticDir };
 }
 
 async function closeHarness(harness: Harness): Promise<void> {
   await harness.client.close().catch(() => undefined);
   await harness.daemon.close().catch(() => undefined);
-  for (const root of [harness.cwd, harness.paseoHomeRoot, harness.staticDir]) {
+  for (const root of [harness.cwd, harness.ramblaHomeRoot, harness.staticDir]) {
     rmSync(root, { recursive: true, force: true });
     roots.delete(root);
   }

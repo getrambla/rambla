@@ -70,7 +70,7 @@ async function fetchGitHubReleases(): Promise<GitHubRelease[]> {
   const response = await fetch(GITHUB_RELEASES_URL, {
     headers: {
       Accept: "application/vnd.github+json",
-      "User-Agent": "paseo-website",
+      "User-Agent": "rambla-website",
     },
     cf: {
       cacheEverything: true,
@@ -143,7 +143,7 @@ export function getLatestAndroidVersionFromReleases(releases: GitHubRelease[]): 
     const version = versionFromTag(candidate.tag_name);
     if (!/^\d+\.\d+\.\d+$/.test(version)) return false;
     return candidate.assets.some(
-      (asset) => asset.name === `paseo-${candidate.tag_name}-android.apk`,
+      (asset) => asset.name === `rambla-${candidate.tag_name}-android.apk`,
     );
   });
   if (!release) throw new Error("no stable GitHub release with an Android APK found");

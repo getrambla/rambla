@@ -78,8 +78,8 @@ Rambla はコーディングエージェントを管理するローカルサー�
 CLI をインストールして Rambla を起動します。
 
 ```bash
-npm install -g @getpaseo/cli
-paseo
+npm install -g @getrambla/cli
+rambla
 ```
 
 ターミナルに QR コードが表示されます。どのクライアントからでも接続できます。サーバーやリモートマシンでの利用に適しています。
@@ -94,15 +94,15 @@ paseo
 アプリでできることはすべてターミナルからも実行できます。
 
 ```bash
-paseo run --provider claude/opus-4.6 "implement user authentication"
-paseo run --provider codex/gpt-5.4 --worktree feature-x "implement feature X"
+rambla run --provider claude/opus-4.6 "implement user authentication"
+rambla run --provider codex/gpt-5.4 --worktree feature-x "implement feature X"
 
-paseo ls                           # 実行中のエージェントを一覧表示
-paseo attach abc123                # ライブ出力をストリーミング
-paseo send abc123 "also add tests" # 追加タスクを送信
+rambla ls                           # 実行中のエージェントを一覧表示
+rambla attach abc123                # ライブ出力をストリーミング
+rambla send abc123 "also add tests" # 追加タスクを送信
 
 # リモートデーモンで実行
-paseo --host workstation.local:6767 run "run the full test suite"
+rambla --host workstation.local:6767 run "run the full test suite"
 ```
 
 詳細は[完全な CLI リファレンス](https://rambla.sh/docs/cli)を参照してください。
@@ -117,9 +117,9 @@ npx skills add getrambla/rambla
 
 どのエージェントとの会話でも使用できます。
 
-- `/paseo-handoff` — エージェント間で作業を引き継ぎます。私はこれを使って Claude で計画し、Codex に実装を引き継いでいます。
-- `/paseo-advisor` — 単一のエージェントをアドバイザーとして起動し、作業を委任せずにセカンドオピニオンを得ます。
-- `/paseo-committee` — 対照的な2つのエージェントで委員会を構成し、一歩引いた視点で根本原因を分析して計画を作成します。
+- `/rambla-handoff` — エージェント間で作業を引き継ぎます。私はこれを使って Claude で計画し、Codex に実装を引き継いでいます。
+- `/rambla-advisor` — 単一のエージェントをアドバイザーとして起動し、作業を委任せずにセカンドオピニオンを得ます。
+- `/rambla-committee` — 対照的な2つのエージェントで委員会を構成し、一歩引いた視点で根本原因を分析して計画を作成します。
 
 ## 開発
 
@@ -127,7 +127,7 @@ npx skills add getrambla/rambla
 
 - `packages/server`: Rambla デーモン（エージェントプロセスのオーケストレーション、WebSocket API、MCP サーバー）
 - `packages/app`: Expo クライアント（iOS、Android、Web）
-- `packages/cli`: デーモンおよびエージェントワークフロー向け `paseo` CLI
+- `packages/cli`: デーモンおよびエージェントワークフロー向け `rambla` CLI
 - `packages/desktop`: Electron デスクトップアプリ
 - `packages/relay`: リモート接続用リレーパッケージ
 - `packages/website`: マーケティングサイトとドキュメント（`rambla.sh`）
@@ -153,8 +153,8 @@ npm run typecheck
 
 ## 関連プロジェクト
 
-- [getpaseo/paseo-relay](https://github.com/getpaseo/paseo-relay) — Elixir 製の公式分散リレー
-- [paseo-vscode](https://marketplace.visualstudio.com/items?itemName=hinnes.paseo-vscode) — VS Code 拡張機能
+- [getrambla/rambla-relay](https://github.com/getrambla/rambla-relay) — Elixir 製の公式分散リレー
+- [rambla-vscode](https://marketplace.visualstudio.com/items?itemName=hinnes.rambla-vscode) — VS Code 拡張機能
 
 ## ライセンス
 

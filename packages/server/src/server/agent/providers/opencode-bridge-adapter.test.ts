@@ -20,12 +20,12 @@ describe("OpenCode bridge adapter", () => {
   });
 
   test("shares the server and binds exact managed env per OpenCode session", async () => {
-    const paseoHome = await mkdtemp(path.join(os.tmpdir(), "paseo-opencode-adapter-"));
-    const bridge = new OpenCodeBridge({ paseoHome, logger: createTestLogger() });
+    const ramblaHome = await mkdtemp(path.join(os.tmpdir(), "rambla-opencode-adapter-"));
+    const bridge = new OpenCodeBridge({ ramblaHome, logger: createTestLogger() });
     await bridge.start();
     cleanups.push(async () => {
       await bridge.close();
-      await rm(paseoHome, { recursive: true, force: true });
+      await rm(ramblaHome, { recursive: true, force: true });
     });
 
     const runtime = new TestOpenCodeHarness();
@@ -72,12 +72,12 @@ describe("OpenCode bridge adapter", () => {
   });
 
   test("keeps process-scoped env and directory-scoped MCP on dedicated servers", async () => {
-    const paseoHome = await mkdtemp(path.join(os.tmpdir(), "paseo-opencode-adapter-"));
-    const bridge = new OpenCodeBridge({ paseoHome, logger: createTestLogger() });
+    const ramblaHome = await mkdtemp(path.join(os.tmpdir(), "rambla-opencode-adapter-"));
+    const bridge = new OpenCodeBridge({ ramblaHome, logger: createTestLogger() });
     await bridge.start();
     cleanups.push(async () => {
       await bridge.close();
-      await rm(paseoHome, { recursive: true, force: true });
+      await rm(ramblaHome, { recursive: true, force: true });
     });
     const runtime = new TestOpenCodeHarness();
     runtime.enqueueClient(new TestOpenCodeClient());

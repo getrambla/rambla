@@ -17,7 +17,7 @@ function release({
   const tag = `v${version}`;
   return {
     tag_name: tag,
-    assets: hasApk ? [{ name: `paseo-${tag}-android.apk` }] : [],
+    assets: hasApk ? [{ name: `rambla-${tag}-android.apk` }] : [],
     prerelease,
     draft: false,
   };

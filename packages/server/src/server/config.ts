@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { resolveRamblaNodeEnv } from "./paseo-env.js";
+import { resolveRamblaNodeEnv } from "./rambla-env.js";
 import { z } from "zod";
 import { expandTilde } from "../utils/path.js";
 
@@ -18,7 +18,7 @@ import type {
   ProviderOverride,
 } from "./agent/provider-launch-config.js";
 import { ProviderOverrideSchema } from "./agent/provider-launch-config.js";
-import { AgentProviderSchema } from "@getpaseo/protocol/provider-manifest";
+import { AgentProviderSchema } from "@getrambla/protocol/provider-manifest";
 import { hashDaemonPassword } from "./auth.js";
 import { resolveSpeechConfig } from "./speech/speech-config-resolver.js";
 import type { RequestedSpeechProviders } from "./speech/speech-types.js";
@@ -373,7 +373,7 @@ interface ResolvedWebUi {
 }
 
 function resolveWebUiConfig(
-  paseoHome: string,
+  ramblaHome: string,
   env: NodeJS.ProcessEnv,
   cli: CliConfigOverrides | undefined,
   persisted: ReturnType<typeof loadPersistedConfig>,
@@ -386,7 +386,7 @@ function resolveWebUiConfig(
   const rawDistDir = env.RAMBLA_WEB_UI_DIST_DIR ?? persisted.features?.webUi?.distDir;
   const trimmedDistDir = rawDistDir?.trim();
   const distDir = trimmedDistDir
-    ? path.resolve(path.isAbsolute(trimmedDistDir) ? trimmedDistDir : paseoHome, trimmedDistDir)
+    ? path.resolve(path.isAbsolute(trimmedDistDir) ? trimmedDistDir : ramblaHome, trimmedDistDir)
     : BUNDLED_WEB_UI_DIST_DIR;
   return {
     enabled,
@@ -485,7 +485,7 @@ function resolveAuthConfig(
 }
 
 function resolveWorktreesRoot(
-  paseoHome: string,
+  ramblaHome: string,
   persisted: ReturnType<typeof loadPersistedConfig>,
 ): string | undefined {
   const configuredRoot = persisted.worktrees?.root?.trim();
@@ -496,7 +496,7 @@ function resolveWorktreesRoot(
   const expandedRoot = expandTilde(configuredRoot);
   return path.isAbsolute(expandedRoot)
     ? path.resolve(expandedRoot)
-    : path.resolve(paseoHome, expandedRoot);
+    : path.resolve(ramblaHome, expandedRoot);
 }
 
 function resolveAppendSystemPrompt(persisted: ReturnType<typeof loadPersistedConfig>): string {
@@ -549,7 +549,7 @@ interface ResolveConfigFromPersistedOptions {
 }
 
 export function resolveConfigFromPersisted(
-  paseoHome: string,
+  ramblaHome: string,
   persisted: PersistedConfig,
   options?: ResolveConfigFromPersistedOptions,
 ): RamblaDaemonConfig {
@@ -581,10 +581,10 @@ export function resolveConfigFromPersisted(
     enabledFallback: relayEnabledFallback,
   });
   const serviceProxy = resolveServiceProxyConfig(env, persisted);
-  const webUi = resolveWebUiConfig(paseoHome, env, cli, persisted);
+  const webUi = resolveWebUiConfig(ramblaHome, env, cli, persisted);
 
   const { openai, speech } = resolveSpeechConfig({
-    paseoHome,
+    ramblaHome,
     env,
     persisted,
   });
@@ -598,9 +598,9 @@ export function resolveConfigFromPersisted(
 
   return {
     listen,
-    paseoHome,
+    ramblaHome,
     desktopManaged: env.RAMBLA_DESKTOP_MANAGED === "1",
-    worktreesRoot: resolveWorktreesRoot(paseoHome, persisted),
+    worktreesRoot: resolveWorktreesRoot(ramblaHome, persisted),
     corsAllowedOrigins: resolveCorsAllowedOrigins(env, persisted),
     hostnames,
     trustedProxies,
@@ -618,7 +618,7 @@ export function resolveConfigFromPersisted(
     plugins: persisted.plugins,
     mcpDebug: env.MCP_DEBUG === "1",
     isDev: resolveRamblaNodeEnv(env) === "development",
-    agentStoragePath: path.join(paseoHome, "agents"),
+    agentStoragePath: path.join(ramblaHome, "agents"),
     staticDir: "public",
     agentClients: {},
     relayEnabled: relay.enabled,
@@ -652,11 +652,11 @@ export function resolveConfigFromPersisted(
 }
 
 export function loadConfig(
-  paseoHome: string,
+  ramblaHome: string,
   options?: Omit<ResolveConfigFromPersistedOptions, "relayEnabledFallback">,
 ): RamblaDaemonConfig {
-  const persisted = loadPersistedConfig(paseoHome);
-  return resolveConfigFromPersisted(paseoHome, persisted, options);
+  const persisted = loadPersistedConfig(ramblaHome);
+  return resolveConfigFromPersisted(ramblaHome, persisted, options);
 }
 
 function parsePositiveGitOverride(value: string | undefined): boolean {

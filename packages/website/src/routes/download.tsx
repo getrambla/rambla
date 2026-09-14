@@ -97,7 +97,7 @@ function Download() {
 
           {!onBeta && (
             <PlatformRow icon={TerminalIcon} label="Homebrew">
-              <CodeBlock size="sm">brew install --cask paseo</CodeBlock>
+              <CodeBlock size="sm">brew install --cask rambla</CodeBlock>
             </PlatformRow>
           )}
 
@@ -185,8 +185,8 @@ function Download() {
           <PlatformRow icon={TerminalIcon} label="npm">
             <CodeBlock size="sm">
               {onBeta
-                ? "npm install -g @getpaseo/cli@beta && paseo"
-                : "npm install -g @getpaseo/cli && paseo"}
+                ? "npm install -g @getrambla/cli@beta && rambla"
+                : "npm install -g @getrambla/cli && rambla"}
             </CodeBlock>
           </PlatformRow>
 

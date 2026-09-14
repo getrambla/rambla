@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import appPackage from "../../../package.json";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -20,7 +20,7 @@ vi.mock("../navigation", () => ({
 }));
 vi.mock("../client-runtime", () => ({
   createPluginClientRuntime: () => ({
-    paseo: {},
+    rambla: {},
     rpc: async () => undefined,
     openSurface: () => undefined,
     openPanel: () => undefined,
@@ -115,7 +115,7 @@ describe("PluginTimelineItemView", () => {
   it("validates and renders the matching plugin component", () => {
     pluginRegistry.installCatalog(
       "host-1",
-      [{ id: "reports", requirements: { paseo: `>=${appPackage.version}` }, clientBundle: bundle }],
+      [{ id: "reports", requirements: { rambla: `>=${appPackage.version}` }, clientBundle: bundle }],
       {
         client: daemonClient,
       },
@@ -136,7 +136,7 @@ describe("PluginTimelineItemView", () => {
       [
         {
           id: "reports",
-          requirements: { paseo: `>=${appPackage.version}` },
+          requirements: { rambla: `>=${appPackage.version}` },
           clientBundle: failingBundle,
         },
       ],
@@ -173,7 +173,7 @@ describe("PluginTimelineItemView", () => {
       [
         {
           id: "reports",
-          requirements: { paseo: `>=${appPackage.version}` },
+          requirements: { rambla: `>=${appPackage.version}` },
           clientBundle: recoveringBundle,
         },
       ],

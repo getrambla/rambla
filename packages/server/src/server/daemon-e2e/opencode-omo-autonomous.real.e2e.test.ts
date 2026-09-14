@@ -10,7 +10,7 @@ import { createOpenCodeOmoRealRuntime } from "./opencode-omo-real-runtime.js";
 const CHILD_TOKEN = "RAMBLA_OMO_CHILD_READY";
 const ROOT_IDLE_TOKEN = "RAMBLA_OMO_ROOT_WAITING";
 const FINAL_TOKEN = "RAMBLA_OMO_AUTONOMOUS_FINAL";
-const ROOT_IDLE_BARRIER = ".paseo-omo-root-idle";
+const ROOT_IDLE_BARRIER = ".rambla-omo-root-idle";
 
 test("OpenCode remains idle while an OMO child works and completes the autonomous wake", async () => {
   const runtime = await createOpenCodeOmoRealRuntime();

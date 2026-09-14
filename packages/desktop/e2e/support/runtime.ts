@@ -34,15 +34,15 @@ export interface RealDaemonState {
  */
 export async function loadRealDaemonState(): Promise<RealDaemonState> {
   const port = getE2EDaemonPort();
-  const paseoHome = process.env.E2E_RAMBLA_HOME;
-  if (!paseoHome) throw new Error("E2E_RAMBLA_HOME not set — the worker fixture must run first");
+  const ramblaHome = process.env.E2E_RAMBLA_HOME;
+  if (!ramblaHome) throw new Error("E2E_RAMBLA_HOME not set — the worker fixture must run first");
 
   const resp = await fetch(`http://127.0.0.1:${port}/api/status`);
   const data: DaemonApiStatus = await resp.json();
 
   let pid: number | null = null;
   try {
-    const raw = readFileSync(`${paseoHome}/rambla.pid`, "utf8");
+    const raw = readFileSync(`${ramblaHome}/rambla.pid`, "utf8");
     const pidContent: PidFileContent = JSON.parse(raw);
     pid = pidContent.pid ?? null;
   } catch (err) {
@@ -50,7 +50,7 @@ export async function loadRealDaemonState(): Promise<RealDaemonState> {
     console.warn("[desktop-updates] rambla.pid not found:", err);
   }
 
-  return { version: data.version, pid, logPath: `${paseoHome}/daemon.log` };
+  return { version: data.version, pid, logPath: `${ramblaHome}/daemon.log` };
 }
 
 export interface DesktopRuntimeConfig {
@@ -113,7 +113,7 @@ declare global {
 }
 
 /**
- * Injects window.paseoDesktop before app load so all Electron-gated code
+ * Injects window.ramblaDesktop before app load so all Electron-gated code
  * activates. The update-check IPC is mocked at the boundary so the real
  * auto-updater never fires. Daemon start/stop commands are stateful: the mock
  * tracks running state and assigns a fresh PID on each start, letting tests
@@ -306,7 +306,7 @@ export async function installDesktopRuntime(
     }
 
     window.__capturedDialogOpenCalls = [];
-    (window as unknown as { paseoDesktop: unknown }).paseoDesktop = desktopBridge;
+    (window as unknown as { ramblaDesktop: unknown }).ramblaDesktop = desktopBridge;
   }, config);
 }
 

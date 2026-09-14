@@ -15,12 +15,12 @@ The Rambla CLI lets you manage agents from your terminal. It's the same interfac
 ## Quick reference
 
 ```bash
-paseo run "fix the tests"            # Start an agent
-paseo ls                             # List running agents
-paseo attach <id>                    # Stream agent output
-paseo send <id> "also fix linting"   # Send follow-up task
-paseo logs <id>                      # View agent timeline
-paseo stop <id>                      # Stop an agent
+rambla run "fix the tests"            # Start an agent
+rambla ls                             # List running agents
+rambla attach <id>                    # Stream agent output
+rambla send <id> "also fix linting"   # Send follow-up task
+rambla logs <id>                      # View agent timeline
+rambla stop <id>                      # Stop an agent
 ```
 
 ## Provider diagnostics
@@ -28,28 +28,28 @@ paseo stop <id>                      # Stop an agent
 Ask the daemon to inspect the provider environment it actually uses:
 
 ```bash
-paseo provider diagnostic claude
-paseo provider diagnostic codex --json
-paseo --host devbox:6767 provider diagnostic opencode
+rambla provider diagnostic claude
+rambla provider diagnostic codex --json
+rambla --host devbox:6767 provider diagnostic opencode
 ```
 
 The diagnostic includes the configured command, daemon `PATH` and shell, matching binaries, resolved path, version, model count, and provider status. Use the global `--host` option for a remote daemon. This is the same diagnostic shown under **Settings → your host → Providers → provider → Diagnostic**.
 
 ## Running agents
 
-Use `paseo run` to start a new agent with a task:
+Use `rambla run` to start a new agent with a task:
 
 ```bash
-paseo run "implement user authentication"
-paseo run --provider codex "refactor the API layer"
-paseo run --background "run the focused test suite"
-paseo run --new-workspace worktree --worktree-mode branch-off --new-branch feature/x --base origin/main "implement feature X"
-paseo run --workspace <workspace-id> "review the current diff"
-paseo run --output-schema schema.json "extract release notes"
-paseo run --output-schema '{"type":"object","properties":{"summary":{"type":"string"}},"required":["summary"]}' "summarize release notes"
+rambla run "implement user authentication"
+rambla run --provider codex "refactor the API layer"
+rambla run --background "run the focused test suite"
+rambla run --new-workspace worktree --worktree-mode branch-off --new-branch feature/x --base origin/main "implement feature X"
+rambla run --workspace <workspace-id> "review the current diff"
+rambla run --output-schema schema.json "extract release notes"
+rambla run --output-schema '{"type":"object","properties":{"summary":{"type":"string"}},"required":["summary"]}' "summarize release notes"
 ```
 
-From a human shell, a bare `paseo run` creates a new local workspace for the current directory. Use `--workspace <id>` to add the agent to an existing workspace, or `--new-workspace local|worktree` to explicitly create a separate workspace for the run.
+From a human shell, a bare `rambla run` creates a new local workspace for the current directory. Use `--workspace <id>` to add the agent to an existing workspace, or `--new-workspace local|worktree` to explicitly create a separate workspace for the run.
 
 Worktree creation accepts `--worktree-mode branch-off|checkout-branch|checkout-pr` plus the matching `--new-branch`/`--base`, `--branch`, or `--pr-number`/`--forge` options. Use `--worktree-slug` to choose the managed directory slug.
 
@@ -57,7 +57,7 @@ When an existing Rambla agent runs the same command, Rambla recognizes it throug
 
 Use `--output-schema` to return only matching JSON output. You can pass a schema file path or an inline JSON schema object. This mode cannot be used with `--background`.
 
-By default, `paseo run` waits for completion. Use `--background` to return immediately while the agent keeps running.
+By default, `rambla run` waits for completion. Use `--background` to return immediately while the agent keeps running.
 
 ## Projects
 
@@ -65,24 +65,24 @@ Register the current directory as a project, then list the projects known to the
 
 ```bash
 cd ~/dev/my-app
-paseo project create
-paseo project ls
+rambla project create
+rambla project ls
 ```
 
-Use the project ID from `paseo project ls` to rename, reset, or delete a project:
+Use the project ID from `rambla project ls` to rename, reset, or delete a project:
 
 ```bash
-paseo project rename <project-id> "My app"
-paseo project rename <project-id> --reset
-paseo project delete <project-id>
+rambla project rename <project-id> "My app"
+rambla project rename <project-id> --reset
+rambla project delete <project-id>
 ```
 
 `--reset` restores the name derived from the project directory. Deleting a project archives its active workspaces and removes the project from Rambla. It does not delete the project directory.
 
-For a local daemon, `paseo project create [path]` defaults to the current directory and resolves relative paths on the CLI machine. When you use the global `--host` option or `RAMBLA_HOST`, provide a path that the target daemon can access:
+For a local daemon, `rambla project create [path]` defaults to the current directory and resolves relative paths on the CLI machine. When you use the global `--host` option or `RAMBLA_HOST`, provide a path that the target daemon can access:
 
 ```bash
-paseo --host devbox:6767 project create /srv/repos/api
+rambla --host devbox:6767 project create /srv/repos/api
 ```
 
 The remote daemon interprets that path on its own machine. See [Workspaces](/docs/workspaces) for how projects group working directories and sessions.
@@ -92,9 +92,9 @@ The remote daemon interprets that path on its own machine. See [Workspaces](/doc
 Create a workspace independently when you want to prepare its files before starting an agent:
 
 ```bash
-paseo workspace create --isolation local --path ~/dev/my-app --title main
+rambla workspace create --isolation local --path ~/dev/my-app --title main
 
-paseo workspace create \
+rambla workspace create \
   --isolation worktree \
   --path ~/dev/my-app \
   --mode branch-off \
@@ -102,14 +102,14 @@ paseo workspace create \
   --worktree-slug feature-auth \
   --base origin/main
 
-paseo workspace create \
+rambla workspace create \
   --isolation worktree \
   --path ~/dev/my-app \
   --mode checkout-branch \
   --branch feature/existing \
   --worktree-slug existing-copy
 
-paseo workspace create \
+rambla workspace create \
   --isolation worktree \
   --path ~/dev/my-app \
   --mode checkout-pr \
@@ -119,11 +119,11 @@ paseo workspace create \
 Then list, use, rename, or archive it:
 
 ```bash
-paseo workspace ls
-paseo run --workspace <workspace-id> "implement authentication"
-paseo workspace rename <workspace-id> "Auth rework"
-paseo workspace rename <workspace-id> --reset   # back to the branch or directory name
-paseo workspace archive <workspace-id>
+rambla workspace ls
+rambla run --workspace <workspace-id> "implement authentication"
+rambla workspace rename <workspace-id> "Auth rework"
+rambla workspace rename <workspace-id> --reset   # back to the branch or directory name
+rambla workspace archive <workspace-id>
 ```
 
 Add `--forge <name>` to PR checkout when Rambla cannot infer the forge from the source checkout. See [Git worktrees](/docs/worktrees) for setup hooks and services.
@@ -133,12 +133,12 @@ Add `--forge <name>` to PR checkout when Rambla cannot infer the forge from the 
 Use the workspace ID when multiple workspaces share a directory:
 
 ```bash
-paseo terminal create --workspace <workspace-id> --name Development
-paseo terminal ls --workspace <workspace-id> --json
-paseo terminal send-keys <terminal-id> -l "echo ready"
-paseo terminal send-keys <terminal-id> Enter
-paseo terminal capture <terminal-id>
-paseo terminal kill <terminal-id>
+rambla terminal create --workspace <workspace-id> --name Development
+rambla terminal ls --workspace <workspace-id> --json
+rambla terminal send-keys <terminal-id> -l "echo ready"
+rambla terminal send-keys <terminal-id> Enter
+rambla terminal capture <terminal-id>
+rambla terminal kill <terminal-id>
 ```
 
 Creation defaults to the workspace directory. Add `--cwd <absolute-path>` to change the process directory while keeping that workspace as the owner. Unknown and archived workspace IDs fail.
@@ -149,62 +149,62 @@ Create and list results include `id`, `name`, `cwd`, and `workspaceId`. Use `--j
 
 ## Workspace scripts
 
-List, start, and stop the scripts configured in a workspace's `paseo.json`:
+List, start, and stop the scripts configured in a workspace's `rambla.json`:
 
 ```bash
-paseo script ls
-paseo script start web
-paseo script stop web
+rambla script ls
+rambla script start web
+rambla script stop web
 ```
 
 By default, Rambla selects the workspace whose directory is the current directory. Pass `--cwd <path>` to select a different directory, or `--workspace <workspace-id>` when a directory has multiple workspaces. Use the global `--host` option to target another daemon. These commands also accept standard output options such as `--json`.
 
-The output includes each script's lifecycle and supervised terminal ID. Services also include their assigned port, proxy URL, and health. See [Git worktrees](/docs/worktrees#scripts-and-services) for `paseo.json` configuration.
+The output includes each script's lifecycle and supervised terminal ID. Services also include their assigned port, proxy URL, and health. See [Git worktrees](/docs/worktrees#scripts-and-services) for `rambla.json` configuration.
 
 ## Plugins
 
-> **Trust every plugin you add.** `paseo plugin add` and `paseo plugin install` mean “I trust this codebase.” Plugin server code and Git preparation commands run unsandboxed with the daemon user's access on the daemon host; client contributions run inside Rambla. Dependencies and future updates are part of that decision. With the global `--host` option, commands run on the remote daemon host.
+> **Trust every plugin you add.** `rambla plugin add` and `rambla plugin install` mean “I trust this codebase.” Plugin server code and Git preparation commands run unsandboxed with the daemon user's access on the daemon host; client contributions run inside Rambla. Dependencies and future updates are part of that decision. With the global `--host` option, commands run on the remote daemon host.
 
 Create and manage trusted plugins on a daemon:
 
 ```bash
-paseo plugin init /absolute/path/to/plugin
-paseo plugin install /absolute/path/to/plugin
-paseo plugin add owner/repository
-paseo plugin add https://gitlab.com/group/repository.git --ref main
-paseo plugin add owner/monorepo:plugins/review
-paseo plugin ls [id]
-paseo plugin update my-plugin
-paseo plugin update --all
-paseo plugin reload my-plugin
-paseo plugin logs my-plugin
-paseo plugin disable my-plugin
-paseo plugin enable my-plugin
-paseo plugin remove my-plugin
+rambla plugin init /absolute/path/to/plugin
+rambla plugin install /absolute/path/to/plugin
+rambla plugin add owner/repository
+rambla plugin add https://gitlab.com/group/repository.git --ref main
+rambla plugin add owner/monorepo:plugins/review
+rambla plugin ls [id]
+rambla plugin update my-plugin
+rambla plugin update --all
+rambla plugin reload my-plugin
+rambla plugin logs my-plugin
+rambla plugin disable my-plugin
+rambla plugin enable my-plugin
+rambla plugin remove my-plugin
 ```
 
 GitHub shorthand checks an existing host directory first. Append `:<directory>` for a plugin in a
-monorepo. `paseo plugin ls [id]` does not contact the remote. `paseo plugin logs <id>` returns the
+monorepo. `rambla plugin ls [id]` does not contact the remote. `rambla plugin logs <id>` returns the
 plugin's recent daemon-side stdout and stderr. Add `--json` for structured entries, or run
-`paseo --host <target> plugin logs <id>` for another daemon. See the
+`rambla --host <target> plugin logs <id>` for another daemon. See the
 [Plugin reference](/docs/plugins/v0.7/reference) for installation, trust, lifecycle, and log-retention
 behavior.
 
 ## Listing agents
 
 ```bash
-paseo ls                    # Non-archived agents in active workspaces
-paseo ls -a                 # Also include archived agents
-paseo ls -g                 # Non-archived agents across all workspaces
-paseo ls -a -g --json       # All agents, including archived, as JSON
+rambla ls                    # Non-archived agents in active workspaces
+rambla ls -a                 # Also include archived agents
+rambla ls -g                 # Non-archived agents across all workspaces
+rambla ls -a -g --json       # All agents, including archived, as JSON
 ```
 
 ## Streaming output
 
-Use `paseo attach` to stream an agent's output in real-time:
+Use `rambla attach` to stream an agent's output in real-time:
 
 ```bash
-paseo attach abc123   # Attach to agent (Ctrl+C to detach)
+rambla attach abc123   # Attach to agent (Ctrl+C to detach)
 ```
 
 Agent IDs can be shortened, `abc` works if it's unambiguous.
@@ -213,21 +213,21 @@ Agent IDs can be shortened, `abc` works if it's unambiguous.
 
 Send follow-up tasks to a running or idle agent:
 
-Use the recipient's agent ID from `paseo ls`, or [copy it from the agent's tab](/docs/orchestration-workflows#send-a-prompt-to-another-agent).
+Use the recipient's agent ID from `rambla ls`, or [copy it from the agent's tab](/docs/orchestration-workflows#send-a-prompt-to-another-agent).
 
 ```bash
-paseo send <id> "now run the tests"
-paseo send <id> --image screenshot.png "what's wrong here?"
-paseo send <id> --no-wait "queue this task"
+rambla send <id> "now run the tests"
+rambla send <id> --image screenshot.png "what's wrong here?"
+rambla send <id> --no-wait "queue this task"
 ```
 
 ## Viewing logs
 
 ```bash
-paseo logs <id>                  # Full timeline
-paseo logs <id> -f               # Follow (streaming)
-paseo logs <id> --tail 10        # Last 10 entries
-paseo logs <id> --filter tools   # Only tool calls
+rambla logs <id>                  # Full timeline
+rambla logs <id> -f               # Follow (streaming)
+rambla logs <id> --tail 10        # Last 10 entries
+rambla logs <id> --filter tools   # Only tool calls
 ```
 
 ## Waiting for agents
@@ -235,8 +235,8 @@ paseo logs <id> --filter tools   # Only tool calls
 Block until an agent finishes its current task:
 
 ```bash
-paseo wait <id>
-paseo wait <id> --timeout 60   # 60 second timeout
+rambla wait <id>
+rambla wait <id> --timeout 60   # 60 second timeout
 ```
 
 Useful in scripts or when one agent needs to wait for another.
@@ -246,9 +246,9 @@ Useful in scripts or when one agent needs to wait for another.
 Run an agent on a cron schedule. The CLI also accepts simple cadence presets and compiles them to cron. See [Schedules from the CLI](/docs/schedules-cli) for the full reference.
 
 ```bash
-paseo schedule create --every 30m --cwd ~/dev/my-app "Continue the refactor and leave a note."
-paseo schedule ls
-paseo schedule pause <id>
+rambla schedule create --every 30m --cwd ~/dev/my-app "Continue the refactor and leave a note."
+rambla schedule ls
+rambla schedule pause <id>
 ```
 
 ## Permissions
@@ -256,9 +256,9 @@ paseo schedule pause <id>
 Agents may request permission for certain actions. Manage these from the CLI:
 
 ```bash
-paseo permit ls                # List pending requests
-paseo permit allow <id>        # Allow all pending for agent
-paseo permit deny <id> --all   # Deny all pending
+rambla permit ls                # List pending requests
+rambla permit allow <id>        # Allow all pending for agent
+rambla permit deny <id> --all   # Deny all pending
 ```
 
 ## Agent modes
@@ -266,10 +266,10 @@ paseo permit deny <id> --all   # Deny all pending
 Change an agent's operational mode (provider-specific):
 
 ```bash
-paseo agent mode <id> --list   # Show available modes
-paseo agent mode <id> bypass   # Set bypass mode
-paseo agent mode <id> plan     # Set plan mode
-paseo agent detach <id>        # Make a subagent top-level
+rambla agent mode <id> --list   # Show available modes
+rambla agent mode <id> bypass   # Set bypass mode
+rambla agent mode <id> plan     # Set plan mode
+rambla agent detach <id>        # Make a subagent top-level
 ```
 
 Detaching is an explicit lifecycle action, not a creation flag. The agent keeps running; only its relationship to its parent changes.
@@ -277,38 +277,38 @@ Detaching is an explicit lifecycle action, not a creation flag. The agent keeps 
 ## Daemon management
 
 ```bash
-paseo daemon start             # Start the daemon
-paseo daemon start --web-ui    # Start and serve the bundled web UI
-paseo daemon status            # Check status
-paseo reload                    # Reload config.json (top-level alias)
-paseo daemon reload             # Reload config.json
-paseo daemon stop              # Stop the daemon
+rambla daemon start             # Start the daemon
+rambla daemon start --web-ui    # Start and serve the bundled web UI
+rambla daemon status            # Check status
+rambla reload                    # Reload config.json (top-level alias)
+rambla daemon reload             # Reload config.json
+rambla daemon stop              # Stop the daemon
 ```
 
-Reload validates the whole file, applies runtime-safe changes, and reports `appliedPaths`, `restartRequiredPaths`, and `overrideControlledPaths`. Human output prints `paseo daemon restart` only when a changed setting needs it. Use `--json` or `--format yaml` for the structured result. Run `paseo --host <target> reload` to reload a remote daemon's own configuration file. An older host that does not support reload returns an update-host error.
+Reload validates the whole file, applies runtime-safe changes, and reports `appliedPaths`, `restartRequiredPaths`, and `overrideControlledPaths`. Human output prints `rambla daemon restart` only when a changed setting needs it. Use `--json` or `--format yaml` for the structured result. Run `rambla --host <target> reload` to reload a remote daemon's own configuration file. An older host that does not support reload returns an update-host error.
 
 Use `RAMBLA_HOME` to run multiple isolated daemon instances.
 
 ## Hub
 
 ```bash
-paseo hub login [url]          # Approve and store organization-scoped CLI access
-paseo hub init                 # Create and optionally deploy a starter trigger here
-paseo hub connect [url]        # Enroll this daemon using CLI access
-paseo hub projects             # List legacy projects in the authenticated organization
-paseo hub status               # Show the current Hub relationship
-paseo hub disconnect           # End it
-paseo hub deploy               # Validate and install .rambla/triggers/*.yml
-paseo hub deploy --dry-run     # Validate without installing
-paseo hub deploy -p <project>   # Deploy an existing legacy project bundle
-paseo hub logout               # Remove the active stored CLI login
+rambla hub login [url]          # Approve and store organization-scoped CLI access
+rambla hub init                 # Create and optionally deploy a starter trigger here
+rambla hub connect [url]        # Enroll this daemon using CLI access
+rambla hub projects             # List legacy projects in the authenticated organization
+rambla hub status               # Show the current Hub relationship
+rambla hub disconnect           # End it
+rambla hub deploy               # Validate and install .rambla/triggers/*.yml
+rambla hub deploy --dry-run     # Validate without installing
+rambla hub deploy -p <project>   # Deploy an existing legacy project bundle
+rambla hub logout               # Remove the active stored CLI login
 ```
 
 Run deploy from the repository root. By default it reads every direct `.rambla/triggers/*.yml` file in deterministic path order. It validates all triggers before installing them one at a time. If an installation fails after earlier ones succeeded, the error lists the installed files. `--dry-run` only validates; it does not create or activate revisions.
 
 Pass `-p, --project <slug>` for an existing legacy bundle: `.rambla/hub.yml`, direct `.rambla/workflows/*.yml` files, and referenced workflow partials. See [Deploy from the CLI](/docs/hub/configuration#deploy-from-the-cli).
 
-`login` opens the Hub approval page and stores a durable organization-scoped CLI credential under `RAMBLA_HOME`. In an interactive terminal it offers to connect this daemon, then separately asks whether to allow Hub automations to run agents. Connection defaults to yes; execution permission defaults to no. It then links to Hub's **Triggers** page and prints `paseo hub init` for setup as code. `--json` and non-TTY login remain login-only and never prompt. The stored login is separate from the daemon relationship created by `connect`.
+`login` opens the Hub approval page and stores a durable organization-scoped CLI credential under `RAMBLA_HOME`. In an interactive terminal it offers to connect this daemon, then separately asks whether to allow Hub automations to run agents. Connection defaults to yes; execution permission defaults to no. It then links to Hub's **Triggers** page and prints `rambla hub init` for setup as code. `--json` and non-TTY login remain login-only and never prompt. The stored login is separate from the daemon relationship created by `connect`.
 
 `init` requires a TTY. It signs in and connects the daemon as needed, then lists the organization's app connections that can back a starter trigger. One usable connection is selected automatically; with several, you choose a **Trigger connection**. If none is ready, setup sends you to **Hub → Apps** and stops before selecting an agent or writing files.
 
@@ -329,9 +329,9 @@ The global `--host` option accepts either a local target (`host:port`, a unix so
 Get an offer URL from the daemon you want to control:
 
 ```bash
-paseo daemon pair          # asks before enabling relay, then prints the QR and link
-paseo daemon pair --relay  # enables relay without prompting
-paseo daemon pair --json   # structured output; never prompts
+rambla daemon pair          # asks before enabling relay, then prints the QR and link
+rambla daemon pair --relay  # enables relay without prompting
+rambla daemon pair --json   # structured output; never prompts
 ```
 
 Relay is off for new installations. In non-interactive or JSON mode, a disabled relay returns a `RELAY_DISABLED` error; pass `--relay` to provide explicit consent. Relay pairing is end-to-end encrypted. See [Security](/docs/security).
@@ -339,8 +339,8 @@ Relay is off for new installations. In non-interactive or JSON mode, a disabled 
 Use it from anywhere:
 
 ```bash
-paseo --host 'https://app.rambla.sh/#offer=eyJ2IjoyLC...' ls
-paseo --host "$OFFER_URL" run "fix the failing tests"
+rambla --host 'https://app.rambla.sh/#offer=eyJ2IjoyLC...' ls
+rambla --host "$OFFER_URL" run "fix the failing tests"
 ```
 
 You can also set it once via `RAMBLA_HOST` instead of passing `--host` on every command. An explicit flag overrides the environment variable.
@@ -351,9 +351,9 @@ The CLI is designed to be used by agents themselves. You can instruct an agent t
 
 ```bash
 # Agent A spawns Agent B and waits for it
-agent_id=$(paseo run --background --quiet --title api-agent "implement the API")
-paseo wait "$agent_id"
-paseo logs "$agent_id" --tail 5
+agent_id=$(rambla run --background --quiet --title api-agent "implement the API")
+rambla wait "$agent_id"
+rambla logs "$agent_id" --tail 5
 ```
 
 Because Agent A's ID is present in the environment, Agent B is created as its subagent in the same workspace unless `--workspace` is specified.
@@ -363,9 +363,9 @@ Simple implement + verify loop:
 ```bash
 # Requires jq
 while true; do
-  paseo run --provider codex "make the tests pass" >/dev/null
+  rambla run --provider codex "make the tests pass" >/dev/null
 
-  verdict=$(paseo run --provider claude --output-schema '{"type":"object","properties":{"criteria_met":{"type":"boolean"}},"required":["criteria_met"],"additionalProperties":false}' "ensure tests all pass")
+  verdict=$(rambla run --provider claude --output-schema '{"type":"object","properties":{"criteria_met":{"type":"boolean"}},"required":["criteria_met"],"additionalProperties":false}' "ensure tests all pass")
   if echo "$verdict" | jq -e '.criteria_met == true' >/dev/null; then
     echo "criteria met"
     break
@@ -380,9 +380,9 @@ This pattern enables hierarchical task decomposition, a lead agent can break dow
 Most commands support multiple output formats for scripting:
 
 ```bash
-paseo ls --json                # JSON output
-paseo ls --format yaml         # YAML output
-paseo ls -q                    # IDs only (quiet)
+rambla ls --json                # JSON output
+rambla ls --format yaml         # YAML output
+rambla ls -q                    # IDs only (quiet)
 ```
 
 ## Global options

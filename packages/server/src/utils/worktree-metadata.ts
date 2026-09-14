@@ -159,7 +159,7 @@ function getGitDirForWorktreeRoot(worktreeRoot: string): string {
 
 export function getRamblaWorktreeMetadataPath(worktreeRoot: string): string {
   const gitDir = getGitDirForWorktreeRoot(worktreeRoot);
-  return join(gitDir, "paseo", "worktree.json");
+  return join(gitDir, "rambla", "worktree.json");
 }
 
 const REMOTE_TRACKING_PREFIX = "refs/remotes/";
@@ -337,7 +337,7 @@ function writeRamblaWorktreeMetadataFile(
   metadata: RamblaWorktreeMetadata,
 ): void {
   const metadataPath = getRamblaWorktreeMetadataPath(worktreeRoot);
-  mkdirSync(join(getGitDirForWorktreeRoot(worktreeRoot), "paseo"), { recursive: true });
+  mkdirSync(join(getGitDirForWorktreeRoot(worktreeRoot), "rambla"), { recursive: true });
   const tempPath = `${metadataPath}.${process.pid}.${Date.now()}.tmp`;
   writeFileSync(tempPath, `${JSON.stringify(metadata, null, 2)}\n`, "utf8");
   renameSync(tempPath, metadataPath);

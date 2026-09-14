@@ -199,7 +199,7 @@ function createSessionForWorkspaceGitWatchTests(options?: {
     logger: createStub<pino.Logger>(logger),
     downloadTokenStore: createStub<SessionOptions["downloadTokenStore"]>({}),
     pushNotifications: createStub<SessionOptions["pushNotifications"]>({}),
-    paseoHome: "/tmp/paseo-test",
+    ramblaHome: "/tmp/rambla-test",
     agentManager: createStub<SessionOptions["agentManager"]>({
       subscribe: () => () => {},
       listAgents: () => [],
@@ -459,7 +459,7 @@ describe("workspace git watch targets", () => {
     serviceProxy.registerWorkspaceService({
       port: 4321,
       workspaceId: "ws-10",
-      projectSlug: "paseo",
+      projectSlug: "rambla",
       branchName: "old-branch",
       scriptName: "app",
     });
@@ -505,7 +505,7 @@ describe("workspace git watch targets", () => {
 
     expect(serviceProxy.getWorkspaceHealthTargets("ws-10")).toEqual([
       expect.objectContaining({
-        hostname: "app--new-branch--paseo.localhost",
+        hostname: "app--new-branch--rambla.localhost",
         scriptName: "app",
       }),
     ]);

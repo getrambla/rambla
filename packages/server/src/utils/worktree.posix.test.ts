@@ -20,7 +20,7 @@ import {
   type CreateWorktreeOptions,
   type WorktreeConfig,
 } from "./worktree";
-import type { RamblaConfig } from "@getpaseo/protocol/paseo-config-schema";
+import type { RamblaConfig } from "@getrambla/protocol/rambla-config-schema";
 import { getRamblaWorktreeMetadataPath, readRamblaWorktreeMetadata } from "./worktree-metadata.js";
 import {
   getCheckoutDiff,
@@ -59,7 +59,7 @@ interface LegacyCreateWorktreeTestOptions {
   baseBranch: string;
   worktreeSlug: string;
   runSetup?: boolean;
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesRoot?: string;
 }
 
@@ -79,7 +79,7 @@ function createLegacyWorktreeForTest(
       branchName: options.branchName,
     },
     runSetup: options.runSetup ?? true,
-    paseoHome: options.paseoHome,
+    ramblaHome: options.ramblaHome,
     worktreesRoot: options.worktreesRoot,
   });
 }
@@ -88,13 +88,13 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
   describe("createWorktree", () => {
     let tempDir: string;
     let repoDir: string;
-    let paseoHome: string;
+    let ramblaHome: string;
 
     beforeEach(() => {
       // Use realpathSync to resolve symlinks (e.g., /var -> /private/var on macOS)
       tempDir = realpathSync(mkdtempSync(join(tmpdir(), "worktree-test-")));
       repoDir = join(tempDir, "test-repo");
-      paseoHome = join(tempDir, "paseo-home");
+      ramblaHome = join(tempDir, "rambla-home");
 
       // Create a git repo with an initial commit
       mkdirSync(repoDir, { recursive: true });
@@ -119,10 +119,10 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "hello-world",
-        paseoHome,
+        ramblaHome,
       });
 
-      expect(result.worktreePath).toBe(join(paseoHome, "worktrees", projectHash, "hello-world"));
+      expect(result.worktreePath).toBe(join(ramblaHome, "worktrees", projectHash, "hello-world"));
       expect(existsSync(result.worktreePath)).toBe(true);
       expect(existsSync(join(result.worktreePath, "file.txt"))).toBe(true);
       const metadataPath = getRamblaWorktreeMetadataPath(result.worktreePath);
@@ -143,36 +143,36 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "custom-root",
-        paseoHome,
+        ramblaHome,
         worktreesRoot,
       });
 
       expect(result.worktreePath).toBe(join(worktreesRoot, projectHash, "custom-root"));
       await expect(
-        isRamblaOwnedWorktreeCwd(result.worktreePath, { paseoHome, worktreesRoot }),
+        isRamblaOwnedWorktreeCwd(result.worktreePath, { ramblaHome, worktreesRoot }),
       ).resolves.toMatchObject({ allowed: true, worktreeRoot: join(worktreesRoot, projectHash) });
       await expect(
-        isRamblaOwnedWorktreeCwd(result.worktreePath, { paseoHome }),
+        isRamblaOwnedWorktreeCwd(result.worktreePath, { ramblaHome }),
       ).resolves.toMatchObject({ allowed: false });
 
-      const worktrees = await listRamblaWorktrees({ cwd: repoDir, paseoHome, worktreesRoot });
+      const worktrees = await listRamblaWorktrees({ cwd: repoDir, ramblaHome, worktreesRoot });
       expect(worktrees.map((entry) => entry.path)).toContain(result.worktreePath);
 
       await deleteRamblaWorktree({
         cwd: repoDir,
         worktreePath: result.worktreePath,
-        paseoHome,
+        ramblaHome,
         worktreesBaseRoot: worktreesRoot,
       });
       expect(existsSync(result.worktreePath)).toBe(false);
     });
 
-    it.skip("detects paseo-owned worktrees across realpath differences (macOS /var vs /private/var)", async () => {
+    it.skip("detects rambla-owned worktrees across realpath differences (macOS /var vs /private/var)", async () => {
       // Intentionally create repo using the non-realpath tmpdir() variant (often /var/... on macOS).
       const varTempDir = mkdtempSync(join(tmpdir(), "worktree-realpath-test-"));
       const privateTempDir = realpathSync(varTempDir);
       const varRepoDir = join(varTempDir, "test-repo");
-      const varRamblaHome = join(varTempDir, "paseo-home");
+      const varRamblaHome = join(varTempDir, "rambla-home");
       mkdirSync(varRepoDir, { recursive: true });
       execFileSync("git", ["init", "-b", "main"], { cwd: varRepoDir });
       execFileSync("git", ["config", "user.email", "test@test.com"], { cwd: varRepoDir });
@@ -188,13 +188,13 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: varRepoDir,
         baseBranch: "main",
         worktreeSlug: "realpath-test",
-        paseoHome: varRamblaHome,
+        ramblaHome: varRamblaHome,
       });
 
       const projectHash = await deriveWorktreeProjectHash(varRepoDir);
       const privateWorktreePath = join(
         privateTempDir,
-        "paseo-home",
+        "rambla-home",
         "worktrees",
         projectHash,
         "realpath-test",
@@ -202,23 +202,23 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       expect(existsSync(privateWorktreePath)).toBe(true);
 
       const ownership = await isRamblaOwnedWorktreeCwd(privateWorktreePath, {
-        paseoHome: varRamblaHome,
+        ramblaHome: varRamblaHome,
       });
       expect(ownership.allowed).toBe(true);
 
       rmSync(varTempDir, { recursive: true, force: true });
     });
 
-    it("reports repoRoot as the repository root for paseo-owned worktrees", async () => {
+    it("reports repoRoot as the repository root for rambla-owned worktrees", async () => {
       const result = await createLegacyWorktreeForTest({
         branchName: "main",
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "repo-root-check",
-        paseoHome,
+        ramblaHome,
       });
 
-      const ownership = await isRamblaOwnedWorktreeCwd(result.worktreePath, { paseoHome });
+      const ownership = await isRamblaOwnedWorktreeCwd(result.worktreePath, { ramblaHome });
       expect(ownership.allowed).toBe(true);
       expect(ownership.repoRoot).toBe(repoDir);
     });
@@ -227,7 +227,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       const nonGitDir = join(tempDir, "not-a-repo");
       mkdirSync(nonGitDir, { recursive: true });
 
-      const ownership = await isRamblaOwnedWorktreeCwd(nonGitDir, { paseoHome });
+      const ownership = await isRamblaOwnedWorktreeCwd(nonGitDir, { ramblaHome });
 
       expect(ownership.allowed).toBe(false);
       expect(ownership.worktreePath).toBe(realpathSync(nonGitDir));
@@ -240,10 +240,10 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         worktreeSlug: "my-feature",
         source: { kind: "branch-off", baseBranch: "main", branchName: "feature/x" },
         runSetup: true,
-        paseoHome,
+        ramblaHome,
       });
 
-      expect(result.worktreePath).toBe(join(paseoHome, "worktrees", projectHash, "my-feature"));
+      expect(result.worktreePath).toBe(join(ramblaHome, "worktrees", projectHash, "my-feature"));
       expect(existsSync(result.worktreePath)).toBe(true);
 
       const currentBranch = execFileSync("git", ["branch", "--show-current"], {
@@ -273,7 +273,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         worktreeSlug: "dev-worktree",
         source: { kind: "checkout-branch", branchName: "dev" },
         runSetup: true,
-        paseoHome,
+        ramblaHome,
       });
 
       expect(existsSync(result.worktreePath)).toBe(true);
@@ -301,7 +301,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         worktreeSlug: "release-worktree",
         source: { kind: "checkout-branch", branchName: "release/1.1.15" },
         runSetup: true,
-        paseoHome,
+        ramblaHome,
       });
 
       expect(existsSync(result.worktreePath)).toBe(true);
@@ -319,7 +319,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         worktreeSlug: "dev-worktree",
         source: { kind: "checkout-branch", branchName: "main" },
         runSetup: true,
-        paseoHome,
+        ramblaHome,
       });
 
       expect(result.branchName).toBe("main-1");
@@ -342,7 +342,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       execFileSync("git", ["checkout", "-b", "contributor/feature"], { cwd: remoteCloneDir });
       writeFileSync(join(remoteCloneDir, "file.txt"), "from-pr\n");
       writeFileSync(
-        join(remoteCloneDir, "paseo.json"),
+        join(remoteCloneDir, "rambla.json"),
         JSON.stringify({ worktree: { setup: ['echo "setup ran" > setup.log'] } }),
       );
       execFileSync("git", ["add", "."], { cwd: remoteCloneDir });
@@ -365,7 +365,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           baseRefName: "main",
         },
         runSetup: true,
-        paseoHome,
+        ramblaHome,
       });
 
       expect(readFileSync(join(result.worktreePath, "file.txt"), "utf8")).toBe("from-pr\n");
@@ -413,7 +413,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           baseRefName: "main",
         },
         runSetup: true,
-        paseoHome,
+        ramblaHome,
       });
 
       expect(readFileSync(join(result.worktreePath, "file.txt"), "utf8")).toBe(
@@ -459,7 +459,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         baseBranch: "refs/heads/main",
         worktreeSlug: "prefer-local-feature",
         runSetup: false,
-        paseoHome,
+        ramblaHome,
       });
       const originResult = await createLegacyWorktreeForTest({
         branchName: "prefer-origin-feature",
@@ -467,18 +467,18 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         baseBranch: "refs/remotes/origin/main",
         worktreeSlug: "prefer-origin-feature",
         runSetup: false,
-        paseoHome,
+        ramblaHome,
       });
 
       expect(readFileSync(join(localResult.worktreePath, "file.txt"), "utf8")).toBe("from-local\n");
-      const localStatus = await getCheckoutStatus(localResult.worktreePath, { paseoHome });
+      const localStatus = await getCheckoutStatus(localResult.worktreePath, { ramblaHome });
       expect(localStatus.isGit).toBe(true);
       if (!localStatus.isGit) {
         return;
       }
       expect(localStatus.aheadBehind).toEqual({ ahead: 0, behind: 0 });
       await expect(
-        getCheckoutDiff(localResult.worktreePath, { mode: "base", baseRef: "main" }, { paseoHome }),
+        getCheckoutDiff(localResult.worktreePath, { mode: "base", baseRef: "main" }, { ramblaHome }),
       ).resolves.toMatchObject({ diff: "" });
       expect(readFileSync(join(originResult.worktreePath, "file.txt"), "utf8")).toBe(
         "from-origin\n",
@@ -517,7 +517,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         baseBranch: "refs/remotes/upstream/main",
         worktreeSlug: "fork-base-feature",
         runSetup: false,
-        paseoHome,
+        ramblaHome,
       });
 
       expect(readFileSync(join(result.worktreePath, "file.txt"), "utf8")).toBe("from-upstream\n");
@@ -530,7 +530,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
 
       // An untouched child must report no work of its own. Comparing against the wrong base
       // shows the upstream-only commit as if the workspace had written it.
-      const status = await getCheckoutStatus(result.worktreePath, { paseoHome });
+      const status = await getCheckoutStatus(result.worktreePath, { ramblaHome });
       expect(status.isGit).toBe(true);
       if (!status.isGit) {
         return;
@@ -543,7 +543,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         getCheckoutDiff(
           result.worktreePath,
           { mode: "base", baseRef: "refs/remotes/origin/main" },
-          { paseoHome },
+          { ramblaHome },
         ),
       ).rejects.toThrow(
         "Base ref mismatch: stored refs/remotes/upstream/main, requested refs/remotes/origin/main",
@@ -552,16 +552,16 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         await getCheckoutDiff(
           result.worktreePath,
           { mode: "base", baseRef: "main" },
-          { paseoHome },
+          { ramblaHome },
         ),
       ).toMatchObject({ diff: "" });
       const history = await listCheckoutCommits({
         cwd: result.worktreePath,
-        context: { paseoHome },
+        context: { ramblaHome },
       });
       expect(history.commits.every((commit) => commit.isOnBase)).toBe(true);
       await expect(
-        mergeToBase(result.worktreePath, { baseRef: "main" }, { paseoHome }),
+        mergeToBase(result.worktreePath, { baseRef: "main" }, { ramblaHome }),
       ).rejects.toThrow(
         "No local merge target is recorded for base ref refs/remotes/upstream/main",
       );
@@ -576,20 +576,20 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       });
       execFileSync("git", ["push", "origin", "main"], { cwd: forkCloneDir });
       execFileSync("git", ["fetch", "upstream"], { cwd: result.worktreePath });
-      await mergeFromBase(result.worktreePath, { baseRef: "main" }, { paseoHome });
+      await mergeFromBase(result.worktreePath, { baseRef: "main" }, { ramblaHome });
       expect(readFileSync(join(result.worktreePath, "later.txt"), "utf8")).toBe("later\n");
 
       execFileSync("git", ["update-ref", "-d", "refs/remotes/upstream/main"], {
         cwd: result.worktreePath,
       });
       await expect(
-        getCheckoutDiff(result.worktreePath, { mode: "base", baseRef: "main" }, { paseoHome }),
+        getCheckoutDiff(result.worktreePath, { mode: "base", baseRef: "main" }, { ramblaHome }),
       ).rejects.toThrow("Base ref not found: refs/remotes/upstream/main");
       await expect(
-        mergeFromBase(result.worktreePath, { baseRef: "main" }, { paseoHome }),
+        mergeFromBase(result.worktreePath, { baseRef: "main" }, { ramblaHome }),
       ).rejects.toThrow("Base ref not found: refs/remotes/upstream/main");
       await expect(
-        listCheckoutCommits({ cwd: result.worktreePath, context: { paseoHome } }),
+        listCheckoutCommits({ cwd: result.worktreePath, context: { ramblaHome } }),
       ).rejects.toThrow("Base ref not found: refs/remotes/upstream/main");
     });
 
@@ -608,7 +608,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         baseBranch: "refs/remotes/upstream/release+hotfix",
         worktreeSlug: "release-hotfix-feature",
         runSetup: false,
-        paseoHome,
+        ramblaHome,
       });
 
       expect(
@@ -636,7 +636,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         baseBranch: "main",
         worktreeSlug: "prefer-local-fallback-feature",
         runSetup: false,
-        paseoHome,
+        ramblaHome,
       });
 
       expect(readFileSync(join(result.worktreePath, "file.txt"), "utf8")).toBe("from-local-only\n");
@@ -650,7 +650,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           baseBranch: "does-not-exist",
           worktreeSlug: "missing-base-feature",
           runSetup: false,
-          paseoHome,
+          ramblaHome,
         }),
       ).rejects.toThrow("Base branch not found: does-not-exist");
     });
@@ -674,7 +674,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           worktreeSlug: "invalid-existing-branch",
           source: { kind: "checkout-branch", branchName: "bad..name" },
           runSetup: true,
-          paseoHome,
+          ramblaHome,
         });
       } catch (error) {
         caughtError = error;
@@ -692,7 +692,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           worktreeSlug: "invalid-option-like-branch",
           source: { kind: "checkout-branch", branchName: "-bad" },
           runSetup: true,
-          paseoHome,
+          ramblaHome,
         });
       } catch (error) {
         caughtError = error;
@@ -712,11 +712,11 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "hello",
-        paseoHome,
+        ramblaHome,
       });
 
       // Should create branch "hello-1" since "hello" exists
-      expect(result.worktreePath).toBe(join(paseoHome, "worktrees", projectHash, "hello"));
+      expect(result.worktreePath).toBe(join(ramblaHome, "worktrees", projectHash, "hello"));
       expect(existsSync(result.worktreePath)).toBe(true);
 
       const branches = execFileSync("git", ["branch"], { cwd: repoDir }).toString();
@@ -733,7 +733,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "hello",
-        paseoHome,
+        ramblaHome,
       });
 
       expect(existsSync(result.worktreePath)).toBe(true);
@@ -742,9 +742,9 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       expect(branches).toContain("hello-2");
     });
 
-    it("runs setup commands from paseo.json", async () => {
-      // Create paseo.json with setup commands
-      const paseoConfig = {
+    it("runs setup commands from rambla.json", async () => {
+      // Create rambla.json with setup commands
+      const ramblaConfig = {
         worktree: {
           setup: [
             'echo "source=$RAMBLA_SOURCE_CHECKOUT_PATH" > setup.log',
@@ -755,9 +755,9 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           ],
         },
       };
-      writeFileSync(join(repoDir, "paseo.json"), JSON.stringify(paseoConfig));
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir });
-      execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add paseo.json"], {
+      writeFileSync(join(repoDir, "rambla.json"), JSON.stringify(ramblaConfig));
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir });
+      execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add rambla.json"], {
         cwd: repoDir,
       });
 
@@ -766,7 +766,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "setup-test",
-        paseoHome,
+        ramblaHome,
       });
 
       expect(existsSync(result.worktreePath)).toBe(true);
@@ -784,14 +784,14 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       expect(portValue).toBeGreaterThan(0);
     });
 
-    it("runs string setup scripts from paseo.json as a single shell command", async () => {
-      const paseoConfig = {
+    it("runs string setup scripts from rambla.json as a single shell command", async () => {
+      const ramblaConfig = {
         worktree: {
           setup: 'greeting="hello from string setup"\necho "$greeting" > setup.log',
         },
       };
-      writeFileSync(join(repoDir, "paseo.json"), JSON.stringify(paseoConfig));
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir });
+      writeFileSync(join(repoDir, "rambla.json"), JSON.stringify(ramblaConfig));
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir });
       execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add string setup"], {
         cwd: repoDir,
       });
@@ -801,7 +801,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "string-setup-test",
-        paseoHome,
+        ramblaHome,
       });
 
       expect(getWorktreeSetupCommands(result.worktreePath)).toEqual([
@@ -818,17 +818,17 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       mkdirSync(home);
       mkdirSync(binDir);
 
-      const shimPath = join(binDir, "paseo-shim");
+      const shimPath = join(binDir, "rambla-shim");
       writeFileSync(shimPath, "#!/bin/sh\nprintf 'shim:%s\\n' \"$1\"\n");
       chmodSync(shimPath, 0o755);
       writeFileSync(join(home, ".bash_profile"), "export PATH=/usr/bin:/bin\n");
       const bashEnvPath = join(home, "bash-env");
       writeFileSync(bashEnvPath, "export PATH=/usr/bin:/bin\n");
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({
           worktree: {
-            setup: "command -v paseo-shim >/dev/null && paseo-shim ok > setup-path.log",
+            setup: "command -v rambla-shim >/dev/null && rambla-shim ok > setup-path.log",
           },
         }),
       );
@@ -876,7 +876,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
 
     it("treats blank lifecycle strings as empty", () => {
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({
           worktree: {
             setup: " \n\t ",
@@ -891,7 +891,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
 
     it("filters non-string and blank entries from lifecycle arrays", () => {
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({
           worktree: {
             setup: [
@@ -921,14 +921,14 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
     });
 
     it("does not run setup commands when runSetup=false", async () => {
-      const paseoConfig = {
+      const ramblaConfig = {
         worktree: {
           setup: ['echo "setup ran" > setup.log'],
         },
       };
-      writeFileSync(join(repoDir, "paseo.json"), JSON.stringify(paseoConfig));
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir });
-      execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add paseo.json"], {
+      writeFileSync(join(repoDir, "rambla.json"), JSON.stringify(ramblaConfig));
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir });
+      execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add rambla.json"], {
         cwd: repoDir,
       });
 
@@ -938,7 +938,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         baseBranch: "main",
         worktreeSlug: "no-setup-test",
         runSetup: false,
-        paseoHome,
+        ramblaHome,
       });
 
       expect(existsSync(result.worktreePath)).toBe(true);
@@ -946,13 +946,13 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
     });
 
     it("streams setup command progress events while commands are executing", async () => {
-      const paseoConfig = {
+      const ramblaConfig = {
         worktree: {
           setup: ['echo "first line"; echo "second line" 1>&2'],
         },
       };
-      writeFileSync(join(repoDir, "paseo.json"), JSON.stringify(paseoConfig));
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir });
+      writeFileSync(join(repoDir, "rambla.json"), JSON.stringify(ramblaConfig));
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir });
       execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add streaming setup"], {
         cwd: repoDir,
       });
@@ -980,7 +980,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         baseBranch: "main",
         worktreeSlug: "runtime-env-port-reuse",
         runSetup: false,
-        paseoHome,
+        ramblaHome,
       });
 
       const first = await resolveWorktreeRuntimeEnv({
@@ -1002,7 +1002,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         baseBranch: "main",
         worktreeSlug: "runtime-env-port-conflict",
         runSetup: false,
-        paseoHome,
+        ramblaHome,
       });
 
       const env = await resolveWorktreeRuntimeEnv({
@@ -1036,19 +1036,19 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
     });
 
     it("cleans up worktree if setup command fails", async () => {
-      // Create paseo.json with failing setup command
-      const paseoConfig = {
+      // Create rambla.json with failing setup command
+      const ramblaConfig = {
         worktree: {
           setup: ["exit 1"],
         },
       };
-      writeFileSync(join(repoDir, "paseo.json"), JSON.stringify(paseoConfig));
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir });
-      execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add paseo.json"], {
+      writeFileSync(join(repoDir, "rambla.json"), JSON.stringify(ramblaConfig));
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir });
+      execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add rambla.json"], {
         cwd: repoDir,
       });
 
-      const expectedWorktreePath = join(paseoHome, "worktrees", "test-repo", "fail-test");
+      const expectedWorktreePath = join(ramblaHome, "worktrees", "test-repo", "fail-test");
 
       await expect(
         createLegacyWorktreeForTest({
@@ -1056,7 +1056,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           cwd: repoDir,
           baseBranch: "main",
           worktreeSlug: "fail-test",
-          paseoHome,
+          ramblaHome,
         }),
       ).rejects.toThrow("Worktree setup command failed");
 
@@ -1064,8 +1064,8 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       expect(existsSync(expectedWorktreePath)).toBe(false);
     });
 
-    it("reads worktree terminal specs from paseo.json with optional name", async () => {
-      const paseoConfig = {
+    it("reads worktree terminal specs from rambla.json with optional name", async () => {
+      const ramblaConfig = {
         worktree: {
           terminals: [
             { name: "Dev Server", command: "npm run dev" },
@@ -1073,7 +1073,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           ],
         },
       };
-      writeFileSync(join(repoDir, "paseo.json"), JSON.stringify(paseoConfig));
+      writeFileSync(join(repoDir, "rambla.json"), JSON.stringify(ramblaConfig));
 
       expect(getWorktreeTerminalSpecs(repoDir)).toEqual([
         { name: "Dev Server", command: "npm run dev" },
@@ -1082,7 +1082,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
     });
 
     it("filters invalid worktree terminal specs", async () => {
-      const paseoConfig = {
+      const ramblaConfig = {
         worktree: {
           terminals: [
             null,
@@ -1093,7 +1093,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           ],
         },
       };
-      writeFileSync(join(repoDir, "paseo.json"), JSON.stringify(paseoConfig));
+      writeFileSync(join(repoDir, "rambla.json"), JSON.stringify(ramblaConfig));
 
       expect(getWorktreeTerminalSpecs(repoDir)).toEqual([
         { name: "Watch", command: "npm run watch" },
@@ -1103,7 +1103,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
 
     it("parses omitted script type as a plain script", async () => {
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({
           scripts: {
             typecheck: {
@@ -1125,7 +1125,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
 
     it("parses service scripts and preserves optional port", async () => {
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({
           scripts: {
             server: {
@@ -1151,7 +1151,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
 
     it("ignores invalid script entries gracefully", async () => {
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({
           scripts: {
             valid: {
@@ -1186,9 +1186,9 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       );
     });
 
-    it("seeds an uncommitted paseo.json from the main repo into a new worktree", async () => {
+    it("seeds an uncommitted rambla.json from the main repo into a new worktree", async () => {
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({ scripts: { dev: { command: "echo hi" } } }),
       );
 
@@ -1197,25 +1197,25 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         worktreeSlug: "seed-uncommitted",
         source: { kind: "branch-off", baseBranch: "main", branchName: "feature/seed" },
         runSetup: false,
-        paseoHome,
+        ramblaHome,
       });
 
-      const worktreeConfigPath = join(result.worktreePath, "paseo.json");
+      const worktreeConfigPath = join(result.worktreePath, "rambla.json");
       expect(existsSync(worktreeConfigPath)).toBe(true);
       expect(JSON.parse(readFileSync(worktreeConfigPath, "utf8"))).toEqual({
         scripts: { dev: { command: "echo hi" } },
       });
     });
 
-    it("keeps a new worktree clean when its upstream ref has a newer paseo.json", async () => {
+    it("keeps a new worktree clean when its upstream ref has a newer rambla.json", async () => {
       const remoteDir = join(tempDir, "remote.git");
       const updaterDir = join(tempDir, "updater");
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({ worktree: { setup: "echo old" } }),
       );
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir });
-      execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add paseo.json"], {
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir });
+      execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add rambla.json"], {
         cwd: repoDir,
       });
       execFileSync("git", ["clone", "--bare", repoDir, remoteDir]);
@@ -1224,11 +1224,11 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       execFileSync("git", ["config", "user.email", "test@test.com"], { cwd: updaterDir });
       execFileSync("git", ["config", "user.name", "Test"], { cwd: updaterDir });
       writeFileSync(
-        join(updaterDir, "paseo.json"),
+        join(updaterDir, "rambla.json"),
         JSON.stringify({ worktree: { setup: "echo new" } }),
       );
-      execFileSync("git", ["add", "paseo.json"], { cwd: updaterDir });
-      execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "update paseo.json"], {
+      execFileSync("git", ["add", "rambla.json"], { cwd: updaterDir });
+      execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "update rambla.json"], {
         cwd: updaterDir,
       });
       execFileSync("git", ["push", "origin", "main"], { cwd: updaterDir });
@@ -1243,10 +1243,10 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           branchName: "feature/upstream-config",
         },
         runSetup: false,
-        paseoHome,
+        ramblaHome,
       });
 
-      const worktreeConfigPath = join(result.worktreePath, "paseo.json");
+      const worktreeConfigPath = join(result.worktreePath, "rambla.json");
       expect(JSON.parse(readFileSync(worktreeConfigPath, "utf8"))).toEqual({
         worktree: { setup: "echo new" },
       });
@@ -1258,19 +1258,19 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       ).toBe("");
     });
 
-    it("preserves a dangling paseo.json symlink from the selected ref", async () => {
-      const externalConfigPath = join(tempDir, "outside-paseo.json");
+    it("preserves a dangling rambla.json symlink from the selected ref", async () => {
+      const externalConfigPath = join(tempDir, "outside-rambla.json");
       execFileSync("git", ["checkout", "-b", "symlink-config"], { cwd: repoDir });
-      symlinkSync(externalConfigPath, join(repoDir, "paseo.json"));
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir });
+      symlinkSync(externalConfigPath, join(repoDir, "rambla.json"));
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir });
       execFileSync(
         "git",
-        ["-c", "commit.gpgsign=false", "commit", "-m", "add paseo.json symlink"],
+        ["-c", "commit.gpgsign=false", "commit", "-m", "add rambla.json symlink"],
         { cwd: repoDir },
       );
       execFileSync("git", ["checkout", "main"], { cwd: repoDir });
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({ worktree: { setup: "echo source" } }),
       );
 
@@ -1283,10 +1283,10 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           branchName: "feature/symlink-config",
         },
         runSetup: false,
-        paseoHome,
+        ramblaHome,
       });
 
-      const worktreeConfigPath = join(result.worktreePath, "paseo.json");
+      const worktreeConfigPath = join(result.worktreePath, "rambla.json");
       expect(lstatSync(worktreeConfigPath).isSymbolicLink()).toBe(true);
       expect(readlinkSync(worktreeConfigPath)).toBe(externalConfigPath);
       expect(existsSync(externalConfigPath)).toBe(false);
@@ -1298,28 +1298,28 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       ).toBe("");
     });
 
-    it("creates a worktree without error when no paseo.json exists in the main repo", async () => {
+    it("creates a worktree without error when no rambla.json exists in the main repo", async () => {
       const result = await createLegacyWorktreeForTest({
         cwd: repoDir,
         worktreeSlug: "no-config",
         source: { kind: "branch-off", baseBranch: "main", branchName: "feature/no-config" },
         runSetup: false,
-        paseoHome,
+        ramblaHome,
       });
 
-      expect(existsSync(join(result.worktreePath, "paseo.json"))).toBe(false);
+      expect(existsSync(join(result.worktreePath, "rambla.json"))).toBe(false);
     });
   });
 
-  describe("paseo worktree manager", () => {
+  describe("rambla worktree manager", () => {
     let tempDir: string;
     let repoDir: string;
-    let paseoHome: string;
+    let ramblaHome: string;
 
     beforeEach(() => {
       tempDir = realpathSync(mkdtempSync(join(tmpdir(), "worktree-manager-test-")));
       repoDir = join(tempDir, "test-repo");
-      paseoHome = join(tempDir, "paseo-home");
+      ramblaHome = join(tempDir, "rambla-home");
 
       mkdirSync(repoDir, { recursive: true });
       execFileSync("git", ["init", "-b", "main"], { cwd: repoDir });
@@ -1357,75 +1357,75 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoA,
         baseBranch: "main",
         worktreeSlug: "alpha",
-        paseoHome,
+        ramblaHome,
       });
       const fromRepoB = await createLegacyWorktreeForTest({
         branchName: "main",
         cwd: repoB,
         baseBranch: "main",
         worktreeSlug: "alpha",
-        paseoHome,
+        ramblaHome,
       });
 
       expect(dirname(fromRepoA.worktreePath)).not.toBe(dirname(fromRepoB.worktreePath));
       expect(fromRepoA.worktreePath.endsWith("alpha-1")).toBe(false);
       expect(fromRepoB.worktreePath.endsWith("alpha-1")).toBe(false);
 
-      const repoAWorktrees = await listRamblaWorktrees({ cwd: repoA, paseoHome });
-      const repoBWorktrees = await listRamblaWorktrees({ cwd: repoB, paseoHome });
+      const repoAWorktrees = await listRamblaWorktrees({ cwd: repoA, ramblaHome });
+      const repoBWorktrees = await listRamblaWorktrees({ cwd: repoB, ramblaHome });
 
       expect(repoAWorktrees.map((entry) => entry.path)).toEqual([fromRepoA.worktreePath]);
       expect(repoBWorktrees.map((entry) => entry.path)).toEqual([fromRepoB.worktreePath]);
     });
 
-    it("lists and deletes paseo worktrees under ~/.rambla/worktrees/{hash}", async () => {
+    it("lists and deletes rambla worktrees under ~/.rambla/worktrees/{hash}", async () => {
       const first = await createLegacyWorktreeForTest({
         branchName: "main",
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "alpha",
-        paseoHome,
+        ramblaHome,
       });
       const second = await createLegacyWorktreeForTest({
         branchName: "main",
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "beta",
-        paseoHome,
+        ramblaHome,
       });
 
-      const worktrees = await listRamblaWorktrees({ cwd: repoDir, paseoHome });
+      const worktrees = await listRamblaWorktrees({ cwd: repoDir, ramblaHome });
       const paths = worktrees.map((worktree) => worktree.path).sort();
       expect(paths).toEqual([first.worktreePath, second.worktreePath].sort());
 
-      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: first.worktreePath, paseoHome });
+      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: first.worktreePath, ramblaHome });
       expect(existsSync(first.worktreePath)).toBe(false);
 
-      const remaining = await listRamblaWorktrees({ cwd: repoDir, paseoHome });
+      const remaining = await listRamblaWorktrees({ cwd: repoDir, ramblaHome });
       expect(remaining.map((worktree) => worktree.path)).toEqual([second.worktreePath]);
     });
 
-    it("deletes a paseo worktree even when given a subdirectory path", async () => {
+    it("deletes a rambla worktree even when given a subdirectory path", async () => {
       const created = await createLegacyWorktreeForTest({
         branchName: "main",
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "alpha",
-        paseoHome,
+        ramblaHome,
       });
 
       const nestedDir = join(created.worktreePath, "nested", "dir");
       mkdirSync(nestedDir, { recursive: true });
 
-      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: nestedDir, paseoHome });
+      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: nestedDir, ramblaHome });
       expect(existsSync(created.worktreePath)).toBe(false);
 
-      const remaining = await listRamblaWorktrees({ cwd: repoDir, paseoHome });
+      const remaining = await listRamblaWorktrees({ cwd: repoDir, ramblaHome });
       expect(remaining.some((worktree) => worktree.path === created.worktreePath)).toBe(false);
     });
 
-    it("runs teardown commands from paseo.json before deleting a worktree", async () => {
-      const paseoConfig = {
+    it("runs teardown commands from rambla.json before deleting a worktree", async () => {
+      const ramblaConfig = {
         worktree: {
           teardown: [
             'echo "source=$RAMBLA_SOURCE_CHECKOUT_PATH" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown.log"',
@@ -1436,8 +1436,8 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           ],
         },
       };
-      writeFileSync(join(repoDir, "paseo.json"), JSON.stringify(paseoConfig));
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir });
+      writeFileSync(join(repoDir, "rambla.json"), JSON.stringify(ramblaConfig));
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir });
       execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add teardown commands"], {
         cwd: repoDir,
       });
@@ -1447,14 +1447,14 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "teardown-test",
-        paseoHome,
+        ramblaHome,
       });
       const runtimeEnv = await resolveWorktreeRuntimeEnv({
         worktreePath: created.worktreePath,
         branchName: created.branchName,
       });
 
-      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome });
+      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, ramblaHome });
       expect(existsSync(created.worktreePath)).toBe(false);
 
       const teardownLog = readFileSync(join(repoDir, "teardown.log"), "utf8");
@@ -1465,15 +1465,15 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       expect(teardownLog).toContain(`port=${runtimeEnv.RAMBLA_WORKTREE_PORT}`);
     });
 
-    it("runs string teardown scripts from paseo.json as a single shell command", async () => {
-      const paseoConfig = {
+    it("runs string teardown scripts from rambla.json as a single shell command", async () => {
+      const ramblaConfig = {
         worktree: {
           teardown:
             'cleanup_message="teardown string"\necho "$cleanup_message" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown.log"',
         },
       };
-      writeFileSync(join(repoDir, "paseo.json"), JSON.stringify(paseoConfig));
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir });
+      writeFileSync(join(repoDir, "rambla.json"), JSON.stringify(ramblaConfig));
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir });
       execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add string teardown"], {
         cwd: repoDir,
       });
@@ -1483,10 +1483,10 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "teardown-string-test",
-        paseoHome,
+        ramblaHome,
       });
 
-      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome });
+      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, ramblaHome });
 
       expect(getWorktreeTeardownCommands(repoDir)).toEqual([
         'cleanup_message="teardown string"\necho "$cleanup_message" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown.log"',
@@ -1495,15 +1495,15 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
     });
 
     it("omits RAMBLA_WORKTREE_PORT from teardown env when runtime metadata is missing", async () => {
-      const paseoConfig = {
+      const ramblaConfig = {
         worktree: {
           teardown: [
             'echo "port=${RAMBLA_WORKTREE_PORT-unset}" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown-port.log"',
           ],
         },
       };
-      writeFileSync(join(repoDir, "paseo.json"), JSON.stringify(paseoConfig));
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir });
+      writeFileSync(join(repoDir, "rambla.json"), JSON.stringify(ramblaConfig));
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir });
       execFileSync(
         "git",
         ["-c", "commit.gpgsign=false", "commit", "-m", "add teardown port logging"],
@@ -1515,17 +1515,17 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "teardown-port-missing-test",
-        paseoHome,
+        ramblaHome,
       });
 
-      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome });
+      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, ramblaHome });
 
       expect(readFileSync(join(repoDir, "teardown-port.log"), "utf8").trim()).toBe("port=unset");
       expect(existsSync(created.worktreePath)).toBe(false);
     });
 
     it("does not remove worktree when a teardown command fails", async () => {
-      const paseoConfig = {
+      const ramblaConfig = {
         worktree: {
           teardown: [
             'echo "started" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown-start.log"',
@@ -1533,8 +1533,8 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           ],
         },
       };
-      writeFileSync(join(repoDir, "paseo.json"), JSON.stringify(paseoConfig));
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir });
+      writeFileSync(join(repoDir, "rambla.json"), JSON.stringify(ramblaConfig));
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir });
       execFileSync(
         "git",
         ["-c", "commit.gpgsign=false", "commit", "-m", "add failing teardown commands"],
@@ -1546,11 +1546,11 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "teardown-failure-test",
-        paseoHome,
+        ramblaHome,
       });
 
       await expect(
-        deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome }),
+        deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, ramblaHome }),
       ).rejects.toThrow("Worktree teardown command failed");
 
       expect(existsSync(created.worktreePath)).toBe(true);

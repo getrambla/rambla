@@ -50,7 +50,7 @@ export function TitleBar({ state }: { state: MockupStateId }) {
       style={TITLEBAR_STYLE}
     >
       <span className="truncate text-[13.5px] font-medium text-mock-fg">Rambla homepage</span>
-      <span className="truncate text-[12.5px] text-mock-fg-muted">paseo</span>
+      <span className="truncate text-[12.5px] text-mock-fg-muted">rambla</span>
       <Ellipsis size={14} className="shrink-0 text-mock-fg-muted" />
 
       <span className="flex-1" />

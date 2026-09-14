@@ -13,10 +13,10 @@ if (-not $env:RAMBLA_HOME) {
         # Inside a worktree — derive a stable home from the worktree name
         $WorktreeRoot = git rev-parse --show-toplevel
         $WorktreeName = (Split-Path -Leaf $WorktreeRoot).ToLower() -replace '[^a-z0-9-]', '-' -replace '-+', '-' -replace '^-|-$', ''
-        $env:RAMBLA_HOME = "$env:USERPROFILE\.paseo-$WorktreeName"
+        $env:RAMBLA_HOME = "$env:USERPROFILE\.rambla-$WorktreeName"
         New-Item -ItemType Directory -Force -Path $env:RAMBLA_HOME | Out-Null
     } else {
-        $env:RAMBLA_HOME = Join-Path ([System.IO.Path]::GetTempPath()) "paseo-dev-$([System.Guid]::NewGuid().ToString('N').Substring(0,6))"
+        $env:RAMBLA_HOME = Join-Path ([System.IO.Path]::GetTempPath()) "rambla-dev-$([System.Guid]::NewGuid().ToString('N').Substring(0,6))"
         New-Item -ItemType Directory -Force -Path $env:RAMBLA_HOME | Out-Null
         # Register cleanup on exit
         $TempRamblaHome = $env:RAMBLA_HOME
@@ -28,7 +28,7 @@ if (-not $env:RAMBLA_HOME) {
 
 # Share speech models with the main install to avoid duplicate downloads
 if (-not $env:RAMBLA_LOCAL_MODELS_DIR) {
-    $env:RAMBLA_LOCAL_MODELS_DIR = "$env:USERPROFILE\.paseo\models\local-speech"
+    $env:RAMBLA_LOCAL_MODELS_DIR = "$env:USERPROFILE\.rambla\models\local-speech"
     New-Item -ItemType Directory -Force -Path $env:RAMBLA_LOCAL_MODELS_DIR | Out-Null
 }
 

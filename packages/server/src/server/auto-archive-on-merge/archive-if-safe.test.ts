@@ -17,9 +17,9 @@ import { createWorktree, type WorktreeConfig } from "../../utils/worktree.js";
 import type { ForgeService } from "../../../services/forge-service.js";
 import type { StoredAgentRecord } from "../agent/agent-storage.js";
 
-const CWD = "/tmp/paseo/worktrees/repo/branch";
-const RAMBLA_HOME = "/tmp/paseo";
-const WORKTREES_ROOT = "/tmp/paseo/worktrees/repo";
+const CWD = "/tmp/rambla/worktrees/repo/branch";
+const RAMBLA_HOME = "/tmp/rambla";
+const WORKTREES_ROOT = "/tmp/rambla/worktrees/repo";
 
 function createPullRequest(
   overrides?: Partial<NonNullable<WorkspaceGitRuntimeSnapshot["forge"]["pullRequest"]>>,
@@ -91,7 +91,7 @@ function createHarness(overrides?: {
     getSnapshot,
   } as unknown as AutoArchiveArchiveOptions["workspaceGitService"];
   const options: AutoArchiveArchiveOptions = {
-    paseoHome: RAMBLA_HOME,
+    ramblaHome: RAMBLA_HOME,
     daemonConfigStore: {
       get: () => ({ autoArchiveAfterMerge: true }),
     } as unknown as AutoArchiveArchiveOptions["daemonConfigStore"],
@@ -172,7 +172,7 @@ function createGitRepo(): { tempDir: string; repoDir: string } {
   const repoDir = path.join(tempDir, "repo");
   mkdirSync(repoDir, { recursive: true });
   execFileSync("git", ["init", "-b", "main"], { cwd: repoDir, stdio: "pipe" });
-  execFileSync("git", ["config", "user.email", "test@getpaseo.local"], {
+  execFileSync("git", ["config", "user.email", "test@getrambla.local"], {
     cwd: repoDir,
     stdio: "pipe",
   });
@@ -189,7 +189,7 @@ function createGitRepo(): { tempDir: string; repoDir: string } {
 
 async function createRamblaOwnedWorktree(
   repoDir: string,
-  paseoHome: string,
+  ramblaHome: string,
   worktreeSlug: string,
 ): Promise<WorktreeConfig> {
   return createWorktree({
@@ -201,7 +201,7 @@ async function createRamblaOwnedWorktree(
       branchName: worktreeSlug,
     },
     runSetup: false,
-    paseoHome,
+    ramblaHome,
   });
 }
 
@@ -246,7 +246,7 @@ function createGitHubServiceStub(): ForgeService {
 }
 
 function createRealOutcomeHarness(input: {
-  paseoHome: string;
+  ramblaHome: string;
   repoDir: string;
   worktreePath: string;
   activeWorkspaces: ActiveWorkspaceRef[];
@@ -260,7 +260,7 @@ function createRealOutcomeHarness(input: {
   vi.spyOn(logger, "error").mockImplementation(() => undefined);
 
   const options: AutoArchiveArchiveOptions = {
-    paseoHome: input.paseoHome,
+    ramblaHome: input.ramblaHome,
     daemonConfigStore: {
       get: () => ({ autoArchiveAfterMerge: true }),
     } as unknown as AutoArchiveArchiveOptions["daemonConfigStore"],
@@ -399,7 +399,7 @@ describe("archiveIfSafe", () => {
     await runArchiveIfSafe(harness);
 
     expect(harness.deps.isRamblaOwnedWorktreeCwd).toHaveBeenCalledWith(CWD, {
-      paseoHome: RAMBLA_HOME,
+      ramblaHome: RAMBLA_HOME,
     });
     expect(harness.deps.archiveByScope).not.toHaveBeenCalled();
   });
@@ -427,7 +427,7 @@ describe("archiveIfSafe", () => {
     expect(harness.deps.archiveByScope).toHaveBeenCalledTimes(1);
     expect(harness.deps.archiveByScope).toHaveBeenCalledWith(
       expect.objectContaining({
-        paseoHome: RAMBLA_HOME,
+        ramblaHome: RAMBLA_HOME,
         workspaceGitService: harness.options.workspaceGitService,
       }),
       {
@@ -505,14 +505,14 @@ describe("archiveIfSafe", () => {
 
   test("real outcome: keeps sibling workspace and directory on last reference", async () => {
     const { tempDir, repoDir } = createGitRepo();
-    const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "merged-with-sibling");
+    const ramblaHome = path.join(tempDir, ".rambla");
+    const worktree = await createRamblaOwnedWorktree(repoDir, ramblaHome, "merged-with-sibling");
     const workspaceA = "ws-merged-with-sibling-a";
     const workspaceB = "ws-merged-with-sibling-b";
     const archivedWorkspaceIds = new Set<string>();
 
     const harness = createRealOutcomeHarness({
-      paseoHome,
+      ramblaHome,
       repoDir,
       worktreePath: worktree.worktreePath,
       activeWorkspaces: [
@@ -536,13 +536,13 @@ describe("archiveIfSafe", () => {
 
   test("real outcome: removes directory when no sibling workspace remains", async () => {
     const { tempDir, repoDir } = createGitRepo();
-    const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "merged-last-ref");
+    const ramblaHome = path.join(tempDir, ".rambla");
+    const worktree = await createRamblaOwnedWorktree(repoDir, ramblaHome, "merged-last-ref");
     const workspaceA = "ws-merged-last-ref";
     const archivedWorkspaceIds = new Set<string>();
 
     const harness = createRealOutcomeHarness({
-      paseoHome,
+      ramblaHome,
       repoDir,
       worktreePath: worktree.worktreePath,
       activeWorkspaces: [{ workspaceId: workspaceA, cwd: worktree.worktreePath, kind: "worktree" }],
@@ -562,8 +562,8 @@ describe("archiveIfSafe", () => {
 
   test("real outcome: an unarchived workspace is not archived again for the same merged PR", async () => {
     const { tempDir, repoDir } = createGitRepo();
-    const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "merged-then-unarchived");
+    const ramblaHome = path.join(tempDir, ".rambla");
+    const worktree = await createRamblaOwnedWorktree(repoDir, ramblaHome, "merged-then-unarchived");
     const workspace = {
       workspaceId: "ws-merged-then-unarchived",
       cwd: worktree.worktreePath,
@@ -576,7 +576,7 @@ describe("archiveIfSafe", () => {
     };
     const archivedWorkspaceIds = new Set<string>();
     const harness = createRealOutcomeHarness({
-      paseoHome,
+      ramblaHome,
       repoDir,
       worktreePath: worktree.worktreePath,
       activeWorkspaces: [workspace, sibling],

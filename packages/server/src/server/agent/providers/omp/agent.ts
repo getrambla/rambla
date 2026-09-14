@@ -185,7 +185,7 @@ interface OmpAgentSessionOptions {
   providerIdleScheduler?: OmpProviderIdleScheduler;
   noTurnScheduler?: OmpNoTurnScheduler;
   usagePollScheduler?: OmpUsagePollScheduler;
-  paseoTools?: RamblaToolCatalog;
+  ramblaTools?: RamblaToolCatalog;
   /**
    * When false (resumed sessions), replayed session events are dropped until
    * the first prompt or agent_start so history is not re-emitted as live
@@ -884,7 +884,7 @@ export class OmpAgentSession implements AgentSession {
     this.state = options.initialState;
     this.currentModeId = options.currentModeId ?? null;
     this.logger = options.logger;
-    this.paseoTools = options.paseoTools;
+    this.ramblaTools = options.ramblaTools;
     this.live = options.live ?? true;
     this.providerIdleScheduler = options.providerIdleScheduler ?? createOmpProviderIdleScheduler();
     this.noTurnScheduler = options.noTurnScheduler ?? createOmpNoTurnScheduler();
@@ -932,7 +932,7 @@ export class OmpAgentSession implements AgentSession {
   private readonly runtimeSession: OmpRuntimeSession;
   private readonly config: AgentSessionConfig;
   private readonly logger: Logger;
-  private readonly paseoTools?: RamblaToolCatalog;
+  private readonly ramblaTools?: RamblaToolCatalog;
 
   get id(): string | null {
     return this.state.sessionId;
@@ -1628,7 +1628,7 @@ export class OmpAgentSession implements AgentSession {
     if (
       handleOmpHostToolRuntimeEvent(event, {
         runtimeSession: this.runtimeSession,
-        paseoTools: this.paseoTools,
+        ramblaTools: this.ramblaTools,
         logger: this.logger,
       })
     ) {
@@ -2247,7 +2247,7 @@ export class OmpAgentClient implements AgentClient {
       env: launchContext?.env,
     });
     try {
-      await this.configureNativeRamblaTools(runtimeSession, launchContext?.paseoTools);
+      await this.configureNativeRamblaTools(runtimeSession, launchContext?.ramblaTools);
       return new OmpAgentSession({
         runtimeSession,
         config,
@@ -2258,7 +2258,7 @@ export class OmpAgentClient implements AgentClient {
         providerIdleScheduler: this.providerIdleScheduler,
         noTurnScheduler: this.noTurnScheduler,
         usagePollScheduler: this.usagePollScheduler,
-        paseoTools: launchContext?.paseoTools,
+        ramblaTools: launchContext?.ramblaTools,
       });
     } catch (error) {
       await runtimeSession.close().catch(() => undefined);
@@ -2289,7 +2289,7 @@ export class OmpAgentClient implements AgentClient {
       }),
     );
     try {
-      await this.configureNativeRamblaTools(runtimeSession, launchContext?.paseoTools);
+      await this.configureNativeRamblaTools(runtimeSession, launchContext?.ramblaTools);
       return new OmpAgentSession({
         runtimeSession,
         config: resumeConfig.config,
@@ -2300,7 +2300,7 @@ export class OmpAgentClient implements AgentClient {
         providerIdleScheduler: this.providerIdleScheduler,
         noTurnScheduler: this.noTurnScheduler,
         usagePollScheduler: this.usagePollScheduler,
-        paseoTools: launchContext?.paseoTools,
+        ramblaTools: launchContext?.ramblaTools,
         live: false,
       });
     } catch (error) {

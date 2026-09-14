@@ -8,7 +8,7 @@ import type { AgentTimelineItem } from "../agent/agent-sdk-types.js";
 import { CodexAppServerAgentClient } from "../agent/providers/codex-app-server-agent.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
 import { createMessageCollector } from "../test-utils/message-collector.js";
-import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import type { SessionOutboundMessage } from "../messages.js";
 import { canRunRealProvider } from "./real-provider-test-config.js";
 

@@ -5,9 +5,9 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 FLOW_TEMPLATE="$REPO_ROOT/packages/app/maestro/sidebar-drag-cancellation-regression.yaml"
 FLOW_TEMPLATE_DIR="$REPO_ROOT/packages/app/maestro"
-OUT_DIR="/tmp/paseo-sidebar-drag-cancellation-$(date +%s)"
+OUT_DIR="/tmp/rambla-sidebar-drag-cancellation-$(date +%s)"
 CLIENT_EXPORTS="$REPO_ROOT/packages/client/dist/daemon-client.js"
-RELAY_EXPORTS="$REPO_ROOT/node_modules/@getpaseo/relay/dist/e2ee.js"
+RELAY_EXPORTS="$REPO_ROOT/node_modules/@getrambla/relay/dist/e2ee.js"
 FIXTURE_ROOT=""
 PROJECT_IDS_FILE="$OUT_DIR/project-ids.json"
 
@@ -41,10 +41,10 @@ if ! curl --fail --silent --show-error --max-time 3 "$RAMBLA_MAESTRO_DAEMON_HEAL
   exit 1
 fi
 
-FIXTURE_ROOT="$(mktemp -d /tmp/paseo-sidebar-drag-fixture-XXXXXX)"
-export RAMBLA_MAESTRO_DRAG_A_NAME="000-paseo-drag-a-$(basename "$FIXTURE_ROOT")"
-export RAMBLA_MAESTRO_DRAG_B_NAME="001-paseo-drag-b-$(basename "$FIXTURE_ROOT")"
-export RAMBLA_MAESTRO_DRAG_Z_NAME="zzz-paseo-drag-z-$(basename "$FIXTURE_ROOT")"
+FIXTURE_ROOT="$(mktemp -d /tmp/rambla-sidebar-drag-fixture-XXXXXX)"
+export RAMBLA_MAESTRO_DRAG_A_NAME="000-rambla-drag-a-$(basename "$FIXTURE_ROOT")"
+export RAMBLA_MAESTRO_DRAG_B_NAME="001-rambla-drag-b-$(basename "$FIXTURE_ROOT")"
+export RAMBLA_MAESTRO_DRAG_Z_NAME="zzz-rambla-drag-z-$(basename "$FIXTURE_ROOT")"
 
 mkdir -p "$OUT_DIR/flows"
 
@@ -88,7 +88,7 @@ for project_name in \
   git -C "$project_path" init >/dev/null
   git -C "$project_path" checkout -b main >/dev/null 2>&1 || true
   git -C "$project_path" config user.name "Rambla Maestro"
-  git -C "$project_path" config user.email "maestro@getpaseo.local"
+  git -C "$project_path" config user.email "maestro@getrambla.local"
   printf '# Sidebar drag cancellation fixture\n' > "$project_path/README.md"
   git -C "$project_path" add README.md
   git -C "$project_path" commit -m "Initial commit" >/dev/null

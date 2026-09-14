@@ -2,16 +2,16 @@ import { afterEach, describe, expect, test } from "vitest";
 import pino from "pino";
 
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import { generateLocalPairingOffer } from "../pairing-offer.js";
 import { CodexAppServerAgentClient } from "../agent/providers/codex-app-server-agent.js";
-import { buildRelayWebSocketUrl } from "@getpaseo/protocol/daemon-endpoints";
+import { buildRelayWebSocketUrl } from "@getrambla/protocol/daemon-endpoints";
 import {
   parseConnectionOfferFromUrl,
   type ConnectionOffer,
-} from "@getpaseo/protocol/connection-offer";
+} from "@getrambla/protocol/connection-offer";
 
-const relayEndpoint = process.env.RAMBLA_LIVE_RELAY_ENDPOINT ?? "paseo-relay-next.fly.dev:443";
+const relayEndpoint = process.env.RAMBLA_LIVE_RELAY_ENDPOINT ?? "rambla-relay-next.fly.dev:443";
 const liveTest = process.env.RUN_LIVE_RELAY_E2E === "1" ? test : test.skip;
 
 function requireOffer(url: string): ConnectionOffer {
@@ -24,7 +24,7 @@ function requireOffer(url: string): ConnectionOffer {
 
 async function pairingOfferFor(daemon: TestRamblaDaemon): Promise<ConnectionOffer> {
   const pairing = await generateLocalPairingOffer({
-    paseoHome: daemon.paseoHome,
+    ramblaHome: daemon.ramblaHome,
     relayEnabled: true,
     relayEndpoint,
     relayPublicEndpoint: relayEndpoint,

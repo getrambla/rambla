@@ -20,19 +20,19 @@ import {
   type TimelineResponsePayload,
   type ViewedTimelineOwner,
 } from "@/timeline/viewed-timeline-sync";
-import type { AgentAttachment, SessionOutboundMessage } from "@getpaseo/protocol/messages";
-import { parseServerInfoStatusPayload } from "@getpaseo/protocol/messages";
+import type { AgentAttachment, SessionOutboundMessage } from "@getrambla/protocol/messages";
+import { parseServerInfoStatusPayload } from "@getrambla/protocol/messages";
 import {
   buildAgentAttentionNotificationPayload,
   type AgentAttentionReason,
   type AgentAttentionNotificationPayload,
   type NotificationPermissionRequest,
-} from "@getpaseo/protocol/agent-attention-notification";
+} from "@getrambla/protocol/agent-attention-notification";
 
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
-import type { AgentSessionConfig } from "@getpaseo/protocol/agent-types";
-import type { GitSetupOptions } from "@getpaseo/protocol/messages";
-import type { AgentPermissionResponse } from "@getpaseo/protocol/agent-types";
+import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
+import type { AgentSessionConfig } from "@getrambla/protocol/agent-types";
+import type { GitSetupOptions } from "@getrambla/protocol/messages";
+import type { AgentPermissionResponse } from "@getrambla/protocol/agent-types";
 import { getHostRuntimeStore, useHostRuntimeIsConnected } from "@/runtime/host-runtime";
 import { useVoiceAudioEngineOptional, useVoiceRuntimeOptional } from "@/contexts/voice-context";
 import type { AudioPlaybackSource } from "@/voice/audio-engine-types";

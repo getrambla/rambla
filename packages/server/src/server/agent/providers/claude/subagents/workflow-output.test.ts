@@ -47,7 +47,7 @@ describe("Claude workflow output", () => {
   });
 
   it("reads at most one byte beyond the on-disk limit before rejecting", () => {
-    const directory = mkdtempSync(path.join(tmpdir(), "paseo-workflow-output-limit-"));
+    const directory = mkdtempSync(path.join(tmpdir(), "rambla-workflow-output-limit-"));
     const outputFile = path.join(directory, "workflow.output");
     try {
       writeFileSync(outputFile, "x".repeat(1024 * 1024 + 1), "utf8");

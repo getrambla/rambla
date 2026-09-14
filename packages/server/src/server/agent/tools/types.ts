@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { ProviderRamblaToolsPolicy } from "@getpaseo/protocol/provider-config";
+import type { ProviderRamblaToolsPolicy } from "@getrambla/protocol/provider-config";
 
 export interface RamblaToolExecutionContext {
   signal?: AbortSignal;
@@ -37,7 +37,7 @@ export interface RamblaToolCatalog {
 
 export interface RamblaToolRuntimeContext {
   callerAgentId?: string;
-  paseoToolPolicy?: ProviderRamblaToolsPolicy;
+  ramblaToolPolicy?: ProviderRamblaToolsPolicy;
   enableVoiceTools?: boolean;
   voiceOnly?: boolean;
 }

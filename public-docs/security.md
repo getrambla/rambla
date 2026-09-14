@@ -23,9 +23,9 @@ Clients connect to the daemon over WebSocket. There are two ways to establish th
 
 ## Relay connections (recommended)
 
-The relay is the simplest way to connect from your phone. It requires no VPN setup, no port forwarding, and no firewall configuration. The daemon can stay bound to localhost or a socket file, it connects _outbound_ to the relay, and your phone meets it there. The official relay server is the open-source Elixir service at [getpaseo/paseo-relay](https://github.com/getpaseo/paseo-relay).
+The relay is the simplest way to connect from your phone. It requires no VPN setup, no port forwarding, and no firewall configuration. The daemon can stay bound to localhost or a socket file, it connects _outbound_ to the relay, and your phone meets it there. The official relay server is the open-source Elixir service at [getrambla/rambla-relay](https://github.com/getrambla/rambla-relay).
 
-Relay is off on new installations. When you pair a device from `paseo`, `paseo daemon pair`, or Rambla Desktop, Rambla asks before enabling it. Choosing not to enable relay leaves the daemon available for direct TCP, Tailscale, or other VPN connections and does not create a pairing QR code. Use `--relay` with the CLI pairing or startup command to opt in without an interactive prompt.
+Relay is off on new installations. When you pair a device from `rambla`, `rambla daemon pair`, or Rambla Desktop, Rambla asks before enabling it. Choosing not to enable relay leaves the daemon available for direct TCP, Tailscale, or other VPN connections and does not create a pairing QR code. Use `--relay` with the CLI pairing or startup command to opt in without an interactive prompt.
 
 > **The relay is designed to be untrusted.** All traffic between your phone and daemon is end-to-end encrypted. The relay server cannot read your messages, see your code, or modify traffic without detection. Even if the relay is compromised, your data remains protected.
 
@@ -115,9 +115,9 @@ For Docker deployments:
 - Use HTTPS at your reverse proxy for browser access outside localhost.
 - Set `RAMBLA_HOSTNAMES` for any DNS names you use to reach the container.
 - Keep `/workspace` mounts scoped to repositories the agents should be able to read and write.
-- Treat `/home/paseo` as sensitive, it can contain daemon state and provider credentials.
+- Treat `/home/rambla` as sensitive, it can contain daemon state and provider credentials.
 
-The image runs the daemon and launched agents as the non-root `paseo` user, but container user isolation is not a substitute for careful mounts. Agents can still access whatever code and credentials you mount into the container.
+The image runs the daemon and launched agents as the non-root `rambla` user, but container user isolation is not a substitute for careful mounts. Agents can still access whatever code and credentials you mount into the container.
 
 See [Docker](/docs/docker) for Compose and reverse proxy examples.
 
@@ -133,11 +133,11 @@ Rambla never stores or transmits provider API keys. Agents run in your user cont
 
 ## Hub identities and credentials
 
-Hub CLI login and daemon enrollment are separate identities. `paseo hub login [origin]` stores a durable organization-scoped human credential in a private file under `RAMBLA_HOME`, keyed by the normalized Hub origin. A stored credential is never sent to another origin. Protect `RAMBLA_HOME` as sensitive local state.
+Hub CLI login and daemon enrollment are separate identities. `rambla hub login [origin]` stores a durable organization-scoped human credential in a private file under `RAMBLA_HOME`, keyed by the normalized Hub origin. A stored credential is never sent to another origin. Protect `RAMBLA_HOME` as sensitive local state.
 
 Hub CLI credentials are bearer secrets. Remote Hub origins must use HTTPS; cleartext HTTP is accepted only for loopback development origins (`localhost`, `127.0.0.1`, and `[::1]`).
 
-`paseo hub connect [origin]` uses that credential, or an explicit API key, only to request a short-lived one-time enrollment token. The daemon exchanges the token and retains its own independently generated relationship credential. Logging out of the CLI does not silently remove daemon authority. Interactive logout completes any accepted same-origin daemon disconnection before deleting the login. In JSON and noninteractive use, `logout` never prompts or disconnects; pass `--disconnect-daemon` only when automation intends to remove both identities.
+`rambla hub connect [origin]` uses that credential, or an explicit API key, only to request a short-lived one-time enrollment token. The daemon exchanges the token and retains its own independently generated relationship credential. Logging out of the CLI does not silently remove daemon authority. Interactive logout completes any accepted same-origin daemon disconnection before deleting the login. In JSON and noninteractive use, `logout` never prompts or disconnects; pass `--disconnect-daemon` only when automation intends to remove both identities.
 
 `--api-key` and `RAMBLA_HUB_API_KEY` override stored login without being persisted. Prefer environment or secret-manager injection for automation, and avoid command-line flags when local process listings or shell history are visible to other users.
 
@@ -149,4 +149,4 @@ Hub CLI credentials are bearer secrets. Remote Hub origins must use HTTPS; clear
 - **Never bind to 0.0.0.0 without a password**, without one, any device on your network can connect
 - **Scope Docker mounts tightly**, agents can access mounted workspaces and provider credentials
 - **Keep your daemon updated**, security improvements are released regularly
-- **Protect the Hub configuration branch**, push access to the `.paseo` bundle controls what that project can reach, see [How Hub works](/docs/hub/concepts)
+- **Protect the Hub configuration branch**, push access to the `.rambla` bundle controls what that project can reach, see [How Hub works](/docs/hub/concepts)

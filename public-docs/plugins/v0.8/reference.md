@@ -28,11 +28,11 @@ Plugin code is trusted and unsandboxed. Client surfaces run in the Rambla app. B
 
 ## Project files
 
-`paseo plugin init /absolute/path/to/my-plugin` creates:
+`rambla plugin init /absolute/path/to/my-plugin` creates:
 
 ```text
 my-plugin/
-  paseo-plugin.json
+  rambla-plugin.json
   index.client.tsx
   index.server.ts
   client/greeting.tsx
@@ -42,16 +42,16 @@ my-plugin/
   tsconfig.json
 ```
 
-The required root manifest is `paseo-plugin.json`. It contains the default plugin ID and supported Rambla versions:
+The required root manifest is `rambla-plugin.json`. It contains the default plugin ID and supported Rambla versions:
 
 ```json
-{ "id": "my-plugin", "requirements": { "paseo": ">=0.8.0" } }
+{ "id": "my-plugin", "requirements": { "rambla": ">=0.8.0" } }
 ```
 
 ### Requirements
 
-`requirements` is an optional object. Its currently supported key, `paseo`, accepts an npm semver
-range. An omitted `requirements.paseo` means `<0.8.0`: the plugin predates the first breaking
+`requirements` is an optional object. Its currently supported key, `rambla`, accepts an npm semver
+range. An omitted `requirements.rambla` means `<0.8.0`: the plugin predates the first breaking
 plugin release. Rambla 0.8 and later reject it with a link to the [migration guide](migration).
 Empty strings, invalid ranges, and unknown manifest requirement keys are rejected.
 
@@ -63,7 +63,7 @@ Empty strings, invalid ranges, and unknown manifest requirement keys are rejecte
 
 Prerelease Rambla versions also satisfy a range their stable core (`major.minor.patch`) satisfies, so `0.8.0-beta.1` satisfies `>=0.8.0` but not `<0.8.0`.
 
-`paseo plugin init` writes `>=` followed by the current CLI version and pins the matching SDK
+`rambla plugin init` writes `>=` followed by the current CLI version and pins the matching SDK
 for typechecking. Raise the minimum when adopting a newer API. Add an upper bound when a later
 release is incompatible; a minimum alone does not promise protection from future breaking changes.
 
@@ -90,7 +90,7 @@ old `index.ts` fails to load and points at the [migration guide](/docs/plugins/v
 Plugin, surface, sidebar-item, workspace-panel, Command Center item, attachment-source, and
 slash-command IDs start with a lowercase letter and contain lowercase letters, numbers, or hyphens.
 
-The generated `package.json` installs `@getpaseo/plugin` and the other host modules as development
+The generated `package.json` installs `@getrambla/plugin` and the other host modules as development
 dependencies for local typechecking and tests. Rambla supplies their runtime instances. Consumers do
 not install them when adding the plugin.
 
@@ -110,7 +110,7 @@ from `server/` into the app bundle, or of a Node module anywhere in the app bund
 error. Server imports of React, React Native, or client SDK entries also fail. Shared code imports
 only shared code: no Node, React, runtime-specific SDK entries, or runtime-specific types.
 
-The SDK root (`@getpaseo/plugin`) contains shared data, schemas, and runtime-neutral helpers only.
+The SDK root (`@getrambla/plugin`) contains shared data, schemas, and runtime-neutral helpers only.
 Import client contexts and hooks from `/client`, server contexts and lifecycle contracts from
 `/server`, and UI from `/client/react-native` or `/client/ui`. These rules include type imports and transitive
 dependencies. `/client/host` is private to the app host; plugins cannot import it.
@@ -121,10 +121,10 @@ Rambla provides these modules to client code:
 
 | Module                                 | Use it for                                                                                        |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `@getpaseo/plugin`                     | Shared data, `defineRpc`, `defineSettings`, `defineAttachmentSource`, `RpcInput`, and `RpcOutput` |
-| `@getpaseo/plugin/client/ui`           | Named, composable settings components                                                             |
-| `@getpaseo/plugin/client/react-native` | Rambla UI components and UI hooks                                                                  |
-| `@getpaseo/plugin/client`              | Client contribution contexts, `useRambla`, `useRpc`, `useSettings`, and data hooks                 |
+| `@getrambla/plugin`                     | Shared data, `defineRpc`, `defineSettings`, `defineAttachmentSource`, `RpcInput`, and `RpcOutput` |
+| `@getrambla/plugin/client/ui`           | Named, composable settings components                                                             |
+| `@getrambla/plugin/client/react-native` | Rambla UI components and UI hooks                                                                  |
+| `@getrambla/plugin/client`              | Client contribution contexts, `useRambla`, `useRpc`, `useSettings`, and data hooks                 |
 | `@tanstack/react-query`                | Request state and caching                                                                         |
 | `react`                                | Components and hooks                                                                              |
 | `react/jsx-runtime`                    | Compiled JSX                                                                                      |
@@ -183,8 +183,8 @@ Use `openSettings`, `openSurface`, and `openPanel` for your own registered contr
 
 ### Server runtime
 
-Rambla provides `@getpaseo/plugin`, `@getpaseo/plugin/server`,
-`@getpaseo/plugin/server/provider`, `@getpaseo/plugin/server/acp`, and `zod` to server code. Backend
+Rambla provides `@getrambla/plugin`, `@getrambla/plugin/server`,
+`@getrambla/plugin/server/provider`, `@getrambla/plugin/server/acp`, and `zod` to server code. Backend
 contributions run in a daemon subprocess with Node access to the host machine. Keep filesystem,
 process, credential, and other machine-local work under `server/`. A plugin without
 `index.server.ts` starts no subprocess.
@@ -195,7 +195,7 @@ Follow [Build a provider plugin](/docs/plugins/v0.8/providers) for direct and AC
 session lifecycle, composer settings, timeline renderers, testing, and distribution.
 
 Call `server.registerProvider()` with a `ProviderRegistration` from
-`@getpaseo/plugin/server/provider`. Its connection accepts inputs with `send()` and emits complete state
+`@getrambla/plugin/server/provider`. Its connection accepts inputs with `send()` and emits complete state
 snapshots through `onEvent()`. `send()` reports acceptance only; prompt disposition, turns,
 configuration, persistence, permissions, and failures are events.
 
@@ -210,7 +210,7 @@ session config.
 Rambla refreshes an agent by closing its current provider session and opening it with current
 configuration and persistence. Providers re-read external state during `session.open`.
 
-Use `runAcpProvider()` from `@getpaseo/plugin/server/acp` to adapt a command-backed ACP. Add transformer
+Use `runAcpProvider()` from `@getrambla/plugin/server/acp` to adapt a command-backed ACP. Add transformer
 hooks only for a vendor's discovery, configuration, notification, or tool-call differences.
 
 `ProviderRegistration.icon` is a file path relative to the plugin directory, such as `icon.svg`.
@@ -227,7 +227,7 @@ receive `PluginClientContext`; server entries receive `PluginServerContext`. Cli
 which return `{ update, remove }` handles. The entry cleanup runs before Rambla removes remaining registrations.
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@getrambla/plugin/client";
 import { Main } from "./client/main";
 
 export default function contribute(client: PluginClientContext) {
@@ -243,7 +243,7 @@ Cleanup can be async. Release timers, watchers, sockets, and other resources cre
 In `index.server.ts`:
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@getrambla/plugin/server";
 
 export default function contribute(server: PluginServerContext) {
   server.on("agent.turn_ended", (event) => {
@@ -256,8 +256,8 @@ export default function contribute(server: PluginServerContext) {
 
 | Register                        | Callback receives                  | Return                                                       |
 | ------------------------------- | ---------------------------------- | ------------------------------------------------------------ |
-| `server.on(name, callback)`     | `(event, { paseo, signal })`       | `void` or `Promise<void>`                                    |
-| `server.before(name, callback)` | `({ request }, { paseo, signal })` | Modified request, or `undefined` to keep it; async supported |
+| `server.on(name, callback)`     | `(event, { rambla, signal })`       | `void` or `Promise<void>`                                    |
+| `server.before(name, callback)` | `({ request }, { rambla, signal })` | Modified request, or `undefined` to keep it; async supported |
 
 Hooks run on the daemon while the plugin is enabled, even with no app connected.
 
@@ -344,12 +344,12 @@ and directory lookup/import operations are unaffected.
 ### Send a follow-up when a turn ends
 
 Copy [server/inspect.ts](https://github.com/getrambla/rambla/blob/main/plugin-examples/lifecycle-actions/server/inspect.ts)
-into your plugin. The helper imports types from `@getpaseo/protocol/agent-types`; add
-`@getpaseo/protocol` at the same version as your plugin SDK to your development dependencies
+into your plugin. The helper imports types from `@getrambla/protocol/agent-types`; add
+`@getrambla/protocol` at the same version as your plugin SDK to your development dependencies
 and install them before loading the plugin. `latestOutputText` joins text chunks after the latest user message.
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@getrambla/plugin/server";
 import { latestOutputText } from "./server/inspect";
 
 export default function contribute(server: PluginServerContext) {
@@ -360,7 +360,7 @@ export default function contribute(server: PluginServerContext) {
 
     const text = latestOutputText(event.timeline);
     if (/out of credits/i.test(text)) {
-      await context.paseo.agents.ref(event.agent.id).send("Try again.");
+      await context.rambla.agents.ref(event.agent.id).send("Try again.");
     }
   });
 
@@ -382,7 +382,7 @@ add limits or delays in your plugin when needed. Attachments and tool effects ar
 Using `shellCommand` from the same [helper file](https://github.com/getrambla/rambla/blob/main/plugin-examples/lifecycle-actions/server/inspect.ts):
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@getrambla/plugin/server";
 import { shellCommand } from "./server/inspect";
 
 export default function contribute(server: PluginServerContext) {
@@ -392,7 +392,7 @@ export default function contribute(server: PluginServerContext) {
       return;
     }
 
-    const agent = context.paseo.agents.ref(event.agent.id);
+    const agent = context.rambla.agents.ref(event.agent.id);
     if (/\brm\s+-rf\b/.test(command)) {
       await agent.respondToPermission({
         requestId: event.request.id,
@@ -439,7 +439,7 @@ plans, and mode changes; requesting permission does not end the turn.
 Agent events exclude internal utility agents. Archive events can precede runtime/worktree cleanup;
 `workspace.created` is not a setup barrier before agent startup.
 
-**Shared payload shapes** (`@getpaseo/plugin/server`):
+**Shared payload shapes** (`@getrambla/plugin/server`):
 
 ```ts
 interface PluginHookAgent {
@@ -540,7 +540,7 @@ saved; environment overrides are not persisted with it.
 
 | Contract                           | Behavior                                                                                                  |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `context.paseo`                    | Existing SDK connected to this daemon                                                                     |
+| `context.rambla`                    | Existing SDK connected to this daemon                                                                     |
 | `context.signal`                   | Aborted on invocation timeout or plugin stop; pass to external requests                                   |
 | Input data                         | Detached snapshot; change state through returned requests or SDK commands                                 |
 | Registration result                | Idempotent remover, e.g. `const remove = server.on(...); remove();`                                       |
@@ -559,7 +559,7 @@ saved; environment overrides are not persisted with it.
 | [lifecycle-actions](https://github.com/getrambla/rambla/tree/main/plugin-examples/lifecycle-actions)     | Follow-ups, permissions, environment, provider switching, worktree selection |
 | [agent-configuration](https://github.com/getrambla/rambla/tree/main/plugin-examples/agent-configuration) | MCP injection and Codex sandbox/approval options                             |
 
-Read logger output with `paseo plugin logs lifecycle-logger` or the host's `daemon.log`.
+Read logger output with `rambla plugin logs lifecycle-logger` or the host's `daemon.log`.
 
 ## Surfaces and sidebar items
 
@@ -568,7 +568,7 @@ Register a component, then point a sidebar item at its surface ID:
 `client/main.tsx`:
 
 ```tsx
-import type { PluginSurfaceProps } from "@getpaseo/plugin/client";
+import type { PluginSurfaceProps } from "@getrambla/plugin/client";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
@@ -597,7 +597,7 @@ export function Main({ theme, host, layout }: PluginSurfaceProps) {
 `index.client.tsx`:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@getrambla/plugin/client";
 import { Main } from "./client/main";
 
 export default function contribute(client: PluginClientContext) {
@@ -625,12 +625,12 @@ Rambla owns the route, header, close action, host picker, error boundary, and qu
 
 ## Host UI
 
-Import Rambla-owned UI from `@getpaseo/plugin/client/react-native` in client code. This example
+Import Rambla-owned UI from `@getrambla/plugin/client/react-native` in client code. This example
 opens a controlled modal, renders a host icon, and confirms the action with a toast:
 
 ```tsx
-import type { PluginSurfaceProps } from "@getpaseo/plugin/client";
-import { Icon, Modal, useToast } from "@getpaseo/plugin/client/react-native";
+import type { PluginSurfaceProps } from "@getrambla/plugin/client";
+import { Icon, Modal, useToast } from "@getrambla/plugin/client/react-native";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -709,7 +709,7 @@ Modal children keep the plugin runtime context. `useRambla`, `useRpc`, `useWorks
 
 ### Scrolling
 
-Import `ScrollView` and `FlatList` from `@getpaseo/plugin/client/react-native` when content can appear in a
+Import `ScrollView` and `FlatList` from `@getrambla/plugin/client/react-native` when content can appear in a
 Rambla modal. They accept React Native props and refs and integrate with the sheet's gestures. Outside
 a sheet they use ordinary React Native scrolling. Do not import bottom-sheet libraries directly.
 
@@ -723,7 +723,7 @@ container without changing these gestures. Expand the sheet before using list me
 `scrollToEnd`; the sheet locks list offsets below its largest height.
 
 ```tsx
-import { FlatList, Modal } from "@getpaseo/plugin/client/react-native";
+import { FlatList, Modal } from "@getrambla/plugin/client/react-native";
 import { Text } from "react-native";
 
 // Inside your controlled Modal:
@@ -753,7 +753,7 @@ user action and await it before reporting success. It rejects if the platform de
 clipboard is unavailable; browser permissions and secure-context requirements still apply.
 
 ```tsx
-import { copyText, useToast } from "@getpaseo/plugin/client/react-native";
+import { copyText, useToast } from "@getrambla/plugin/client/react-native";
 
 // Inside your component:
 const toast = useToast();
@@ -768,7 +768,7 @@ async function copyResult() {
 ```
 
 Programmatic copying and native text selection are separate interactions. Use `<Text selectable>`
-for long-press selection and OS Copy. Import `TextInput` from `@getpaseo/plugin/client/react-native` for modal forms. It accepts React Native
+for long-press selection and OS Copy. Import `TextInput` from `@getrambla/plugin/client/react-native` for modal forms. It accepts React Native
 input props and refs, supports OS Paste, and registers focus with the native sheet so the keyboard
 can raise the form. Outside a sheet it uses the ordinary input. A plain React Native input supports
 Paste too, but does not register focus with the sheet; the keyboard can cover it. No clipboard read
@@ -814,7 +814,7 @@ registrations are client contributions. Rambla applies the transformer while bui
 model, including every live streaming update.
 
 ```tsx
-import type { PluginClientContext, PluginTimelineItemProps } from "@getpaseo/plugin/client";
+import type { PluginClientContext, PluginTimelineItemProps } from "@getrambla/plugin/client";
 import { Text } from "react-native";
 import { z } from "zod";
 
@@ -870,10 +870,10 @@ assistant rows.
 A server handler can add a plugin-owned row to canonical history:
 
 ```ts
-import type { PluginHandlerContext } from "@getpaseo/plugin/server";
+import type { PluginHandlerContext } from "@getrambla/plugin/server";
 
-async function publishReview(agentId: string, { paseo }: PluginHandlerContext) {
-  await paseo.agents.ref(agentId).timeline.append({
+async function publishReview(agentId: string, { rambla }: PluginHandlerContext) {
+  await rambla.agents.ref(agentId).timeline.append({
     type: "plugin",
     id: "review",
     kind: "review-result",
@@ -929,7 +929,7 @@ Workspace and agent panels receive the same `theme`, `layout`, and optional `nav
 `name`. A theme is data, so it needs no component file:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@getrambla/plugin/client";
 
 export default function contribute(client: PluginClientContext) {
   client.addTheme({
@@ -994,12 +994,12 @@ A disabled or removed plugin leaves an unavailable screen with working Back navi
 
 ### Named UI components
 
-Import settings components from `@getpaseo/plugin/client/ui`. They work with your own state and RPCs;
+Import settings components from `@getrambla/plugin/client/ui`. They work with your own state and RPCs;
 no form wrapper or storage binding is required.
 
 ```tsx
 import { useState } from "react";
-import { SettingsCard, SettingsSection, SettingsSwitch } from "@getpaseo/plugin/client/ui";
+import { SettingsCard, SettingsSection, SettingsSwitch } from "@getrambla/plugin/client/ui";
 
 export function DisplaySettings() {
   const [visible, setVisible] = useState(true);
@@ -1033,7 +1033,7 @@ can sit beside or inside these components.
 Define a settings document in `shared/`:
 
 ```ts
-import { defineSettings } from "@getpaseo/plugin";
+import { defineSettings } from "@getrambla/plugin";
 import { z } from "zod";
 
 export const preferences = defineSettings({
@@ -1098,7 +1098,7 @@ Register one panel for workspace or agent context:
 `client/review.tsx`:
 
 ```tsx
-import { type PluginAgentPanelProps, useAgent, useWorkspace } from "@getpaseo/plugin/client";
+import { type PluginAgentPanelProps, useAgent, useWorkspace } from "@getrambla/plugin/client";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
@@ -1129,7 +1129,7 @@ export function ReviewPanel({ theme, layout, workspaceId, agentId }: PluginAgent
 `index.client.tsx`:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@getrambla/plugin/client";
 import { ReviewPanel } from "./client/review";
 
 export default function contribute(client: PluginClientContext) {
@@ -1210,7 +1210,7 @@ Open the Command Center with **⌘K** on macOS or **Ctrl+K** on Windows and Linu
 Register an action and open a panel from the callback:
 
 ```tsx
-import { defineRpc } from "@getpaseo/plugin";
+import { defineRpc } from "@getrambla/plugin";
 import { z } from "zod";
 
 const refreshReview = defineRpc({
@@ -1225,8 +1225,8 @@ client.addCommandCenterItem({
   icon: "Scan",
   keywords: ["inspect"],
   context: "agent",
-  async onSelect({ paseo, rpc, workspace, agent, openPanel }) {
-    await paseo.workspaces.ref(workspace.id).setTitle(`Review ${agent.id}`);
+  async onSelect({ rambla, rpc, workspace, agent, openPanel }) {
+    await rambla.workspaces.ref(workspace.id).setTitle(`Review ${agent.id}`);
     await rpc(refreshReview, { agentId: agent.id });
     openPanel("review");
   },
@@ -1251,14 +1251,14 @@ Every callback receives:
 | Field                     | Context             | Meaning                                                                                                         |
 | ------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `context`                 | All                 | Matching discriminator.                                                                                         |
-| `paseo`                   | All                 | Selected host's existing `RamblaApi`.                                                                            |
+| `rambla`                   | All                 | Selected host's existing `RamblaApi`.                                                                            |
 | `rpc(contract, input)`    | All                 | Typed call to this installation's daemon-side plugin handler.                                                   |
 | `openSurface(id)`         | All                 | Opens one of this plugin's registered global surfaces.                                                          |
 | `workspace`               | Workspace and agent | Synchronous workspace snapshot.                                                                                 |
 | `agent`                   | Agent               | Synchronous matching agent snapshot.                                                                            |
 | `openPanel(id, options?)` | Workspace and agent | Opens a registered panel in the callback's current context. Pass `{ location: "explorer" }` to target Explorer. |
 
-An agent callback may open either an agent panel or a workspace panel. A workspace callback may open only a workspace panel. Unknown surface and panel IDs fail visibly. Use `paseo` for normal workspace, agent, provider, and daemon-config operations. Use `rpc` for plugin-specific filesystem, credential, vendor, or daemon-local work.
+An agent callback may open either an agent panel or a workspace panel. A workspace callback may open only a workspace panel. Unknown surface and panel IDs fail visibly. Use `rambla` for normal workspace, agent, provider, and daemon-config operations. Use `rpc` for plugin-specific filesystem, credential, vendor, or daemon-local work.
 
 ## Slash commands
 
@@ -1359,7 +1359,7 @@ const pill = client.addComposerPill({
 
 ## Button descriptor
 
-These contracts are exported from `@getpaseo/plugin/client`.
+These contracts are exported from `@getrambla/plugin/client`.
 
 | Field      | Required | Meaning                                                                 |
 | ---------- | -------- | ----------------------------------------------------------------------- |
@@ -1378,7 +1378,7 @@ type PluginButtonBehavior =
 ```
 
 An action runs on the client. Rambla marks the button busy until its promise settles, blocks repeated
-presses, and shows failures in a toast. A failed action can be retried. Use the client's `paseo` for
+presses, and shows failures in a toast. A failed action can be retried. Use the client's `rambla` for
 ordinary operations and `rpc` for plugin-specific backend work.
 
 Menus and popovers open anchored surfaces on wide layouts and bottom sheets on compact layouts.
@@ -1460,14 +1460,14 @@ your subscriptions, timers, and other resources.
 Use `useRambla()` for ordinary Rambla operations from a surface. It borrows the selected host's existing connection; do not create another client.
 
 ```tsx
-import { type PluginSurfaceProps, useRambla } from "@getpaseo/plugin/client";
+import { type PluginSurfaceProps, useRambla } from "@getrambla/plugin/client";
 import { Pressable, Text } from "react-native";
 
 function PullRequestAction({ theme }: PluginSurfaceProps) {
-  const paseo = useRambla();
+  const rambla = useRambla();
 
   async function createReviewWorkspace() {
-    const workspace = await paseo.workspaces.create({
+    const workspace = await rambla.workspaces.create({
       title: "Review PR 42",
       source: {
         kind: "worktree",
@@ -1501,7 +1501,7 @@ Define one contract with Zod, handle it in the subprocess, and call it from the 
 `shared/greeting.ts`:
 
 ```ts
-import { defineRpc } from "@getpaseo/plugin";
+import { defineRpc } from "@getrambla/plugin";
 import { z } from "zod";
 
 export const greeting = defineRpc({
@@ -1514,7 +1514,7 @@ export const greeting = defineRpc({
 `client/greeting.tsx`:
 
 ```tsx
-import { useRpc } from "@getpaseo/plugin/client";
+import { useRpc } from "@getrambla/plugin/client";
 import { greeting } from "../shared/greeting";
 
 export function GreetingButton() {
@@ -1527,7 +1527,7 @@ export function GreetingButton() {
 `server/greeting.ts`:
 
 ```ts
-import type { RpcInput } from "@getpaseo/plugin";
+import type { RpcInput } from "@getrambla/plugin";
 import { greeting } from "../shared/greeting";
 
 export function createGreeting({ name }: RpcInput<typeof greeting>) {
@@ -1538,7 +1538,7 @@ export function createGreeting({ name }: RpcInput<typeof greeting>) {
 `index.client.tsx`:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@getrambla/plugin/client";
 import { GreetingButton } from "./client/greeting";
 
 export default function contribute(client: PluginClientContext) {
@@ -1550,7 +1550,7 @@ export default function contribute(client: PluginClientContext) {
 `index.server.ts`:
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@getrambla/plugin/server";
 import { createGreeting } from "./server/greeting";
 import { greeting } from "./shared/greeting";
 
@@ -1562,7 +1562,7 @@ export default function contribute(server: PluginServerContext) {
 
 Inputs and outputs are validated on both sides. RPC names start with a lowercase letter and contain lowercase letters, numbers, dots, hyphens, or underscores. `useRpc()` returns a typed async function. Use TanStack Query for request state, caching, and mutations.
 
-Backend handlers receive the same `RamblaApi` as `{ paseo }`. Their connection belongs to the subprocess and closes when the plugin stops. It does not subscribe to timelines or catalog events until plugin code subscribes. Follow the [SDK event contract](../../sdk/events.md) for cleanup and timeline replacements. Backend code can use Node APIs and dependencies installed in the plugin directory.
+Backend handlers receive the same `RamblaApi` as `{ rambla }`. Their connection belongs to the subprocess and closes when the plugin stops. It does not subscribe to timelines or catalog events until plugin code subscribes. Follow the [SDK event contract](../../sdk/events.md) for cleanup and timeline replacements. Backend code can use Node APIs and dependencies installed in the plugin directory.
 
 ## Debug backend output
 
@@ -1573,7 +1573,7 @@ console.log("Refreshing issues");
 console.error("Issue refresh failed", error);
 ```
 
-Rambla adds `[paseo]` entries when the plugin starts loading, becomes ready, starts stopping, and has
+Rambla adds `[rambla]` entries when the plugin starts loading, becomes ready, starts stopping, and has
 stopped. It records compilation and load failures as stderr entries, including failures that happen
 before the plugin subprocess starts. Rambla also captures output emitted during initialization, RPC
 handlers, cleanup, and process failure. Protocol traffic uses a separate channel, so `console.log()`
@@ -1583,9 +1583,9 @@ Open **Settings → Plugins → Logs** for the plugin, or inspect the same recen
 CLI:
 
 ```bash
-paseo plugin logs my-plugin
-paseo plugin logs my-plugin --json
-paseo --host <url> plugin logs my-plugin
+rambla plugin logs my-plugin
+rambla plugin logs my-plugin --json
+rambla --host <url> plugin logs my-plugin
 ```
 
 The command returns a snapshot rather than following live output. Refresh the settings view or run
@@ -1608,7 +1608,7 @@ An attachment source searches external resources and returns a stable text snaps
 `shared/issues.ts`:
 
 ```ts
-import { defineAttachmentSource, defineRpc } from "@getpaseo/plugin";
+import { defineAttachmentSource, defineRpc } from "@getrambla/plugin";
 import { z } from "zod";
 
 export const searchIssues = defineRpc({
@@ -1642,7 +1642,7 @@ export const issues = defineAttachmentSource({
 `server/issues.ts`:
 
 ```ts
-import type { RpcInput } from "@getpaseo/plugin";
+import type { RpcInput } from "@getrambla/plugin";
 import { searchIssues } from "../shared/issues";
 
 export function search({ query }: RpcInput<typeof searchIssues>) {
@@ -1653,7 +1653,7 @@ export function search({ query }: RpcInput<typeof searchIssues>) {
 `index.client.tsx`:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@getrambla/plugin/client";
 import { issues } from "./shared/issues";
 
 export default function contribute(client: PluginClientContext) {
@@ -1665,7 +1665,7 @@ export default function contribute(client: PluginClientContext) {
 `index.server.ts`:
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@getrambla/plugin/server";
 import { search } from "./server/issues";
 import { searchIssues } from "./shared/issues";
 
@@ -1692,20 +1692,20 @@ failures stay inside the plugin error boundary.
 ## CLI reference
 
 ```bash
-paseo plugin init /absolute/path/to/plugin
-paseo plugin install /absolute/path/to/plugin
-paseo plugin install /absolute/path/to/plugin --id another-runtime-id
-paseo plugin add owner/repository
-paseo plugin add https://git.example.com/owner/repository.git --ref main
-paseo plugin add owner/monorepo:plugins/review
-paseo plugin ls [id]
-paseo plugin update <id>
-paseo plugin update --all
-paseo plugin reload my-plugin
-paseo plugin logs my-plugin
-paseo plugin disable my-plugin
-paseo plugin enable my-plugin
-paseo plugin remove my-plugin
+rambla plugin init /absolute/path/to/plugin
+rambla plugin install /absolute/path/to/plugin
+rambla plugin install /absolute/path/to/plugin --id another-runtime-id
+rambla plugin add owner/repository
+rambla plugin add https://git.example.com/owner/repository.git --ref main
+rambla plugin add owner/monorepo:plugins/review
+rambla plugin ls [id]
+rambla plugin update <id>
+rambla plugin update --all
+rambla plugin reload my-plugin
+rambla plugin logs my-plugin
+rambla plugin disable my-plugin
+rambla plugin enable my-plugin
+rambla plugin remove my-plugin
 ```
 
 `ls` reports runtime state, source details, and the installed commit without contacting the remote.
@@ -1715,7 +1715,7 @@ Put `--host <url>` before a management command when the target is not the CLI's 
 never deletes a directory source; it deletes the managed checkout for a Git source. The install-time
 `--id` is the runtime ID and allows the same directory or repository to be installed more than once.
 
-> **Trust every plugin you add.** `paseo plugin add` and `paseo plugin install` mean “I trust this codebase.” Server code and Git preparation commands run unsandboxed with the daemon user's access on the daemon host; client contributions run inside Rambla. Dependencies and future updates are part of that decision. With the global `--host` option, commands run on the remote daemon host.
+> **Trust every plugin you add.** `rambla plugin add` and `rambla plugin install` mean “I trust this codebase.” Server code and Git preparation commands run unsandboxed with the daemon user's access on the daemon host; client contributions run inside Rambla. Dependencies and future updates are part of that decision. With the global `--host` option, commands run on the remote daemon host.
 
 An existing directory wins over `owner/repository` GitHub shorthand. Append `:relative/path` when
 the plugin lives below the repository root. Omit `--ref` to track the default branch. Explicit
@@ -1728,7 +1728,7 @@ step:
 ```json
 {
   "id": "review",
-  "requirements": { "paseo": ">=0.8.0" },
+  "requirements": { "rambla": ">=0.8.0" },
   "build": [
     ["npm", "ci"],
     ["npm", "run", "build"]
@@ -1747,11 +1747,11 @@ Run `npm run typecheck` before install or reload. Manage plugin source entries w
 
 The daemon-wide **Enable plugins** switch lives under **Settings → Plugins**. A configured plugin remains `disabled` until that switch and the plugin's own enabled state are both on.
 
-The switch is the root `pluginsEnabled` field in `config.json`. After changing it, run `paseo reload --json`. Enabling starts every configured plugin whose own `enabled` value is not `false`; disabling tears down all plugins. No daemon restart is required. Manual edits to plugin source entries are not reloaded; use the plugin lifecycle commands for those.
+The switch is the root `pluginsEnabled` field in `config.json`. After changing it, run `rambla reload --json`. Enabling starts every configured plugin whose own `enabled` value is not `false`; disabling tears down all plugins. No daemon restart is required. Manual edits to plugin source entries are not reloaded; use the plugin lifecycle commands for those.
 
 ## Load failures
 
-Use `paseo plugin ls` to read the current status and error.
+Use `rambla plugin ls` to read the current status and error.
 
 | Symptom                                                               | Check                                                                                                                                   |
 | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1763,6 +1763,6 @@ Use `paseo plugin ls` to read the current status and error.
 | Sidebar item is missing                                               | The plugin is `running`, the item references an existing surface, the icon name is valid, and the client is on the installation's host. |
 | Client module is unavailable                                          | Import only the host-provided client modules listed above.                                                                              |
 | RPC rejects                                                           | Check both Zod schemas and the daemon-side handler error.                                                                               |
-| Edited code does not appear                                           | Run `npm run typecheck`, then `paseo plugin reload <id>`.                                                                               |
-| Reload fails                                                          | Read `paseo plugin ls` and `paseo plugin logs <id>`, fix the source error, then reload; Rambla does not restore the previous bundle.     |
-| Plugin exits unexpectedly                                             | Read `paseo plugin logs <id>` for retained initialization, cleanup, stderr, and final crash output.                                     |
+| Edited code does not appear                                           | Run `npm run typecheck`, then `rambla plugin reload <id>`.                                                                               |
+| Reload fails                                                          | Read `rambla plugin ls` and `rambla plugin logs <id>`, fix the source error, then reload; Rambla does not restore the previous bundle.     |
+| Plugin exits unexpectedly                                             | Read `rambla plugin logs <id>` for retained initialization, cleanup, stderr, and final crash output.                                     |

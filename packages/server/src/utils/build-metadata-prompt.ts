@@ -1,8 +1,8 @@
-import { readRamblaConfigJson } from "./paseo-config-file.js";
+import { readRamblaConfigJson } from "./rambla-config-file.js";
 import {
   RamblaConfigSchema,
   type RamblaMetadataGeneration,
-} from "@getpaseo/protocol/paseo-config-schema";
+} from "@getrambla/protocol/rambla-config-schema";
 
 export type MetadataConfigKey = "title" | "branchName" | "commitMessage" | "pullRequest";
 
@@ -11,7 +11,7 @@ export interface RepoRootResolver {
 }
 
 // A style section carries the default guidance for one artifact. The project
-// owner replaces it wholesale via paseo.json metadataGeneration.<configKey>.instructions
+// owner replaces it wholesale via rambla.json metadataGeneration.<configKey>.instructions
 // — their text is used instead of the default, never appended alongside it, so the
 // two never conflict. The contract block (what to produce, the JSON shape, and any
 // correctness/safety rules) lives outside the sections and is never overridable.

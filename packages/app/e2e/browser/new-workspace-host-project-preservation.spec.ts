@@ -20,7 +20,7 @@ import { createTempGitRepo } from "../support/helpers/workspace";
 const PRIMARY_HOST_LABEL = "Primary host";
 const SECONDARY_HOST_LABEL = "Secondary host";
 const SHARED_PROJECT_NAME = "Rambla";
-const SHARED_REMOTE_URL = "https://github.com/getpaseo/paseo.git";
+const SHARED_REMOTE_URL = "https://github.com/getrambla/rambla.git";
 
 interface CreatedProject {
   projectId: string;
@@ -94,14 +94,14 @@ const test = base.extend<{ crossHostProject: CrossHostProjectScenario }>({
       "new-workspace-project-preservation-secondary",
     );
     const contextRepo = await createTempGitRepo("new-workspace-context-");
-    const primarySharedRepo = await createTempGitRepo("new-workspace-paseo-primary-", {
+    const primarySharedRepo = await createTempGitRepo("new-workspace-rambla-primary-", {
       originUrl: SHARED_REMOTE_URL,
     });
-    const primaryDuplicateRepo = await createTempGitRepo("new-workspace-paseo-duplicate-", {
+    const primaryDuplicateRepo = await createTempGitRepo("new-workspace-rambla-duplicate-", {
       originUrl: SHARED_REMOTE_URL,
     });
     const secondaryFallbackRepo = await createTempGitRepo("new-workspace-fallback-");
-    const secondarySharedRepo = await createTempGitRepo("new-workspace-paseo-secondary-", {
+    const secondarySharedRepo = await createTempGitRepo("new-workspace-rambla-secondary-", {
       originUrl: SHARED_REMOTE_URL,
     });
     const primaryClient = await connectSeedClient();

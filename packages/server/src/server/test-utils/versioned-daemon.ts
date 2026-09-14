@@ -1,5 +1,5 @@
 // Browser compatibility tests run a real daemon in a separate Node runtime.
-import { createTestRamblaDaemon } from "./paseo-daemon.js";
+import { createTestRamblaDaemon } from "./rambla-daemon.js";
 
 const daemon = await createTestRamblaDaemon({
   daemonVersion: process.argv[2],

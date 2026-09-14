@@ -5,7 +5,7 @@ import path from "node:path";
 import { expect, test } from "vitest";
 
 import { DaemonClient } from "./test-utils/index.js";
-import { createTestRamblaDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "./test-utils/rambla-daemon.js";
 
 // The reshaped workspace.create.request forwards its worktree `source`
 // (action/refName/branchName/githubPrNumber/worktreeSlug) into createWorktreeCore.
@@ -18,7 +18,7 @@ function createGitRepoWithBranch(): { repoDir: string; tempRoot: string } {
   const tempRoot = mkdtempSync(path.join(tmpdir(), "workspace-create-worktree-source-"));
   const repoDir = path.join(tempRoot, "repo");
   execFileSync("git", ["init", "-b", "main", repoDir], { stdio: "pipe" });
-  execFileSync("git", ["config", "user.email", "test@getpaseo.local"], {
+  execFileSync("git", ["config", "user.email", "test@getrambla.local"], {
     cwd: repoDir,
     stdio: "pipe",
   });

@@ -18,7 +18,7 @@ By default, Rambla uses `~/.rambla` as its home directory. The configuration fil
 ~/.rambla/config.json
 ```
 
-You can change the home directory by setting `RAMBLA_HOME` or passing `--home` to `paseo daemon start`.
+You can change the home directory by setting `RAMBLA_HOME` or passing `--home` to `rambla daemon start`.
 
 ## Precedence
 
@@ -37,7 +37,7 @@ Minimal example that configures listening address, hostnames, and MCP:
 
 ```json
 {
-  "$schema": "https://rambla.sh/schemas/paseo.config.v1.json",
+  "$schema": "https://rambla.sh/schemas/rambla.config.v1.json",
   "version": 1,
   "daemon": {
     "listen": "127.0.0.1:6767",
@@ -54,13 +54,13 @@ Minimal example that configures listening address, hostnames, and MCP:
 After saving `config.json`, reload it:
 
 ```bash
-paseo reload
+rambla reload
 ```
 
 The daemon validates the complete file before applying anything. It applies runtime-safe changes and lists any settings that still need a restart. If it reports restart-required paths, run:
 
 ```bash
-paseo daemon restart
+rambla daemon restart
 ```
 
 Runtime-safe settings include relay enablement, MCP settings, browser tools, hostnames, CORS origins, trusted proxies, Git process limits, agent and terminal profiles, provider definitions, metadata generation, the app base URL, provider catalog timeout, and the global plugin switch. Removing one of these settings applies its omitted-field behavior; removing a provider removes it from future launches.
@@ -84,7 +84,7 @@ New worktrees are created under `$RAMBLA_HOME/worktrees` by default. To place ne
 ```json
 {
   "worktrees": {
-    "root": "/mnt/fast/paseo-worktrees"
+    "root": "/mnt/fast/rambla-worktrees"
   }
 }
 ```
@@ -104,13 +104,13 @@ The daemon can serve the browser web client from the same HTTP server. This is e
 Enable it from the CLI:
 
 ```bash
-paseo daemon start --web-ui
+rambla daemon start --web-ui
 ```
 
 Or set the environment variable:
 
 ```bash
-RAMBLA_WEB_UI_ENABLED=true paseo daemon start
+RAMBLA_WEB_UI_ENABLED=true rambla daemon start
 ```
 
 Or persist it in `config.json`:
@@ -163,15 +163,15 @@ You can require a password to connect to the daemon. When set, all HTTP and WebS
 The easiest way to set a password is with the CLI:
 
 ```bash
-paseo daemon set-password
+rambla daemon set-password
 ```
 
-This prompts for a password, writes the bcrypt hash to `config.json`, and tells you to restart the daemon. Authentication is a startup setting, so `paseo reload` will also report it as restart-required.
+This prompts for a password, writes the bcrypt hash to `config.json`, and tells you to restart the daemon. Authentication is a startup setting, so `rambla reload` will also report it as restart-required.
 
 Alternatively, set the `RAMBLA_PASSWORD` environment variable (plaintext, hashed automatically at startup):
 
 ```bash
-RAMBLA_PASSWORD=my-secret paseo daemon start
+RAMBLA_PASSWORD=my-secret rambla daemon start
 ```
 
 Or write the hash directly in `config.json`:
@@ -195,14 +195,14 @@ The CLI picks up a password from, in order:
 1. The `password` query parameter on a `tcp://` host URI:
 
    ```bash
-   paseo --host "tcp://192.168.1.10:6767?password=my-secret" ls
+   rambla --host "tcp://192.168.1.10:6767?password=my-secret" ls
    ```
 
 2. The `RAMBLA_PASSWORD` environment variable, used as a fallback when the host carries no embedded password (works for `localhost:6767`, bare `host:port`, or `tcp://` hosts without a `password=` query):
 
    ```bash
-   RAMBLA_PASSWORD=my-secret paseo ls
-   RAMBLA_PASSWORD=my-secret paseo --host 192.168.1.10:6767 ls
+   RAMBLA_PASSWORD=my-secret rambla ls
+   RAMBLA_PASSWORD=my-secret rambla --host 192.168.1.10:6767 ls
    ```
 
 A `password=` in the URI always wins over the env var, so you can keep `RAMBLA_PASSWORD` set globally and still target a different daemon by spelling its password into the URI.
@@ -225,7 +225,7 @@ Set the persisted value in `config.json`:
 }
 ```
 
-`RAMBLA_RELAY_ENABLED=true|false` overrides the persisted value for that daemon launch. The matching `paseo daemon start --relay` and `--no-relay` flags have the same authority. Remove the launch override before changing relay from Rambla Desktop or `paseo daemon pair --relay`.
+`RAMBLA_RELAY_ENABLED=true|false` overrides the persisted value for that daemon launch. The matching `rambla daemon start --relay` and `--no-relay` flags have the same authority. Remove the launch override before changing relay from Rambla Desktop or `rambla daemon pair --relay`.
 
 ## Common env vars
 
@@ -261,5 +261,5 @@ Set the persisted value in `config.json`:
 For editor autocomplete/validation, set `$schema` to:
 
 ```
-https://rambla.sh/schemas/paseo.config.v1.json
+https://rambla.sh/schemas/rambla.config.v1.json
 ```

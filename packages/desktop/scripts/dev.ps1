@@ -55,7 +55,7 @@ $env:RAMBLA_CORS_ORIGINS = "*"
 # its daemon config seeded below, so we never rewrite a production config.
 $DevStateDir = "$DesktopDir\.dev"
 if (-not $env:RAMBLA_HOME) {
-    $env:RAMBLA_HOME = "$DevStateDir\paseo-home"
+    $env:RAMBLA_HOME = "$DevStateDir\rambla-home"
     $RamblaHomeManaged = $true
 } else {
     $RamblaHomeManaged = $false

@@ -98,13 +98,13 @@ buildNpmPackage {
     npm run build:server
 
     # App workspace deps not covered by build:server
-    npm run build --workspace=@getpaseo/expo-two-way-audio
+    npm run build --workspace=@getrambla/expo-two-way-audio
 
     # Expo web export for the Electron renderer
     ( cd packages/app && RAMBLA_WEB_PLATFORM=electron npx expo export --platform web )
 
     # Desktop main process
-    npm run build:main --workspace=@getpaseo/desktop
+    npm run build:main --workspace=@getrambla/desktop
 
     ${lib.optionalString stdenv.hostPlatform.isDarwin ''
       # Let electron-builder create the native bundle layout (including helper

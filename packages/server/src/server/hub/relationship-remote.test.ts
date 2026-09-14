@@ -97,11 +97,11 @@ test.each([
     const server = createServer();
     const webSockets = new WebSocketServer({ noServer: true });
     if (acknowledge) {
-      webSockets.on("headers", (headers) => headers.push("x-paseo-session-protocol: 1"));
+      webSockets.on("headers", (headers) => headers.push("x-rambla-session-protocol: 1"));
     }
     let offeredProtocol: string | string[] | undefined;
     server.on("upgrade", (request, socket, head) => {
-      offeredProtocol = request.headers["x-paseo-session-protocol"];
+      offeredProtocol = request.headers["x-rambla-session-protocol"];
       webSockets.handleUpgrade(request, socket, head, () => undefined);
     });
     openServers.push(server);
@@ -613,10 +613,10 @@ async function connectController(
   hub: UpgradeRejectingHub,
   clock: ManualRelationshipClock,
 ): Promise<HubRelationshipController> {
-  const paseoHome = await mkdtemp(path.join(tmpdir(), "paseo-hub-socket-"));
-  openRamblaHomes.push(paseoHome);
+  const ramblaHome = await mkdtemp(path.join(tmpdir(), "rambla-hub-socket-"));
+  openRamblaHomes.push(ramblaHome);
   const controller = new HubRelationshipController({
-    paseoHome,
+    ramblaHome,
     hostname: "test-daemon.local",
     serverId: "server-1",
     daemonPublicKey: "daemon-public-key",

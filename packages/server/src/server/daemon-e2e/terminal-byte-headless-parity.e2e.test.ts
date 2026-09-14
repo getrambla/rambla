@@ -6,11 +6,11 @@ import { fileURLToPath } from "node:url";
 import { Terminal as HeadlessTerminal, type IBufferCell, type IBufferLine } from "@xterm/headless";
 import { expect, test } from "vitest";
 
-import type { TerminalCell, TerminalState } from "@getpaseo/protocol/messages";
-import { renderTerminalSnapshotToAnsi } from "@getpaseo/protocol/terminal-snapshot";
-import type { TerminalStreamEvent } from "@getpaseo/client/internal/terminal-stream-router";
+import type { TerminalCell, TerminalState } from "@getrambla/protocol/messages";
+import { renderTerminalSnapshotToAnsi } from "@getrambla/protocol/terminal-snapshot";
+import type { TerminalStreamEvent } from "@getrambla/client/internal/terminal-stream-router";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 
 const BYTE_DONE_MARKER = "__RAMBLA_BYTE_PACKAGE_LOCK_DONE__";
 const BYTE_TEST_SIZE = { rows: 24, cols: 100 };
@@ -218,7 +218,7 @@ function waitForTerminalStreamEvent<TType extends TerminalStreamEvent["type"]>(
 }
 
 async function createPackageLockTerminalCwd(): Promise<PackageLockTerminalCwd> {
-  const cwd = await mkdtemp(path.join(tmpdir(), "paseo-byte-package-lock-"));
+  const cwd = await mkdtemp(path.join(tmpdir(), "rambla-byte-package-lock-"));
   return {
     path: cwd,
     gatePath: path.join(cwd, "start-package-lock-output"),

@@ -4,7 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { afterEach, beforeEach, expect, test } from "vitest";
 
 import { DaemonClient, type DaemonEvent } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 
 const cleanupPaths = new Set<string>();
 const cleanupDaemons = new Set<TestRamblaDaemon>();
@@ -59,7 +59,7 @@ test("openProject on a nonexistent directory does not broadcast an upsert that i
   });
   await client.fetchWorkspaces({ subscribe: { subscriptionId: "missing-dir-workspaces" } });
 
-  const tempParent = await mkdtemp(path.join(os.tmpdir(), "paseo-open-project-"));
+  const tempParent = await mkdtemp(path.join(os.tmpdir(), "rambla-open-project-"));
   cleanupPaths.add(tempParent);
   const missingPath = path.join(tempParent, "this-directory-does-not-exist");
   const response = await client.openProject(missingPath);
@@ -81,7 +81,7 @@ test("openProject expands tilde before creating the workspace", async () => {
   await client.fetchWorkspaces({ subscribe: { subscriptionId: "tilde-project-workspaces" } });
 
   const home = process.env.HOME || os.homedir();
-  const workspacePath = await mkdtemp(path.join(home, ".paseo-open-project-"));
+  const workspacePath = await mkdtemp(path.join(home, ".rambla-open-project-"));
   cleanupPaths.add(workspacePath);
   const queryPath = `~/${path.relative(home, workspacePath)}`;
 

@@ -26,7 +26,7 @@ export interface TestDaemonContext {
   /** WebSocket URL for connecting to daemon */
   wsUrl: string;
   /** Temp directory for RAMBLA_HOME */
-  paseoHome: string;
+  ramblaHome: string;
   /** Temp directory for agent working directory */
   workDir: string;
   /** Running daemon process */
@@ -154,19 +154,19 @@ export function getRandomPort(): number {
 /**
  * Create isolated temp directories for testing
  */
-export async function createTempDirs(): Promise<{ paseoHome: string; workDir: string }> {
-  const paseoHome = await mkdtemp(join(tmpdir(), "paseo-e2e-home-"));
-  const workDir = await mkdtemp(join(tmpdir(), "paseo-e2e-work-"));
+export async function createTempDirs(): Promise<{ ramblaHome: string; workDir: string }> {
+  const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-e2e-home-"));
+  const workDir = await mkdtemp(join(tmpdir(), "rambla-e2e-work-"));
 
   // Create the agents directory that the daemon expects
-  const agentsDir = join(paseoHome, "agents");
+  const agentsDir = join(ramblaHome, "agents");
   await mkdir(agentsDir, { recursive: true });
 
-  return { paseoHome, workDir };
+  return { ramblaHome, workDir };
 }
 
 /**
- * Wait for daemon to be ready by running `paseo agent ls`
+ * Wait for daemon to be ready by running `rambla agent ls`
  * This connects via WebSocket and ensures the daemon is responsive
  */
 async function probeDaemonReady(port: number, env?: NodeJS.ProcessEnv): Promise<boolean> {
@@ -175,7 +175,7 @@ async function probeDaemonReady(port: number, env?: NodeJS.ProcessEnv): Promise<
       {
         port,
         wsUrl: `ws://${TEST_DAEMON_HOST}:${port}`,
-        paseoHome: "",
+        ramblaHome: "",
         workDir: "",
         process: null,
         isReady: false,
@@ -221,15 +221,15 @@ function sleep(ms: number): Promise<void> {
  */
 export async function startTestDaemon(options?: {
   port?: number;
-  paseoHome?: string;
+  ramblaHome?: string;
   workDir?: string;
   timeout?: number;
   env?: NodeJS.ProcessEnv;
 }): Promise<TestDaemonContext> {
   const port = options?.port ?? (await getAvailablePort());
-  const { paseoHome, workDir } =
-    options?.paseoHome && options?.workDir
-      ? { paseoHome: options.paseoHome, workDir: options.workDir }
+  const { ramblaHome, workDir } =
+    options?.ramblaHome && options?.workDir
+      ? { ramblaHome: options.ramblaHome, workDir: options.workDir }
       : await createTempDirs();
   const timeout = options?.timeout ?? 30000;
 
@@ -247,7 +247,7 @@ export async function startTestDaemon(options?: {
       env: {
         ...process.env,
         ...TEST_DAEMON_ENV_DEFAULTS,
-        RAMBLA_HOME: paseoHome,
+        RAMBLA_HOME: ramblaHome,
         RAMBLA_LISTEN: `${TEST_DAEMON_HOST}:${port}`,
         // Force no TTY to prevent QR code output
         CI: "true",
@@ -276,8 +276,8 @@ export async function startTestDaemon(options?: {
 
     // Clean up temp directories
     try {
-      if (existsSync(paseoHome)) {
-        await rm(paseoHome, { recursive: true, force: true });
+      if (existsSync(ramblaHome)) {
+        await rm(ramblaHome, { recursive: true, force: true });
       }
     } catch {
       // Ignore cleanup errors
@@ -310,7 +310,7 @@ export async function startTestDaemon(options?: {
   const ctx: TestDaemonContext = {
     port,
     wsUrl,
-    paseoHome,
+    ramblaHome,
     workDir,
     process: daemonProcess,
     isReady: false,
@@ -335,7 +335,7 @@ export async function startTestDaemon(options?: {
 }
 
 /**
- * Run a paseo CLI command against a test daemon
+ * Run a rambla CLI command against a test daemon
  *
  * This is a helper that sets the correct environment variables
  * to point at the test daemon.
@@ -361,7 +361,7 @@ export async function runRamblaCli(
         ...process.env,
         ...TEST_DAEMON_ENV_DEFAULTS,
         RAMBLA_HOST: `${TEST_DAEMON_HOST}:${ctx.port}`,
-        RAMBLA_HOME: ctx.paseoHome,
+        RAMBLA_HOME: ctx.ramblaHome,
         ...options?.env,
       },
       cwd,
@@ -384,7 +384,7 @@ export async function runRamblaCli(
       if (proc.pid) {
         signalProcessTree(proc.pid, "SIGKILL");
       }
-      reject(new Error(`CLI command timed out after ${timeout}ms: paseo ${args.join(" ")}`));
+      reject(new Error(`CLI command timed out after ${timeout}ms: rambla ${args.join(" ")}`));
     }, timeout);
 
     proc.on("exit", (code) => {
@@ -414,8 +414,8 @@ export async function createE2ETestContext(options?: {
   env?: NodeJS.ProcessEnv;
 }): Promise<
   TestDaemonContext & {
-    /** Run a paseo CLI command against this daemon */
-    paseo: (
+    /** Run a rambla CLI command against this daemon */
+    rambla: (
       args: string[],
       opts?: { timeout?: number; cwd?: string; env?: NodeJS.ProcessEnv },
     ) => Promise<{
@@ -427,13 +427,13 @@ export async function createE2ETestContext(options?: {
 > {
   const ctx = await startTestDaemon({ timeout: options?.timeout, env: options?.env });
 
-  const paseo = (
+  const rambla = (
     args: string[],
     opts?: { timeout?: number; cwd?: string; env?: NodeJS.ProcessEnv },
   ) => runRamblaCli(ctx, args, opts);
 
   return {
     ...ctx,
-    paseo,
+    rambla,
   };
 }

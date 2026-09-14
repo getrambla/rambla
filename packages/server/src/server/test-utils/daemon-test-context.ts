@@ -1,4 +1,4 @@
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "./paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "./rambla-daemon.js";
 import { DaemonClient } from "./daemon-client.js";
 import { createTestAgentClients } from "./fake-agent-client.js";
 

@@ -5,9 +5,9 @@ import pino from "pino";
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest";
 
 import type { AgentTimelineItem } from "../agent/agent-sdk-types.js";
-import type { AgentLifecycleStatus } from "@getpaseo/protocol/agent-lifecycle";
+import type { AgentLifecycleStatus } from "@getrambla/protocol/agent-lifecycle";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import {
   canRunRealProvider,
   createRealProviderClients,
@@ -47,7 +47,7 @@ async function launchOpenCodeRewindSession(
   const cwd = tmpRewindCwd("daemon-real-opencode-rewind-", { realpath: true });
   const scratchPath = path.join(cwd, "rewind-scratch.txt");
   execFileSync("git", ["init"], { cwd, stdio: "ignore" });
-  execFileSync("git", ["config", "user.email", "paseo-test@example.com"], {
+  execFileSync("git", ["config", "user.email", "rambla-test@example.com"], {
     cwd,
     stdio: "ignore",
   });

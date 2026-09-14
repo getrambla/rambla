@@ -30,7 +30,7 @@ interface CreateAgentWorktreeTestOptions {
   branchName: string;
   baseBranch: string;
   worktreeSlug: string;
-  paseoHome?: string;
+  ramblaHome?: string;
 }
 
 interface CreateAgentWorktreeTestResult {
@@ -66,7 +66,7 @@ async function createBootstrapWorktreeForTest(
       branchName: options.branchName,
     },
     runSetup: false,
-    paseoHome: options.paseoHome,
+    ramblaHome: options.ramblaHome,
   });
   return { worktree, shouldBootstrap: true };
 }
@@ -75,7 +75,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
   describe("runAsyncWorktreeBootstrap", () => {
     let tempDir: string;
     let repoDir: string;
-    let paseoHome: string;
+    let ramblaHome: string;
     let realTerminalManagers: TerminalManager[];
 
     async function waitForPathExists(targetPath: string, timeoutMs = 10000): Promise<void> {
@@ -108,7 +108,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
       realTerminalManagers = [];
       tempDir = realpathSync(mkdtempSync(join(tmpdir(), "worktree-bootstrap-test-")));
       repoDir = join(tempDir, "repo");
-      paseoHome = join(tempDir, "paseo-home");
+      ramblaHome = join(tempDir, "rambla-home");
 
       mkdirSync(repoDir, { recursive: true });
       execFileSync("git", ["init", "-b", "main"], { cwd: repoDir, stdio: "pipe" });
@@ -131,14 +131,14 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
     });
     it("streams running setup updates live and persists only a final setup timeline row", async () => {
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({
           worktree: {
             setup: ['echo "line-one"; echo "line-two" 1>&2', 'echo "line-three"'],
           },
         }),
       );
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
       execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add setup"], {
         cwd: repoDir,
         stdio: "pipe",
@@ -149,7 +149,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
         branchName: "feature-streaming-setup",
         baseBranch: "main",
         worktreeSlug: "feature-streaming-setup",
-        paseoHome,
+        ramblaHome,
       });
 
       const persisted: AgentTimelineItem[] = [];
@@ -174,13 +174,13 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
       const liveSetupItems = live.filter(
         (item) =>
           item.type === "tool_call" &&
-          item.name === "paseo_worktree_setup" &&
+          item.name === "rambla_worktree_setup" &&
           item.status === "running",
       );
       expect(liveSetupItems.length).toBeGreaterThan(0);
 
       const persistedSetupItems = persisted.filter(
-        (item) => item.type === "tool_call" && item.name === "paseo_worktree_setup",
+        (item) => item.type === "tool_call" && item.name === "rambla_worktree_setup",
       );
       expect(persistedSetupItems).toHaveLength(1);
       expect(persistedSetupItems[0]?.type).toBe("tool_call");
@@ -242,7 +242,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
 
     it("keeps only the final carriage-return-updated content in command logs", async () => {
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({
           worktree: {
             setup: [
@@ -251,7 +251,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
           },
         }),
       );
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
       execFileSync(
         "git",
         ["-c", "commit.gpgsign=false", "commit", "-m", "add carriage return setup"],
@@ -266,7 +266,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
         branchName: "feature-carriage-return",
         baseBranch: "main",
         worktreeSlug: "feature-carriage-return",
-        paseoHome,
+        ramblaHome,
       });
 
       const persisted: AgentTimelineItem[] = [];
@@ -285,7 +285,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
 
       const persistedSetupItem = persisted.find(
         (item): item is Extract<AgentTimelineItem, { type: "tool_call" }> =>
-          item.type === "tool_call" && item.name === "paseo_worktree_setup",
+          item.type === "tool_call" && item.name === "rambla_worktree_setup",
       );
       expect(persistedSetupItem?.detail.type).toBe("worktree_setup");
       if (!persistedSetupItem || persistedSetupItem.detail.type !== "worktree_setup") {
@@ -300,7 +300,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
 
     it("shares the same worktree runtime port across setup and bootstrap terminals", async () => {
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({
           worktree: {
             setup: ['echo "$RAMBLA_WORKTREE_PORT" > setup-port.txt'],
@@ -313,7 +313,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
           },
         }),
       );
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
       execFileSync(
         "git",
         ["-c", "commit.gpgsign=false", "commit", "-m", "add port setup and terminals"],
@@ -328,7 +328,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
         branchName: "feature-shared-runtime-port",
         baseBranch: "main",
         worktreeSlug: "feature-shared-runtime-port",
-        paseoHome,
+        ramblaHome,
       });
 
       const registeredEnvs: Array<{ cwd: string; env: Record<string, string> }> = [];
@@ -408,7 +408,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
       const terminalToolCall = persisted.find(
         (item): item is Extract<AgentTimelineItem, { type: "tool_call" }> =>
           item.type === "tool_call" &&
-          item.name === "paseo_worktree_terminals" &&
+          item.name === "rambla_worktree_terminals" &&
           item.status === "completed",
       );
       expect(terminalToolCall?.status).toBe("completed");
@@ -416,7 +416,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
 
     it("injects real peer service env into terminal-backed services", async () => {
       writeFileSync(
-        join(repoDir, "paseo.json"),
+        join(repoDir, "rambla.json"),
         JSON.stringify({
           scripts: {
             api: {
@@ -432,7 +432,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
           },
         }),
       );
-      execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
       execFileSync(
         "git",
         ["-c", "commit.gpgsign=false", "commit", "-m", "add real peer env services"],

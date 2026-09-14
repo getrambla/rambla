@@ -144,7 +144,7 @@ function resolveRequestedSpeechProviders(params: {
 }
 
 export function resolveSpeechConfig(params: {
-  paseoHome: string;
+  ramblaHome: string;
   env: NodeJS.ProcessEnv;
   persisted: PersistedConfig;
 }): {
@@ -157,7 +157,7 @@ export function resolveSpeechConfig(params: {
   });
 
   const local = resolveLocalSpeechConfig({
-    paseoHome: params.paseoHome,
+    ramblaHome: params.ramblaHome,
     env: params.env,
     persisted: params.persisted,
     providers,

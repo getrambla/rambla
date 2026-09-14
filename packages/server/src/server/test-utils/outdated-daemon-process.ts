@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { createTestRamblaDaemon } from "./paseo-daemon.js";
+import { createTestRamblaDaemon } from "./rambla-daemon.js";
 
 async function main(): Promise<void> {
   const metroPort = process.env.E2E_METRO_PORT;
@@ -15,7 +15,7 @@ async function main(): Promise<void> {
     daemonStatusRpcCapability: process.env.E2E_DAEMON_STATUS_RPC_CAPABILITY !== "0",
     relayConfigCapability: process.env.E2E_RELAY_CONFIG_CAPABILITY !== "0",
   });
-  const serverId = (await readFile(path.join(daemon.paseoHome, "server-id"), "utf8")).trim();
+  const serverId = (await readFile(path.join(daemon.ramblaHome, "server-id"), "utf8")).trim();
 
   process.send?.({
     type: "ready",

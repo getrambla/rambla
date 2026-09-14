@@ -63,7 +63,7 @@ test.describe("real Codex Rambla tool-call presentation", () => {
   test.setTimeout(600_000);
 
   test("renders owned tool inputs and results as readable text", async ({ page }, testInfo) => {
-    const cwd = realpathSync(mkdtempSync(path.join(tmpdir(), "paseo-tool-call-presentation-")));
+    const cwd = realpathSync(mkdtempSync(path.join(tmpdir(), "rambla-tool-call-presentation-")));
     const childWorkspacePath = path.join(cwd, "presentation-workspace");
     mkdirSync(childWorkspacePath);
     let handle: AgentHandle | undefined;

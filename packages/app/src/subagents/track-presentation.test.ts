@@ -12,7 +12,7 @@ function row(
   overrides: Partial<RamblaSubagentRow> & Pick<RamblaSubagentRow, "id">,
 ): RamblaSubagentRow {
   return {
-    kind: "paseo",
+    kind: "rambla",
     id: overrides.id,
     provider: overrides.provider ?? "codex",
     title: overrides.title ?? `Agent ${overrides.id}`,
@@ -170,7 +170,7 @@ describe("resolveRowLabel", () => {
 describe("buildSubagentRowPresentationData", () => {
   it("namespaces the key with a subagent prefix", () => {
     expect(buildSubagentRowPresentationData(row({ id: "child-a" })).key).toBe(
-      "paseo_subagent_child-a",
+      "rambla_subagent_child-a",
     );
   });
 

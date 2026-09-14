@@ -9,8 +9,8 @@ import type { AgentManager, ManagedAgent } from "./agent-manager.js";
 import type { AgentStorage } from "./agent-storage.js";
 import { ensureAgentLoaded } from "./agent-loading.js";
 import { isStaleProviderSessionError } from "./stale-provider-session-error.js";
-import { getParentAgentIdFromLabels } from "@getpaseo/protocol/agent-labels";
-import type { ActiveTurnBehavior } from "@getpaseo/protocol/messages";
+import { getParentAgentIdFromLabels } from "@getrambla/protocol/agent-labels";
+import type { ActiveTurnBehavior } from "@getrambla/protocol/messages";
 
 export type AgentUnarchiveController = Pick<AgentManager, "notifyAgentState" | "unarchiveSnapshot">;
 
@@ -207,15 +207,15 @@ export async function unarchiveAgentState(
 }
 
 /**
- * Wrap a body in <paseo-system>…</paseo-system> so the receiving agent
+ * Wrap a body in <rambla-system>…</rambla-system> so the receiving agent
  * recognizes the prompt as system-injected context — not a user turn.
  * Used by chat mentions, schedule fires, and notify-on-finish.
  */
 export function formatSystemNotificationPrompt(reason: string): string {
-  return `<paseo-system>\n${reason}\n</paseo-system>`;
+  return `<rambla-system>\n${reason}\n</rambla-system>`;
 }
 
-const SYSTEM_ENVELOPE_PATTERN = /^<paseo-system>\n[\s\S]*\n<\/paseo-system>$/;
+const SYSTEM_ENVELOPE_PATTERN = /^<rambla-system>\n[\s\S]*\n<\/rambla-system>$/;
 
 export function isSystemInjectedEnvelope(text: string): boolean {
   return SYSTEM_ENVELOPE_PATTERN.test(text);

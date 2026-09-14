@@ -1,4 +1,4 @@
-export { createTestRamblaDaemon, type TestRamblaDaemon } from "./paseo-daemon.js";
+export { createTestRamblaDaemon, type TestRamblaDaemon } from "./rambla-daemon.js";
 export {
   DaemonClient,
   type DaemonClientConfig,

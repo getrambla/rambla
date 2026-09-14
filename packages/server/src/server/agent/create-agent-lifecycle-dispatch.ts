@@ -18,7 +18,7 @@ import type { AgentManager, AgentSubscriber, SubscribeOptions } from "./agent-ma
 import type { AgentStorage } from "./agent-storage.js";
 
 interface CreateAgentLifecycleDispatchDependencies {
-  paseoHome: string;
+  ramblaHome: string;
   worktreesRoot?: string;
   agentManager: AgentManager;
   agentStorage: AgentStorage;
@@ -120,7 +120,7 @@ export class CreateAgentLifecycleDispatch {
       cwd,
       firstAgentContext,
       runSetup: false,
-      paseoHome: this.dependencies.paseoHome,
+      ramblaHome: this.dependencies.ramblaHome,
       worktreesRoot: this.dependencies.worktreesRoot,
     } as const;
 
@@ -191,7 +191,7 @@ export class CreateAgentLifecycleDispatch {
     const { createdWorktree } = options;
     const worktreePath = createdWorktree.worktree.worktreePath;
     const ownership = await isRamblaOwnedWorktreeCwd(worktreePath, {
-      paseoHome: this.dependencies.paseoHome,
+      ramblaHome: this.dependencies.ramblaHome,
       worktreesRoot: this.dependencies.worktreesRoot,
     });
     if (!ownership.allowed) {
@@ -200,8 +200,8 @@ export class CreateAgentLifecycleDispatch {
 
     await archiveByScope(
       {
-        paseoHome: this.dependencies.paseoHome,
-        paseoWorktreesBaseRoot: this.dependencies.worktreesRoot,
+        ramblaHome: this.dependencies.ramblaHome,
+        ramblaWorktreesBaseRoot: this.dependencies.worktreesRoot,
         github: this.dependencies.github,
         workspaceGitService: this.dependencies.workspaceGitService,
         agentManager: this.dependencies.agentManager,

@@ -1,7 +1,7 @@
 import { WebSocket } from "ws";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import { createTestRamblaDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "./test-utils/rambla-daemon.js";
 
 const originalEnv = { ...process.env };
 const CORRECT_PASSWORD_HASH = "$2b$12$OLxyuuP9uLK30Uzc4wQX0O6liuU/Q1t5P2b0Ebf36mULvpVK3DRZW";
@@ -136,16 +136,16 @@ describe("daemon bearer auth", () => {
       });
       await expectWebSocketCloses({
         port: daemonHandle.port,
-        protocol: "paseo.bearer.wrong-password",
+        protocol: "rambla.bearer.wrong-password",
         code: 4401,
         reason: "Incorrect password",
       });
 
       const { ws, protocol } = await connectWebSocket({
         port: daemonHandle.port,
-        protocol: "paseo.bearer.correct-password",
+        protocol: "rambla.bearer.correct-password",
       });
-      expect(protocol).toBe("paseo.bearer.correct-password");
+      expect(protocol).toBe("rambla.bearer.correct-password");
       ws.close();
     } finally {
       await daemonHandle.close();

@@ -30,7 +30,7 @@ async function installBenchmarkShortcutOverride(page) {
   await page.addInitScript(
     ({ profileFocus }) => {
       localStorage.setItem(
-        "@paseo:keyboard-shortcut-overrides",
+        "@rambla:keyboard-shortcut-overrides",
         JSON.stringify({ "workspace-navigate-index-alt-digit-web": "Cmd+Digit" }),
       );
 
@@ -192,7 +192,7 @@ async function beginBrowserMeasurements(page, scenarioName) {
       performance.mark(label);
       console.timeStamp(label);
     };
-    markTrace(`paseo:${name}:capture-start`);
+    markTrace(`rambla:${name}:capture-start`);
 
     const recordActivation = (records) => {
       const activeEntry = records
@@ -202,12 +202,12 @@ async function beginBrowserMeasurements(page, scenarioName) {
         );
       if (!activeEntry) return;
       lastActiveEntry = activeEntry;
-      markTrace(`paseo:${name}:activation:${activationSequence}:${activeEntry}`);
+      markTrace(`rambla:${name}:activation:${activationSequence}:${activeEntry}`);
       activationSequence += 1;
       measurements.activations.push({ activeEntry, time: performance.now() });
     };
     const recordKeydown = (digit) => {
-      markTrace(`paseo:${name}:keydown:${keydownSequence}:Cmd+${digit}`);
+      markTrace(`rambla:${name}:keydown:${keydownSequence}:Cmd+${digit}`);
       keydownSequence += 1;
       measurements.keydowns.push({
         digit,
@@ -352,7 +352,7 @@ async function runScenario(page, name, scenarioDigits, targets) {
   await page.waitForTimeout(finalWaitMs);
   await waitForProfilerIdle(page);
   await page.evaluate((scenarioName) => {
-    const label = `paseo:${scenarioName}:capture-end`;
+    const label = `rambla:${scenarioName}:capture-end`;
     performance.mark(label);
     console.timeStamp(label);
   }, name);

@@ -19,7 +19,7 @@ Wait for nested_owner to finish, then reply exactly DIRECT_DONE.
 Wait for direct_owner to finish, then reply exactly ROOT_DONE.`;
 
 test("attributes a nested Claude child and its background notification to their direct owners", async () => {
-  const cwd = mkdtempSync(path.join(tmpdir(), "paseo-claude-nested-ownership-"));
+  const cwd = mkdtempSync(path.join(tmpdir(), "rambla-claude-nested-ownership-"));
   const client = new ClaudeAgentClient({ logger: pino({ level: "trace" }) });
   const session = await client.createSession({
     provider: "claude",

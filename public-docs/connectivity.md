@@ -13,7 +13,7 @@ Your Rambla app connects to the daemon running on your computer or server. Rambl
 This is client-to-daemon transport. If you are looking for the service that starts agents from GitHub, Slack, and Discord events, that is [Hub](/docs/hub).
 
 - [SSH](#ssh)
-- [Rambla relay](#paseo-relay)
+- [Rambla relay](#rambla-relay)
 - [Tailscale](#tailscale)
 
 ## SSH
@@ -28,22 +28,22 @@ Before connecting:
 The CLI accepts an SSH URI as its host:
 
 ```bash
-paseo --host ssh://user@host ls -a
+rambla --host ssh://user@host ls -a
 ```
 
 The daemon is expected at `127.0.0.1:6767` on the remote host. The port in the SSH URL is the SSH server port:
 
 ```bash
-paseo --host ssh://user@host:2222 ls -a
+rambla --host ssh://user@host:2222 ls -a
 ```
 
 Set a different remote daemon port with `daemonPort`:
 
 ```bash
-paseo --host 'ssh://user@host?daemonPort=7777' ls -a
+rambla --host 'ssh://user@host?daemonPort=7777' ls -a
 ```
 
-Put `--host` before the command. `paseo daemon status` checks only the local daemon; use `paseo --host ssh://user@host ls` to verify a remote connection. `paseo --host ssh://user@host run --cwd /path/on/remote ...` requires a working directory that exists on the remote host.
+Put `--host` before the command. `rambla daemon status` checks only the local daemon; use `rambla --host ssh://user@host ls` to verify a remote connection. `rambla --host ssh://user@host run --cwd /path/on/remote ...` requires a working directory that exists on the remote host.
 
 In Rambla Desktop, open **Settings → Add host → Remote SSH** and enter the same `ssh://` destination.
 
@@ -64,7 +64,7 @@ Relay is disabled until you enable it.
 Run:
 
 ```bash
-paseo daemon pair
+rambla daemon pair
 ```
 
 Confirm when prompted. Rambla prints a QR code and pairing link. Scan the QR code with Rambla on your phone, or choose **Paste pairing link** in the phone app.
@@ -89,7 +89,7 @@ Open `~/.rambla/config.json` and set `daemon.listen` to the Tailscale IP:
 
 ```json
 {
-  "$schema": "https://rambla.sh/schemas/paseo.config.v1.json",
+  "$schema": "https://rambla.sh/schemas/rambla.config.v1.json",
   "version": 1,
   "daemon": {
     "listen": "100.101.102.103:6767"
@@ -104,7 +104,7 @@ To restrict access with a password, see [Password authentication](/docs/configur
 Restart the daemon:
 
 ```bash
-paseo daemon restart
+rambla daemon restart
 ```
 
 If Rambla Desktop manages the daemon, use **Settings → your host → Overview → Restart daemon**.
@@ -122,7 +122,7 @@ If the host was already paired through the relay, Rambla adds the direct connect
 ## Troubleshooting
 
 - **SSH authentication failed:** Run `ssh user@host` in a terminal and fix the key, agent, host key, or `~/.ssh/config` entry there. Rambla does not prompt for SSH passwords.
-- **SSH connects but Rambla is refused:** Run `paseo daemon status` on the remote host. SSH transport does not start the daemon.
+- **SSH connects but Rambla is refused:** Run `rambla daemon status` on the remote host. SSH transport does not start the daemon.
 - **Connection timed out:** Check that Tailscale is connected on both devices and that you used the daemon machine's Tailscale IP.
-- **Connection refused:** Run `paseo daemon status` and confirm the daemon is running on the configured IP and port.
-- **Config change has no effect:** Run `paseo reload`. `daemon.listen` is a startup setting, so restart when the command reports it.
+- **Connection refused:** Run `rambla daemon status` and confirm the daemon is running on the configured IP and port.
+- **Config change has no effect:** Run `rambla reload`. `daemon.listen` is a startup setting, so restart when the command reports it.

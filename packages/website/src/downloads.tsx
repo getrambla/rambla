@@ -23,11 +23,11 @@ export function downloadUrls(release: ReleaseAssetInfo) {
     linuxRpm: `${base}/Rambla-${version}-x86_64.rpm`,
     windowsExeX64: `${base}/${windowsX64Asset ?? `Rambla-Setup-${version}.exe`}`,
     windowsExeArm64: windowsArm64Asset ? `${base}/${windowsArm64Asset}` : null,
-    androidApk: `${base}/paseo-v${version}-android.apk`,
+    androidApk: `${base}/rambla-v${version}-android.apk`,
   };
 }
 
-export const appStoreUrl = "https://apps.apple.com/app/paseo-pocket-engineer/id6758887924";
+export const appStoreUrl = "https://apps.apple.com/app/rambla-pocket-engineer/id6758887924";
 export const playStoreUrl = "https://play.google.com/store/apps/details?id=sh.rambla";
 export const webAppUrl = "https://app.rambla.sh";
 

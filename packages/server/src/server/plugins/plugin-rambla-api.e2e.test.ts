@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import { createTestAgentClient, createTestAgentClients } from "../test-utils/fake-agent-client.js";
 
 const roots: string[] = [];
@@ -14,20 +14,20 @@ afterEach(async () => {
 });
 
 test("plugin handlers create workspaces and agents through their Rambla API", async () => {
-  const pluginDirectory = await mkdtemp(path.join(tmpdir(), "paseo-api-plugin-"));
-  const workspaceDirectory = await mkdtemp(path.join(tmpdir(), "paseo-api-workspace-"));
+  const pluginDirectory = await mkdtemp(path.join(tmpdir(), "rambla-api-plugin-"));
+  const workspaceDirectory = await mkdtemp(path.join(tmpdir(), "rambla-api-workspace-"));
   roots.push(pluginDirectory, workspaceDirectory);
   await writeFile(
-    path.join(pluginDirectory, "paseo-plugin.json"),
+    path.join(pluginDirectory, "rambla-plugin.json"),
     JSON.stringify({
-      id: "paseo-api",
-      requirements: { paseo: `>=${resolveDaemonVersion(import.meta.url)}` },
+      id: "rambla-api",
+      requirements: { rambla: `>=${resolveDaemonVersion(import.meta.url)}` },
     }),
   );
   await writeFile(
     path.join(pluginDirectory, "index.server.ts"),
-    `import { defineRpc } from "@getpaseo/plugin";
-import { type PluginServerContext } from "@getpaseo/plugin/server";
+    `import { defineRpc } from "@getrambla/plugin";
+import { type PluginServerContext } from "@getrambla/plugin/server";
 import { z } from "zod";
 
 const create = defineRpc({
@@ -49,8 +49,8 @@ const append = defineRpc({
 });
 
 export default function contribute(server: PluginServerContext) {
-  server.handle(create, async ({ path }, { paseo }) => {
-    const workspace = await paseo.workspaces.create({
+  server.handle(create, async ({ path }, { rambla }) => {
+    const workspace = await rambla.workspaces.create({
       source: { kind: "directory", path },
       title: "Plugin workspace",
     });
@@ -60,12 +60,12 @@ export default function contribute(server: PluginServerContext) {
     });
     return { workspaceId: workspace.id, agentId: agent.id };
   });
-  server.handle(list, async (_input, { paseo }) => {
-    const result = await paseo.agents.list({ page: { limit: 100 } });
+  server.handle(list, async (_input, { rambla }) => {
+    const result = await rambla.agents.list({ page: { limit: 100 } });
     return { agentIds: result.entries.map((entry) => entry.agent.id) };
   });
-  server.handle(append, ({ agentId, status }, { paseo }) =>
-    paseo.agents.ref(agentId).timeline.append({
+  server.handle(append, ({ agentId, status }, { rambla }) =>
+    rambla.agents.ref(agentId).timeline.append({
       type: "plugin",
       id: "review-1",
       kind: "review",
@@ -89,11 +89,11 @@ export default function contribute(server: PluginServerContext) {
     await client.connect();
     await client.patchDaemonConfig({ pluginsEnabled: true });
     await expect(client.installDirectoryPlugin(pluginDirectory)).resolves.toMatchObject({
-      id: "paseo-api",
+      id: "rambla-api",
       status: "running",
     });
 
-    const created = await client.invokePluginRpc("paseo-api", "create", {
+    const created = await client.invokePluginRpc("rambla-api", "create", {
       path: workspaceDirectory,
     });
 
@@ -104,27 +104,27 @@ export default function contribute(server: PluginServerContext) {
     if (typeof created !== "object" || created === null) {
       throw new Error("Plugin returned an invalid creation result");
     }
-    const listed = await client.invokePluginRpc("paseo-api", "list", {});
+    const listed = await client.invokePluginRpc("rambla-api", "list", {});
     expect(listed).toEqual({
       agentIds: expect.arrayContaining([Reflect.get(created, "agentId")]),
     });
     const agentId = Reflect.get(created, "agentId");
     await expect(
-      client.invokePluginRpc("paseo-api", "append", { agentId, status: "running" }),
+      client.invokePluginRpc("rambla-api", "append", { agentId, status: "running" }),
     ).resolves.toEqual({ seq: expect.any(Number), epoch: expect.any(String) });
-    await client.invokePluginRpc("paseo-api", "append", { agentId, status: "complete" });
+    await client.invokePluginRpc("rambla-api", "append", { agentId, status: "complete" });
     const timeline = await client.fetchAgentTimeline(agentId, { projection: "projected" });
     expect(timeline.entries.filter((entry) => entry.item.type === "plugin")).toEqual([
       expect.objectContaining({
         item: expect.objectContaining({
           type: "plugin",
           id: "review-1",
-          pluginId: "paseo-api",
+          pluginId: "rambla-api",
           data: { status: "complete" },
         }),
       }),
     ]);
-    await client.removePlugin("paseo-api");
+    await client.removePlugin("rambla-api");
     const workspaces = await client.fetchWorkspaces();
     const agents = await client.fetchAgents();
     expect(workspaces.entries.map((workspace) => workspace.id)).toContain(
@@ -140,15 +140,15 @@ export default function contribute(server: PluginServerContext) {
 }, 60_000);
 
 test("daemon config reload enables and disables configured plugins without restarting", async () => {
-  const pluginDirectory = await mkdtemp(path.join(tmpdir(), "paseo-reload-plugin-"));
-  const paseoHomeRoot = await mkdtemp(path.join(tmpdir(), "paseo-reload-home-"));
-  const paseoHome = path.join(paseoHomeRoot, ".rambla");
-  roots.push(pluginDirectory, paseoHomeRoot);
+  const pluginDirectory = await mkdtemp(path.join(tmpdir(), "rambla-reload-plugin-"));
+  const ramblaHomeRoot = await mkdtemp(path.join(tmpdir(), "rambla-reload-home-"));
+  const ramblaHome = path.join(ramblaHomeRoot, ".rambla");
+  roots.push(pluginDirectory, ramblaHomeRoot);
   await writeFile(
-    path.join(pluginDirectory, "paseo-plugin.json"),
+    path.join(pluginDirectory, "rambla-plugin.json"),
     JSON.stringify({
       id: "reloadable-plugin",
-      requirements: { paseo: `>=${resolveDaemonVersion(import.meta.url)}` },
+      requirements: { rambla: `>=${resolveDaemonVersion(import.meta.url)}` },
     }),
   );
   await writeFile(
@@ -162,13 +162,13 @@ test("daemon config reload enables and disables configured plugins without resta
   const plugins = {
     "reloadable-plugin": { source: "directory" as const, path: pluginDirectory, enabled: true },
   };
-  await mkdir(paseoHome, { recursive: true });
+  await mkdir(ramblaHome, { recursive: true });
   await writeFile(
-    path.join(paseoHome, "config.json"),
+    path.join(ramblaHome, "config.json"),
     `${JSON.stringify({ version: 1, pluginsEnabled: false, plugins }, null, 2)}\n`,
   );
   const daemon = await createTestRamblaDaemon({
-    paseoHomeRoot,
+    ramblaHomeRoot,
     cleanup: false,
     pluginsEnabled: false,
     plugins,
@@ -177,7 +177,7 @@ test("daemon config reload enables and disables configured plugins without resta
     url: `ws://127.0.0.1:${daemon.port}/ws`,
     appVersion: "0.4.0",
   });
-  const configPath = path.join(daemon.paseoHome, "config.json");
+  const configPath = path.join(daemon.ramblaHome, "config.json");
 
   async function setPluginsEnabled(enabled: boolean): Promise<void> {
     const config = JSON.parse(await readFile(configPath, "utf8"));

@@ -26,8 +26,8 @@ import type {
   StoredSchedule,
   UpdateScheduleInput,
   UpdateScheduleNewAgentConfig,
-} from "@getpaseo/protocol/schedule/types";
-import type { FirstAgentContext } from "@getpaseo/protocol/messages";
+} from "@getrambla/protocol/schedule/types";
+import type { FirstAgentContext } from "@getrambla/protocol/messages";
 
 const SCHEDULE_TICK_INTERVAL_MS = 1000;
 
@@ -226,7 +226,7 @@ interface ScheduleWorkspaceCreateInput {
 }
 
 export interface ScheduleServiceOptions {
-  paseoHome: string;
+  ramblaHome: string;
   logger: Logger;
   agentManager: ScheduleAgentManager;
   agentStorage: AgentStorage;
@@ -264,7 +264,7 @@ export class ScheduleService {
   private tickTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(options: ScheduleServiceOptions) {
-    this.store = new ScheduleStore(join(options.paseoHome, "schedules"));
+    this.store = new ScheduleStore(join(options.ramblaHome, "schedules"));
     this.logger = options.logger.child({ module: "schedule-service" });
     this.agentManager = options.agentManager;
     this.agentStorage = options.agentStorage;
@@ -902,8 +902,8 @@ export class ScheduleService {
         workspaceId: workspace.workspaceId,
         title: resolveScheduleAgentTitle(config, schedule.prompt),
         labels: {
-          "paseo.schedule-id": schedule.id,
-          "paseo.schedule-run": runId,
+          "rambla.schedule-id": schedule.id,
+          "rambla.schedule-run": runId,
         },
         mode: config.modeId,
         thinking: config.thinkingOptionId,

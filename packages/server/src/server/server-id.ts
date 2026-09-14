@@ -16,8 +16,8 @@ function getLogger(logger: LoggerLike | undefined): LoggerLike | undefined {
   return logger?.child({ module: "server-id" });
 }
 
-function getServerIdPath(paseoHome: string): string {
-  return path.join(paseoHome, SERVER_ID_FILENAME);
+function getServerIdPath(ramblaHome: string): string {
+  return path.join(ramblaHome, SERVER_ID_FILENAME);
 }
 
 function generateServerId(): string {
@@ -33,12 +33,12 @@ function generateServerId(): string {
  * - Can be overridden via `RAMBLA_SERVER_ID` (useful for tests)
  */
 export function getOrCreateServerId(
-  paseoHome: string,
+  ramblaHome: string,
   options?: { env?: NodeJS.ProcessEnv; logger?: LoggerLike },
 ): string {
   const env = options?.env ?? process.env;
   const log = getLogger(options?.logger);
-  const serverIdPath = getServerIdPath(paseoHome);
+  const serverIdPath = getServerIdPath(ramblaHome);
 
   const envOverride =
     typeof env.RAMBLA_SERVER_ID === "string" && env.RAMBLA_SERVER_ID.trim().length > 0

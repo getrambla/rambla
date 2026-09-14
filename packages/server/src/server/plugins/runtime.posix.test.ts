@@ -5,7 +5,7 @@ import { PassThrough } from "node:stream";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pino from "pino";
-import type { ProviderEvent, ProviderRegistration } from "@getpaseo/plugin/server/provider";
+import type { ProviderEvent, ProviderRegistration } from "@getrambla/plugin/server/provider";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AgentStreamEvent } from "../agent/agent-sdk-types.js";
 import { PluginAgentClientRegistry } from "../agent/plugin-provider.js";
@@ -19,9 +19,9 @@ function hasCompletedAgentTurn(events: readonly AgentStreamEvent[]): boolean {
 }
 
 async function createPlugin(id: string, source: string): Promise<string> {
-  const directory = await mkdtemp(path.join(tmpdir(), "paseo-plugin-"));
+  const directory = await mkdtemp(path.join(tmpdir(), "rambla-plugin-"));
   temporaryDirectories.push(directory);
-  await writeFile(path.join(directory, "paseo-plugin.json"), JSON.stringify({ id }), "utf8");
+  await writeFile(path.join(directory, "rambla-plugin.json"), JSON.stringify({ id }), "utf8");
   await writeFile(path.join(directory, "index.server.ts"), source, "utf8");
   return directory;
 }
@@ -209,8 +209,8 @@ afterEach(async () => {
 
 describe("PluginRuntime", () => {
   it.each([
-    { specifier: "@getpaseo/plugin", moduleDirectory: "shared" },
-    { specifier: "@getpaseo/plugin", moduleDirectory: "server" },
+    { specifier: "@getrambla/plugin", moduleDirectory: "shared" },
+    { specifier: "@getrambla/plugin", moduleDirectory: "server" },
   ])(
     "loads $specifier contracts without React in the subprocess module graph",
     async ({ specifier, moduleDirectory }) => {
@@ -313,8 +313,8 @@ register(${JSON.stringify(guardUrl)});`;
   it("runs a provider connection through the real plugin subprocess boundary", async () => {
     const directory = await createPlugin(
       "provider-round-trip",
-      `import type { PluginServerContext } from "@getpaseo/plugin/server";
-import type { ProviderEvent, ProviderRegistration } from "@getpaseo/plugin/server/provider";
+      `import type { PluginServerContext } from "@getrambla/plugin/server";
+import type { ProviderEvent, ProviderRegistration } from "@getrambla/plugin/server/provider";
 
 const provider: ProviderRegistration = {
   id: "direct-example",
@@ -521,8 +521,8 @@ export default function contribute(server: PluginServerContext) {
     );
     const directory = await createPlugin(
       "provider-acp-round-trip",
-      `import type { PluginServerContext } from "@getpaseo/plugin/server";
-import { runAcpProvider } from "@getpaseo/plugin/server/acp";
+      `import type { PluginServerContext } from "@getrambla/plugin/server";
+import { runAcpProvider } from "@getrambla/plugin/server/acp";
 import { vendorEditTransformer } from "./server/vendor-edit.js";
 
 export default function contribute(server: PluginServerContext) {
@@ -582,14 +582,14 @@ lines.on("line", (line) => {
     await connection.send({
       type: "session.open",
       requestId: "open-acp",
-      sessionId: "paseo-1",
+      sessionId: "rambla-1",
       config: { cwd: directory, env: {}, mcpServers: {}, settings: {}, persist: true },
       history: "skip",
     });
     await expect.poll(() => hasReadyRequest(events, "open-acp")).toBe(true);
     await connection.send({
       type: "session.prompt",
-      sessionId: "paseo-1",
+      sessionId: "rambla-1",
       prompt: {
         clientMessageId: "client-acp",
         delivery: "auto",
@@ -658,7 +658,7 @@ lines.on("line", (line) => {
   it("rejects a malformed provider event from a real plugin subprocess", async () => {
     const directory = await createPlugin(
       "malicious-provider",
-      `import type { ProviderEvent, ProviderRegistration } from "@getpaseo/plugin/server/provider";
+      `import type { ProviderEvent, ProviderRegistration } from "@getrambla/plugin/server/provider";
 let connectionId = "";
 process.on("message", (message: unknown) => {
   const value = message as { type?: string; connectionId?: string };
@@ -725,7 +725,7 @@ export default function contribute(server: any) { server.registerProvider(provid
   it("emits runtime failure for live sessions when a real plugin process dies", async () => {
     const directory = await createPlugin(
       "dying-provider",
-      `import type { ProviderEvent, ProviderRegistration } from "@getpaseo/plugin/server/provider";
+      `import type { ProviderEvent, ProviderRegistration } from "@getrambla/plugin/server/provider";
 const provider: ProviderRegistration = {
   id: "dying",
   label: "Dying",
@@ -798,10 +798,10 @@ export default function contribute(server: any) { server.registerProvider(provid
     expect(
       runtime.getLogs("lifecycle").map(({ stream, message }) => ({ stream, message })),
     ).toEqual([
-      { stream: "stdout", message: "[paseo] Loading plugin" },
-      { stream: "stdout", message: "[paseo] Plugin ready" },
-      { stream: "stdout", message: "[paseo] Stopping plugin" },
-      { stream: "stdout", message: "[paseo] Plugin stopped" },
+      { stream: "stdout", message: "[rambla] Loading plugin" },
+      { stream: "stdout", message: "[rambla] Plugin ready" },
+      { stream: "stdout", message: "[rambla] Stopping plugin" },
+      { stream: "stdout", message: "[rambla] Plugin stopped" },
     ]);
   });
 
@@ -823,7 +823,7 @@ export default function contribute(server: any) { server.registerProvider(provid
     const logs = runtime.getLogs("output");
     expect(
       logs
-        .filter((entry) => !entry.message.startsWith("[paseo]"))
+        .filter((entry) => !entry.message.startsWith("[rambla]"))
         .map(({ stream, message }) => ({ stream, message })),
     ).toEqual([
       { stream: "stdout", message: "first" },
@@ -945,7 +945,7 @@ export default function contribute(server: any) { server.registerProvider(provid
     ).toEqual([
       {
         stream: "stdout",
-        message: "[paseo] Loading plugin",
+        message: "[rambla] Loading plugin",
       },
       {
         stream: "stderr",
@@ -998,7 +998,7 @@ export default function contribute(server: any) { server.registerProvider(provid
   });
 
   it("waits for asynchronous plugin cleanup before stopping", async () => {
-    const cleanupFile = path.join(tmpdir(), `paseo-plugin-cleanup-${Date.now()}`);
+    const cleanupFile = path.join(tmpdir(), `rambla-plugin-cleanup-${Date.now()}`);
     const directory = await createPlugin(
       "async-cleanup",
       `import { writeFile } from "node:fs/promises";
@@ -1021,12 +1021,12 @@ export default function contribute(plugin: unknown) {
 
   it("closes a provider connection that resolves during plugin shutdown", async () => {
     const suffix = `${process.pid}-${Date.now()}`;
-    const startedFile = path.join(tmpdir(), `paseo-provider-connect-started-${suffix}`);
-    const closedFile = path.join(tmpdir(), `paseo-provider-connect-closed-${suffix}`);
+    const startedFile = path.join(tmpdir(), `rambla-provider-connect-started-${suffix}`);
+    const closedFile = path.join(tmpdir(), `rambla-provider-connect-closed-${suffix}`);
     const directory = await createPlugin(
       "shutdown-connect",
       `import { writeFile } from "node:fs/promises";
-import type { ProviderRegistration } from "@getpaseo/plugin/server/provider";
+import type { ProviderRegistration } from "@getrambla/plugin/server/provider";
 
 const provider: ProviderRegistration = {
   id: "delayed",
@@ -1392,10 +1392,10 @@ export default function contribute(server: { registerProvider(provider: Provider
   });
 
   it("explains that an index.ts plugin was made for an older Rambla version", async () => {
-    const directory = await mkdtemp(path.join(tmpdir(), "paseo-plugin-"));
+    const directory = await mkdtemp(path.join(tmpdir(), "rambla-plugin-"));
     temporaryDirectories.push(directory);
     await Promise.all([
-      writeFile(path.join(directory, "paseo-plugin.json"), JSON.stringify({ id: "legacy" })),
+      writeFile(path.join(directory, "rambla-plugin.json"), JSON.stringify({ id: "legacy" })),
       writeFile(path.join(directory, "index.ts"), "export default function contribute() {}"),
     ]);
     const runtime = createTestRuntime();
@@ -1406,10 +1406,10 @@ export default function contribute(server: { registerProvider(provider: Provider
   });
 
   it("loads a client-only plugin without spawning a subprocess", async () => {
-    const directory = await mkdtemp(path.join(tmpdir(), "paseo-plugin-"));
+    const directory = await mkdtemp(path.join(tmpdir(), "rambla-plugin-"));
     temporaryDirectories.push(directory);
     await Promise.all([
-      writeFile(path.join(directory, "paseo-plugin.json"), JSON.stringify({ id: "theme" })),
+      writeFile(path.join(directory, "rambla-plugin.json"), JSON.stringify({ id: "theme" })),
       writeFile(
         path.join(directory, "index.client.tsx"),
         `export default function contribute(client: any) {
@@ -1429,15 +1429,15 @@ export default function contribute(server: { registerProvider(provider: Provider
   });
 
   it("loads separate entries, exposes the client bundle, and invokes the server RPC", async () => {
-    const directory = await mkdtemp(path.join(tmpdir(), "paseo-plugin-"));
+    const directory = await mkdtemp(path.join(tmpdir(), "rambla-plugin-"));
     temporaryDirectories.push(directory);
     await mkdir(path.join(directory, "shared"));
-    await writeFile(path.join(directory, "paseo-plugin.json"), JSON.stringify({ id: "hello" }));
+    await writeFile(path.join(directory, "rambla-plugin.json"), JSON.stringify({ id: "hello" }));
     await writeFile(
       path.join(directory, "index.client.tsx"),
       `import React from "react";
 import { Text } from "react-native";
-import { defineAttachmentSource } from "@getpaseo/plugin";
+import { defineAttachmentSource } from "@getrambla/plugin";
 import { greetRpc } from "./shared/greet";
 
 const attachments = defineAttachmentSource({
@@ -1469,7 +1469,7 @@ export default function contribute(client: any) {
     await writeFile(
       path.join(directory, "shared", "greet.ts"),
       `import { z } from "zod";
-import { defineRpc } from "@getpaseo/plugin";
+import { defineRpc } from "@getrambla/plugin";
 export const greetRpc = defineRpc({
   name: "greet",
   input: z.object({ name: z.string() }),
@@ -1510,7 +1510,7 @@ export default function contribute(server: any) {
   });
 
   it("keeps client and server modules in their target runtime", async () => {
-    const directory = await mkdtemp(path.join(tmpdir(), "paseo-plugin-"));
+    const directory = await mkdtemp(path.join(tmpdir(), "rambla-plugin-"));
     temporaryDirectories.push(directory);
     await Promise.all([
       mkdir(path.join(directory, "client")),
@@ -1519,13 +1519,13 @@ export default function contribute(server: any) {
     ]);
     await Promise.all([
       writeFile(
-        path.join(directory, "paseo-plugin.json"),
+        path.join(directory, "rambla-plugin.json"),
         JSON.stringify({ id: "split-runtime" }),
         "utf8",
       ),
       writeFile(
         path.join(directory, "index.client.tsx"),
-        `import type { PluginClientContext } from "@getpaseo/plugin/client";
+        `import type { PluginClientContext } from "@getrambla/plugin/client";
 import { Surface } from "./client/surface";
 export default function contribute(client: PluginClientContext) {
   client.addSurface("main", Surface);
@@ -1535,7 +1535,7 @@ export default function contribute(client: PluginClientContext) {
       ),
       writeFile(
         path.join(directory, "index.server.ts"),
-        `import type { PluginServerContext } from "@getpaseo/plugin/server";
+        `import type { PluginServerContext } from "@getrambla/plugin/server";
 import { inspectRpc } from "./shared/inspect";
 import { inspectHost } from "./server/inspect";
 export default function contribute(server: PluginServerContext) {
@@ -1558,7 +1558,7 @@ export function Surface() {
       ),
       writeFile(
         path.join(directory, "shared", "inspect.ts"),
-        `import { defineRpc } from "@getpaseo/plugin";
+        `import { defineRpc } from "@getrambla/plugin";
 import { z } from "zod";
 
 export const inspectRpc = defineRpc({
@@ -1594,7 +1594,7 @@ export function inspectHost(_input: z.input<typeof inspectRpc.input>) {
   });
 
   it("rejects server imports from client-only modules", async () => {
-    const directory = await mkdtemp(path.join(tmpdir(), "paseo-plugin-"));
+    const directory = await mkdtemp(path.join(tmpdir(), "rambla-plugin-"));
     temporaryDirectories.push(directory);
     await Promise.all([
       mkdir(path.join(directory, "client")),
@@ -1602,13 +1602,13 @@ export function inspectHost(_input: z.input<typeof inspectRpc.input>) {
     ]);
     await Promise.all([
       writeFile(
-        path.join(directory, "paseo-plugin.json"),
+        path.join(directory, "rambla-plugin.json"),
         JSON.stringify({ id: "cross-runtime-import" }),
         "utf8",
       ),
       writeFile(
         path.join(directory, "index.client.tsx"),
-        `import type { PluginClientContext } from "@getpaseo/plugin/client";
+        `import type { PluginClientContext } from "@getrambla/plugin/client";
 import { Surface } from "./client/surface";
 
 export default function contribute(client: PluginClientContext) {
@@ -1638,7 +1638,7 @@ export function Surface() { return readSecret(); }`,
   });
 
   it("rejects client imports from server-only modules", async () => {
-    const directory = await mkdtemp(path.join(tmpdir(), "paseo-plugin-"));
+    const directory = await mkdtemp(path.join(tmpdir(), "rambla-plugin-"));
     temporaryDirectories.push(directory);
     await Promise.all([
       mkdir(path.join(directory, "client")),
@@ -1647,13 +1647,13 @@ export function Surface() { return readSecret(); }`,
     ]);
     await Promise.all([
       writeFile(
-        path.join(directory, "paseo-plugin.json"),
+        path.join(directory, "rambla-plugin.json"),
         JSON.stringify({ id: "cross-runtime-import" }),
         "utf8",
       ),
       writeFile(
         path.join(directory, "index.server.ts"),
-        `import type { PluginServerContext } from "@getpaseo/plugin/server";
+        `import type { PluginServerContext } from "@getrambla/plugin/server";
 import { inspect } from "./server/inspect";
 import { inspectRpc } from "./shared/inspect";
 
@@ -1665,7 +1665,7 @@ export default function contribute(server: PluginServerContext) {
       ),
       writeFile(
         path.join(directory, "shared", "inspect.ts"),
-        `import { defineRpc } from "@getpaseo/plugin";
+        `import { defineRpc } from "@getrambla/plugin";
 import { z } from "zod";
 export const inspectRpc = defineRpc({
   name: "inspect",
@@ -1698,7 +1698,7 @@ export function inspect() { void Surface; return {}; }`,
     const directory = await createPlugin(
       "invalid-output",
       `import { z } from "zod";
-import { defineRpc } from "@getpaseo/plugin";
+import { defineRpc } from "@getrambla/plugin";
 const brokenRpc = defineRpc({
   name: "broken",
   input: z.object({}),

@@ -1,7 +1,7 @@
 import type { Logger } from "pino";
 
 import type { TerminalManager } from "../../../terminal/terminal-manager.js";
-import type { CreateRamblaWorktreeInput } from "../../paseo-worktree-service.js";
+import type { CreateRamblaWorktreeInput } from "../../rambla-worktree-service.js";
 import { expandUserPath, resolvePathFromBase } from "../../path-utils.js";
 import { toWorktreeRequestError } from "../../worktree-errors.js";
 import type {
@@ -39,7 +39,7 @@ export interface CreateAgentCommandDependencies {
   agentManager: AgentManager;
   agentStorage: AgentStorage;
   logger: Logger;
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesRoot?: string;
   terminalManager?: TerminalManager | null;
   providerSnapshotManager: Pick<ProviderSnapshotManager, "resolveCreateConfig">;
@@ -544,7 +544,7 @@ async function resolveMcpCwd(params: {
       githubPrNumber: worktree.githubPrNumber,
       firstAgentContext: { prompt: params.initialPrompt },
       runSetup: false,
-      paseoHome: dependencies.paseoHome,
+      ramblaHome: dependencies.ramblaHome,
       worktreesRoot: dependencies.worktreesRoot,
     },
     createRamblaWorktree: dependencies.createRamblaWorktree,

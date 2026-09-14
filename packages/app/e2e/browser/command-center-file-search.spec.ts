@@ -17,7 +17,7 @@ const FILE_NAME = "needle-layout-stability-command-center.tsx";
 const FILE_DIRECTORY =
   "packages/app/src/command-center/features/workspace-file-search/layout-stability";
 
-function paseoSizedFiles(): Array<{ path: string; content: string }> {
+function ramblaSizedFiles(): Array<{ path: string; content: string }> {
   const files = Array.from({ length: 120 }, (_, index) => ({
     path: `packages/app/src/features/feature-${String(index).padStart(3, "0")}/index.ts`,
     content: `export const feature${index} = ${index};\n`,
@@ -49,7 +49,7 @@ test("workspace file search stays geometrically stable through delayed loading a
   const seeded = await seedWorkspace({
     repoPrefix: "command-center-file-search-",
     title: "Rambla-shaped file search",
-    repo: { files: paseoSizedFiles() },
+    repo: { files: ramblaSizedFiles() },
   });
 
   try {

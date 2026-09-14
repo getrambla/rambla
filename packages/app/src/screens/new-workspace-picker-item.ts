@@ -1,5 +1,5 @@
-import type { CreateRamblaWorktreeInput } from "@getpaseo/client/internal/daemon-client";
-import type { ForgeSearchItem } from "@getpaseo/protocol/messages";
+import type { CreateRamblaWorktreeInput } from "@getrambla/client/internal/daemon-client";
+import type { ForgeSearchItem } from "@getrambla/protocol/messages";
 import type { ComboboxOptionModel } from "@/components/ui/combobox-options";
 import { getForgePresentation } from "@/git/forge";
 

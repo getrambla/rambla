@@ -66,9 +66,9 @@ interface DaemonStatus {
   pid: number | null;
 }
 
-async function readDaemonStatus(paseoHome: string): Promise<DaemonStatus> {
+async function readDaemonStatus(ramblaHome: string): Promise<DaemonStatus> {
   const result =
-    await $`RAMBLA_HOME=${paseoHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx paseo daemon status --home ${paseoHome} --json`.nothrow();
+    await $`RAMBLA_HOME=${ramblaHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx rambla daemon status --home ${ramblaHome} --json`.nothrow();
   if (result.exitCode !== 0) {
     return { localDaemon: null, pid: null };
   }
@@ -124,7 +124,7 @@ function waitForProcessExit(processRef: ChildProcess, timeoutMs: number): Promis
 console.log("=== Daemon SIGINT (supervisor regression) ===\n");
 
 const port = await getAvailablePort();
-const paseoHome = await mkdtemp(join(tmpdir(), "paseo-sigint-supervisor-"));
+const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-sigint-supervisor-"));
 const cliRoot = join(import.meta.dirname, "..");
 
 let supervisorProcess: ChildProcess | null = null;
@@ -141,7 +141,7 @@ try {
       env: {
         ...process.env,
         ...testEnv,
-        RAMBLA_HOME: paseoHome,
+        RAMBLA_HOME: ramblaHome,
         RAMBLA_LISTEN: `127.0.0.1:${port}`,
         RAMBLA_RELAY_ENABLED: "false",
         CI: "true",
@@ -160,7 +160,7 @@ try {
 
   await waitFor(
     async () => {
-      const status = await readDaemonStatus(paseoHome);
+      const status = await readDaemonStatus(ramblaHome);
       return (
         status.localDaemon === "running" && status.pid !== null && isProcessRunning(status.pid)
       );
@@ -188,7 +188,7 @@ try {
 
   await waitFor(
     async () => {
-      const status = await readDaemonStatus(paseoHome);
+      const status = await readDaemonStatus(ramblaHome);
       return status.localDaemon === "stopped";
     },
     15000,
@@ -223,8 +223,8 @@ try {
     });
   }
 
-  await $`RAMBLA_HOME=${paseoHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx paseo daemon stop --home ${paseoHome} --force`.nothrow();
-  await rm(paseoHome, { recursive: true, force: true });
+  await $`RAMBLA_HOME=${ramblaHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx rambla daemon stop --home ${ramblaHome} --force`.nothrow();
+  await rm(ramblaHome, { recursive: true, force: true });
 }
 
 if (recentSupervisorLogs.trim().length === 0) {

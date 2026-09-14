@@ -9,7 +9,7 @@ import pino from "pino";
 import { OpenCodeAgentClient } from "../agent/providers/opencode-agent.js";
 import { OpenCodeServerManager } from "../agent/providers/opencode/server-manager.js";
 import { terminateWithTreeKill } from "../../utils/tree-kill.js";
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
 
 const PINNED_OPENCODE_VERSION = "1.18.9";
@@ -21,7 +21,7 @@ const COMMAND_TIMEOUT_MS = 180_000;
 interface RuntimePaths {
   root: string;
   home: string;
-  paseoHomeRoot: string;
+  ramblaHomeRoot: string;
   xdgConfig: string;
   xdgData: string;
   xdgCache: string;
@@ -154,7 +154,7 @@ export async function createOpenCodeOmoRealRuntime(): Promise<OpenCodeOmoRealRun
   let daemon: TestRamblaDaemon | null = null;
   let client: DaemonClient | null = null;
   try {
-    process.env.RAMBLA_HOME = path.join(paths.paseoHomeRoot, ".rambla");
+    process.env.RAMBLA_HOME = path.join(paths.ramblaHomeRoot, ".rambla");
     traceDestination = pino.destination({
       dest: path.join(paths.artifacts, "daemon.log"),
       sync: true,
@@ -181,7 +181,7 @@ export async function createOpenCodeOmoRealRuntime(): Promise<OpenCodeOmoRealRun
     daemon = await createTestRamblaDaemon({
       agentClients: { opencode: openCodeClient },
       logger,
-      paseoHomeRoot: paths.paseoHomeRoot,
+      ramblaHomeRoot: paths.ramblaHomeRoot,
       staticDir: path.join(paths.root, "static"),
       cleanup: false,
     });
@@ -227,11 +227,11 @@ export async function createOpenCodeOmoRealRuntime(): Promise<OpenCodeOmoRealRun
 }
 
 function createRuntimePaths(): RuntimePaths {
-  const root = mkdtempSync(path.join(tmpdir(), "paseo-real-opencode-omo-"));
+  const root = mkdtempSync(path.join(tmpdir(), "rambla-real-opencode-omo-"));
   const paths: RuntimePaths = {
     root,
     home: path.join(root, "home"),
-    paseoHomeRoot: path.join(root, "paseo-home"),
+    ramblaHomeRoot: path.join(root, "rambla-home"),
     xdgConfig: path.join(root, "xdg", "config"),
     xdgData: path.join(root, "xdg", "data"),
     xdgCache: path.join(root, "xdg", "cache"),
@@ -273,7 +273,7 @@ function buildRuntimeEnv(paths: RuntimePaths, openRouterApiKey: string | null): 
     SSL_CERT_DIR: process.env.SSL_CERT_DIR,
     HOME: paths.home,
     ...(process.platform === "win32" ? resolveWindowsHomeEnv(paths.home, paths.temporary) : {}),
-    RAMBLA_HOME: path.join(paths.paseoHomeRoot, ".rambla"),
+    RAMBLA_HOME: path.join(paths.ramblaHomeRoot, ".rambla"),
     XDG_CONFIG_HOME: paths.xdgConfig,
     XDG_DATA_HOME: paths.xdgData,
     XDG_CACHE_HOME: paths.xdgCache,

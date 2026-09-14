@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // Emit the set of files the daemon and CLI need at runtime, computed by
 // static module-graph tracing (@vercel/nft) from the daemon entry points.
-// Used by nix/package.nix's installPhase to materialize $out/lib/paseo
+// Used by nix/package.nix's installPhase to materialize $out/lib/rambla
 // with only the bytes the daemon actually loads — no Expo, RN, Metro,
 // Electron, ML stacks, or other non-daemon workspace bloat.
 //
 // Output: newline-separated repo-relative file paths on stdout. The Nix
-// installPhase copies each path to $out/lib/paseo/<path>, preserving the
+// installPhase copies each path to $out/lib/rambla/<path>, preserving the
 // directory structure node's module resolution expects.
 //
 // Run from the repo root, after `npm run build:server`. Requires
@@ -80,7 +80,7 @@ const additionalInputs = [
         "packages/desktop/assets/**",
         // resolveExternalCliEntrypoint() looks up the workspace through this
         // link at runtime; nft traces the target files but not the link.
-        "node_modules/@getpaseo/cli",
+        "node_modules/@getrambla/cli",
       ]
     : []),
 ];

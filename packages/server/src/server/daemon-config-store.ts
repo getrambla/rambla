@@ -7,13 +7,13 @@ import { ProviderOverrideSchema } from "./agent/provider-launch-config.js";
 import {
   MutableDaemonConfigSchema,
   MutableDaemonConfigPatchSchema,
-} from "@getpaseo/protocol/messages";
-import type { AgentSkillSelection } from "@getpaseo/protocol/messages";
+} from "@getrambla/protocol/messages";
+import type { AgentSkillSelection } from "@getrambla/protocol/messages";
 
-export type { MutableDaemonConfig, MutableDaemonConfigPatch } from "@getpaseo/protocol/messages";
+export type { MutableDaemonConfig, MutableDaemonConfigPatch } from "@getrambla/protocol/messages";
 
-type MutableDaemonConfig = import("@getpaseo/protocol/messages").MutableDaemonConfig;
-type MutableDaemonConfigPatch = import("@getpaseo/protocol/messages").MutableDaemonConfigPatch;
+type MutableDaemonConfig = import("@getrambla/protocol/messages").MutableDaemonConfig;
+type MutableDaemonConfigPatch = import("@getrambla/protocol/messages").MutableDaemonConfigPatch;
 type ProviderOverride = import("./agent/provider-launch-config.js").ProviderOverride;
 
 interface SupportedMutableConfigPatch {
@@ -294,11 +294,11 @@ export function applyMutableProviderConfigToOverrides(
     nextOverrides[providerId] = {
       ...previousOverride,
       ...parsedOverride,
-      ...(parsedOverride.paseoTools
+      ...(parsedOverride.ramblaTools
         ? {
-            paseoTools: {
-              ...previousOverride?.paseoTools,
-              ...parsedOverride.paseoTools,
+            ramblaTools: {
+              ...previousOverride?.ramblaTools,
+              ...parsedOverride.ramblaTools,
             },
           }
         : {}),
@@ -310,7 +310,7 @@ export function applyMutableProviderConfigToOverrides(
 
 export class DaemonConfigStore {
   private current: MutableDaemonConfig;
-  private readonly paseoHome: string;
+  private readonly ramblaHome: string;
   private readonly logger: LoggerLike | undefined;
   private readonly changeListeners = new Set<ConfigListener>();
   private readonly applyListeners = new Set<ConfigApplyListener>();
@@ -321,7 +321,7 @@ export class DaemonConfigStore {
   private lastKnownPersisted: PersistedConfig;
 
   constructor(
-    paseoHome: string,
+    ramblaHome: string,
     initial: MutableDaemonConfig,
     logger?: LoggerLike,
     options: {
@@ -330,7 +330,7 @@ export class DaemonConfigStore {
       startupPersisted?: PersistedConfig;
     } = {},
   ) {
-    this.paseoHome = paseoHome;
+    this.ramblaHome = ramblaHome;
     this.logger = getLogger(logger);
     this.current = MutableDaemonConfigSchema.parse({
       ...initial,
@@ -338,7 +338,7 @@ export class DaemonConfigStore {
     });
     this.relayEnabledMutable = options.relayEnabledMutable ?? true;
     this.reloadSource = options.reloadSource;
-    this.startupPersisted = options.startupPersisted ?? loadPersistedConfig(paseoHome, this.logger);
+    this.startupPersisted = options.startupPersisted ?? loadPersistedConfig(ramblaHome, this.logger);
     this.lastKnownPersisted = this.startupPersisted;
   }
 
@@ -394,7 +394,7 @@ export class DaemonConfigStore {
       this.applyReplacement(next, { removedProviders });
       this.lastKnownPersisted = knownNext;
     } catch (error) {
-      savePersistedConfig(this.paseoHome, persistedBeforePatch, this.logger);
+      savePersistedConfig(this.ramblaHome, persistedBeforePatch, this.logger);
       throw error;
     }
 
@@ -406,7 +406,7 @@ export class DaemonConfigStore {
       throw new Error("Daemon config reload is unavailable for this daemon instance");
     }
 
-    const persisted = loadPersistedConfig(this.paseoHome, this.logger);
+    const persisted = loadPersistedConfig(this.ramblaHome, this.logger);
     const resolved = this.reloadSource.resolve(persisted);
     // Plugin source changes require the plugin lifecycle operation or a daemon
     // restart. The global switch is independently reloadable.
@@ -560,7 +560,7 @@ export class DaemonConfigStore {
     patch: Omit<SupportedMutableConfigPatch, "removeProviders">,
     removeProviders: readonly string[],
   ): { previous: PersistedConfig; knownNext: PersistedConfig } {
-    const persisted = loadPersistedConfig(this.paseoHome, this.logger);
+    const persisted = loadPersistedConfig(this.ramblaHome, this.logger);
     const merge = (source: PersistedConfig) =>
       mergeMutablePatchIntoPersistedConfig({
         persisted: source,
@@ -570,7 +570,7 @@ export class DaemonConfigStore {
       });
     const nextPersisted = merge(persisted);
     const knownNext = merge(this.lastKnownPersisted);
-    savePersistedConfig(this.paseoHome, nextPersisted, this.logger);
+    savePersistedConfig(this.ramblaHome, nextPersisted, this.logger);
     return { previous: persisted, knownNext };
   }
 }

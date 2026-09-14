@@ -12,10 +12,10 @@ const originalRamblaHome = process.env.RAMBLA_HOME;
 try {
   {
     console.log("Test 1: resolves explicit RAMBLA_HOME when set");
-    process.env.RAMBLA_HOME = "/tmp/paseo-explicit-home";
+    process.env.RAMBLA_HOME = "/tmp/rambla-explicit-home";
 
-    assert.strictEqual(resolveRamblaHomePath(), "/tmp/paseo-explicit-home");
-    assert.strictEqual(resolveRamblaWorktreesDir(), "/tmp/paseo-explicit-home/worktrees");
+    assert.strictEqual(resolveRamblaHomePath(), "/tmp/rambla-explicit-home");
+    assert.strictEqual(resolveRamblaWorktreesDir(), "/tmp/rambla-explicit-home/worktrees");
     console.log("\u2713 explicit RAMBLA_HOME is respected\n");
   }
 

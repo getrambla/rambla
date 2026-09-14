@@ -37,7 +37,7 @@ function Header() {
       <span className="min-w-0 flex-1">
         <span className="block text-[18px] font-semibold leading-[21px] text-mock-fg">Rambla</span>
         <span className="mt-[2px] flex items-center gap-[5px] text-[13px] leading-[16px] text-mock-fg-muted">
-          <span className="shrink-0">paseo ·</span>
+          <span className="shrink-0">rambla ·</span>
           <Server size={12} className="shrink-0" />
           <span className="truncate">Mohameds-MacBook-Pro.l…</span>
         </span>

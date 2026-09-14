@@ -1,18 +1,18 @@
 import { existsSync, readFileSync } from "node:fs";
-import { loadConfig, resolveRamblaHome } from "@getpaseo/server";
+import { loadConfig, resolveRamblaHome } from "@getrambla/server";
 import {
   buildDaemonWebSocketUrl,
   buildRelayWebSocketUrl,
   normalizeHostPort,
   parseConnectionUri,
   shouldUseTlsForDefaultHostedRelay,
-} from "@getpaseo/protocol/daemon-endpoints";
+} from "@getrambla/protocol/daemon-endpoints";
 import {
   parseConnectionOfferFromUrl,
   type ConnectionOffer,
-} from "@getpaseo/protocol/connection-offer";
-import { parseSshTransportUri } from "@getpaseo/protocol/ssh-transport";
-import { DaemonClient, type WebSocketLike } from "@getpaseo/client/internal/daemon-client";
+} from "@getrambla/protocol/connection-offer";
+import { parseSshTransportUri } from "@getrambla/protocol/ssh-transport";
+import { DaemonClient, type WebSocketLike } from "@getrambla/client/internal/daemon-client";
 import path from "node:path";
 import { WebSocket } from "ws";
 import { getOrCreateCliClientId } from "./client-id.js";
@@ -63,7 +63,7 @@ export function buildDaemonConnectionCommandError(options: {
     message: `Cannot connect to daemon at ${host}: ${message}`,
     details: host.trim().startsWith("ssh://")
       ? "Start the Rambla daemon on the SSH host; SSH transport does not install or start it."
-      : "Start the daemon with: paseo daemon start",
+      : "Start the daemon with: rambla daemon start",
   };
 }
 
@@ -130,8 +130,8 @@ function isTcpDaemonHost(host: string | null): host is string {
   return host !== null && !isIpcDaemonHost(host);
 }
 
-function readPidSocketTarget(paseoHome: string): string | null {
-  const pidPath = path.join(paseoHome, PID_FILENAME);
+function readPidSocketTarget(ramblaHome: string): string | null {
+  const pidPath = path.join(ramblaHome, PID_FILENAME);
   if (!existsSync(pidPath)) {
     return null;
   }
@@ -149,24 +149,24 @@ function readPidSocketTarget(paseoHome: string): string | null {
   }
 }
 
-function resolveConfiguredIpcDaemonHost(env: NodeJS.ProcessEnv, paseoHome: string): string | null {
+function resolveConfiguredIpcDaemonHost(env: NodeJS.ProcessEnv, ramblaHome: string): string | null {
   const directEnvHost = normalizeDaemonHost(env.RAMBLA_LISTEN ?? "");
   if (isIpcDaemonHost(directEnvHost)) {
     return directEnvHost;
   }
 
-  const pidHost = normalizeDaemonHost(readPidSocketTarget(paseoHome) ?? "");
+  const pidHost = normalizeDaemonHost(readPidSocketTarget(ramblaHome) ?? "");
   if (isIpcDaemonHost(pidHost)) {
     return pidHost;
   }
 
-  const config = loadConfig(paseoHome, { env });
+  const config = loadConfig(ramblaHome, { env });
   const configuredHost = normalizeDaemonHost(config.listen);
   return isIpcDaemonHost(configuredHost) ? configuredHost : null;
 }
 
-function resolveConfiguredTcpDaemonHost(env: NodeJS.ProcessEnv, paseoHome: string): string | null {
-  const configuredHost = normalizeDaemonHost(loadConfig(paseoHome, { env }).listen);
+function resolveConfiguredTcpDaemonHost(env: NodeJS.ProcessEnv, ramblaHome: string): string | null {
+  const configuredHost = normalizeDaemonHost(loadConfig(ramblaHome, { env }).listen);
   if (!isTcpDaemonHost(configuredHost)) {
     return null;
   }
@@ -174,13 +174,13 @@ function resolveConfiguredTcpDaemonHost(env: NodeJS.ProcessEnv, paseoHome: strin
 }
 
 export function resolveDefaultDaemonHosts(env: NodeJS.ProcessEnv = process.env): string[] {
-  const paseoHome = resolveRamblaHome(env);
+  const ramblaHome = resolveRamblaHome(env);
   const candidates: string[] = [];
-  const configuredIpcHost = resolveConfiguredIpcDaemonHost(env, paseoHome);
+  const configuredIpcHost = resolveConfiguredIpcDaemonHost(env, ramblaHome);
   if (configuredIpcHost) {
     candidates.push(configuredIpcHost);
   }
-  const configuredTcpHost = resolveConfiguredTcpDaemonHost(env, paseoHome);
+  const configuredTcpHost = resolveConfiguredTcpDaemonHost(env, ramblaHome);
   if (configuredTcpHost) {
     candidates.push(configuredTcpHost);
   }

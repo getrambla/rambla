@@ -5,18 +5,18 @@ import {
   type PluginProcessRequest,
 } from "./plugin-process-protocol.js";
 import { createRequire } from "node:module";
-import * as pluginSharedRuntime from "@getpaseo/plugin";
-import * as pluginProviderRuntime from "@getpaseo/plugin/server/provider";
-import * as pluginAcpRuntime from "@getpaseo/plugin/server/acp";
-import type { SettingsDefinition, PluginRpcContract } from "@getpaseo/plugin";
-import type { PluginHandlerContext } from "@getpaseo/plugin/server";
+import * as pluginSharedRuntime from "@getrambla/plugin";
+import * as pluginProviderRuntime from "@getrambla/plugin/server/provider";
+import * as pluginAcpRuntime from "@getrambla/plugin/server/acp";
+import type { SettingsDefinition, PluginRpcContract } from "@getrambla/plugin";
+import type { PluginHandlerContext } from "@getrambla/plugin/server";
 import {
   ProviderEventSchema,
   type ProviderConnection,
   type ProviderRegistration,
-} from "@getpaseo/plugin/server/provider";
-import { createRamblaApi, type RamblaApi } from "@getpaseo/client";
-import { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+} from "@getrambla/plugin/server/provider";
+import { createRamblaApi, type RamblaApi } from "@getrambla/client";
+import { DaemonClient } from "@getrambla/client/internal/daemon-client";
 import { createPluginDaemonTransportFactory } from "./daemon-transport.js";
 import { isPluginClientOnlySdkSpecifier } from "./plugin-sdk-specifiers.js";
 import { createPluginClientId } from "./plugin-session-identity.js";
@@ -54,7 +54,7 @@ const providerConnections = new Map<
 const pendingProviderConnections = new Map<string, { tombstoned: boolean }>();
 let cleanup: (() => void | Promise<void>) | null = null;
 let daemonClient: DaemonClient | null = null;
-let paseo: RamblaApi | null = null;
+let rambla: RamblaApi | null = null;
 let stopping = false;
 const nodeRequire = createRequire(import.meta.url);
 
@@ -212,11 +212,11 @@ function runtimeRequire(name: string): unknown {
   if (isPluginClientOnlySdkSpecifier(name)) {
     throw new Error(`${name} is available only in plugin client code`);
   }
-  if (name === "@getpaseo/plugin") return pluginSharedRuntime;
-  if (name === "@getpaseo/plugin/server") return {};
-  if (name === "@getpaseo/plugin/server/provider") return pluginProviderRuntime;
-  if (name === "@getpaseo/plugin/server/acp") return pluginAcpRuntime;
-  if (name === "@getpaseo/plugin/client/host")
+  if (name === "@getrambla/plugin") return pluginSharedRuntime;
+  if (name === "@getrambla/plugin/server") return {};
+  if (name === "@getrambla/plugin/server/provider") return pluginProviderRuntime;
+  if (name === "@getrambla/plugin/server/acp") return pluginAcpRuntime;
+  if (name === "@getrambla/plugin/client/host")
     throw new Error(`${name} is private to the app host`);
   return nodeRequire(name);
 }
@@ -261,7 +261,7 @@ async function initialize(message: Extract<PluginProcessRequest, { type: "initia
     reconnect: { enabled: false },
     transportFactory,
   });
-  paseo = createRamblaApi(daemonClient);
+  rambla = createRamblaApi(daemonClient);
   await daemonClient.connect();
   settingsStore = message.settingsDirectory
     ? new PluginSettingsStore(message.settingsDirectory, (settingsId) =>
@@ -293,9 +293,9 @@ async function shutdown(): Promise<void> {
   }
   await Promise.all([...providerConnections.keys()].map(closeProviderConnection));
   await daemonClient?.close().catch(() => undefined);
-  await sendAndWait({ type: "paseo_close" });
+  await sendAndWait({ type: "rambla_close" });
   daemonClient = null;
-  paseo = null;
+  rambla = null;
   process.disconnect();
 }
 
@@ -396,7 +396,7 @@ process.on("message", (rawMessage: unknown) => {
     });
     return;
   }
-  if (message.type === "paseo_frame" || message.type === "paseo_close") return;
+  if (message.type === "rambla_frame" || message.type === "rambla_close") return;
   if (isHookMessage(message)) {
     handleHookMessage(message);
     return;
@@ -413,8 +413,8 @@ process.on("message", (rawMessage: unknown) => {
   void registered.contract.input
     .parseAsync(message.input)
     .then((input) => {
-      if (!paseo) throw new Error("Plugin Rambla API is unavailable");
-      return registered.handler(input, { paseo });
+      if (!rambla) throw new Error("Plugin Rambla API is unavailable");
+      return registered.handler(input, { rambla });
     })
     .then((output) => registered.contract.output.parseAsync(output))
     .then(
@@ -431,7 +431,7 @@ function handleHookMessage(
     return;
   }
   if (message.type === "hook") {
-    if (!paseo) {
+    if (!rambla) {
       send({
         type: "error",
         requestId: message.requestId,
@@ -439,7 +439,7 @@ function handleHookMessage(
       });
       return;
     }
-    void hooks.invoke(message.requestId, message.kind, message.name, message.input, paseo).then(
+    void hooks.invoke(message.requestId, message.kind, message.name, message.input, rambla).then(
       (output) => {
         return send({ type: "result", requestId: message.requestId, output });
       },

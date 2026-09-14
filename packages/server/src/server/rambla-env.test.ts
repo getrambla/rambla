@@ -5,9 +5,9 @@ import {
   createExternalProcessEnv,
   createRamblaInternalEnv,
   resolveRamblaNodeEnv,
-} from "./paseo-env.js";
+} from "./rambla-env.js";
 
-describe("paseo env contract", () => {
+describe("rambla env contract", () => {
   const ELECTRON_RUN_AS_NODE = "ELECTRON_RUN_AS_NODE";
   const RAMBLA_NODE_ENV = "RAMBLA_NODE_ENV";
   const baseEnv = {

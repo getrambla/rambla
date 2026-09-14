@@ -14,4 +14,4 @@ elif [[ -f "${HOME}/.zshenv" ]]; then
   source "${HOME}/.zshenv"
 fi
 
-source "${RAMBLA_SHELL_INTEGRATION_DIR}/paseo-integration.zsh"
+source "${RAMBLA_SHELL_INTEGRATION_DIR}/rambla-integration.zsh"

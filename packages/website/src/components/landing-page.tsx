@@ -698,7 +698,7 @@ function CliAutomationExample() {
       <div className="space-y-6">
         <div>
           <ShellPrompt>
-            <span className="text-white">paseo run</span> <span className="text-white/35">\</span>
+            <span className="text-white">rambla run</span> <span className="text-white/35">\</span>
           </ShellPrompt>
           <div className="pl-5">
             <span className="text-sky-300/75">--provider</span>{" "}
@@ -711,7 +711,7 @@ function CliAutomationExample() {
 
         <div className="space-y-1">
           <ShellPrompt>
-            <span className="text-white">paseo ls</span>
+            <span className="text-white">rambla ls</span>
           </ShellPrompt>
           <AgentListOutput />
         </div>
@@ -719,7 +719,7 @@ function CliAutomationExample() {
         <div>
           <div className="text-white/30"># Target another host</div>
           <ShellPrompt>
-            <span className="text-white">paseo ls</span>{" "}
+            <span className="text-white">rambla ls</span>{" "}
             <span className="text-sky-300/75">--host</span>{" "}
             <span className="text-white/75">devbox:6767</span>
           </ShellPrompt>
@@ -758,7 +758,7 @@ function SdkAutomationExample() {
     <pre className="overflow-x-auto font-mono text-[11px] leading-5 text-white/60">
       <span className="text-purple-300">import</span> {"{"} createRamblaClient {"}"}{" "}
       <span className="text-purple-300">from</span>{" "}
-      <span className="text-emerald-300/80">{'"@getpaseo/client"'}</span>;{"\n\n"}
+      <span className="text-emerald-300/80">{'"@getrambla/client"'}</span>;{"\n\n"}
       <span className="text-purple-300">const</span> client ={" "}
       <span className="text-sky-300">createRamblaClient</span>({"{"}
       {"\n"} url: <span className="text-emerald-300/80">{'"ws://127.0.0.1:6767/ws"'}</span>,{"\n"}
@@ -772,7 +772,7 @@ function SdkAutomationExample() {
       <span className="text-sky-300">create</span>({"{"}
       {"\n"} config: {"{"} provider:{" "}
       <span className="text-emerald-300/80">{'"codex/gpt-5.6-sol"'}</span> {"}"},{"\n"} cwd:{" "}
-      <span className="text-emerald-300/80">{'"/Users/me/dev/paseo"'}</span>,{"\n"} prompt:{" "}
+      <span className="text-emerald-300/80">{'"/Users/me/dev/rambla"'}</span>,{"\n"} prompt:{" "}
       <span className="text-emerald-300/80">{'"Fix issue #412 and add tests."'}</span>,{"\n"}
       {"}"});
       {"\n\n"}
@@ -816,7 +816,7 @@ interface ExtensibleCardLink {
 const PLUGIN_CARD_LINKS: ReadonlyArray<ExtensibleCardLink> = [
   { href: "/docs/plugins", label: "Plugin documentation", icon: BookOpen },
   {
-    href: "https://paseo.cafe",
+    href: "https://rambla.cafe",
     label: "Community plugins",
     icon: Coffee,
     external: true,
@@ -985,7 +985,7 @@ const SERVER_INSTALL_TRIGGER = (
 
 const SERVER_INSTALL_FOOTNOTE = (
   <>
-    Requires Node.js 18+. Run <span className="font-mono text-white/40">paseo</span> to start the
+    Requires Node.js 18+. Run <span className="font-mono text-white/40">rambla</span> to start the
     daemon.
   </>
 );
@@ -996,7 +996,7 @@ function ServerInstallButton() {
       trigger={SERVER_INSTALL_TRIGGER}
       title="Run agents on a remote machine"
       description="For headless machines you want to connect to from the Rambla apps. The desktop app already includes a built-in daemon"
-      command="npm install -g @getpaseo/cli && paseo"
+      command="npm install -g @getrambla/cli && rambla"
       footnote={SERVER_INSTALL_FOOTNOTE}
     />
   );

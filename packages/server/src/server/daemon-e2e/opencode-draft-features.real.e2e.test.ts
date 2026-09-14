@@ -8,7 +8,7 @@ import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import type { AgentClient, ImportableProviderSession } from "../agent/agent-sdk-types.js";
 import { OpenCodeServerManager } from "../agent/providers/opencode/server-manager.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import { canRunRealProvider, createRealProviderClient } from "./real-provider-test-config.js";
 
 function tmpCwd(): string {

@@ -1,4 +1,4 @@
-import { createRamblaClient, type RamblaClient } from "@getpaseo/client";
+import { createRamblaClient, type RamblaClient } from "@getrambla/client";
 
 export function createClient(url: string): RamblaClient {
   return createRamblaClient({

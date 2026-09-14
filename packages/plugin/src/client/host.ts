@@ -6,7 +6,7 @@ export {
 } from "./runtime-context-bridge.js";
 import type { PluginAttachmentSourceContribution } from "../contracts.js";
 import { PluginRpcProvider } from "./rpc-context.js";
-import { RamblaApiProvider } from "./paseo-context.js";
+import { RamblaApiProvider } from "./rambla-context.js";
 import { callPluginRpc } from "../rpc.js";
 
 export async function searchPluginAttachments(

@@ -3,8 +3,8 @@ import type {
   AgentStreamEventPayload,
   CreateAgentWorktreeTarget,
   HubExecutionControlAction,
-} from "@getpaseo/protocol/messages";
-import type { ProviderOptions, ToolPolicy } from "@getpaseo/protocol/agent-types";
+} from "@getrambla/protocol/messages";
+import type { ProviderOptions, ToolPolicy } from "@getrambla/protocol/agent-types";
 
 import type { AgentManager, AgentManagerEvent, ManagedAgent } from "../agent/agent-manager.js";
 import type { McpServerConfig } from "../agent/agent-sdk-types.js";
@@ -349,8 +349,8 @@ export class DaemonExecutions implements HubExecutionAgents {
 }
 
 function requireHubMcpNamespace(mcpServers: Record<string, McpServerConfig> | undefined): void {
-  if (mcpServers && Object.hasOwn(mcpServers, "paseo")) {
-    throw new Error('Hub execution MCP server name "paseo" is reserved by the daemon');
+  if (mcpServers && Object.hasOwn(mcpServers, "rambla")) {
+    throw new Error('Hub execution MCP server name "rambla" is reserved by the daemon');
   }
 }
 

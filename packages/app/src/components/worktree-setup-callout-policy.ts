@@ -1,4 +1,4 @@
-import type { RamblaConfigRaw } from "@getpaseo/protocol/messages";
+import type { RamblaConfigRaw } from "@getrambla/protocol/messages";
 import { i18n } from "@/i18n/i18next";
 import { buildProjectSettingsRoute } from "@/utils/host-routes";
 

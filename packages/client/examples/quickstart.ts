@@ -1,4 +1,4 @@
-import { createRamblaClient } from "@getpaseo/client";
+import { createRamblaClient } from "@getrambla/client";
 
 const client = createRamblaClient({ url: "ws://127.0.0.1:6767/ws" });
 

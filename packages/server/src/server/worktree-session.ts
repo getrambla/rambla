@@ -40,7 +40,7 @@ import { toCheckoutError } from "./checkout-git-utils.js";
 import type {
   CreateRamblaWorktreeInput,
   CreateRamblaWorktreeResult,
-} from "./paseo-worktree-service.js";
+} from "./rambla-worktree-service.js";
 import type { ArchiveDependencies } from "./workspace-archive-service.js";
 import { toWorktreeWireError } from "./worktree-errors.js";
 import {
@@ -81,7 +81,7 @@ type AgentWorktreeSetupTimelineWriter = (input: {
 }) => Promise<boolean>;
 
 interface BuildAgentSessionConfigDependencies {
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesRoot?: string;
   sessionLogger: Logger;
   workspaceGitService?: WorkspaceGitService;
@@ -101,7 +101,7 @@ interface BuildAgentSessionConfigDependencies {
 }
 
 interface CreateRamblaWorktreeInBackgroundDependencies {
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesRoot?: string;
   emitWorkspaceUpdateForWorkspaceId: (workspaceId: string) => Promise<void>;
   cacheWorkspaceSetupSnapshot: (workspaceId: string, snapshot: WorkspaceSetupSnapshot) => void;
@@ -175,7 +175,7 @@ interface HandleWorkspaceSetupRunRequestDependencies extends CreateRamblaWorktre
 }
 
 interface HandleCreateRamblaWorktreeRequestDependencies {
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesRoot?: string;
   describeWorkspaceRecord: (
     result: CreateRamblaWorktreeResult,
@@ -188,7 +188,7 @@ interface HandleCreateRamblaWorktreeRequestDependencies {
 }
 
 function normalizeFirstAgentContext(
-  request: Extract<SessionInboundMessage, { type: "create_paseo_worktree_request" }>,
+  request: Extract<SessionInboundMessage, { type: "create_rambla_worktree_request" }>,
 ): FirstAgentContext | undefined {
   if (request.firstAgentContext) {
     return request.firstAgentContext;
@@ -245,7 +245,7 @@ export async function buildAgentSessionConfig(
         githubPrNumber: normalized.githubPrNumber,
         firstAgentContext,
         runSetup: false,
-        paseoHome: dependencies.paseoHome,
+        ramblaHome: dependencies.ramblaHome,
         worktreesRoot: dependencies.worktreesRoot,
       },
       {
@@ -255,7 +255,7 @@ export async function buildAgentSessionConfig(
               resolveGitCreateBaseBranch(
                 repoRoot,
                 dependencies.workspaceGitService,
-                dependencies.paseoHome,
+                dependencies.ramblaHome,
               ),
       },
     );
@@ -268,7 +268,7 @@ export async function buildAgentSessionConfig(
       (await resolveGitCreateBaseBranch(
         cwd,
         dependencies.workspaceGitService,
-        dependencies.paseoHome,
+        dependencies.ramblaHome,
       ));
     await dependencies.createBranchFromBase({
       cwd,
@@ -399,7 +399,7 @@ export function assertSafeGitRef(ref: string, label: string): void {
 export async function resolveGitCreateBaseBranch(
   cwd: string,
   workspaceGitService?: WorkspaceGitService,
-  _paseoHome?: string,
+  _ramblaHome?: string,
 ): Promise<string> {
   if (!workspaceGitService) {
     throw new Error("WorkspaceGitService is required to resolve the repository root");
@@ -411,16 +411,16 @@ export async function resolveGitCreateBaseBranch(
 export async function handleRamblaWorktreeListRequest(
   dependencies: {
     emit: EmitSessionMessage;
-    paseoHome?: string;
+    ramblaHome?: string;
     workspaceGitService: WorkspaceGitService;
   },
-  msg: Extract<SessionInboundMessage, { type: "paseo_worktree_list_request" }>,
+  msg: Extract<SessionInboundMessage, { type: "rambla_worktree_list_request" }>,
 ): Promise<void> {
   const { requestId } = msg;
   const cwd = msg.repoRoot ?? msg.cwd;
   if (!cwd) {
     dependencies.emit({
-      type: "paseo_worktree_list_response",
+      type: "rambla_worktree_list_response",
       payload: {
         worktrees: [],
         error: { code: "UNKNOWN", message: "cwd or repoRoot is required" },
@@ -436,7 +436,7 @@ export async function handleRamblaWorktreeListRequest(
       { cwd },
     );
     dependencies.emit({
-      type: "paseo_worktree_list_response",
+      type: "rambla_worktree_list_response",
       payload: {
         worktrees: worktrees.map((entry) => ({
           worktreePath: entry.path,
@@ -450,7 +450,7 @@ export async function handleRamblaWorktreeListRequest(
     });
   } catch (error) {
     dependencies.emit({
-      type: "paseo_worktree_list_response",
+      type: "rambla_worktree_list_response",
       payload: {
         worktrees: [],
         error: toCheckoutError(error),
@@ -469,7 +469,7 @@ export async function handleRamblaWorktreeArchiveRequest(
     workspaceGitService: Pick<WorkspaceGitService, "getSnapshot" | "listWorktrees">;
     emitWorkspaceUpdatesForWorkspaceIds: (workspaceIds: Iterable<string>) => Promise<void>;
   },
-  msg: Extract<SessionInboundMessage, { type: "paseo_worktree_archive_request" }>,
+  msg: Extract<SessionInboundMessage, { type: "rambla_worktree_archive_request" }>,
 ): Promise<void> {
   const { requestId } = msg;
 
@@ -484,7 +484,7 @@ export async function handleRamblaWorktreeArchiveRequest(
     });
     if (!result.ok) {
       dependencies.emit({
-        type: "paseo_worktree_archive_response",
+        type: "rambla_worktree_archive_response",
         payload: {
           success: false,
           removedAgents: result.removedAgents,
@@ -499,7 +499,7 @@ export async function handleRamblaWorktreeArchiveRequest(
     }
 
     dependencies.emit({
-      type: "paseo_worktree_archive_response",
+      type: "rambla_worktree_archive_response",
       payload: {
         success: true,
         removedAgents: result.removedAgents,
@@ -509,7 +509,7 @@ export async function handleRamblaWorktreeArchiveRequest(
     });
   } catch (error) {
     dependencies.emit({
-      type: "paseo_worktree_archive_response",
+      type: "rambla_worktree_archive_response",
       payload: {
         success: false,
         removedAgents: [],
@@ -522,12 +522,12 @@ export async function handleRamblaWorktreeArchiveRequest(
 
 export async function handleCreateRamblaWorktreeRequest(
   dependencies: HandleCreateRamblaWorktreeRequestDependencies,
-  request: Extract<SessionInboundMessage, { type: "create_paseo_worktree_request" }>,
+  request: Extract<SessionInboundMessage, { type: "create_rambla_worktree_request" }>,
 ): Promise<void> {
   try {
     const commandResult = await createRamblaWorktreeCommand(
       {
-        paseoHome: dependencies.paseoHome,
+        ramblaHome: dependencies.ramblaHome,
         worktreesRoot: dependencies.worktreesRoot,
         createRamblaWorktreeWorkflow: dependencies.createRamblaWorktreeWorkflow,
       },
@@ -549,7 +549,7 @@ export async function handleCreateRamblaWorktreeRequest(
         "Failed to create worktree",
       );
       dependencies.emit({
-        type: "create_paseo_worktree_response",
+        type: "create_rambla_worktree_response",
         payload: {
           workspace: null,
           error: commandResult.error.message,
@@ -564,7 +564,7 @@ export async function handleCreateRamblaWorktreeRequest(
     const createdWorktree = commandResult.createdWorktree;
     const descriptor = await dependencies.describeWorkspaceRecord(createdWorktree);
     dependencies.emit({
-      type: "create_paseo_worktree_response",
+      type: "create_rambla_worktree_response",
       payload: {
         workspace: descriptor,
         error: null,
@@ -593,7 +593,7 @@ export async function handleCreateRamblaWorktreeRequest(
       "Failed to create worktree",
     );
     dependencies.emit({
-      type: "create_paseo_worktree_response",
+      type: "create_rambla_worktree_response",
       payload: {
         workspace: null,
         error: wireError.message,
@@ -617,7 +617,7 @@ export async function createRamblaWorktreeWorkflow(
     {
       ...input,
       runSetup: false,
-      paseoHome: input.paseoHome ?? dependencies.paseoHome,
+      ramblaHome: input.ramblaHome ?? dependencies.ramblaHome,
       worktreesRoot: input.worktreesRoot ?? dependencies.worktreesRoot,
     },
     options?.resolveDefaultBranch

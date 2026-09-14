@@ -30,11 +30,11 @@ console.log("=== Daemon Commands ===\n");
 
 // Keep restart off default 6767 to avoid collisions with any existing daemon.
 const port = 10000 + Math.floor(Math.random() * 50000);
-const paseoHome = await mkdtemp(join(tmpdir(), "paseo-test-home-"));
+const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-test-home-"));
 const require = createRequire(import.meta.url);
 
 function daemonCommand(args: string[]) {
-  return runLocalRambla(["daemon", ...args], { RAMBLA_HOME: paseoHome });
+  return runLocalRambla(["daemon", ...args], { RAMBLA_HOME: ramblaHome });
 }
 
 async function stopChildProcess(child: ChildProcess): Promise<void> {
@@ -51,13 +51,13 @@ async function stopChildProcess(child: ChildProcess): Promise<void> {
 }
 
 function resolveDaemonWorkerEntry(): string {
-  let currentDir = dirname(require.resolve("@getpaseo/server"));
+  let currentDir = dirname(require.resolve("@getrambla/server"));
 
   while (true) {
     const packageJsonPath = join(currentDir, "package.json");
     if (existsSync(packageJsonPath)) {
       const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
-      if (packageJson.name === "@getpaseo/server") {
+      if (packageJson.name === "@getrambla/server") {
         const candidates = [
           join(currentDir, "dist", "server", "server", "daemon-worker.js"),
           join(currentDir, "src", "server", "daemon-worker.ts"),
@@ -73,12 +73,12 @@ function resolveDaemonWorkerEntry(): string {
     currentDir = parentDir;
   }
 
-  throw new Error("Unable to resolve @getpaseo/server package root");
+  throw new Error("Unable to resolve @getrambla/server package root");
 }
 
 async function tailDaemonLog(): Promise<string> {
   try {
-    const log = await readFile(join(paseoHome, "daemon.log"), "utf-8");
+    const log = await readFile(join(ramblaHome, "daemon.log"), "utf-8");
     return log.split("\n").slice(-30).join("\n");
   } catch {
     return "<daemon log unavailable>";
@@ -166,7 +166,7 @@ try {
     const status = JSON.parse(result.stdout);
     assert.strictEqual(typeof status.serverId, "string", "json status should include serverId");
     assert.strictEqual(status.localDaemon, "stopped", "json status should report stopped");
-    assert.strictEqual(status.home, paseoHome, "json status should reflect the isolated home");
+    assert.strictEqual(status.home, ramblaHome, "json status should reflect the isolated home");
     assert.strictEqual(
       status.hostname,
       null,
@@ -179,7 +179,7 @@ try {
   {
     console.log("Test 5b: daemon status ignores a global --host");
     const result = await runLocalRambla(["--host", "localhost:1", "daemon", "status", "--json"], {
-      RAMBLA_HOME: paseoHome,
+      RAMBLA_HOME: ramblaHome,
     });
     assert.strictEqual(result.exitCode, 0, `daemon status should stay local: ${result.stderr}`);
     const parsed = JSON.parse(result.stdout);
@@ -222,9 +222,9 @@ try {
     console.log("Test 8: daemon status probes live relay state over local IPC");
     const listen =
       process.platform === "win32"
-        ? `\\\\.\\pipe\\paseo-status-${process.pid}-${Date.now()}`
-        : join(paseoHome, "status.sock");
-    const configPath = join(paseoHome, "config.json");
+        ? `\\\\.\\pipe\\rambla-status-${process.pid}-${Date.now()}`
+        : join(ramblaHome, "status.sock");
+    const configPath = join(ramblaHome, "config.json");
     const config = JSON.parse(await readFile(configPath, "utf-8"));
     config.daemon = {
       ...config.daemon,
@@ -242,7 +242,7 @@ try {
       cwd: join(import.meta.dirname, ".."),
       env: {
         ...process.env,
-        RAMBLA_HOME: paseoHome,
+        RAMBLA_HOME: ramblaHome,
         RAMBLA_LISTEN: listen,
         RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD: "0",
         RAMBLA_DICTATION_ENABLED: "0",
@@ -311,7 +311,7 @@ try {
       reloadConfig.daemon.browserTools.enabled = false;
       await writeFile(configPath, `${JSON.stringify(reloadConfig, null, 2)}\n`, "utf-8");
       const aliasReload = await runLocalRambla(["reload", "--host", listen, "--json"], {
-        RAMBLA_HOME: paseoHome,
+        RAMBLA_HOME: ramblaHome,
       });
       assert.strictEqual(aliasReload.exitCode, 0, aliasReload.stderr);
       assert.deepStrictEqual(JSON.parse(aliasReload.stdout), {
@@ -331,7 +331,7 @@ try {
       const humanReload = await daemonCommand(["reload", "--host", listen]);
       assert.match(humanReload.stdout, /Configuration reloaded\./);
 
-      const foreignHome = await mkdtemp(join(tmpdir(), "paseo-test-foreign-home-"));
+      const foreignHome = await mkdtemp(join(tmpdir(), "rambla-test-foreign-home-"));
       try {
         await writeFile(
           join(foreignHome, "config.json"),
@@ -372,7 +372,7 @@ try {
   // Test 9: --relay accepts an already-enabled persisted relay while stopped
   {
     console.log("Test 9: daemon pair --relay accepts persisted relay while stopped");
-    const configPath = join(paseoHome, "config.json");
+    const configPath = join(ramblaHome, "config.json");
     const config = JSON.parse(await readFile(configPath, "utf-8"));
     config.daemon = {
       ...config.daemon,
@@ -396,7 +396,7 @@ try {
   // Best-effort daemon cleanup in case assertions fail before explicit stop.
   await daemonCommand(["stop", "--force"]);
   // Clean up temp directory
-  await rm(paseoHome, { recursive: true, force: true });
+  await rm(ramblaHome, { recursive: true, force: true });
 }
 
 console.log("=== All daemon tests passed ===");

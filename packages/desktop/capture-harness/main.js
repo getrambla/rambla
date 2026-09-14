@@ -27,7 +27,7 @@ const PRODUCTION_BROWSER_WEBVIEW_REGISTRY_PATH = path.join(
   "browser-webviews",
   "registry.js",
 );
-const BROWSER_SHORTCUT_INPUT_CHANNEL = "paseo:browser-shortcut-input";
+const BROWSER_SHORTCUT_INPUT_CHANNEL = "rambla:browser-shortcut-input";
 const VIEWPORT_WIDTH = 1280;
 const VIEWPORT_HEIGHT = 800;
 const FULL_PAGE_HEIGHT = 1600;
@@ -2409,7 +2409,7 @@ async function runAutomationGroup() {
     }
     const evaluated = await guest.debugger.sendCommand("Runtime.evaluate", {
       expression: `(() => window.__RAMBLA_BROWSER_AUTOMATION__.resolve(${JSON.stringify(uploadRef.ref)}, ${JSON.stringify(uploadRef.fingerprint)}).element)()`,
-      objectGroup: "paseo-browser-automation",
+      objectGroup: "rambla-browser-automation",
       returnByValue: false,
     });
     const described = await guest.debugger.sendCommand("DOM.describeNode", {
@@ -2509,7 +2509,7 @@ async function createBrowserProfileHarnessWindow(partition, sourceUrl) {
 async function readBrowserProfileFixture(guest) {
   return await guest.executeJavaScript(`({
     cookie: document.cookie,
-    localStorage: localStorage.getItem("paseo-browser-profile")
+    localStorage: localStorage.getItem("rambla-browser-profile")
   })`);
 }
 
@@ -2517,7 +2517,7 @@ function assertBrowserProfileFixture(state, expectedValue, label) {
   if (state.localStorage !== expectedValue) {
     fail(`${label} localStorage mismatch ${JSON.stringify(state)}`);
   }
-  if (!state.cookie.split("; ").includes(`paseo-browser-profile=${expectedValue}`)) {
+  if (!state.cookie.split("; ").includes(`rambla-browser-profile=${expectedValue}`)) {
     fail(`${label} cookie mismatch ${JSON.stringify(state)}`);
   }
 }
@@ -2569,8 +2569,8 @@ async function prepareBrowserProfileValue(firstGuest, profileSession) {
   const profileValue = `profile-${Date.now()}-${process.pid}`;
   await firstGuest.executeJavaScript(`(() => {
     const value = ${JSON.stringify(profileValue)};
-    localStorage.setItem("paseo-browser-profile", value);
-    document.cookie = "paseo-browser-profile=" + value + "; Max-Age=86400; SameSite=Lax";
+    localStorage.setItem("rambla-browser-profile", value);
+    document.cookie = "rambla-browser-profile=" + value + "; Max-Age=86400; SameSite=Lax";
   })()`);
   if (BROWSER_PROFILE_PHASE === "write") {
     await fsp.writeFile(BROWSER_PROFILE_VALUE_FILE, `${profileValue}\n`);
@@ -2583,7 +2583,7 @@ async function runBrowserProfileGroup() {
   if (!["write", "read"].includes(BROWSER_PROFILE_PHASE)) {
     fail(`unknown browser profile phase ${BROWSER_PROFILE_PHASE}`);
   }
-  const partition = "persist:paseo-browser-profile-harness-restart";
+  const partition = "persist:rambla-browser-profile-harness-restart";
   const profileSession = session.fromPartition(partition);
   const fixture = await startBrowserProfileServer();
   const windows = [];

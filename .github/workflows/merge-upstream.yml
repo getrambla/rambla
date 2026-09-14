@@ -1,6 +1,6 @@
 name: Merge upstream
 
-# Daily merge-only sync from getpaseo/paseo. The merge must be conflict-free
+# Daily merge-only sync from getrambla/rambla. The merge must be conflict-free
 # and the server must build, or nothing is pushed. Never rebases.
 
 on:
@@ -37,7 +37,7 @@ jobs:
         run: |
           git config user.name "rambla-merge-bot"
           git config user.email "rambla-merge-bot@users.noreply.github.com"
-          git remote add upstream https://github.com/getpaseo/paseo.git
+          git remote add upstream https://github.com/getrambla/rambla.git
           git fetch upstream main
 
           if ! git merge upstream/main --no-edit; then

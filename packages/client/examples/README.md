@@ -3,7 +3,7 @@
 These examples use only the public SDK root:
 
 ```ts
-import { createRamblaClient, type RamblaClient } from "@getpaseo/client";
+import { createRamblaClient, type RamblaClient } from "@getrambla/client";
 ```
 
 Each example takes the daemon WebSocket URL as an argument. In worktree dev, read it

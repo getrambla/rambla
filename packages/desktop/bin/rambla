@@ -42,7 +42,7 @@ else
 fi
 
 RUNNER_PATH="${RESOURCES_DIR}/app.asar.unpacked/dist/daemon/node-entrypoint-runner.js"
-CLI_ENTRYPOINT="${RESOURCES_DIR}/app.asar/node_modules/@getpaseo/cli/dist/index.js"
+CLI_ENTRYPOINT="${RESOURCES_DIR}/app.asar/node_modules/@getrambla/cli/dist/index.js"
 
 # RAMBLA_DESKTOP_MANAGED marks daemons started through this bundled CLI as
 # desktop-managed, so the desktop app restarts them when it upgrades.

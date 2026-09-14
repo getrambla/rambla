@@ -11,8 +11,8 @@ import type {
   RamblaConfigRaw,
   RamblaConfigRevision,
   ProjectConfigRpcError,
-} from "@getpaseo/protocol/messages";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+} from "@getrambla/protocol/messages";
+import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

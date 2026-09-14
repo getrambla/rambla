@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { RamblaConfigRawSchema, RamblaConfigSchema } from "@getpaseo/protocol/paseo-config-schema";
+import { RamblaConfigRawSchema, RamblaConfigSchema } from "@getrambla/protocol/rambla-config-schema";
 
-describe("paseo config schema", () => {
+describe("rambla config schema", () => {
   it("parses an empty config without metadata generation", () => {
     const parsed = RamblaConfigSchema.parse({});
 

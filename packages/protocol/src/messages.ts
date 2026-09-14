@@ -75,7 +75,7 @@ import {
   type RamblaMetadataGenerationEntry,
   type RamblaScriptEntryRaw,
   type ProjectConfigRpcError,
-} from "./paseo-config-schema.js";
+} from "./rambla-config-schema.js";
 export {
   RamblaConfigRawSchema,
   RamblaLifecycleCommandRawSchema,
@@ -119,7 +119,7 @@ const MutableDaemonProviderModelSchema = z
 
 const MutableDaemonProviderConfigSchema = z
   .object({
-    paseoTools: ProviderRamblaToolsPolicySchema.optional(),
+    ramblaTools: ProviderRamblaToolsPolicySchema.optional(),
     enabled: z.boolean().optional(),
     additionalModels: z.array(MutableDaemonProviderModelSchema).optional(),
   })
@@ -193,7 +193,7 @@ const MutableRelayConfigSchema = z
 
 export const PluginIdSchema = z.string().regex(/^[a-z][a-z0-9-]*$/);
 // Semver validation belongs at the manifest/runtime boundary, not on the wire.
-export const PluginRequirementsSchema = z.object({ paseo: z.string().optional() });
+export const PluginRequirementsSchema = z.object({ rambla: z.string().optional() });
 export type PluginRequirements = z.infer<typeof PluginRequirementsSchema>;
 
 export const DirectoryPluginSourceSchema = z
@@ -1104,7 +1104,7 @@ export const GitHubPrAttachmentSchema = z.object({
 
 export const ForgeChangeRequestAttachmentSchema = z.object({
   type: z.literal("forge_change_request"),
-  mimeType: z.literal("application/paseo-forge-change-request"),
+  mimeType: z.literal("application/rambla-forge-change-request"),
   forge: z.string().optional().default("github"),
   number: z.number().int().positive(),
   title: z.string(),
@@ -1129,7 +1129,7 @@ export const GitHubIssueAttachmentSchema = z.object({
 
 export const ForgeIssueAttachmentSchema = z.object({
   type: z.literal("forge_issue"),
-  mimeType: z.literal("application/paseo-forge-issue"),
+  mimeType: z.literal("application/rambla-forge-issue"),
   forge: z.string().optional().default("github"),
   number: z.number().int().positive(),
   title: z.string(),
@@ -1183,7 +1183,7 @@ export const ReviewAttachmentCommentSchema = z.object({
 
 export const ReviewAttachmentSchema = z.object({
   type: z.literal("review"),
-  mimeType: z.literal("application/paseo-review"),
+  mimeType: z.literal("application/rambla-review"),
   cwd: z.string(),
   mode: z.enum(["uncommitted", "base"]),
   baseRef: z.string().nullable().optional(),
@@ -2335,8 +2335,8 @@ export const StashPopRequestSchema = z.object({
 export const StashListRequestSchema = z.object({
   type: z.literal("stash_list_request"),
   cwd: z.string(),
-  /** If true, only return paseo-created stashes. Default true. */
-  paseoOnly: z.boolean().optional(),
+  /** If true, only return rambla-created stashes. Default true. */
+  ramblaOnly: z.boolean().optional(),
   requestId: z.string(),
 });
 
@@ -2413,14 +2413,14 @@ export const DirectorySuggestionsRequestSchema = z.object({
 });
 
 export const RamblaWorktreeListRequestSchema = z.object({
-  type: z.literal("paseo_worktree_list_request"),
+  type: z.literal("rambla_worktree_list_request"),
   cwd: z.string().optional(),
   repoRoot: z.string().optional(),
   requestId: z.string(),
 });
 
 export const RamblaWorktreeArchiveRequestSchema = z.object({
-  type: z.literal("paseo_worktree_archive_request"),
+  type: z.literal("rambla_worktree_archive_request"),
   worktreePath: z.string().optional(),
   repoRoot: z.string().optional(),
   branchName: z.string().optional(),
@@ -2449,7 +2449,7 @@ export const FirstAgentContextSchema = z.object({
 });
 
 export const CreateRamblaWorktreeRequestSchema = z.object({
-  type: z.literal("create_paseo_worktree_request"),
+  type: z.literal("create_rambla_worktree_request"),
   cwd: z.string(),
   projectId: z.string().optional(),
   worktreeSlug: z.string().optional(),
@@ -2551,7 +2551,7 @@ export const ArchiveWorkspaceRequestSchema = z.object({
 
 // Create a new workspace record. Unlike open_project, this never deduplicates by
 // directory: it always produces a fresh workspace. The source discriminates
-// between an existing local directory and a newly created paseo worktree.
+// between an existing local directory and a newly created rambla worktree.
 export const WorkspaceCreateRequestSchema = z.object({
   type: z.literal("workspace.create.request"),
   requestId: z.string(),
@@ -5679,7 +5679,7 @@ const RamblaWorktreeSchema = z.object({
 });
 
 export const RamblaWorktreeListResponseSchema = z.object({
-  type: z.literal("paseo_worktree_list_response"),
+  type: z.literal("rambla_worktree_list_response"),
   payload: z.object({
     worktrees: z.array(RamblaWorktreeSchema),
     error: CheckoutErrorSchema.nullable(),
@@ -5688,7 +5688,7 @@ export const RamblaWorktreeListResponseSchema = z.object({
 });
 
 export const RamblaWorktreeArchiveResponseSchema = z.object({
-  type: z.literal("paseo_worktree_archive_response"),
+  type: z.literal("rambla_worktree_archive_response"),
   payload: z.object({
     success: z.boolean(),
     removedAgents: z.array(z.string()).optional(),
@@ -5698,7 +5698,7 @@ export const RamblaWorktreeArchiveResponseSchema = z.object({
 });
 
 export const CreateRamblaWorktreeResponseSchema = z.object({
-  type: z.literal("create_paseo_worktree_response"),
+  type: z.literal("create_rambla_worktree_response"),
   payload: z.object({
     workspace: WorkspaceDescriptorPayloadSchema.nullable(),
     error: z.string().nullable(),

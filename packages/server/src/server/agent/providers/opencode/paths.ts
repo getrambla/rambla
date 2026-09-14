@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { resolveRamblaHome } from "../../../paseo-home.js";
+import { resolveRamblaHome } from "../../../rambla-home.js";
 
 const OPENCODE_HOME_DIRNAME = "opencode-home";
 

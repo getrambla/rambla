@@ -6,7 +6,7 @@ STATE_DIR="${RAMBLA_COMPOSER_KEYBOARD_STATE_DIR:-${REPO_ROOT}/.dev/agent-device-
 ARTIFACTS_DIR="${REPO_ROOT}/.dev/agent-device-artifacts/composer-keyboard-android"
 SESSION="${RAMBLA_COMPOSER_KEYBOARD_SESSION:-composer-keyboard-android}"
 APP_ID="${RAMBLA_COMPOSER_KEYBOARD_APP_ID:-sh.rambla.debug}"
-DEVICE="${RAMBLA_COMPOSER_KEYBOARD_DEVICE:-paseo-api35}"
+DEVICE="${RAMBLA_COMPOSER_KEYBOARD_DEVICE:-rambla-api35}"
 HELPER_IME="com.callstack.agentdevice.imehelper/.TestInputMethodService"
 GBOARD_IME="com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
 ASSERT="${REPO_ROOT}/packages/app/e2e/mobile/composer-keyboard/assert-composer-keyboard.mjs"
@@ -43,7 +43,7 @@ snapshot_json() {
 
 capture_ui_xml() {
   local output_path="$1"
-  local device_path="/sdcard/paseo-composer-keyboard-window.xml"
+  local device_path="/sdcard/rambla-composer-keyboard-window.xml"
   # Android exposes one UI Automation connection at a time. Release the
   # persistent agent-device snapshot helper before asking uiautomator for the
   # app and IME windows; agent-device reconnects it on the next interaction.

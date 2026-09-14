@@ -21,7 +21,7 @@ vi.mock("electron-log/main", () => ({
   default: { warn: vi.fn() },
 }));
 
-vi.mock("@getpaseo/server", () => ({
+vi.mock("@getrambla/server", () => ({
   spawnProcess: vi.fn(),
 }));
 

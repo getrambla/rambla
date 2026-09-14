@@ -1,7 +1,7 @@
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
-import type { RamblaApi } from "@getpaseo/client";
-import { RamblaApiProvider } from "@getpaseo/plugin/client/host";
-import { useRambla } from "@getpaseo/plugin/client";
+import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
+import type { RamblaApi } from "@getrambla/client";
+import { RamblaApiProvider } from "@getrambla/plugin/client/host";
+import { useRambla } from "@getrambla/plugin/client";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -34,14 +34,14 @@ function clientWithWorkspace(id: string) {
   };
 }
 
-function borrowFromAppProvider(paseo: RamblaApi): RamblaApi {
+function borrowFromAppProvider(rambla: RamblaApi): RamblaApi {
   let borrowed: RamblaApi | null = null;
   function PluginSurface() {
     borrowed = useRambla();
     return null;
   }
   renderToStaticMarkup(
-    <RamblaApiProvider paseo={paseo}>
+    <RamblaApiProvider rambla={rambla}>
       <PluginSurface />
     </RamblaApiProvider>,
   );
@@ -55,8 +55,8 @@ describe("plugin surface host runtime", () => {
     const runtime = createPluginSurfaceRuntime(selected.client, "workspace-plugin");
     if (!runtime) throw new Error("Expected selected host runtime");
 
-    const paseo = borrowFromAppProvider(runtime.paseo);
-    const workspace = await paseo.workspaces.create({
+    const rambla = borrowFromAppProvider(runtime.rambla);
+    const workspace = await rambla.workspaces.create({
       source: {
         kind: "worktree",
         cwd: "/tmp/repository",
@@ -83,7 +83,7 @@ describe("plugin surface host runtime", () => {
     if (!first || !second) throw new Error("Expected online host runtimes");
 
     await first.invoke("host", {});
-    await borrowFromAppProvider(second.paseo).workspaces.create({
+    await borrowFromAppProvider(second.rambla).workspaces.create({
       source: { kind: "directory", path: "/tmp/workspace-b" },
     });
 

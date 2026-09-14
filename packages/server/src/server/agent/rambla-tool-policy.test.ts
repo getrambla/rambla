@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import type { ProviderRamblaToolsPolicy } from "@getpaseo/protocol/provider-config";
+import type { ProviderRamblaToolsPolicy } from "@getrambla/protocol/provider-config";
 
-import { isRamblaToolEnabled, resolveRamblaToolPolicy } from "./paseo-tool-policy.js";
+import { isRamblaToolEnabled, resolveRamblaToolPolicy } from "./rambla-tool-policy.js";
 
 describe("Rambla tool policy", () => {
   test("defaults to all Rambla tools and resolves only the exact provider ID", () => {
@@ -12,11 +12,11 @@ describe("Rambla tool policy", () => {
 
     expect(
       resolveRamblaToolPolicy("custom-claude", {
-        claude: { paseoTools: { enabled: false } },
-        "custom-claude": { paseoTools: customPolicy },
+        claude: { ramblaTools: { enabled: false } },
+        "custom-claude": { ramblaTools: customPolicy },
       }),
     ).toBe(customPolicy);
-    expect(resolveRamblaToolPolicy("other-custom", { claude: { paseoTools: customPolicy } })).toBe(
+    expect(resolveRamblaToolPolicy("other-custom", { claude: { ramblaTools: customPolicy } })).toBe(
       undefined,
     );
     expect(isRamblaToolEnabled(undefined, "list_agents")).toBe(true);

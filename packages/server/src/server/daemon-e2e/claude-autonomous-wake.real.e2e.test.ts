@@ -5,7 +5,7 @@ import pino from "pino";
 import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { WebSocket } from "ws";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 import {
   canRunRealProvider,
   createRealProviderClients,

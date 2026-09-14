@@ -22,7 +22,7 @@ interface CreateAgentWorktreeTestOptions {
   branchName: string;
   baseBranch: string;
   worktreeSlug: string;
-  paseoHome?: string;
+  ramblaHome?: string;
 }
 
 interface CreateAgentWorktreeTestResult {
@@ -58,7 +58,7 @@ async function createBootstrapWorktreeForTest(
       branchName: options.branchName,
     },
     runSetup: false,
-    paseoHome: options.paseoHome,
+    ramblaHome: options.ramblaHome,
   });
   return { worktree, shouldBootstrap: true };
 }
@@ -66,14 +66,14 @@ async function createBootstrapWorktreeForTest(
 describe("runAsyncWorktreeBootstrap", () => {
   let tempDir: string;
   let repoDir: string;
-  let paseoHome: string;
+  let ramblaHome: string;
   let realTerminalManagers: TerminalManager[];
 
   beforeEach(() => {
     realTerminalManagers = [];
     tempDir = realpathSync(mkdtempSync(join(tmpdir(), "worktree-bootstrap-test-")));
     repoDir = join(tempDir, "repo");
-    paseoHome = join(tempDir, "paseo-home");
+    ramblaHome = join(tempDir, "rambla-home");
 
     mkdirSync(repoDir, { recursive: true });
     execFileSync("git", ["init", "-b", "main"], { cwd: repoDir, stdio: "pipe" });
@@ -94,14 +94,14 @@ describe("runAsyncWorktreeBootstrap", () => {
 
   it("does not fail setup when live timeline emission throws", async () => {
     writeFileSync(
-      join(repoDir, "paseo.json"),
+      join(repoDir, "rambla.json"),
       JSON.stringify({
         worktree: {
           setup: ['echo "ok"'],
         },
       }),
     );
-    execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+    execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
     execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add setup"], {
       cwd: repoDir,
       stdio: "pipe",
@@ -112,7 +112,7 @@ describe("runAsyncWorktreeBootstrap", () => {
       branchName: "feature-live-failure",
       baseBranch: "main",
       worktreeSlug: "feature-live-failure",
-      paseoHome,
+      ramblaHome,
     });
 
     const persisted: AgentTimelineItem[] = [];
@@ -134,7 +134,7 @@ describe("runAsyncWorktreeBootstrap", () => {
     ).resolves.toBeUndefined();
 
     const persistedSetupItems = persisted.filter(
-      (item) => item.type === "tool_call" && item.name === "paseo_worktree_setup",
+      (item) => item.type === "tool_call" && item.name === "rambla_worktree_setup",
     );
     expect(persistedSetupItems).toHaveLength(1);
     if (persistedSetupItems[0]?.type === "tool_call") {
@@ -146,14 +146,14 @@ describe("runAsyncWorktreeBootstrap", () => {
     const largeOutputCommand =
       "node -e \"process.stdout.write('prefix-'); process.stdout.write('x'.repeat(70000)); process.stdout.write('-suffix')\"";
     writeFileSync(
-      join(repoDir, "paseo.json"),
+      join(repoDir, "rambla.json"),
       JSON.stringify({
         worktree: {
           setup: [largeOutputCommand],
         },
       }),
     );
-    execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+    execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
     execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add large output setup"], {
       cwd: repoDir,
       stdio: "pipe",
@@ -164,7 +164,7 @@ describe("runAsyncWorktreeBootstrap", () => {
       branchName: "feature-large-output",
       baseBranch: "main",
       worktreeSlug: "feature-large-output",
-      paseoHome,
+      ramblaHome,
     });
 
     const persisted: AgentTimelineItem[] = [];
@@ -183,7 +183,7 @@ describe("runAsyncWorktreeBootstrap", () => {
 
     const persistedSetupItem = persisted.find(
       (item): item is Extract<AgentTimelineItem, { type: "tool_call" }> =>
-        item.type === "tool_call" && item.name === "paseo_worktree_setup",
+        item.type === "tool_call" && item.name === "rambla_worktree_setup",
     );
     expect(persistedSetupItem).toBeDefined();
     expect(persistedSetupItem?.detail.type).toBe("worktree_setup");
@@ -204,7 +204,7 @@ describe("runAsyncWorktreeBootstrap", () => {
 
   it("waits for terminal output before sending bootstrap commands", async () => {
     writeFileSync(
-      join(repoDir, "paseo.json"),
+      join(repoDir, "rambla.json"),
       JSON.stringify({
         worktree: {
           terminals: [
@@ -216,7 +216,7 @@ describe("runAsyncWorktreeBootstrap", () => {
         },
       }),
     );
-    execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+    execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
     execFileSync(
       "git",
       ["-c", "commit.gpgsign=false", "commit", "-m", "add terminal bootstrap config"],
@@ -231,7 +231,7 @@ describe("runAsyncWorktreeBootstrap", () => {
       branchName: "feature-terminal-readiness",
       baseBranch: "main",
       worktreeSlug: "feature-terminal-readiness",
-      paseoHome,
+      ramblaHome,
     });
 
     let readyAt = 0;
@@ -494,8 +494,8 @@ describe("runAsyncWorktreeBootstrap", () => {
     scripts: Record<string, { command: string; type?: "script" | "service" }>,
     message = "add script config",
   ): void {
-    writeFileSync(join(repoDir, "paseo.json"), JSON.stringify({ scripts }));
-    execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+    writeFileSync(join(repoDir, "rambla.json"), JSON.stringify({ scripts }));
+    execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
     execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", message], {
       cwd: repoDir,
       stdio: "pipe",
@@ -893,7 +893,7 @@ describe("runAsyncWorktreeBootstrap", () => {
 
   it("refreshes a stopped service port on respawn and updates the route", async () => {
     writeFileSync(
-      join(repoDir, "paseo.json"),
+      join(repoDir, "rambla.json"),
       JSON.stringify({
         scripts: {
           api: {
@@ -907,7 +907,7 @@ describe("runAsyncWorktreeBootstrap", () => {
         },
       }),
     );
-    execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+    execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
     execFileSync(
       "git",
       ["-c", "commit.gpgsign=false", "commit", "-m", "add respawn service script config"],
@@ -1000,7 +1000,7 @@ describe("runAsyncWorktreeBootstrap", () => {
 
   it("removes the current service route on exit after a branch rename", async () => {
     writeFileSync(
-      join(repoDir, "paseo.json"),
+      join(repoDir, "rambla.json"),
       JSON.stringify({
         scripts: {
           api: {
@@ -1010,7 +1010,7 @@ describe("runAsyncWorktreeBootstrap", () => {
         },
       }),
     );
-    execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+    execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
     execFileSync(
       "git",
       ["-c", "commit.gpgsign=false", "commit", "-m", "add renamed service script config"],
@@ -1062,7 +1062,7 @@ describe("runAsyncWorktreeBootstrap", () => {
 
   it("fails normalized service env name collisions before terminal creation", async () => {
     writeFileSync(
-      join(repoDir, "paseo.json"),
+      join(repoDir, "rambla.json"),
       JSON.stringify({
         scripts: {
           "app-server": {
@@ -1076,7 +1076,7 @@ describe("runAsyncWorktreeBootstrap", () => {
         },
       }),
     );
-    execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+    execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
     execFileSync(
       "git",
       ["-c", "commit.gpgsign=false", "commit", "-m", "add colliding service config"],
@@ -1111,7 +1111,7 @@ describe("runAsyncWorktreeBootstrap", () => {
     ).toBeNull();
 
     writeFileSync(
-      join(repoDir, "paseo.json"),
+      join(repoDir, "rambla.json"),
       JSON.stringify({
         scripts: {
           "app-server": {
@@ -1154,7 +1154,7 @@ describe("runAsyncWorktreeBootstrap", () => {
 
   it("binds services to the network when the daemon listens on a non-loopback host", async () => {
     writeFileSync(
-      join(repoDir, "paseo.json"),
+      join(repoDir, "rambla.json"),
       JSON.stringify({
         scripts: {
           web: {
@@ -1164,7 +1164,7 @@ describe("runAsyncWorktreeBootstrap", () => {
         },
       }),
     );
-    execFileSync("git", ["add", "paseo.json"], { cwd: repoDir, stdio: "pipe" });
+    execFileSync("git", ["add", "rambla.json"], { cwd: repoDir, stdio: "pipe" });
     execFileSync(
       "git",
       ["-c", "commit.gpgsign=false", "commit", "-m", "add remote service script config"],

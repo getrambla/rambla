@@ -4,7 +4,7 @@ Local plugins contribute daemon RPCs, native app surfaces, workspace panels, Com
 client slash commands, timeline items, header buttons, composer pills, app themes, composer attachment sources, and settings screens.
 Rambla executes `index.server.ts` in a subprocess and `index.client.tsx` in every connected app.
 
-> **Trust every plugin you add.** `paseo plugin add` and `paseo plugin install` mean “I trust this codebase.” Plugins are unsandboxed: server code and Git preparation commands run with the daemon user's access on the daemon host, and client contributions run inside Rambla. The repository's dependencies and future updates are part of that trust decision. With `--host`, preparation runs on that remote daemon host.
+> **Trust every plugin you add.** `rambla plugin add` and `rambla plugin install` mean “I trust this codebase.” Plugins are unsandboxed: server code and Git preparation commands run with the daemon user's access on the daemon host, and client contributions run inside Rambla. The repository's dependencies and future updates are part of that trust decision. With `--host`, preparation runs on that remote daemon host.
 
 ## Install a directory source
 
@@ -12,13 +12,13 @@ Create a typecheckable plugin project, install its development dependencies, the
 the daemon. `init` only writes the project files; it does not run the package manager.
 
 ```bash
-paseo plugin init /absolute/path/to/my-plugin
+rambla plugin init /absolute/path/to/my-plugin
 cd /absolute/path/to/my-plugin
 npm install
 npm run typecheck
-paseo plugin install /absolute/path/to/my-plugin
-paseo plugin install /absolute/path/to/my-plugin --id another-runtime-id
-paseo plugin ls
+rambla plugin install /absolute/path/to/my-plugin
+rambla plugin install /absolute/path/to/my-plugin --id another-runtime-id
+rambla plugin ls
 ```
 
 The daemon stores directory sources under the root `plugins` object:
@@ -37,7 +37,7 @@ The daemon stores directory sources under the root `plugins` object:
 ```
 
 The plugin system is disabled unless `pluginsEnabled` is `true`. Changing that root field is
-runtime-safe: run `paseo reload` after editing `config.json`. Enabling starts every configured,
+runtime-safe: run `rambla reload` after editing `config.json`. Enabling starts every configured,
 enabled plugin; disabling tears them all down without restarting the daemon. Plugin source entries
 remain lifecycle-owned and do not reload from manual config edits.
 
@@ -46,7 +46,7 @@ directories, and local typechecking support. At least one entry is required.
 
 ```text
 my-plugin/
-  paseo-plugin.json
+  rambla-plugin.json
   package.json
   tsconfig.json
   index.client.tsx
@@ -56,14 +56,14 @@ my-plugin/
   shared/greeting.ts
 ```
 
-The generated `package.json` installs `@getpaseo/plugin` and the other host modules as development
+The generated `package.json` installs `@getrambla/plugin` and the other host modules as development
 dependencies for local typechecking and tests. Rambla compiles TypeScript and TSX and supplies the
 runtime modules, so consumers do not install these packages when adding the plugin.
 
 ```json
 {
   "id": "my-plugin",
-  "requirements": { "paseo": ">=0.8.0" }
+  "requirements": { "rambla": ">=0.8.0" }
 }
 ```
 
@@ -80,7 +80,7 @@ Never enable plugins on a user's behalf without explicit permission. Before aski
 target daemon's current `pluginsEnabled` value. State that plugins are trusted, unsandboxed code:
 backend code can access the daemon machine, while client contributions run inside the Rambla app.
 
-Source changes are explicit. Run `paseo plugin reload <id>` to stop and fully tear down the old
+Source changes are explicit. Run `rambla plugin reload <id>` to stop and fully tear down the old
 plugin before compiling and starting from disk. A failed reload stays failed; Rambla does not restore
 the old code. Use `enable`, `disable`, and `remove` to manage one plugin. Removing a directory source
 never deletes it. The global `pluginsEnabled` switch remains available.
@@ -91,14 +91,14 @@ GitHub repositories use an `owner/repository` shorthand. Other hosts use a Git U
 directory always wins over shorthand resolution.
 
 ```bash
-paseo plugin add owner/repository
-paseo plugin add https://gitlab.com/group/repository.git
-paseo plugin add https://git.example.com/owner/repository.git
-paseo plugin add owner/monorepo:plugins/review
-paseo plugin add owner/repository --ref main
-paseo plugin ls
-paseo plugin update review
-paseo plugin update --all
+rambla plugin add owner/repository
+rambla plugin add https://gitlab.com/group/repository.git
+rambla plugin add https://git.example.com/owner/repository.git
+rambla plugin add owner/monorepo:plugins/review
+rambla plugin add owner/repository --ref main
+rambla plugin ls
+rambla plugin update review
+rambla plugin update --all
 ```
 
 Append `:relative/path` to the source when the plugin lives below the repository root.
@@ -116,7 +116,7 @@ step:
 ```json
 {
   "id": "review",
-  "requirements": { "paseo": ">=0.8.0" },
+  "requirements": { "rambla": ">=0.8.0" },
   "build": [
     ["npm", "ci"],
     ["npm", "run", "build"]
@@ -134,10 +134,10 @@ output in the daemon log. If a command fails, the error includes its output, Ram
 candidate, and the existing installed and running version stays untouched. On a remote daemon, all
 of this happens on the remote daemon host.
 
-Server contributions can write to stdout and stderr with normal Node logging. Rambla adds `[paseo]`
+Server contributions can write to stdout and stderr with normal Node logging. Rambla adds `[rambla]`
 entries for loading, ready, stopping, and stopped transitions. Compilation and load failures are
 recorded as stderr entries before a subprocess exists. Inspect the recent in-memory
-tail from the host plugin settings or with `paseo plugin logs <id>`. Git preparation commands are
+tail from the host plugin settings or with `rambla plugin logs <id>`. Git preparation commands are
 recorded in `$RAMBLA_HOME/daemon.log` before a plugin exists, rather than the plugin log tail. Reload, disable, and process
 failure retain the tail; removing the plugin clears it. Daemon restarts do not retain the tail, but
 structured copies remain in `$RAMBLA_HOME/daemon.log`. Plugin output can contain secrets, so do not
@@ -156,9 +156,9 @@ wiring. Runtime code lives behind directory boundaries:
 
 Do not put any other code modules in the plugin root.
 
-Shared files import contract helpers and types from `@getpaseo/plugin`. Server handler files import
-`PluginHandlerContext` from `@getpaseo/plugin/server`. Client files import Rambla UI from
-`@getpaseo/plugin/client/react-native`. Its `Icon` resolves a Lucide name using the client's installed icon
+Shared files import contract helpers and types from `@getrambla/plugin`. Server handler files import
+`PluginHandlerContext` from `@getrambla/plugin/server`. Client files import Rambla UI from
+`@getrambla/plugin/client/react-native`. Its `Icon` resolves a Lucide name using the client's installed icon
 set; an unknown name renders nothing so it cannot break the plugin surface.
 Its controlled modal keeps presentation metadata on `<Modal title="…" icon={…}>` and body UI in
 `<Modal.Content>`. Body layout, sheet-aware scrolling, and clipboard actions follow the
@@ -176,12 +176,12 @@ dependency; shared types must not refer to React components, hooks, Node APIs, o
 
 | Entry                                                | Owns                                                                       | May depend on          |
 | ---------------------------------------------------- | -------------------------------------------------------------------------- | ---------------------- |
-| `@getpaseo/plugin`                                   | Shared data, schemas, RPC/settings definitions, runtime-neutral helpers    | Shared code only       |
-| `@getpaseo/plugin/server`                            | Server contribution/handler contexts and lifecycle contracts               | Shared and server code |
-| `@getpaseo/plugin/server/provider`, `/server/acp`    | Server provider contracts and adapters                                     | Shared and server code |
-| `@getpaseo/plugin/client`                            | Client contribution contexts, hooks, navigation, and UI contribution types | Shared and client code |
-| `@getpaseo/plugin/client/react-native`, `/client/ui` | Host-provided UI components                                                | Shared and client code |
-| `@getpaseo/plugin/client/host`                       | App-owned rendering integration; not a plugin-author entry                 | Shared and client code |
+| `@getrambla/plugin`                                   | Shared data, schemas, RPC/settings definitions, runtime-neutral helpers    | Shared code only       |
+| `@getrambla/plugin/server`                            | Server contribution/handler contexts and lifecycle contracts               | Shared and server code |
+| `@getrambla/plugin/server/provider`, `/server/acp`    | Server provider contracts and adapters                                     | Shared and server code |
+| `@getrambla/plugin/client`                            | Client contribution contexts, hooks, navigation, and UI contribution types | Shared and client code |
+| `@getrambla/plugin/client/react-native`, `/client/ui` | Host-provided UI components                                                | Shared and client code |
+| `@getrambla/plugin/client/host`                       | App-owned rendering integration; not a plugin-author entry                 | Shared and client code |
 
 Server code imports shared helpers from the root and server capabilities from `/server`. Client
 code imports shared helpers from the root and client capabilities from `/client`. Neither runtime
@@ -211,7 +211,7 @@ pattern.
 
 ```ts
 // index.server.ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@getrambla/plugin/server";
 import { createGreeting } from "./server/greeting";
 import { greetRpc } from "./shared/greeting";
 
@@ -223,7 +223,7 @@ export default function contribute(server: PluginServerContext) {
 
 ```tsx
 // index.client.tsx
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@getrambla/plugin/client";
 import { Greeting } from "./client/greeting";
 
 export default function contribute(client: PluginClientContext) {
@@ -246,7 +246,7 @@ RPC contracts validate inputs and outputs in both the app and plugin subprocess.
 typed async function. Use the host-provided `@tanstack/react-query` for request state and caching;
 Rambla gives each plugin installation its own query client.
 
-`useRambla()` and the handler's `{ paseo }` context expose the same `RamblaApi`: projects,
+`useRambla()` and the handler's `{ rambla }` context expose the same `RamblaApi`: projects,
 workspaces, agents, terminals, providers, and daemon config. They do not expose connection lifecycle. A surface borrows the
 selected host's existing connection; switching the screen's host changes both `useRambla()` and
 `useRpc()` to that host. An offline selected host fails there and never falls through to another
@@ -300,8 +300,8 @@ Register a provider from `index.server.ts`. The provider connection is callback-
 of its sessions; plugin RPC is not part of the provider data path.
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
-import type { ProviderRegistration } from "@getpaseo/plugin/server/provider";
+import type { PluginServerContext } from "@getrambla/plugin/server";
+import type { ProviderRegistration } from "@getrambla/plugin/server/provider";
 import { createProvider } from "./server/provider";
 
 export default function contribute(server: PluginServerContext) {
@@ -327,7 +327,7 @@ persistence. Providers re-read credentials, environment, global configuration, a
 `session.open`; there is no provider reload input.
 
 For an ACP command, register `runAcpProvider({ id, label, command })` from
-`@getpaseo/plugin/server/acp`. Its transformer hooks cover narrow vendor differences; do not translate the
+`@getrambla/plugin/server/acp`. Its transformer hooks cover narrow vendor differences; do not translate the
 whole provider event stream. The direct and ACP examples live in `plugin-examples/provider-direct`
 and `plugin-examples/provider-acp-transformer`.
 
@@ -378,7 +378,7 @@ See `plugin-examples/timeline-items` for the complete contract.
 A plugin subprocess can also append a canonical plugin row from a server handler:
 
 ```ts
-await paseo.agents.ref(agentId).timeline.append({
+await rambla.agents.ref(agentId).timeline.append({
   type: "plugin",
   id: "review",
   kind: "review-result",
@@ -399,7 +399,7 @@ be rendered intact. The daemon advertises this RPC through
 
 `addSlashCommand` registers an agent- or workspace-context command in the composer. The
 callback runs in the app, receives the trimmed text after the command name as `args`, and receives
-the same `paseo`, `rpc`, `openSurface`, workspace, agent, and `openPanel` capabilities as the matching
+the same `rambla`, `rpc`, `openSurface`, workspace, agent, and `openPanel` capabilities as the matching
 Command Center callback.
 
 ```ts
@@ -427,7 +427,7 @@ credentials and vendor API calls stay in the daemon handler.
 
 ```ts
 // index.server.ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@getrambla/plugin/server";
 import { search } from "./server/issues";
 import { searchIssues } from "./shared/issues";
 
@@ -439,7 +439,7 @@ export default function contribute(server: PluginServerContext) {
 
 ```tsx
 // index.client.tsx
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@getrambla/plugin/client";
 import { issues } from "./shared/issues";
 
 export default function contribute(client: PluginClientContext) {

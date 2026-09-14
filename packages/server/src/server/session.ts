@@ -1,12 +1,12 @@
-import type { SessionEventSubscription } from "@getpaseo/protocol/messages";
+import type { SessionEventSubscription } from "@getrambla/protocol/messages";
 import type { AgentRequests } from "./agent/requests/index.js";
 import equal from "fast-deep-equal";
 import { v4 as uuidv4 } from "uuid";
 import { lstat, mkdir, mkdtemp, rename, rm, stat } from "node:fs/promises";
 import { basename, resolve, sep } from "path";
 import { homedir } from "node:os";
-import { CLIENT_CAPS, type ClientCapability } from "@getpaseo/protocol/client-capabilities";
-import { formatPluginSourceReference } from "@getpaseo/protocol/plugin-source-reference";
+import { CLIENT_CAPS, type ClientCapability } from "@getrambla/protocol/client-capabilities";
+import { formatPluginSourceReference } from "@getrambla/protocol/plugin-source-reference";
 import {
   serializeAgentStreamEvent,
   type AgentSnapshotPayload,
@@ -30,8 +30,8 @@ import type {
   TerminalWorkspaceContributionChangedEvent,
 } from "../terminal/terminal-manager.js";
 import { TerminalSessionController } from "../terminal/terminal-session-controller.js";
-import type { TerminalActivity } from "@getpaseo/protocol/terminal-activity";
-import type { BinaryFrame } from "@getpaseo/protocol/binary-frames/index";
+import type { TerminalActivity } from "@getrambla/protocol/terminal-activity";
+import type { BinaryFrame } from "@getrambla/protocol/binary-frames/index";
 import { CursorError } from "./pagination/cursor.js";
 import { SortablePager, type SortSpec } from "./pagination/sortable-pager.js";
 import { describeAgentHistoryMatches, rankAgentHistoryCandidates } from "./agent-history-search.js";
@@ -64,9 +64,9 @@ import {
 import type { DaemonConfigStore } from "./daemon-config-store.js";
 import { loadPersistedConfig } from "./persisted-config.js";
 import { releaseWorkspaceServicePortPlan } from "./workspace-service-port-registry.js";
-import { getErrorMessage, getErrorMessageOr } from "@getpaseo/protocol/error-utils";
-import { getAgentStatusPriority } from "@getpaseo/protocol/agent-state-bucket";
-import { getParentAgentIdFromLabels } from "@getpaseo/protocol/agent-labels";
+import { getErrorMessage, getErrorMessageOr } from "@getrambla/protocol/error-utils";
+import { getAgentStatusPriority } from "@getrambla/protocol/agent-state-bucket";
+import { getParentAgentIdFromLabels } from "@getrambla/protocol/agent-labels";
 import type { WorkspaceGitRuntimeSnapshot, WorkspaceGitService } from "./workspace-git-service.js";
 import type { ProjectUpdate } from "./workspace-reconciliation-service.js";
 import {
@@ -241,7 +241,7 @@ import {
   createRamblaWorktree,
   type CreateRamblaWorktreeInput,
   type CreateRamblaWorktreeResult,
-} from "./paseo-worktree-service.js";
+} from "./rambla-worktree-service.js";
 import { WorkspaceAutoName } from "./workspace-auto-name.js";
 import {
   buildAgentSessionConfig as buildWorktreeAgentSessionConfig,
@@ -264,7 +264,7 @@ function resolveWorkspaceSetupRuntime(
   return runtime ?? new WorkspaceSetupRuntime();
 }
 import { WorktreeRequestError, toWorktreeWireError } from "./worktree-errors.js";
-import { parseGitRemoteLocation } from "@getpaseo/protocol/git-remote";
+import { parseGitRemoteLocation } from "@getrambla/protocol/git-remote";
 import {
   createProjectDirectory,
   ProjectDirectoryRequestError,
@@ -460,7 +460,7 @@ export interface SessionOptions {
   logger: pino.Logger;
   downloadTokenStore: DownloadTokenStore;
   pushNotifications: PushNotifications;
-  paseoHome: string;
+  ramblaHome: string;
   worktreesRoot?: string;
   agentManager: AgentManager;
   agentStorage: AgentStorage;
@@ -483,27 +483,27 @@ export interface SessionOptions {
   pluginRuntime?: {
     before: import("./plugins/lifecycle/index.js").PluginLifecycle["before"];
     emit: import("./plugins/lifecycle/index.js").PluginLifecycle["emit"];
-    listPlugins(): import("@getpaseo/protocol/messages").PluginListItem[];
-    getLogs(pluginId: string): import("@getpaseo/protocol/messages").PluginLogEntry[];
+    listPlugins(): import("@getrambla/protocol/messages").PluginListItem[];
+    getLogs(pluginId: string): import("@getrambla/protocol/messages").PluginLogEntry[];
     installDirectory(input: {
       path: string;
       id?: string;
-    }): Promise<import("@getpaseo/protocol/messages").PluginListItem>;
+    }): Promise<import("@getrambla/protocol/messages").PluginListItem>;
     inspectDirectory(path: string): Promise<{ id: string }>;
     installSource(input: {
       source: string;
       id?: string;
       ref?: string;
-    }): Promise<import("@getpaseo/protocol/messages").PluginListItem>;
+    }): Promise<import("@getrambla/protocol/messages").PluginListItem>;
     statusSources(
       pluginId?: string,
-    ): Promise<import("@getpaseo/protocol/messages").PluginSourceStatusItem[]>;
+    ): Promise<import("@getrambla/protocol/messages").PluginSourceStatusItem[]>;
     updateSources(
       pluginId?: string,
-    ): Promise<import("@getpaseo/protocol/messages").PluginSourceUpdateItem[]>;
-    reloadPlugin(pluginId: string): Promise<import("@getpaseo/protocol/messages").PluginListItem>;
-    enablePlugin(pluginId: string): Promise<import("@getpaseo/protocol/messages").PluginListItem>;
-    disablePlugin(pluginId: string): Promise<import("@getpaseo/protocol/messages").PluginListItem>;
+    ): Promise<import("@getrambla/protocol/messages").PluginSourceUpdateItem[]>;
+    reloadPlugin(pluginId: string): Promise<import("@getrambla/protocol/messages").PluginListItem>;
+    enablePlugin(pluginId: string): Promise<import("@getrambla/protocol/messages").PluginListItem>;
+    disablePlugin(pluginId: string): Promise<import("@getrambla/protocol/messages").PluginListItem>;
     removePlugin(pluginId: string): Promise<void>;
     subscribe(listener: (pluginId: string) => void): () => void;
     subscribeSettings?(listener: (pluginId: string, settingsId: string) => void): () => void;
@@ -674,7 +674,7 @@ export class Session {
     | ((workspace: PersistedWorkspaceRecord) => Promise<void>)
     | null;
   private readonly sessionLogger: pino.Logger;
-  private readonly paseoHome: string;
+  private readonly ramblaHome: string;
   private readonly projectIcons: ProjectIconReader;
   private readonly worktreesRoot: string | undefined;
   private readonly rewindInitiators = new Map<string, object | undefined>();
@@ -773,7 +773,7 @@ export class Session {
       logger,
       downloadTokenStore,
       pushNotifications,
-      paseoHome,
+      ramblaHome,
       worktreesRoot,
       agentManager,
       agentStorage,
@@ -827,9 +827,9 @@ export class Session {
     this.onLifecycleIntent = onLifecycleIntent ?? null;
     this.onWorkspaceRecovered = onWorkspaceRecovered ?? null;
     this.pushNotifications = pushNotifications;
-    this.paseoHome = paseoHome;
+    this.ramblaHome = ramblaHome;
     this.agentRequests = options.agentRequests;
-    this.projectIcons = new ProjectIconReader(paseoHome);
+    this.projectIcons = new ProjectIconReader(ramblaHome);
     this.worktreesRoot = worktreesRoot;
     this.pluginRuntime = pluginRuntime;
     this.orchestrationSkills = orchestrationSkills;
@@ -846,7 +846,7 @@ export class Session {
         hasBinaryChannel: () => this.onBinaryMessage !== null,
       },
       downloadTokenStore,
-      paseoHome,
+      ramblaHome,
       logger: this.sessionLogger,
     });
     this.agentManager = agentManager;
@@ -873,7 +873,7 @@ export class Session {
       logger: this.sessionLogger,
     });
     this.workspaceRecovery = createWorkspaceRecoveryService({
-      paseoHome: this.paseoHome,
+      ramblaHome: this.ramblaHome,
       worktreesRoot: this.worktreesRoot,
       getWorkspace: (workspaceId) => this.workspaceRegistry.get(workspaceId),
       getProject: (projectId) => this.projectRegistry.get(projectId),
@@ -903,7 +903,7 @@ export class Session {
           getFocusedSelection: (cwd) => this.getFocusedAgentSelectionForCwd(cwd),
         }),
       }),
-      paseoHome: this.paseoHome,
+      ramblaHome: this.ramblaHome,
       worktreesRoot: this.worktreesRoot,
       logger: this.sessionLogger,
     });
@@ -974,7 +974,7 @@ export class Session {
         emitLifecycleIntent: (intent) => this.emitLifecycleIntent(intent),
       },
       clientId: this.clientId,
-      paseoHome: this.paseoHome,
+      ramblaHome: this.ramblaHome,
       serverId,
       daemonVersion,
       daemonRuntimeConfig,
@@ -1028,7 +1028,7 @@ export class Session {
       logger: this.sessionLogger,
     });
     this.createAgentLifecycleDispatch = new CreateAgentLifecycleDispatch({
-      paseoHome: this.paseoHome,
+      ramblaHome: this.ramblaHome,
       worktreesRoot: this.worktreesRoot,
       agentManager: this.agentManager,
       agentStorage: this.agentStorage,
@@ -1076,7 +1076,7 @@ export class Session {
       spawnWorkspaceScript,
       assertAutomationAllowed: (workspaceId) =>
         assertWorkspaceAutomationAllowedForWorkspace(this.workspaceRegistry, workspaceId),
-      globalServicePorts: loadPersistedConfig(this.paseoHome).worktrees?.servicePorts,
+      globalServicePorts: loadPersistedConfig(this.ramblaHome).worktrees?.servicePorts,
     });
     this.subscribeToOptionalManagers();
     this.workspaceDirectory = new WorkspaceDirectory({
@@ -2556,11 +2556,11 @@ export class Session {
         return this.handleFetchWorkspacesRequest(msg);
       case "project.list.request":
         return this.handleProjectListRequest(msg);
-      case "paseo_worktree_list_request":
+      case "rambla_worktree_list_request":
         return this.handleRamblaWorktreeListRequest(msg);
-      case "paseo_worktree_archive_request":
+      case "rambla_worktree_archive_request":
         return this.handleRamblaWorktreeArchiveRequest(msg);
-      case "create_paseo_worktree_request":
+      case "create_rambla_worktree_request":
         return this.handleCreateRamblaWorktreeRequest(msg);
       // COMPAT(desktopEditorBridge): added in v0.1.88, remove after 2026-12-03 once old clients no longer call daemon editor RPCs.
       case "list_available_editors_request":
@@ -3200,7 +3200,7 @@ export class Session {
     const { projectId, requestId } = request;
     try {
       const updated = await setProjectCustomIcon({
-        paseoHome: this.paseoHome,
+        ramblaHome: this.ramblaHome,
         projectId,
         source: request.source,
         projects: this.projectRegistry,
@@ -3289,7 +3289,7 @@ export class Session {
 
         await this.projectRegistry.remove(resolvedProjectId);
         await removeProjectCustomIcon({
-          paseoHome: this.paseoHome,
+          ramblaHome: this.ramblaHome,
           projectId: resolvedProjectId,
         }).catch((error) => {
           this.sessionLogger.warn(
@@ -3691,7 +3691,7 @@ export class Session {
           agentManager: this.agentManager,
           agentStorage: this.agentStorage,
           logger: this.sessionLogger,
-          paseoHome: this.paseoHome,
+          ramblaHome: this.ramblaHome,
           worktreesRoot: this.worktreesRoot,
           providerSnapshotManager: this.providerSnapshotManager,
         },
@@ -4185,7 +4185,7 @@ export class Session {
   }> {
     return buildWorktreeAgentSessionConfig(
       {
-        paseoHome: this.paseoHome,
+        ramblaHome: this.ramblaHome,
         worktreesRoot: this.worktreesRoot,
         sessionLogger: this.sessionLogger,
         workspaceGitService: this.workspaceGitService,
@@ -4494,12 +4494,12 @@ export class Session {
   }
 
   private async handleRamblaWorktreeListRequest(
-    msg: Extract<SessionInboundMessage, { type: "paseo_worktree_list_request" }>,
+    msg: Extract<SessionInboundMessage, { type: "rambla_worktree_list_request" }>,
   ): Promise<void> {
     return handleWorktreeListRequest(
       {
         emit: (message) => this.emit(message),
-        paseoHome: this.paseoHome,
+        ramblaHome: this.ramblaHome,
         workspaceGitService: this.workspaceGitService,
       },
       msg,
@@ -4507,12 +4507,12 @@ export class Session {
   }
 
   private async handleRamblaWorktreeArchiveRequest(
-    msg: Extract<SessionInboundMessage, { type: "paseo_worktree_archive_request" }>,
+    msg: Extract<SessionInboundMessage, { type: "rambla_worktree_archive_request" }>,
   ): Promise<void> {
     return handleWorktreeArchiveRequest(
       {
-        paseoHome: this.paseoHome,
-        paseoWorktreesBaseRoot: this.worktreesRoot,
+        ramblaHome: this.ramblaHome,
+        ramblaWorktreesBaseRoot: this.worktreesRoot,
         github: this.github,
         workspaceGitService: this.workspaceGitService,
         agentManager: this.agentManager,
@@ -6544,7 +6544,7 @@ export class Session {
         }
       }
 
-      const cloneStagingPath = await mkdtemp(resolve(targetParent, ".paseo-clone-"));
+      const cloneStagingPath = await mkdtemp(resolve(targetParent, ".rambla-clone-"));
       try {
         await runGitCommand(["clone", repo.cloneUrl, cloneStagingPath], {
           cwd: targetParent,
@@ -6720,11 +6720,11 @@ export class Session {
   }
 
   private async handleCreateRamblaWorktreeRequest(
-    request: Extract<SessionInboundMessage, { type: "create_paseo_worktree_request" }>,
+    request: Extract<SessionInboundMessage, { type: "create_rambla_worktree_request" }>,
   ): Promise<void> {
     return handleCreateWorktreeRequest(
       {
-        paseoHome: this.paseoHome,
+        ramblaHome: this.ramblaHome,
         worktreesRoot: this.worktreesRoot,
         describeWorkspaceRecord: (result) => this.describeCreatedWorktreeWorkspace(result),
         emit: (message) => this.emit(message),
@@ -6744,7 +6744,7 @@ export class Session {
   ): Promise<CreateRamblaWorktreeWorkflowResult> {
     return createWorktreeWorkflow(
       {
-        paseoHome: this.paseoHome,
+        ramblaHome: this.ramblaHome,
         worktreesRoot: this.worktreesRoot,
         createRamblaWorktree: (workflowInput, serviceOptions) =>
           this.createRamblaWorktree(workflowInput, serviceOptions),
@@ -6803,7 +6803,7 @@ export class Session {
           clearWorkspaceAutomationBlock(this.workspaceRegistry, workspaceId),
         startWorkspaceSetup: (workspaceId, operation) =>
           this.workspaceSetupRuntime.start(workspaceId, operation),
-        paseoHome: this.paseoHome,
+        ramblaHome: this.ramblaHome,
         worktreesRoot: this.worktreesRoot,
         emitWorkspaceUpdateForWorkspaceId: (workspaceId) =>
           this.emitWorkspaceUpdateForWorkspaceId(workspaceId),
@@ -6836,8 +6836,8 @@ export class Session {
 
       await archiveByScope(
         {
-          paseoHome: this.paseoHome,
-          paseoWorktreesBaseRoot: this.worktreesRoot,
+          ramblaHome: this.ramblaHome,
+          ramblaWorktreesBaseRoot: this.worktreesRoot,
           github: this.github,
           workspaceGitService: this.workspaceGitService,
           agentManager: this.agentManager,

@@ -4,7 +4,7 @@ import {
   type PluginButtonIconProps,
   type PluginClientContext,
   useWorkspace,
-} from "@getpaseo/plugin/client";
+} from "@getrambla/plugin/client";
 import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -79,7 +79,7 @@ export function createButtonExamples(
 
   async function refreshWorkspace() {
     // Return the real operation's promise: Rambla supplies pending, double-press prevention, and errors.
-    await client.paseo.workspaces.ref(workspaceId).refresh();
+    await client.rambla.workspaces.ref(workspaceId).refresh();
     refreshes += 1;
     if (mode === "action") {
       header.update({ title: `Refresh workspace (${refreshes})` });

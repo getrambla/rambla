@@ -39,7 +39,7 @@ cp -f packages/server/src/terminal/terminal-ts-loader.mjs "$server_dist/terminal
 # Mirror the supervisor's src imports (dist/src/...) from the server output.
 src_out="packages/server/dist/src"
 mkdir -p "$src_out/server" "$src_out/server/agent" "$src_out/utils" "$src_out/executable-resolution" "$src_out/server/speech/providers/local/sherpa"
-for f in pid-lock private-files paseo-home paseo-env persisted-config; do
+for f in pid-lock private-files rambla-home rambla-env persisted-config; do
   cp -f "$server_dist/server/$f.js" "$server_dist/server/$f.d.ts" "$src_out/server/" 2>/dev/null || true
 done
 for f in windows-command spawn tree-kill; do

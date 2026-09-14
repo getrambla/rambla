@@ -6,10 +6,10 @@ The image runs the daemon headless and serves the bundled web UI from the same
 HTTP origin. Start it, then open the daemon URL in a browser.
 
 ```bash
-docker run -d --name paseo \
+docker run -d --name rambla \
   -p 6767:6767 \
   -e RAMBLA_PASSWORD=change-me \
-  -v "$PWD/paseo-home:/home/paseo" \
+  -v "$PWD/rambla-home:/home/rambla" \
   -v "$PWD:/workspace" \
   ghcr.io/getrambla/rambla:latest
 ```

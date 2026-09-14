@@ -12,7 +12,7 @@ import { loadConfig } from "./config.js";
 import { AgentManagerShuttingDownError } from "./agent/agent-manager.js";
 import { hashDaemonPassword } from "./auth.js";
 import { generateLocalPairingOffer } from "./pairing-offer.js";
-import { createTestRamblaDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "./test-utils/rambla-daemon.js";
 import { createTestAgentClients } from "./test-utils/fake-agent-client.js";
 import { DaemonClient } from "./test-utils/daemon-client.js";
 import { isPlatform } from "../test-utils/platform.js";
@@ -49,7 +49,7 @@ type WebSocketProbeResult =
   | { status: "connected" }
   | { status: "rejected"; statusCode: number | null };
 
-describe("paseo daemon bootstrap", () => {
+describe("rambla daemon bootstrap", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -81,14 +81,14 @@ describe("paseo daemon bootstrap", () => {
   });
 
   test("keeps timeline activity in memory and removes obsolete timeline files at startup", async () => {
-    const paseoHomeRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-timeline-cleanup-"));
-    const paseoHome = path.join(paseoHomeRoot, ".rambla");
-    const obsoleteTimelineDirectory = path.join(paseoHome, "agent-timelines");
-    const agentCwd = await mkdtemp(path.join(os.tmpdir(), "paseo-timeline-agent-"));
+    const ramblaHomeRoot = await mkdtemp(path.join(os.tmpdir(), "rambla-timeline-cleanup-"));
+    const ramblaHome = path.join(ramblaHomeRoot, ".rambla");
+    const obsoleteTimelineDirectory = path.join(ramblaHome, "agent-timelines");
+    const agentCwd = await mkdtemp(path.join(os.tmpdir(), "rambla-timeline-agent-"));
     await mkdir(obsoleteTimelineDirectory, { recursive: true });
     await writeFile(path.join(obsoleteTimelineDirectory, "obsolete.json"), "{}\n", "utf-8");
 
-    const daemonHandle = await createTestRamblaDaemon({ paseoHomeRoot, cleanup: false });
+    const daemonHandle = await createTestRamblaDaemon({ ramblaHomeRoot, cleanup: false });
     try {
       await expect(access(obsoleteTimelineDirectory)).rejects.toMatchObject({ code: "ENOENT" });
 
@@ -107,17 +107,17 @@ describe("paseo daemon bootstrap", () => {
     } finally {
       await daemonHandle.close();
       await Promise.all([
-        rm(paseoHomeRoot, { recursive: true, force: true }),
+        rm(ramblaHomeRoot, { recursive: true, force: true }),
         rm(agentCwd, { recursive: true, force: true }),
       ]);
     }
   });
 
   test("does not create a timeline directory for live timeline activity", async () => {
-    const paseoHomeRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-timeline-memory-"));
-    const agentCwd = await mkdtemp(path.join(os.tmpdir(), "paseo-timeline-agent-"));
-    const daemonHandle = await createTestRamblaDaemon({ paseoHomeRoot, cleanup: false });
-    const timelineDirectory = path.join(daemonHandle.paseoHome, "agent-timelines");
+    const ramblaHomeRoot = await mkdtemp(path.join(os.tmpdir(), "rambla-timeline-memory-"));
+    const agentCwd = await mkdtemp(path.join(os.tmpdir(), "rambla-timeline-agent-"));
+    const daemonHandle = await createTestRamblaDaemon({ ramblaHomeRoot, cleanup: false });
+    const timelineDirectory = path.join(daemonHandle.ramblaHome, "agent-timelines");
     try {
       const agent = await daemonHandle.daemon.agentManager.createAgent(
         { provider: "codex", cwd: agentCwd },
@@ -134,19 +134,19 @@ describe("paseo daemon bootstrap", () => {
     } finally {
       await daemonHandle.close();
       await Promise.all([
-        rm(paseoHomeRoot, { recursive: true, force: true }),
+        rm(ramblaHomeRoot, { recursive: true, force: true }),
         rm(agentCwd, { recursive: true, force: true }),
       ]);
     }
   });
 
   test("reload applies live HTTP, MCP, Git, provider, relay, and app policies", async () => {
-    const paseoHomeRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-config-reload-runtime-"));
-    const paseoHome = path.join(paseoHomeRoot, ".rambla");
-    const staticDir = await mkdtemp(path.join(os.tmpdir(), "paseo-static-"));
-    const agentCwd = await mkdtemp(path.join(os.tmpdir(), "paseo-config-reload-agent-"));
-    await mkdir(paseoHome, { recursive: true });
-    const configPath = path.join(paseoHome, "config.json");
+    const ramblaHomeRoot = await mkdtemp(path.join(os.tmpdir(), "rambla-config-reload-runtime-"));
+    const ramblaHome = path.join(ramblaHomeRoot, ".rambla");
+    const staticDir = await mkdtemp(path.join(os.tmpdir(), "rambla-static-"));
+    const agentCwd = await mkdtemp(path.join(os.tmpdir(), "rambla-config-reload-agent-"));
+    await mkdir(ramblaHome, { recursive: true });
+    const configPath = path.join(ramblaHome, "config.json");
     const initialPersisted = {
       version: 1 as const,
       daemon: {
@@ -167,10 +167,10 @@ describe("paseo daemon bootstrap", () => {
       app: { baseUrl: "https://before.example.test" },
     };
     await writeFile(configPath, `${JSON.stringify(initialPersisted, null, 2)}\n`, "utf-8");
-    const config = loadConfig(paseoHome, { env: {} });
+    const config = loadConfig(ramblaHome, { env: {} });
     config.staticDir = staticDir;
     config.agentClients = createTestAgentClients();
-    config.agentStoragePath = path.join(paseoHome, "agents");
+    config.agentStoragePath = path.join(ramblaHome, "agents");
     config.isDev = true;
     config.speech = {
       providers: {
@@ -326,7 +326,7 @@ describe("paseo daemon bootstrap", () => {
         await new Promise<void>((resolve) => proxyUpstream?.close(() => resolve()));
       }
       await Promise.all([
-        rm(paseoHomeRoot, { recursive: true, force: true }),
+        rm(ramblaHomeRoot, { recursive: true, force: true }),
         rm(staticDir, { recursive: true, force: true }),
         rm(agentCwd, { recursive: true, force: true }),
       ]);
@@ -432,20 +432,20 @@ describe("paseo daemon bootstrap", () => {
       throw new Error("Expected occupied TCP address");
     }
 
-    const paseoHomeRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-standalone-rollback-"));
-    const paseoHome = path.join(paseoHomeRoot, ".rambla");
-    const staticDir = await mkdtemp(path.join(os.tmpdir(), "paseo-static-"));
-    await mkdir(paseoHome, { recursive: true });
+    const ramblaHomeRoot = await mkdtemp(path.join(os.tmpdir(), "rambla-standalone-rollback-"));
+    const ramblaHome = path.join(ramblaHomeRoot, ".rambla");
+    const staticDir = await mkdtemp(path.join(os.tmpdir(), "rambla-static-"));
+    await mkdir(ramblaHome, { recursive: true });
     const config: RamblaDaemonConfig = {
       listen: "127.0.0.1:0",
-      paseoHome,
+      ramblaHome,
       corsAllowedOrigins: [],
       hostnames: true,
       mcpEnabled: false,
       staticDir,
       mcpDebug: false,
       agentClients: createTestAgentClients(),
-      agentStoragePath: path.join(paseoHome, "agents"),
+      agentStoragePath: path.join(ramblaHome, "agents"),
       relayEnabled: false,
       appBaseUrl: "https://app.rambla.sh",
       openai: undefined,
@@ -462,7 +462,7 @@ describe("paseo daemon bootstrap", () => {
     } finally {
       await daemon.stop().catch(() => undefined);
       await new Promise<void>((resolve) => occupiedServer.close(() => resolve()));
-      await rm(paseoHomeRoot, { recursive: true, force: true });
+      await rm(ramblaHomeRoot, { recursive: true, force: true });
       await rm(staticDir, { recursive: true, force: true });
     }
   });
@@ -500,12 +500,12 @@ describe("paseo daemon bootstrap", () => {
   });
 
   test("relay config changes during Hub enrollment reach the live runtime", async () => {
-    const paseoHomeRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-relay-startup-"));
-    const paseoHome = path.join(paseoHomeRoot, ".rambla");
-    const staticDir = await mkdtemp(path.join(os.tmpdir(), "paseo-static-"));
-    await mkdir(paseoHome, { recursive: true });
+    const ramblaHomeRoot = await mkdtemp(path.join(os.tmpdir(), "rambla-relay-startup-"));
+    const ramblaHome = path.join(ramblaHomeRoot, ".rambla");
+    const staticDir = await mkdtemp(path.join(os.tmpdir(), "rambla-static-"));
+    await mkdir(ramblaHome, { recursive: true });
     await writeFile(
-      path.join(paseoHome, "hub-relationship.json"),
+      path.join(ramblaHome, "hub-relationship.json"),
       `${JSON.stringify({
         version: 1,
         state: "pending",
@@ -551,14 +551,14 @@ describe("paseo daemon bootstrap", () => {
     };
     const config: RamblaDaemonConfig = {
       listen: "127.0.0.1:0",
-      paseoHome,
+      ramblaHome,
       corsAllowedOrigins: [],
       hostnames: true,
       mcpEnabled: false,
       staticDir,
       mcpDebug: false,
       agentClients: createTestAgentClients(),
-      agentStoragePath: path.join(paseoHome, "agents"),
+      agentStoragePath: path.join(ramblaHome, "agents"),
       relayEnabled: false,
       relayEndpoint: "127.0.0.1:9",
       relayUseTls: false,
@@ -594,7 +594,7 @@ describe("paseo daemon bootstrap", () => {
       await starting.catch(() => undefined);
       await client?.close().catch(() => undefined);
       await daemon.stop().catch(() => undefined);
-      await rm(paseoHomeRoot, { recursive: true, force: true });
+      await rm(ramblaHomeRoot, { recursive: true, force: true });
       await rm(staticDir, { recursive: true, force: true });
     }
   });
@@ -663,19 +663,19 @@ describe("paseo daemon bootstrap", () => {
     });
     await new Promise<void>((resolve) => occupiedMain.listen(mainPort, "127.0.0.1", resolve));
 
-    const paseoHomeRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-main-rollback-"));
-    const paseoHome = path.join(paseoHomeRoot, ".rambla");
-    const staticDir = await mkdtemp(path.join(os.tmpdir(), "paseo-static-"));
-    const pluginDirectory = path.join(paseoHomeRoot, "plugin");
+    const ramblaHomeRoot = await mkdtemp(path.join(os.tmpdir(), "rambla-main-rollback-"));
+    const ramblaHome = path.join(ramblaHomeRoot, ".rambla");
+    const staticDir = await mkdtemp(path.join(os.tmpdir(), "rambla-static-"));
+    const pluginDirectory = path.join(ramblaHomeRoot, "plugin");
     const pluginPidPath = path.join(pluginDirectory, "plugin.pid");
-    await mkdir(paseoHome, { recursive: true });
+    await mkdir(ramblaHome, { recursive: true });
     if (!isPlatform("win32")) {
       await mkdir(pluginDirectory);
       await writeFile(
-        path.join(pluginDirectory, "paseo-plugin.json"),
+        path.join(pluginDirectory, "rambla-plugin.json"),
         JSON.stringify({
           id: "startup-rollback",
-          requirements: { paseo: `>=${resolveDaemonVersion(import.meta.url)}` },
+          requirements: { rambla: `>=${resolveDaemonVersion(import.meta.url)}` },
         }),
       );
       await writeFile(
@@ -689,14 +689,14 @@ export default function contribute(plugin: unknown) {
     }
     const config: RamblaDaemonConfig = {
       listen: `127.0.0.1:${mainPort}`,
-      paseoHome,
+      ramblaHome,
       corsAllowedOrigins: [],
       hostnames: true,
       mcpEnabled: false,
       staticDir,
       mcpDebug: false,
       agentClients: createTestAgentClients(),
-      agentStoragePath: path.join(paseoHome, "agents"),
+      agentStoragePath: path.join(ramblaHome, "agents"),
       relayEnabled: false,
       appBaseUrl: "https://app.rambla.sh",
       openai: undefined,
@@ -718,7 +718,7 @@ export default function contribute(plugin: unknown) {
     } finally {
       await daemon.stop().catch(() => undefined);
       await new Promise<void>((resolve) => occupiedMain.close(() => resolve()));
-      await rm(paseoHomeRoot, { recursive: true, force: true });
+      await rm(ramblaHomeRoot, { recursive: true, force: true });
       await rm(staticDir, { recursive: true, force: true });
     }
   });
@@ -771,21 +771,21 @@ export default function contribute(plugin: unknown) {
   });
 
   test("starts when OpenAI speech provider is configured without credentials", async () => {
-    const paseoHomeRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-openai-config-"));
-    const paseoHome = path.join(paseoHomeRoot, ".rambla");
-    const staticDir = await mkdtemp(path.join(os.tmpdir(), "paseo-static-"));
-    await mkdir(paseoHome, { recursive: true });
+    const ramblaHomeRoot = await mkdtemp(path.join(os.tmpdir(), "rambla-openai-config-"));
+    const ramblaHome = path.join(ramblaHomeRoot, ".rambla");
+    const staticDir = await mkdtemp(path.join(os.tmpdir(), "rambla-static-"));
+    await mkdir(ramblaHome, { recursive: true });
 
     const config: RamblaDaemonConfig = {
       listen: "127.0.0.1:0",
-      paseoHome,
+      ramblaHome,
       corsAllowedOrigins: [],
       hostnames: true,
       mcpEnabled: false,
       staticDir,
       mcpDebug: false,
       agentClients: createTestAgentClients(),
-      agentStoragePath: path.join(paseoHome, "agents"),
+      agentStoragePath: path.join(ramblaHome, "agents"),
       relayEnabled: false,
       appBaseUrl: "https://app.rambla.sh",
       openai: undefined,
@@ -808,7 +808,7 @@ export default function contribute(plugin: unknown) {
         await daemon.stop();
       }
     } finally {
-      await rm(paseoHomeRoot, { recursive: true, force: true });
+      await rm(ramblaHomeRoot, { recursive: true, force: true });
       await rm(staticDir, { recursive: true, force: true });
     }
   });
@@ -833,7 +833,7 @@ export default function contribute(plugin: unknown) {
           voiceTts: { provider: "local", explicit: true, enabled: false },
         },
         local: {
-          modelsDir: path.join(os.tmpdir(), `paseo-missing-models-${Date.now()}`),
+          modelsDir: path.join(os.tmpdir(), `rambla-missing-models-${Date.now()}`),
           models: {
             dictationStt: "parakeet-tdt-0.6b-v2-int8",
             voiceStt: "parakeet-tdt-0.6b-v2-int8",
@@ -884,19 +884,19 @@ export default function contribute(plugin: unknown) {
     // A Windows drive path like C:\daemon must NOT be silently parsed as TCP
     // (split(":") would yield host="C" and port="\\daemon" which is nonsensical).
     expect(() => parseListenString(String.raw`C:\daemon`)).toThrow();
-    expect(() => parseListenString(String.raw`D:\Users\foo\.paseo\daemon.sock`)).toThrow();
+    expect(() => parseListenString(String.raw`D:\Users\foo\.rambla\daemon.sock`)).toThrow();
     // Single-letter "host" with no valid port is not a valid listen string
     expect(() => parseListenString(String.raw`C:\some\path`)).toThrow();
   });
 
   test("parses Windows named pipes as managed IPC listen targets", () => {
-    expect(parseListenString(String.raw`\\.\pipe\paseo-managed-test`)).toEqual({
+    expect(parseListenString(String.raw`\\.\pipe\rambla-managed-test`)).toEqual({
       type: "pipe",
-      path: String.raw`\\.\pipe\paseo-managed-test`,
+      path: String.raw`\\.\pipe\rambla-managed-test`,
     });
-    expect(parseListenString(`pipe://${String.raw`\\.\pipe\paseo-managed-test`}`)).toEqual({
+    expect(parseListenString(`pipe://${String.raw`\\.\pipe\rambla-managed-test`}`)).toEqual({
       type: "pipe",
-      path: String.raw`\\.\pipe\paseo-managed-test`,
+      path: String.raw`\\.\pipe\rambla-managed-test`,
     });
   });
 
@@ -904,24 +904,24 @@ export default function contribute(plugin: unknown) {
   test.skipIf(isPlatform("win32"))(
     "generates a relay pairing offer for unix socket listeners",
     async () => {
-      const paseoHomeRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-socket-relay-"));
-      const paseoHome = path.join(paseoHomeRoot, ".rambla");
-      const staticDir = await mkdtemp(path.join(os.tmpdir(), "paseo-static-"));
-      const socketPath = path.join(paseoHomeRoot, "run", "paseo.sock");
+      const ramblaHomeRoot = await mkdtemp(path.join(os.tmpdir(), "rambla-socket-relay-"));
+      const ramblaHome = path.join(ramblaHomeRoot, ".rambla");
+      const staticDir = await mkdtemp(path.join(os.tmpdir(), "rambla-static-"));
+      const socketPath = path.join(ramblaHomeRoot, "run", "rambla.sock");
       await mkdir(path.dirname(socketPath), { recursive: true });
-      await mkdir(paseoHome, { recursive: true });
+      await mkdir(ramblaHome, { recursive: true });
       const logger = pino({ level: "silent" });
 
       const config: RamblaDaemonConfig = {
         listen: socketPath,
-        paseoHome,
+        ramblaHome,
         corsAllowedOrigins: [],
         hostnames: true,
         mcpEnabled: false,
         staticDir,
         mcpDebug: false,
         agentClients: createTestAgentClients(),
-        agentStoragePath: path.join(paseoHome, "agents"),
+        agentStoragePath: path.join(ramblaHome, "agents"),
         relayEnabled: true,
         relayEndpoint: "127.0.0.1:9",
         relayPublicEndpoint: "127.0.0.1:9",
@@ -935,7 +935,7 @@ export default function contribute(plugin: unknown) {
       try {
         await daemon.start();
         const pairing = await generateLocalPairingOffer({
-          paseoHome,
+          ramblaHome,
           relayEnabled: true,
           relayEndpoint: "127.0.0.1:9",
           relayPublicEndpoint: "127.0.0.1:9",
@@ -947,7 +947,7 @@ export default function contribute(plugin: unknown) {
       } finally {
         await daemon.stop().catch(() => undefined);
         await daemon.agentManager.flush().catch(() => undefined);
-        await rm(paseoHomeRoot, { recursive: true, force: true });
+        await rm(ramblaHomeRoot, { recursive: true, force: true });
         await rm(staticDir, { recursive: true, force: true });
       }
     },
@@ -986,7 +986,7 @@ async function beginDaemonShutdownWithAgentClosing(): Promise<BlockedDaemonShutd
     cleanup: false,
     agentClients: createTestAgentClients({ closeSession: heldAgentClose.closeSession }),
   });
-  const agentCwd = await mkdtemp(path.join(os.tmpdir(), "paseo-shutdown-agent-"));
+  const agentCwd = await mkdtemp(path.join(os.tmpdir(), "rambla-shutdown-agent-"));
   await daemonHandle.daemon.agentManager.createAgent(
     {
       provider: "codex",
@@ -1025,7 +1025,7 @@ async function beginDaemonShutdownWithAgentClosing(): Promise<BlockedDaemonShutd
       await stopPromise;
       await daemonHandle.daemon.agentManager.flush().catch(() => undefined);
       await Promise.all([
-        rm(path.dirname(daemonHandle.paseoHome), { recursive: true, force: true }),
+        rm(path.dirname(daemonHandle.ramblaHome), { recursive: true, force: true }),
         rm(daemonHandle.staticDir, { recursive: true, force: true }),
         rm(agentCwd, { recursive: true, force: true }),
       ]);

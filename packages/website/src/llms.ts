@@ -10,7 +10,7 @@ const PRODUCT_PREAMBLE = `# Rambla
 
 Rambla is an open source application that lets you run AI coding agents on your own machine and drive them from your phone, desktop, browser, or terminal. Your code stays local — Rambla connects directly to your real development environment instead of running agents in someone else's cloud.
 
-A self-hosted daemon manages agent lifecycle, exposes a WebSocket API, and ships with an MCP server so other agents can talk to it. Native apps for iOS, Android, macOS, Windows, Linux, and the web let you launch sessions, watch them work, review diffs, and ship from anywhere. A Docker-style CLI ("paseo run", "paseo ls", "paseo logs", "paseo wait") gives you scripting access. An end-to-end encrypted relay lets the mobile app reach your daemon over the public internet without exposing it.
+A self-hosted daemon manages agent lifecycle, exposes a WebSocket API, and ships with an MCP server so other agents can talk to it. Native apps for iOS, Android, macOS, Windows, Linux, and the web let you launch sessions, watch them work, review diffs, and ship from anywhere. A Docker-style CLI ("rambla run", "rambla ls", "rambla logs", "rambla wait") gives you scripting access. An end-to-end encrypted relay lets the mobile app reach your daemon over the public internet without exposing it.
 
 Rambla supports every major coding agent: Claude Code, Codex, GitHub Copilot, OpenCode, Cursor, Gemini, Cline, Goose, Amp, Aider, and 30+ others. Each agent runs as its own process; Rambla handles I/O, persistence, git worktree isolation, schedules, and skills.
 

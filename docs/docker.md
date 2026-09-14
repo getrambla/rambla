@@ -10,11 +10,11 @@ The image source lives in [`docker/`](../docker/).
 
 The official image:
 
-- builds `@getpaseo/server` and `@getpaseo/cli` from source-built workspace tarballs
-- runs the daemon as the non-root `paseo` user
+- builds `@getrambla/server` and `@getrambla/cli` from source-built workspace tarballs
+- runs the daemon as the non-root `rambla` user
 - listens on `0.0.0.0:6767` inside the container
 - enables the bundled daemon web UI with `RAMBLA_WEB_UI_ENABLED=true`
-- stores daemon state and agent credentials under `/home/paseo`
+- stores daemon state and agent credentials under `/home/rambla`
 - leaves agent CLIs out of the base image
 
 Open the container's HTTP origin, for example `http://localhost:6767`, to load
@@ -25,10 +25,10 @@ WebSocket requests still require `RAMBLA_PASSWORD` when one is configured.
 ## Quick Start
 
 ```bash
-docker run -d --name paseo \
+docker run -d --name rambla \
   -p 6767:6767 \
   -e RAMBLA_PASSWORD=change-me \
-  -v "$PWD/paseo-home:/home/paseo" \
+  -v "$PWD/rambla-home:/home/rambla" \
   -v "$PWD:/workspace" \
   ghcr.io/getrambla/rambla:latest
 ```
@@ -56,7 +56,7 @@ Minimal example:
 
 ```yaml
 services:
-  paseo:
+  rambla:
     image: ghcr.io/getrambla/rambla:latest
     restart: unless-stopped
     ports:
@@ -64,7 +64,7 @@ services:
     environment:
       RAMBLA_PASSWORD: "change-me"
     volumes:
-      - ./paseo-home:/home/paseo
+      - ./rambla-home:/home/rambla
       - ./workspace:/workspace
 ```
 
@@ -86,14 +86,14 @@ RUN npm install -g @openai/codex @anthropic-ai/claude-code opencode-ai
 Build it:
 
 ```bash
-docker build -f Dockerfile -t paseo-with-agents .
+docker build -f Dockerfile -t rambla-with-agents .
 ```
 
-Then use `image: paseo-with-agents` in Compose.
+Then use `image: rambla-with-agents` in Compose.
 
 Leave the child image user as root. The base entrypoint uses root only for
 first-run directory setup, then drops the daemon and launched agents to the
-non-root `paseo` user.
+non-root `rambla` user.
 
 An example child image is in
 [`docker/Dockerfile.agents.example`](../docker/Dockerfile.agents.example).
@@ -102,11 +102,11 @@ You can also mount credentials from the host or run agent login once inside the
 container:
 
 ```bash
-docker exec -it --user paseo paseo codex
-docker exec -it --user paseo paseo claude
+docker exec -it --user rambla rambla codex
+docker exec -it --user rambla rambla claude
 ```
 
-Agent credentials and config persist in `/home/paseo`, alongside daemon state.
+Agent credentials and config persist in `/home/rambla`, alongside daemon state.
 Provider environment variables such as `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`,
 `OPENAI_BASE_URL`, or `ANTHROPIC_BASE_URL` can be passed through `docker run -e`
 or `compose.environment`; Rambla passes them to launched agents.
@@ -115,19 +115,19 @@ or `compose.environment`; Rambla passes them to launched agents.
 
 | Mount         | Purpose                                                                  |
 | ------------- | ------------------------------------------------------------------------ |
-| `/home/paseo` | Rambla state under `.paseo` plus agent config such as `.codex`, `.claude` |
+| `/home/rambla` | Rambla state under `.rambla` plus agent config such as `.codex`, `.claude` |
 | `/workspace`  | Code that Rambla and launched agents can read and write                   |
 
 The image defaults:
 
 | Variable       | Default               |
 | -------------- | --------------------- |
-| `HOME`         | `/home/paseo`         |
-| `RAMBLA_HOME`   | `/home/paseo/.rambla` |
+| `HOME`         | `/home/rambla`         |
+| `RAMBLA_HOME`   | `/home/rambla/.rambla` |
 | `RAMBLA_LISTEN` | `0.0.0.0:6767`        |
 
 If you bind-mount host directories on Linux, make sure the container user can
-write them. The built-in `paseo` user has uid/gid `1000:1000`. For a different
+write them. The built-in `rambla` user has uid/gid `1000:1000`. For a different
 host uid/gid, either adjust ownership on the mounted directories or run the
 container with Docker's `--user` / Compose `user:` option.
 
@@ -139,7 +139,7 @@ WebSocket upgrades to the same daemon port.
 Caddy example:
 
 ```caddy
-paseo.example.com {
+rambla.example.com {
   reverse_proxy 127.0.0.1:6767
 }
 ```
@@ -149,7 +149,7 @@ Nginx example:
 ```nginx
 server {
     listen 443 ssl;
-    server_name paseo.example.com;
+    server_name rambla.example.com;
 
     location / {
         proxy_pass http://127.0.0.1:6767;
@@ -167,7 +167,7 @@ validation allows that name:
 
 ```yaml
 environment:
-  RAMBLA_HOSTNAMES: "paseo.example.com,.lan"
+  RAMBLA_HOSTNAMES: "rambla.example.com,.lan"
 ```
 
 IPs and `localhost` are allowed by default.
@@ -176,12 +176,12 @@ IPs and `localhost` are allowed by default.
 
 - Set `RAMBLA_PASSWORD` for any published port or network-reachable deployment.
 - Prefer HTTPS at the reverse proxy for direct browser access.
-- Use the [official Rambla relay](https://github.com/getpaseo/paseo-relay) for
+- Use the [official Rambla relay](https://github.com/getrambla/rambla-relay) for
   untrusted networks or mobile access when you do not want to expose the daemon
   port directly.
 - The container is the isolation boundary for agents. Agents can read and write
   whatever you mount into `/workspace` and whatever credentials you place in
-  `/home/paseo`.
+  `/home/rambla`.
 - The bundled web UI static files are public on the daemon origin. The daemon
   API and WebSocket remain protected by password auth when configured.
 
@@ -190,7 +190,7 @@ See [SECURITY.md](../SECURITY.md) for the daemon trust model.
 ## Building Locally
 
 ```bash
-docker build -f docker/base/Dockerfile -t paseo:local .
+docker build -f docker/base/Dockerfile -t rambla:local .
 ```
 
 To assert the source tree version while building:
@@ -198,7 +198,7 @@ To assert the source tree version while building:
 ```bash
 docker build \
   --build-arg RAMBLA_VERSION=0.1.102 \
-  -t paseo:0.1.102 \
+  -t rambla:0.1.102 \
   -f docker/base/Dockerfile \
   .
 ```
@@ -216,11 +216,11 @@ pushing a `v*` release tag:
 ```bash
 gh workflow run docker.yml \
   --ref main \
-  -f paseo_version=0.1.102-beta.1 \
+  -f rambla_version=0.1.102-beta.1 \
   -f publish=true
 ```
 
-Manual Docker publishes require an explicit `paseo_version`. The workflow builds
+Manual Docker publishes require an explicit `rambla_version`. The workflow builds
 from the checked-out source tree and publishes only the exact prerelease image
 tag for prerelease versions.
 
@@ -235,5 +235,5 @@ The published image is multi-arch for `linux/amd64` and `linux/arm64`.
   runtime where the binary is on `PATH`.
 - **Permission errors in `/workspace`**: make the mounted directory writable by
   uid/gid `1000:1000`, or run the container as the host uid/gid.
-- **Logs**: inspect `docker logs paseo` or
-  `/home/paseo/.rambla/daemon.log` inside the container.
+- **Logs**: inspect `docker logs rambla` or
+  `/home/rambla/.rambla/daemon.log` inside the container.

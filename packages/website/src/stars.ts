@@ -19,7 +19,7 @@ async function fetchStarCount(): Promise<string> {
   const res = await fetch(GITHUB_REPO_URL, {
     headers: {
       Accept: "application/vnd.github+json",
-      "User-Agent": "paseo-website",
+      "User-Agent": "rambla-website",
     },
     cf: {
       cacheEverything: true,

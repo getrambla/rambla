@@ -164,7 +164,7 @@ export async function launchAgent(input: {
   };
 }): Promise<AgentHandle> {
   execFileSync("git", ["init", "-b", "main"], { cwd: input.cwd, stdio: "ignore" });
-  execFileSync("git", ["config", "user.email", "paseo-test@example.com"], {
+  execFileSync("git", ["config", "user.email", "rambla-test@example.com"], {
     cwd: input.cwd,
     stdio: "ignore",
   });

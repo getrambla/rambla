@@ -12,7 +12,7 @@ import {
   type DaemonTestContext,
   DaemonClient,
 } from "./test-utils/index.js";
-import { createTestRamblaDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "./test-utils/rambla-daemon.js";
 import { createTestAgentClients } from "./test-utils/fake-agent-client.js";
 import { getFullAccessConfig, getAskModeConfig } from "./daemon-e2e/agent-configs.js";
 import { parsePcm16MonoWav, wordSimilarity } from "./test-utils/dictation-e2e.js";
@@ -165,7 +165,7 @@ test("DaemonClient uploads file bytes to daemon temp storage", async () => {
         fileName: "notes.txt",
         mimeType: "text/plain",
         size: 11,
-        path: path.join(daemon.paseoHome, "uploads", "upload_req-upload-e2e", "notes.txt"),
+        path: path.join(daemon.ramblaHome, "uploads", "upload_req-upload-e2e", "notes.txt"),
       },
       error: null,
     });
@@ -1090,9 +1090,9 @@ test("update_agent persists unloaded title and labels across auto-unarchive", as
 }, 180000);
 
 test("returns home-scoped directory suggestions", async () => {
-  const insideHomeDir = mkdtempSync(path.join(homedir(), "paseo-dir-suggestion-"));
-  const rootBrowseDir = mkdtempSync(path.join(homedir(), "000-paseo-root-browse-"));
-  const outsideHomeDir = mkdtempSync(path.join(tmpdir(), "paseo-dir-suggestion-outside-"));
+  const insideHomeDir = mkdtempSync(path.join(homedir(), "rambla-dir-suggestion-"));
+  const rootBrowseDir = mkdtempSync(path.join(homedir(), "000-rambla-root-browse-"));
+  const outsideHomeDir = mkdtempSync(path.join(tmpdir(), "rambla-dir-suggestion-outside-"));
 
   try {
     const insideQuery = path.basename(insideHomeDir);
@@ -1129,7 +1129,7 @@ test("returns home-scoped directory suggestions", async () => {
 }, 30000);
 
 test("returns typed relative suggestions within a requested directory", async () => {
-  const cwd = mkdtempSync(path.join(tmpdir(), "paseo-workspace-suggestion-"));
+  const cwd = mkdtempSync(path.join(tmpdir(), "rambla-workspace-suggestion-"));
   const target = path.join(cwd, "src", "components", "message-renderer.tsx");
 
   try {
@@ -1153,7 +1153,7 @@ test("returns typed relative suggestions within a requested directory", async ()
 }, 30000);
 
 test("finds workspace files inside the OpenCode directory", async () => {
-  const cwd = mkdtempSync(path.join(tmpdir(), "paseo-opencode-suggestion-"));
+  const cwd = mkdtempSync(path.join(tmpdir(), "rambla-opencode-suggestion-"));
   const target = path.join(
     cwd,
     ".opencode",
@@ -1189,7 +1189,7 @@ test("finds workspace files inside the OpenCode directory", async () => {
 }, 30000);
 
 test("opens an exact gitignored workspace path without offering it as a suggestion", async () => {
-  const cwd = mkdtempSync(path.join(tmpdir(), "paseo-gitignored-suggestion-"));
+  const cwd = mkdtempSync(path.join(tmpdir(), "rambla-gitignored-suggestion-"));
   const target = path.join(cwd, "generated", "notes.md");
 
   try {

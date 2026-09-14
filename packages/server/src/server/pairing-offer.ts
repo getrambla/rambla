@@ -12,7 +12,7 @@ export interface LocalPairingOffer {
 }
 
 export async function generateLocalPairingOffer(args: {
-  paseoHome: string;
+  ramblaHome: string;
   relayEnabled?: boolean;
   relayEndpoint?: string;
   relayPublicEndpoint?: string;
@@ -36,8 +36,8 @@ export async function generateLocalPairingOffer(args: {
   const relayUseTls = args.relayUseTls ?? relayEndpoint === "relay.rambla.sh:443";
   const relayPublicUseTls = args.relayPublicUseTls ?? relayUseTls;
   const appBaseUrl = args.appBaseUrl ?? "https://app.rambla.sh";
-  const serverId = getOrCreateServerId(args.paseoHome, { logger: args.logger });
-  const daemonKeyPair = await loadOrCreateDaemonKeyPair(args.paseoHome, args.logger);
+  const serverId = getOrCreateServerId(args.ramblaHome, { logger: args.logger });
+  const daemonKeyPair = await loadOrCreateDaemonKeyPair(args.ramblaHome, args.logger);
   const offer = await createConnectionOfferV2({
     serverId,
     daemonPublicKeyB64: daemonKeyPair.publicKeyB64,

@@ -12,7 +12,7 @@ const workspaceCwd = process.env.RAMBLA_PROFILE_WORKSPACE_CWD ?? repoRoot;
 const workspaceId = process.env.RAMBLA_PROFILE_WORKSPACE_ID ?? resolveRamblaWorkspaceId();
 const serverId =
   process.env.RAMBLA_PROFILE_SERVER_ID ??
-  (await readFile(resolve(repoRoot, ".dev/paseo-home/server-id"), "utf8")).trim();
+  (await readFile(resolve(repoRoot, ".dev/rambla-home/server-id"), "utf8")).trim();
 const warmPresses = numberFromEnv("RAMBLA_PROFILE_WARM_PRESSES", 8);
 const measuredPresses = numberFromEnv("RAMBLA_PROFILE_MEASURED_PRESSES", 20);
 const burstPresses = numberFromEnv("RAMBLA_PROFILE_BURST_PRESSES", 20);
@@ -37,7 +37,7 @@ function resolveRamblaWorkspaceId() {
     env: { ...process.env, FORCE_COLOR: "0" },
   });
   const jsonStart = output.indexOf("[\n");
-  if (jsonStart < 0) throw new Error("Could not parse `paseo workspace ls --json`");
+  if (jsonStart < 0) throw new Error("Could not parse `rambla workspace ls --json`");
   const workspaces = JSON.parse(output.slice(jsonStart));
   const candidates = workspaces.filter((workspace) => workspace.cwd === workspaceCwd);
   const workspace = candidates.find((candidate) => candidate.name === "Rambla") ?? candidates[0];
@@ -139,8 +139,8 @@ async function installMeasurementProbe(page) {
     const onKeyDown = (event) => {
       if (!event.metaKey || event.code !== "KeyE") return;
       const sequence = state.events.length;
-      performance.mark(`paseo:explorer-toggle:keydown:${sequence}`);
-      console.timeStamp(`paseo:explorer-toggle:keydown:${sequence}`);
+      performance.mark(`rambla:explorer-toggle:keydown:${sequence}`);
+      console.timeStamp(`rambla:explorer-toggle:keydown:${sequence}`);
       state.events.push({
         sequence,
         inputTime: event.timeStamp,

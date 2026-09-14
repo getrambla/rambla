@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { buildSelfNodeCommand } from "../server/paseo-env.js";
+import { buildSelfNodeCommand } from "../server/rambla-env.js";
 import { execCommand, spawnProcess } from "./spawn.js";
 
 const printEnvScript = `

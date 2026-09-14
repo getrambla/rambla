@@ -6,15 +6,15 @@ import {
   type RamblaConfigRaw,
   type RamblaConfigRevision,
   type ProjectConfigRpcError,
-} from "@getpaseo/protocol/paseo-config-schema";
+} from "@getrambla/protocol/rambla-config-schema";
 export {
   RamblaConfigRevisionSchema,
   ProjectConfigRpcErrorSchema,
   type RamblaConfigRevision,
   type ProjectConfigRpcError,
-} from "@getpaseo/protocol/paseo-config-schema";
+} from "@getrambla/protocol/rambla-config-schema";
 
-export const RAMBLA_CONFIG_FILE_NAME = "paseo.json";
+export const RAMBLA_CONFIG_FILE_NAME = "rambla.json";
 
 export type ReadRamblaConfigForEditResult =
   | { ok: true; config: RamblaConfigRaw | null; revision: RamblaConfigRevision | null }
@@ -90,7 +90,7 @@ export function writeRamblaConfigForEdit(
   try {
     writeFileSync(tempPath, `${JSON.stringify(parsed.data, null, 2)}\n`);
     const currentRevision = statRamblaConfigPath(input.repoRoot);
-    if (!paseoConfigRevisionsEqual(currentRevision, input.expectedRevision)) {
+    if (!ramblaConfigRevisionsEqual(currentRevision, input.expectedRevision)) {
       removeTempRamblaConfig(tempPath);
       return {
         ok: false,
@@ -110,7 +110,7 @@ export function writeRamblaConfigForEdit(
   }
 }
 
-function paseoConfigRevisionsEqual(
+function ramblaConfigRevisionsEqual(
   left: RamblaConfigRevision | null,
   right: RamblaConfigRevision | null,
 ): boolean {

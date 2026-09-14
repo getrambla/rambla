@@ -253,7 +253,7 @@ function lastNonEmptyLineIsPrompt(state: ReturnType<TerminalSession["getState"]>
 }
 
 function removeZshShellIntegrationRuntimeDir(): void {
-  rmSync(join(tmpdir(), `${userInfo().username || "unknown"}-paseo-zsh-${process.pid}`), {
+  rmSync(join(tmpdir(), `${userInfo().username || "unknown"}-rambla-zsh-${process.pid}`), {
     recursive: true,
     force: true,
   });
@@ -264,28 +264,28 @@ describe.skipIf(isPlatform("win32"))("terminal POSIX-only", () => {
     const resolvedEnv = buildTerminalEnvironment({
       shell: "/bin/zsh",
       env: {
-        HOME: "/tmp/paseo-home",
-        ZDOTDIR: "/tmp/paseo-zdotdir",
+        HOME: "/tmp/rambla-home",
+        ZDOTDIR: "/tmp/rambla-zdotdir",
       },
     });
 
     expect(resolvedEnv.TERM).toBe("xterm-256color");
     expect(resolvedEnv.TERM_PROGRAM).toBe("kitty");
-    expect(resolvedEnv.RAMBLA_ZSH_ZDOTDIR).toBe("/tmp/paseo-zdotdir");
+    expect(resolvedEnv.RAMBLA_ZSH_ZDOTDIR).toBe("/tmp/rambla-zdotdir");
     expect(resolvedEnv.ZDOTDIR).toBe(
-      join(tmpdir(), `${userInfo().username || "unknown"}-paseo-zsh-${process.pid}`),
+      join(tmpdir(), `${userInfo().username || "unknown"}-rambla-zsh-${process.pid}`),
     );
     expect(existsSync(join(resolvedEnv.ZDOTDIR, ".zshenv"))).toBe(true);
-    expect(existsSync(join(resolvedEnv.ZDOTDIR, "paseo-integration.zsh"))).toBe(true);
+    expect(existsSync(join(resolvedEnv.ZDOTDIR, "rambla-integration.zsh"))).toBe(true);
   });
 
   it("reuses zsh shell integration copied from read-only source files", () => {
-    const integrationSourceDir = mkdtempSync(join(tmpdir(), "paseo-zsh-readonly-source-"));
-    const tmpHome = mkdtempSync(join(tmpdir(), "paseo-zsh-readonly-home-"));
+    const integrationSourceDir = mkdtempSync(join(tmpdir(), "rambla-zsh-readonly-source-"));
+    const tmpHome = mkdtempSync(join(tmpdir(), "rambla-zsh-readonly-home-"));
     temporaryDirs.push(integrationSourceDir, tmpHome);
     cpSync(resolveZshShellIntegrationDir(), integrationSourceDir, { recursive: true });
     chmodSync(join(integrationSourceDir, ".zshenv"), 0o444);
-    chmodSync(join(integrationSourceDir, "paseo-integration.zsh"), 0o444);
+    chmodSync(join(integrationSourceDir, "rambla-integration.zsh"), 0o444);
     removeZshShellIntegrationRuntimeDir();
 
     const buildEnvironment = () =>
@@ -622,7 +622,7 @@ describe.skipIf(isPlatform("win32"))("terminal POSIX-only", () => {
         fakeAppRoot,
         "app.asar",
         "node_modules",
-        "@getpaseo",
+        "@getrambla",
         "server",
         "dist",
         "server",
@@ -634,7 +634,7 @@ describe.skipIf(isPlatform("win32"))("terminal POSIX-only", () => {
         fakeAppRoot,
         "app.asar.unpacked",
         "node_modules",
-        "@getpaseo",
+        "@getrambla",
         "server",
         "dist",
         "server",

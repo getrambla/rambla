@@ -4,8 +4,8 @@ import { basename, join, resolve } from "node:path";
 import { LRUCache } from "lru-cache";
 import pLimit from "p-limit";
 import type pino from "pino";
-import type { ProjectCheckoutLitePayload } from "@getpaseo/protocol/messages";
-import { parseGitRemoteLocation } from "@getpaseo/protocol/git-remote";
+import type { ProjectCheckoutLitePayload } from "@getrambla/protocol/messages";
+import { parseGitRemoteLocation } from "@getrambla/protocol/git-remote";
 import type { CheckoutContext } from "../utils/checkout-git.js";
 import {
   type BranchCheckoutResolution,
@@ -272,7 +272,7 @@ export interface WorkspaceGitBranchSuggestionsOptions {
 }
 
 export interface WorkspaceGitStashListOptions {
-  paseoOnly?: boolean;
+  ramblaOnly?: boolean;
 }
 
 export interface WorkspaceGitStashEntry {
@@ -365,7 +365,7 @@ interface WorkspaceGitServiceDependencies {
 
 interface WorkspaceGitServiceOptions {
   logger: pino.Logger;
-  paseoHome: string;
+  ramblaHome: string;
   worktreesRoot?: string;
   fileObserver?: FileObserver;
   deps?: Partial<WorkspaceGitServiceDependencies>;
@@ -519,7 +519,7 @@ function resolveWorkspaceGitServiceDeps(
 
 export class WorkspaceGitServiceImpl implements WorkspaceGitService {
   private readonly logger: pino.Logger;
-  private readonly paseoHome: string;
+  private readonly ramblaHome: string;
   private readonly worktreesRoot: string | undefined;
   private readonly fileObserver: FileObserver;
   private readonly deps: WorkspaceGitServiceDependencies;
@@ -573,7 +573,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
   private watcherErrorCallbackCount = 0;
   constructor(options: WorkspaceGitServiceOptions) {
     this.logger = options.logger.child({ module: "workspace-git-service" });
-    this.paseoHome = options.paseoHome;
+    this.ramblaHome = options.ramblaHome;
     this.worktreesRoot = options.worktreesRoot;
     this.fileObserver = options.fileObserver ?? createFileObserver();
     this.deps = resolveWorkspaceGitServiceDeps(
@@ -697,7 +697,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
     this.assertNotDisposed();
     const normalizedCwd = resolve(cwd);
     const status = await this.deps.getCheckoutStatus(normalizedCwd, {
-      paseoHome: this.paseoHome,
+      ramblaHome: this.ramblaHome,
       worktreesRoot: this.worktreesRoot,
       logger: this.logger,
     });
@@ -737,7 +737,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
     const key = this.buildCheckoutDiffCacheKey(normalizedCwd, normalizedOptions);
     return this.readAuxiliaryCache(this.checkoutDiffCache, key, readOptions, () =>
       this.deps.getCheckoutDiff(normalizedCwd, normalizedOptions, {
-        paseoHome: this.paseoHome,
+        ramblaHome: this.ramblaHome,
         worktreesRoot: this.worktreesRoot,
       }),
     );
@@ -828,14 +828,14 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
   ): Promise<WorkspaceGitStashEntry[]> {
     this.assertNotDisposed();
     const normalizedCwd = resolve(cwd);
-    const paseoOnly = options?.paseoOnly !== false;
-    const key = JSON.stringify(["stashes", normalizedCwd, paseoOnly]);
+    const ramblaOnly = options?.ramblaOnly !== false;
+    const key = JSON.stringify(["stashes", normalizedCwd, ramblaOnly]);
     return this.readAuxiliaryCache(this.stashListCache, key, readOptions, async () => {
       const { stdout } = await this.deps.runGitCommand(["stash", "list", "--format=%gd%x00%s"], {
         cwd: normalizedCwd,
         envOverlay: READ_ONLY_GIT_ENV,
       });
-      return parseWorkspaceGitStashList(stdout, { paseoOnly });
+      return parseWorkspaceGitStashList(stdout, { ramblaOnly });
     });
   }
 
@@ -849,7 +849,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
     return this.readAuxiliaryCache(this.worktreeListCache, key, options, () =>
       this.deps.listRamblaWorktrees({
         cwd: repoRoot,
-        paseoHome: this.paseoHome,
+        ramblaHome: this.ramblaHome,
         worktreesRoot: this.worktreesRoot,
       }),
     );
@@ -1248,7 +1248,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
       return target.latestFacts;
     }
     return this.loadCheckoutFacts(target, {
-      paseoHome: this.paseoHome,
+      ramblaHome: this.ramblaHome,
       logger: this.logger,
     });
   }
@@ -2569,7 +2569,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
       target.latestFacts?.isGit && target.latestFacts.currentBranch === git.currentBranch
         ? target.latestFacts.pullRequestLookupTarget
         : null;
-    if (target.latestFacts?.isGit && target.latestFacts.paseoWorktree.isRamblaOwnedWorktree) {
+    if (target.latestFacts?.isGit && target.latestFacts.ramblaWorktree.isRamblaOwnedWorktree) {
       return lookupTarget;
     }
     if (lookupTarget) {
@@ -2890,7 +2890,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
       { aheadBehind: latestGit.aheadBehind, diffStat: latestGit.diffStat },
       movedRemoteRefs,
       {
-        paseoHome: this.paseoHome,
+        ramblaHome: this.ramblaHome,
         worktreesRoot: this.worktreesRoot,
         logger: this.logger,
         facts,
@@ -2922,7 +2922,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
 
     target.lastShellOutAtMs = this.deps.now().getTime();
     const context: CheckoutContext = {
-      paseoHome: this.paseoHome,
+      ramblaHome: this.ramblaHome,
       worktreesRoot: this.worktreesRoot,
       logger: this.logger,
       facts,
@@ -2949,7 +2949,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
     const cwd = target.cwd;
     const previousForgePrStatusPollKey = this.getForgePrStatusPollKey(target);
     const baseContext: CheckoutContext = {
-      paseoHome: this.paseoHome,
+      ramblaHome: this.ramblaHome,
       worktreesRoot: this.worktreesRoot,
       logger: this.logger,
       runGitCommand: runRefreshGitCommand,
@@ -3450,7 +3450,7 @@ function buildForgeSnapshot(
 
 function parseWorkspaceGitStashList(
   stdout: string,
-  options: { paseoOnly: boolean },
+  options: { ramblaOnly: boolean },
 ): WorkspaceGitStashEntry[] {
   const entries: WorkspaceGitStashEntry[] = [];
   const lines = stdout.trim().split("\n").filter(Boolean);
@@ -3469,12 +3469,12 @@ function parseWorkspaceGitStashList(
     }
 
     const index = Number(indexMatch[1]);
-    const prefix = "paseo-auto-stash:";
+    const prefix = "rambla-auto-stash:";
     const prefixIdx = subject.indexOf(prefix);
     const isRambla = prefixIdx >= 0;
     const branch = isRambla ? subject.slice(prefixIdx + prefix.length).trim() || null : null;
 
-    if (options.paseoOnly && !isRambla) {
+    if (options.ramblaOnly && !isRambla) {
       continue;
     }
 

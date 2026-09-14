@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { WorkspaceDescriptorPayload } from "@getpaseo/protocol/messages";
+import type { WorkspaceDescriptorPayload } from "@getrambla/protocol/messages";
 import {
   normalizeProjectDescriptor,
   normalizeWorkspaceDescriptor,
@@ -116,7 +116,7 @@ function agent(id = "agent-1"): Agent {
       {
         id,
         provider: "codex",
-        cwd: "/repo/paseo",
+        cwd: "/repo/rambla",
         workspaceId: "workspace-1",
         model: null,
         createdAt: "2026-07-18T08:00:00.000Z",
@@ -149,8 +149,8 @@ function workspacePayload(): WorkspaceDescriptorPayload {
     id: "workspace-1",
     projectId: "project-1",
     projectDisplayName: "Rambla",
-    projectRootPath: "/repo/paseo",
-    workspaceDirectory: "/repo/paseo",
+    projectRootPath: "/repo/rambla",
+    workspaceDirectory: "/repo/rambla",
     projectKind: "git",
     workspaceKind: "local_checkout",
     name: "main",
@@ -181,7 +181,7 @@ function directory(
   const project = normalizeProjectDescriptor({
     projectId: "project-1",
     projectDisplayName: "Rambla",
-    projectRootPath: "/repo/paseo",
+    projectRootPath: "/repo/rambla",
     projectKind: "git",
   });
   return {
@@ -563,7 +563,7 @@ describe("ReplicaCache", () => {
         projectDisplayName: "Rambla",
         projectCustomName: null,
         projectCustomIconRevision: null,
-        projectRootPath: "/repo/paseo",
+        projectRootPath: "/repo/rambla",
         projectKind: "git",
       }),
     });

@@ -59,7 +59,7 @@ describe("browser webview attachment", () => {
     expect(
       isRamblaBrowserWebviewAttach({
         src: "https://example.com",
-        partition: "persist:paseo-browser-tab-a",
+        partition: "persist:rambla-browser-tab-a",
       }),
     ).toBe(false);
     expect(

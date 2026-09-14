@@ -28,8 +28,8 @@ function createTempDir(prefix: string): string {
 }
 
 function createFakeCliBinDir(): string {
-  const dir = createTempDir("paseo-cli-bin-");
-  writeFileSync(join(dir, "paseo"), "");
+  const dir = createTempDir("rambla-cli-bin-");
+  writeFileSync(join(dir, "rambla"), "");
   return dir;
 }
 
@@ -66,7 +66,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 describe("Claude terminal agent hooks", () => {
   it("installs registered provider hooks idempotently", () => {
-    const configDir = createTempDir("paseo-claude-config-");
+    const configDir = createTempDir("rambla-claude-config-");
     const provider = AGENT_HOOK_PROVIDERS.claude;
     const install = provider.install;
 
@@ -75,19 +75,19 @@ describe("Claude terminal agent hooks", () => {
 
     const settings = readSettings(configDir);
     for (const event of provider.events) {
-      const paseoCommands = hookCommands(settings, event.event).filter((command) =>
+      const ramblaCommands = hookCommands(settings, event.event).filter((command) =>
         command.includes(install.hookMarker),
       );
-      expect(paseoCommands).toHaveLength(1);
-      expect(paseoCommands[0]).toBe(
-        `if [ -n "$RAMBLA_TERMINAL_ID" ]; then "\${RAMBLA_HOOK_CLI:-paseo}" hooks ${provider.id} ${event.event}; fi`,
+      expect(ramblaCommands).toHaveLength(1);
+      expect(ramblaCommands[0]).toBe(
+        `if [ -n "$RAMBLA_TERMINAL_ID" ]; then "\${RAMBLA_HOOK_CLI:-rambla}" hooks ${provider.id} ${event.event}; fi`,
       );
     }
     expect(registeredAgentHooksAreInstalled({ configDir })).toBe(true);
   });
 
   it("preserves unrelated user hooks", () => {
-    const configDir = createTempDir("paseo-claude-config-preserve-");
+    const configDir = createTempDir("rambla-claude-config-preserve-");
     writeFileSync(
       join(configDir, "settings.json"),
       `${JSON.stringify(
@@ -118,7 +118,7 @@ describe("Claude terminal agent hooks", () => {
   });
 
   it("uninstalls only marker-matched hooks", () => {
-    const configDir = createTempDir("paseo-claude-config-uninstall-");
+    const configDir = createTempDir("rambla-claude-config-uninstall-");
     installRegisteredAgentHooks({ configDir });
     const settings = readSettings(configDir);
     settings.hooks = {
@@ -145,7 +145,7 @@ describe("Claude terminal agent hooks", () => {
     const command = buildAgentHookShellCommand(provider, provider.events[0]);
 
     expect(command).toBe(
-      'if [ -n "$RAMBLA_TERMINAL_ID" ]; then "${RAMBLA_HOOK_CLI:-paseo}" hooks claude UserPromptSubmit; fi',
+      'if [ -n "$RAMBLA_TERMINAL_ID" ]; then "${RAMBLA_HOOK_CLI:-rambla}" hooks claude UserPromptSubmit; fi',
     );
   });
 
@@ -156,7 +156,7 @@ describe("Claude terminal agent hooks", () => {
       const command = buildAgentHookShellCommand(provider, event);
 
       const result = spawnSync("/bin/sh", ["-c", command], {
-        env: { PATH: process.env.PATH ?? "", RAMBLA_HOOK_CLI: "paseo" },
+        env: { PATH: process.env.PATH ?? "", RAMBLA_HOOK_CLI: "rambla" },
         stdio: "ignore",
       });
 
@@ -175,15 +175,15 @@ describe("Claude terminal agent hooks", () => {
     }
   });
 
-  it("prepends the paseo CLI directory and injects the hook CLI path", () => {
+  it("prepends the rambla CLI directory and injects the hook CLI path", () => {
     const cliBinDir = createFakeCliBinDir();
-    const hookCliPath = join(cliBinDir, "paseo");
+    const hookCliPath = join(cliBinDir, "rambla");
 
     const env = buildTerminalEnvironment({
       shell: "/bin/sh",
       env: { PATH: ["/usr/bin", "/bin"].join(delimiter) },
-      paseoCliBinDir: cliBinDir,
-      paseoHookCliPath: hookCliPath,
+      ramblaCliBinDir: cliBinDir,
+      ramblaHookCliPath: hookCliPath,
     });
 
     expect(env.PATH?.split(delimiter)).toEqual([cliBinDir, "/usr/bin", "/bin"]);
@@ -194,7 +194,7 @@ describe("Claude terminal agent hooks", () => {
     const env = buildTerminalEnvironment({
       shell: "/bin/sh",
       env: { PATH: ["/usr/bin", "/bin"].join(delimiter) },
-      paseoCliBinDir: null,
+      ramblaCliBinDir: null,
     });
 
     expect(env.PATH?.split(delimiter)).toEqual(["/usr/bin", "/bin"]);

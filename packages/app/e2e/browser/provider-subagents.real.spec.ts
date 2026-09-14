@@ -62,7 +62,7 @@ test.describe("real provider subagent timelines", () => {
       page,
     }, testInfo) => {
       const cwd = realpathSync(
-        mkdtempSync(path.join(tmpdir(), `paseo-provider-subagent-${scenario.provider}-`)),
+        mkdtempSync(path.join(tmpdir(), `rambla-provider-subagent-${scenario.provider}-`)),
       );
       let handle: AgentHandle | undefined;
 
@@ -159,7 +159,7 @@ test.describe("real Claude nested subagent ownership", () => {
   test("keeps a grandchild and its background notification with their direct owners", async ({
     page,
   }, testInfo) => {
-    const cwd = realpathSync(mkdtempSync(path.join(tmpdir(), "paseo-claude-nested-ui-")));
+    const cwd = realpathSync(mkdtempSync(path.join(tmpdir(), "rambla-claude-nested-ui-")));
     let handle: AgentHandle | undefined;
 
     try {

@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 
 /**
- * Regression: `paseo daemon stop` must only act on daemon ownership state and
+ * Regression: `rambla daemon stop` must only act on daemon ownership state and
  * must not discover/kill processes via home-scoped `ps` command heuristics.
  */
 
@@ -52,7 +52,7 @@ async function waitForRunning(pid: number, timeoutMs: number): Promise<void> {
 
 console.log("=== Daemon Stop Ownership Regression ===\n");
 
-const paseoHome = await mkdtemp(join(tmpdir(), "paseo-stop-ownership-"));
+const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-stop-ownership-"));
 let decoyProcess: ChildProcess | null = null;
 
 try {
@@ -69,7 +69,7 @@ try {
     {
       env: {
         ...process.env,
-        RAMBLA_HOME: paseoHome,
+        RAMBLA_HOME: ramblaHome,
       },
       stdio: "ignore",
       detached: process.platform !== "win32",
@@ -85,7 +85,7 @@ try {
   console.log("Test 2: daemon stop should report not_running and leave decoy untouched");
 
   const stopResult =
-    await $`RAMBLA_HOME=${paseoHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx paseo daemon stop --home ${paseoHome} --json`.nothrow();
+    await $`RAMBLA_HOME=${ramblaHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx rambla daemon stop --home ${ramblaHome} --json`.nothrow();
   assert.strictEqual(stopResult.exitCode, 0, `stop should succeed: ${stopResult.stderr}`);
 
   const parsed = JSON.parse(stopResult.stdout) as { action?: unknown };
@@ -114,8 +114,8 @@ try {
     }
   }
 
-  await $`RAMBLA_HOME=${paseoHome} npx paseo daemon stop --home ${paseoHome} --force`.nothrow();
-  await rm(paseoHome, { recursive: true, force: true });
+  await $`RAMBLA_HOME=${ramblaHome} npx rambla daemon stop --home ${ramblaHome} --force`.nothrow();
+  await rm(ramblaHome, { recursive: true, force: true });
 }
 
 console.log("=== Daemon stop ownership regression test passed ===");

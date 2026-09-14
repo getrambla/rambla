@@ -724,7 +724,7 @@ export const en = {
       },
       routes: {
         public: "Reverse proxy",
-        paseo: "Memorable",
+        rambla: "Memorable",
         direct: "Direct",
       },
       states: {
@@ -1320,7 +1320,7 @@ export const en = {
       fullStatus: {
         title: "Full status",
         modalTitle: "Daemon status",
-        hint: "Runs `paseo daemon status` and shows the output",
+        hint: "Runs `rambla daemon status` and shows the output",
         view: "View status",
         copied: "Status copied to clipboard.",
         fetchFailed: "Failed to fetch daemon status: {{message}}",
@@ -1871,7 +1871,7 @@ export const en = {
       one: "used {{count}} other tool",
       other: "used {{count}} other tools",
     },
-    paseoCalls: {
+    ramblaCalls: {
       one: "called Rambla {{count}} time",
       other: "called Rambla {{count}} times",
     },
@@ -2020,7 +2020,7 @@ export const en = {
       directoryLabel: "Plugin directory",
       directoryPlaceholder: "/absolute/path/on/host",
       idLabel: "Plugin installation ID",
-      idHint: "Leave blank to use paseo-plugin.json",
+      idHint: "Leave blank to use rambla-plugin.json",
       idPlaceholder: "Manifest default",
       install: "Install directory",
       installing: "Installing…",
@@ -2701,13 +2701,13 @@ export const en = {
         savedToast: "Project updated",
       },
       readFailures: {
-        invalidTitle: "paseo.json couldn't be parsed",
+        invalidTitle: "rambla.json couldn't be parsed",
         invalidDescription: "Fix the file on disk, then reload.",
         missingTitle: "This host doesn't have this project",
         missingSingleHost: "The selected host has no record of this project.",
-        transportTitle: "Couldn't load paseo.json",
+        transportTitle: "Couldn't load rambla.json",
         transportFallback: "The host didn't respond.",
-        failedTitle: "Couldn't load paseo.json",
+        failedTitle: "Couldn't load rambla.json",
         failedDescription: "Reload to try again.",
       },
       worktree: {
@@ -2718,7 +2718,7 @@ export const en = {
           "See docs for more details and the environment variables available to these commands",
         setup: "Setup",
         setupAccessibility: "Worktree setup commands",
-        uncommittedTitle: "Commit paseo.json changes",
+        uncommittedTitle: "Commit rambla.json changes",
         uncommittedDescription:
           "New worktrees use the setup script from the base branch you select.",
         teardown: "Teardown",
@@ -2762,8 +2762,8 @@ export const en = {
       },
       writeFailures: {
         staleTitle: "Config changed on disk",
-        staleDescription: "Reload to fetch the latest paseo.json before saving.",
-        failedTitle: "Couldn't save paseo.json",
+        staleDescription: "Reload to fetch the latest rambla.json before saving.",
+        failedTitle: "Couldn't save rambla.json",
         failedDescription: "Try again, or reload the latest version from disk.",
       },
       actions: {

@@ -11,7 +11,7 @@ category: Hub
 The shortest path is one command:
 
 ```sh
-npx @getpaseo/hub
+npx @getrambla/hub
 ```
 
 Open <http://localhost:3000>. A fresh Hub creates its embedded database and authentication secret, then guides you through creating the operator account and the GitHub, Slack, or Discord apps you want.
@@ -20,12 +20,12 @@ Follow the [quickstart](/docs/hub/quickstart) to connect Slack over Socket Mode 
 
 ## Local data
 
-Without `DATABASE_URL`, Hub stores an embedded PGlite database and its generated authentication secret under `$XDG_DATA_HOME/paseo-hub`. If `XDG_DATA_HOME` is not set to an absolute path, Hub uses `~/.local/share/paseo-hub`. Both survive restarts.
+Without `DATABASE_URL`, Hub stores an embedded PGlite database and its generated authentication secret under `$XDG_DATA_HOME/rambla-hub`. If `XDG_DATA_HOME` is not set to an absolute path, Hub uses `~/.local/share/rambla-hub`. Both survive restarts.
 
 Set a different location explicitly with:
 
 ```sh
-RAMBLA_HUB_DATA_DIR=/path/to/paseo-hub-data npx @getpaseo/hub
+RAMBLA_HUB_DATA_DIR=/path/to/rambla-hub-data npx @getrambla/hub
 ```
 
 Embedded mode supports one Hub process per data directory. It is intended for a personal or single-process Hub. Back up the whole data directory before upgrading or moving it.
@@ -39,7 +39,7 @@ GitHub event triggers use webhooks and need a public HTTPS address. Repository a
 When Hub is available at a stable public origin, set it before starting:
 
 ```sh
-RAMBLA_HUB_APP_URL=https://hub.example.com npx @getpaseo/hub
+RAMBLA_HUB_APP_URL=https://hub.example.com npx @getrambla/hub
 ```
 
 Changing the public origin requires updating callback and webhook settings in the provider apps. The **Apps** page generates the URLs for the origin Hub is currently using.
@@ -49,8 +49,8 @@ Changing the public origin requires updating callback and webhook settings in th
 Set `DATABASE_URL` to use PostgreSQL instead of the embedded database:
 
 ```sh
-DATABASE_URL=postgres://paseo:password@localhost:5432/paseo_hub \
-  npx @getpaseo/hub
+DATABASE_URL=postgres://rambla:password@localhost:5432/rambla_hub \
+  npx @getrambla/hub
 ```
 
 Use PostgreSQL for a durable server deployment, more than one Hub process, or an existing database backup and operations setup. Migrations run automatically at startup. Hub does not start listening when a migration fails.
@@ -109,7 +109,7 @@ The password must be at least 12 characters. Sign in once, replace it in the das
 The repository contains Hub and PostgreSQL as one Compose stack:
 
 ```sh
-git clone https://github.com/getpaseo/hub.git
+git clone https://github.com/getrambla/hub.git
 cd hub
 cp .env.example .env
 docker compose up -d
@@ -117,7 +117,7 @@ docker compose up -d
 
 Open <http://localhost:3000> and complete browser setup. For a public deployment, set `RAMBLA_HUB_APP_URL` and any reverse-proxy settings in `.env` before starting the stack.
 
-The stack publishes Hub on port `3000` and stores PostgreSQL data in a named volume. The Hub image is `ghcr.io/getpaseo/hub:latest`.
+The stack publishes Hub on port `3000` and stores PostgreSQL data in a named volume. The Hub image is `ghcr.io/getrambla/hub:latest`.
 
 ### HTTPS with Caddy
 
@@ -145,7 +145,7 @@ To keep port `3000` off the public interface, change the `hub` port in `compose.
 Clone the repository and create an app and database under names you control:
 
 ```sh
-git clone https://github.com/getpaseo/hub.git
+git clone https://github.com/getrambla/hub.git
 cd hub
 fly apps create your-hub
 fly postgres create --name your-hub-db

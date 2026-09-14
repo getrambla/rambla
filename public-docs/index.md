@@ -21,8 +21,8 @@ The desktop app bundles its own daemon and starts it automatically, no separate 
 For headless machines, dev boxes, or any setup where you want the daemon running without the desktop UI:
 
 ```bash
-npm install -g @getpaseo/cli
-paseo
+npm install -g @getrambla/cli
+rambla
 ```
 
 Rambla starts the daemon locally, then asks whether to enable the end-to-end encrypted relay and print a pairing QR code. If you decline, enter the daemon address manually over TCP, Tailscale, or another VPN.
@@ -36,10 +36,10 @@ Configuration and local state live under `RAMBLA_HOME` (defaults to `~/.rambla`)
 For servers, dev boxes, NAS devices, or homelab hosts, run the official image:
 
 ```bash
-docker run -d --name paseo \
+docker run -d --name rambla \
   -p 6767:6767 \
   -e RAMBLA_PASSWORD=change-me \
-  -v "$PWD/paseo-home:/home/paseo" \
+  -v "$PWD/rambla-home:/home/rambla" \
   -v "$PWD:/workspace" \
   ghcr.io/getrambla/rambla:latest
 ```

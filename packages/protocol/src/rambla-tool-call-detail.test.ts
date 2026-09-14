@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { buildRamblaToolDetailSections } from "./paseo-tool-call-detail.js";
+import { buildRamblaToolDetailSections } from "./rambla-tool-call-detail.js";
 
 describe("Rambla tool-call detail presentation", () => {
-  it.each(["mcp__paseo__create_agent", "paseo.create_agent", "paseo_remote.create_agent"])(
+  it.each(["mcp__rambla__create_agent", "rambla.create_agent", "rambla_remote.create_agent"])(
     "shares one create-agent mapping for %s",
     (toolName) => {
       expect(
@@ -48,7 +48,7 @@ describe("Rambla tool-call detail presentation", () => {
 
   it("formats schedule cadence and nested settings without JSON syntax", () => {
     const sections = buildRamblaToolDetailSections(
-      "mcp__paseo__create_schedule",
+      "mcp__rambla__create_schedule",
       {
         prompt: "Say hello back.",
         cron: "0 9 * * 1",
@@ -92,7 +92,7 @@ describe("Rambla tool-call detail presentation", () => {
   it("unwraps MCP result envelopes instead of exposing JSON-encoded text", () => {
     expect(
       buildRamblaToolDetailSections(
-        "mcp__paseo__send_agent_prompt",
+        "mcp__rambla__send_agent_prompt",
         { prompt: "Say hello back." },
         {
           meta: null,
@@ -122,7 +122,7 @@ describe("Rambla tool-call detail presentation", () => {
   it("uses readable fallback fields for newly added Rambla tools", () => {
     expect(
       buildRamblaToolDetailSections(
-        "mcp__paseo__future_tool",
+        "mcp__rambla__future_tool",
         { opaqueThing: ["one", "two"], enabled: false },
         { success: true },
       ),

@@ -17,24 +17,24 @@ interface SupervisorLogFileOptions {
 
 type WorkerLifecycleMessage =
   | {
-      type: "paseo:shutdown";
+      type: "rambla:shutdown";
       reason?: string;
     }
   | {
-      type: "paseo:ready";
+      type: "rambla:ready";
       listen: string;
     }
   | {
-      type: "paseo:restart";
+      type: "rambla:restart";
       reason?: string;
     };
 
 interface SupervisorHeartbeatMessage {
-  type: "paseo:supervisor-heartbeat";
+  type: "rambla:supervisor-heartbeat";
 }
 
 interface SupervisorGracefulShutdownMessage {
-  type: "paseo:graceful-shutdown";
+  type: "rambla:graceful-shutdown";
   reason: string;
 }
 
@@ -69,24 +69,24 @@ function parseLifecycleMessage(msg: unknown): WorkerLifecycleMessage | null {
     return null;
   }
   const type = (msg as { type?: unknown }).type;
-  if (type === "paseo:shutdown") {
+  if (type === "rambla:shutdown") {
     const reason = (msg as { reason?: unknown }).reason;
     return {
-      type: "paseo:shutdown",
+      type: "rambla:shutdown",
       ...(typeof reason === "string" && reason.trim().length > 0 ? { reason } : {}),
     };
   }
-  if (type === "paseo:ready") {
+  if (type === "rambla:ready") {
     const listen = (msg as { listen?: unknown }).listen;
     if (typeof listen !== "string" || listen.trim().length === 0) {
       return null;
     }
-    return { type: "paseo:ready", listen };
+    return { type: "rambla:ready", listen };
   }
-  if (type === "paseo:restart") {
+  if (type === "rambla:restart") {
     const reason = (msg as { reason?: unknown }).reason;
     return {
-      type: "paseo:restart",
+      type: "rambla:restart",
       ...(typeof reason === "string" && reason.trim().length > 0 ? { reason } : {}),
     };
   }
@@ -245,7 +245,7 @@ export function runSupervisor(options: SupervisorOptions): SupervisorController 
 
     const currentChild = child;
     const heartbeat = setInterval(() => {
-      const message: SupervisorHeartbeatMessage = { type: "paseo:supervisor-heartbeat" };
+      const message: SupervisorHeartbeatMessage = { type: "rambla:supervisor-heartbeat" };
       if (currentChild.connected) {
         currentChild.send?.(message, (error) => {
           if (error) {
@@ -280,7 +280,7 @@ export function runSupervisor(options: SupervisorOptions): SupervisorController 
         return;
       }
 
-      if (lifecycleMessage.type === "paseo:ready") {
+      if (lifecycleMessage.type === "rambla:ready") {
         writeLifecycleLog("Worker ready", { listen: lifecycleMessage.listen });
         Promise.resolve(options.onWorkerReady?.({ listen: lifecycleMessage.listen })).catch(
           (error) => {
@@ -291,7 +291,7 @@ export function runSupervisor(options: SupervisorOptions): SupervisorController 
         return;
       }
 
-      if (lifecycleMessage.type === "paseo:shutdown") {
+      if (lifecycleMessage.type === "rambla:shutdown") {
         const reason = lifecycleMessage.reason ?? "worker_requested_shutdown";
         writeLifecycleLog("Worker requested shutdown", { reason });
         requestShutdown(reason);
@@ -341,7 +341,7 @@ export function runSupervisor(options: SupervisorOptions): SupervisorController 
     }
     const currentChild = child;
     const message: SupervisorGracefulShutdownMessage = {
-      type: "paseo:graceful-shutdown",
+      type: "rambla:graceful-shutdown",
       reason,
     };
     writeLifecycleLog("Supervisor requesting graceful worker shutdown", {

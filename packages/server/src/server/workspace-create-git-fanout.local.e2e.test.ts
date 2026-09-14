@@ -4,10 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { afterEach, expect, test } from "vitest";
-import type { WorkspaceDescriptorPayload } from "@getpaseo/protocol/messages";
+import type { WorkspaceDescriptorPayload } from "@getrambla/protocol/messages";
 
 import { DaemonClient } from "./test-utils/daemon-client.js";
-import { createTestRamblaDaemon, type TestRamblaDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "./test-utils/rambla-daemon.js";
 import { getWorkspaceGitSelfHealPhaseMs } from "./workspace-git-service.js";
 import {
   configureGitProcessPolicy,
@@ -57,16 +57,16 @@ function git(cwd: string, ...args: string[]): string {
 
 function seedFixture(siblingCount = SIBLING_COUNT): {
   repoRoot: string;
-  paseoHomeRoot: string;
+  ramblaHomeRoot: string;
   projectId: string;
   siblingWorktrees: string[];
 } {
-  const fixtureRoot = mkdtempSync(join(tmpdir(), "paseo-workspace-create-fanout-"));
+  const fixtureRoot = mkdtempSync(join(tmpdir(), "rambla-workspace-create-fanout-"));
   cleanupPaths.push(fixtureRoot);
   const repoRoot = join(fixtureRoot, "repo");
   const worktreesRoot = join(fixtureRoot, "siblings");
-  const paseoHomeRoot = join(fixtureRoot, "home");
-  const projectsDir = join(paseoHomeRoot, ".rambla", "projects");
+  const ramblaHomeRoot = join(fixtureRoot, "home");
+  const projectsDir = join(ramblaHomeRoot, ".rambla", "projects");
   mkdirSync(repoRoot, { recursive: true });
   mkdirSync(worktreesRoot, { recursive: true });
   mkdirSync(projectsDir, { recursive: true });
@@ -130,13 +130,13 @@ function seedFixture(siblingCount = SIBLING_COUNT): {
     ]),
   );
   writeFileSync(join(projectsDir, "workspaces.json"), JSON.stringify(workspaces));
-  return { repoRoot, paseoHomeRoot, projectId, siblingWorktrees };
+  return { repoRoot, ramblaHomeRoot, projectId, siblingWorktrees };
 }
 
 async function startObservedFixture(siblingCount: number): Promise<ReturnType<typeof seedFixture>> {
   const fixture = seedFixture(siblingCount);
   daemon = await createTestRamblaDaemon({
-    paseoHomeRoot: fixture.paseoHomeRoot,
+    ramblaHomeRoot: fixture.ramblaHomeRoot,
     cleanup: false,
     mcpEnabled: false,
   });
@@ -618,7 +618,7 @@ test("workspace archive is admitted while 52 sibling observations hydrate", asyn
   configureGitProcessPolicy({ maxProcessConcurrency: 8, maxProcessesPerSecond: 64 });
   const fixture = seedFixture(52);
   daemon = await createTestRamblaDaemon({
-    paseoHomeRoot: fixture.paseoHomeRoot,
+    ramblaHomeRoot: fixture.ramblaHomeRoot,
     cleanup: false,
     mcpEnabled: false,
   });
@@ -660,7 +660,7 @@ test("workspace create is admitted while 100 sibling observations hydrate", asyn
   configureGitProcessPolicy({ maxProcessConcurrency: 8, maxProcessesPerSecond: 64 });
   const fixture = seedFixture();
   daemon = await createTestRamblaDaemon({
-    paseoHomeRoot: fixture.paseoHomeRoot,
+    ramblaHomeRoot: fixture.ramblaHomeRoot,
     cleanup: false,
     mcpEnabled: false,
   });

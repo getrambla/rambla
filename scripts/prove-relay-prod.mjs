@@ -58,8 +58,8 @@ page.on("pageerror", (e) => console.error(`[browser:pageerror] ${e.message}`));
 
 await page.addInitScript(
   (seed) => {
-    localStorage.setItem("@paseo:daemon-registry", JSON.stringify([seed.daemon]));
-    localStorage.removeItem("@paseo:settings");
+    localStorage.setItem("@rambla:daemon-registry", JSON.stringify([seed.daemon]));
+    localStorage.removeItem("@rambla:settings");
   },
   { daemon },
 );

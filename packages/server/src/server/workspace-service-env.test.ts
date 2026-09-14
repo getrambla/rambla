@@ -19,7 +19,7 @@ describe("buildWorkspaceServiceEnv", () => {
     expect(
       buildWorkspaceServiceEnv({
         scriptName: "daemon",
-        projectSlug: "paseo",
+        projectSlug: "rambla",
         branchName: "main",
         daemonPort: 6767,
         daemonListenHost: null,
@@ -30,7 +30,7 @@ describe("buildWorkspaceServiceEnv", () => {
     expect(
       buildWorkspaceServiceEnv({
         scriptName: "daemon",
-        projectSlug: "paseo",
+        projectSlug: "rambla",
         branchName: "main",
         daemonPort: 6767,
         daemonListenHost: "localhost",
@@ -43,7 +43,7 @@ describe("buildWorkspaceServiceEnv", () => {
     expect(
       buildWorkspaceServiceEnv({
         scriptName: "daemon",
-        projectSlug: "paseo",
+        projectSlug: "rambla",
         branchName: "main",
         daemonPort: 6767,
         daemonListenHost: "100.64.0.20",
@@ -56,7 +56,7 @@ describe("buildWorkspaceServiceEnv", () => {
     expect(
       buildWorkspaceServiceEnv({
         scriptName: "daemon",
-        projectSlug: "paseo",
+        projectSlug: "rambla",
         branchName: "main",
         daemonPort: 6767,
         daemonListenHost: null,
@@ -65,9 +65,9 @@ describe("buildWorkspaceServiceEnv", () => {
     ).toEqual({
       HOST: "127.0.0.1",
       RAMBLA_PORT: "5173",
-      RAMBLA_URL: "http://daemon--paseo.localhost:6767",
+      RAMBLA_URL: "http://daemon--rambla.localhost:6767",
       RAMBLA_SERVICE_DAEMON_PORT: "5173",
-      RAMBLA_SERVICE_DAEMON_URL: "http://daemon--paseo.localhost:6767",
+      RAMBLA_SERVICE_DAEMON_URL: "http://daemon--rambla.localhost:6767",
     });
   });
 
@@ -75,7 +75,7 @@ describe("buildWorkspaceServiceEnv", () => {
     expect(
       buildWorkspaceServiceEnv({
         scriptName: "daemon",
-        projectSlug: "paseo",
+        projectSlug: "rambla",
         branchName: "feature-x",
         daemonPort: 6767,
         daemonListenHost: null,
@@ -84,16 +84,16 @@ describe("buildWorkspaceServiceEnv", () => {
     ).toEqual({
       HOST: "127.0.0.1",
       RAMBLA_PORT: "5173",
-      RAMBLA_URL: "http://daemon--feature-x--paseo.localhost:6767",
+      RAMBLA_URL: "http://daemon--feature-x--rambla.localhost:6767",
       RAMBLA_SERVICE_DAEMON_PORT: "5173",
-      RAMBLA_SERVICE_DAEMON_URL: "http://daemon--feature-x--paseo.localhost:6767",
+      RAMBLA_SERVICE_DAEMON_URL: "http://daemon--feature-x--rambla.localhost:6767",
     });
   });
 
   it("omits PORT while keeping RAMBLA_PORT", () => {
     const env = buildWorkspaceServiceEnv({
       scriptName: "daemon",
-      projectSlug: "paseo",
+      projectSlug: "rambla",
       branchName: "main",
       daemonPort: 6767,
       daemonListenHost: null,
@@ -108,7 +108,7 @@ describe("buildWorkspaceServiceEnv", () => {
     expect(
       buildWorkspaceServiceEnv({
         scriptName: "daemon",
-        projectSlug: "paseo",
+        projectSlug: "rambla",
         branchName: "main",
         daemonPort: null,
         daemonListenHost: null,
@@ -125,7 +125,7 @@ describe("buildWorkspaceServiceEnv", () => {
     expect(
       buildWorkspaceServiceEnv({
         scriptName: "web",
-        projectSlug: "paseo",
+        projectSlug: "rambla",
         branchName: "feature-x",
         daemonPort: 6767,
         daemonListenHost: null,
@@ -137,11 +137,11 @@ describe("buildWorkspaceServiceEnv", () => {
     ).toEqual({
       HOST: "127.0.0.1",
       RAMBLA_PORT: "5173",
-      RAMBLA_URL: "http://web--feature-x--paseo.localhost:6767",
+      RAMBLA_URL: "http://web--feature-x--rambla.localhost:6767",
       RAMBLA_SERVICE_API_PORT: "4000",
-      RAMBLA_SERVICE_API_URL: "http://api--feature-x--paseo.localhost:6767",
+      RAMBLA_SERVICE_API_URL: "http://api--feature-x--rambla.localhost:6767",
       RAMBLA_SERVICE_WEB_PORT: "5173",
-      RAMBLA_SERVICE_WEB_URL: "http://web--feature-x--paseo.localhost:6767",
+      RAMBLA_SERVICE_WEB_URL: "http://web--feature-x--rambla.localhost:6767",
     });
   });
 
@@ -149,7 +149,7 @@ describe("buildWorkspaceServiceEnv", () => {
     expect(
       buildWorkspaceServiceEnv({
         scriptName: "web",
-        projectSlug: "paseo",
+        projectSlug: "rambla",
         branchName: "feature-x",
         daemonPort: 6767,
         daemonListenHost: null,
@@ -160,9 +160,9 @@ describe("buildWorkspaceServiceEnv", () => {
         ],
       }),
     ).toMatchObject({
-      RAMBLA_URL: "https://web--feature-x--paseo.services.example.com",
-      RAMBLA_SERVICE_API_URL: "https://api--feature-x--paseo.services.example.com",
-      RAMBLA_SERVICE_WEB_URL: "https://web--feature-x--paseo.services.example.com",
+      RAMBLA_URL: "https://web--feature-x--rambla.services.example.com",
+      RAMBLA_SERVICE_API_URL: "https://api--feature-x--rambla.services.example.com",
+      RAMBLA_SERVICE_WEB_URL: "https://web--feature-x--rambla.services.example.com",
     });
   });
 
@@ -170,7 +170,7 @@ describe("buildWorkspaceServiceEnv", () => {
     expect(() =>
       buildWorkspaceServiceEnv({
         scriptName: "app-server",
-        projectSlug: "paseo",
+        projectSlug: "rambla",
         branchName: "main",
         daemonPort: 6767,
         daemonListenHost: null,

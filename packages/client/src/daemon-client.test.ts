@@ -6,13 +6,13 @@ import {
   type DaemonTransport,
   type Logger,
 } from "./daemon-client";
-import { CLIENT_CAPS } from "@getpaseo/protocol/client-capabilities";
-import { BROWSER_AUTOMATION_COMMAND_NAMES } from "@getpaseo/protocol/browser-automation/rpc-schemas";
+import { CLIENT_CAPS } from "@getrambla/protocol/client-capabilities";
+import { BROWSER_AUTOMATION_COMMAND_NAMES } from "@getrambla/protocol/browser-automation/rpc-schemas";
 import {
   decodeFileTransferFrame,
   encodeFileTransferFrame,
   FileTransferOpcode,
-} from "@getpaseo/protocol/binary-frames/index";
+} from "@getrambla/protocol/binary-frames/index";
 import {
   asUint8Array,
   decodeTerminalResizePayload,
@@ -20,7 +20,7 @@ import {
   encodeTerminalSnapshotPayload,
   encodeTerminalStreamFrame,
   TerminalStreamOpcode,
-} from "@getpaseo/protocol/terminal-stream-protocol";
+} from "@getrambla/protocol/terminal-stream-protocol";
 
 expectTypeOf<"getGitDiff" extends keyof DaemonClient ? true : false>().toEqualTypeOf<false>();
 expectTypeOf<
@@ -203,30 +203,30 @@ test("traces WebSocket frames, message types, and JSON parse duration", async ()
   expect(recorder.records).toEqual([
     {
       phase: "begin",
-      name: "paseo.ws.message.outbound",
+      name: "rambla.ws.message.outbound",
       args: { envelopeType: "hello", messageType: "hello" },
     },
     { phase: "end" },
     {
       phase: "begin",
-      name: "paseo.ws.frame.outbound",
+      name: "rambla.ws.frame.outbound",
       args: { kind: "text", size: expect.any(String) },
     },
     { phase: "end" },
     {
       phase: "begin",
-      name: "paseo.ws.frame.inbound",
+      name: "rambla.ws.frame.inbound",
       args: { kind: "text", size: expect.any(String) },
     },
     {
       phase: "begin",
-      name: "paseo.ws.json.parse",
+      name: "rambla.ws.json.parse",
       args: { size: expect.any(String) },
     },
     { phase: "end" },
     {
       phase: "begin",
-      name: "paseo.ws.message.inbound",
+      name: "rambla.ws.message.inbound",
       args: { envelopeType: "session", messageType: "status" },
     },
     { phase: "end" },
@@ -721,7 +721,7 @@ test("passes password as HTTP bearer header and WebSocket subprotocol", async ()
   expect(transportFactory).toHaveBeenCalledWith({
     url: "ws://test",
     headers: { Authorization: "Bearer shared-secret" },
-    protocols: ["paseo.bearer.shared-secret"],
+    protocols: ["rambla.bearer.shared-secret"],
   });
 });
 
@@ -2500,7 +2500,7 @@ test("uploadFile sends metadata request and file bytes as binary chunks", async 
           fileName: "notes.txt",
           mimeType: "text/plain",
           size: 11,
-          path: "/tmp/paseo-uploads/upload_req-upload/notes.txt",
+          path: "/tmp/rambla-uploads/upload_req-upload/notes.txt",
         },
         error: null,
       },
@@ -2515,7 +2515,7 @@ test("uploadFile sends metadata request and file bytes as binary chunks", async 
       fileName: "notes.txt",
       mimeType: "text/plain",
       size: 11,
-      path: "/tmp/paseo-uploads/upload_req-upload/notes.txt",
+      path: "/tmp/rambla-uploads/upload_req-upload/notes.txt",
     },
     error: null,
   });
@@ -2732,7 +2732,7 @@ test("sends structured attachments with create_agent_request", async () => {
         mimeType: "application/github-pr",
         number: 123,
         title: "Fix race in worktree setup",
-        url: "https://github.com/getpaseo/paseo/pull/123",
+        url: "https://github.com/getrambla/rambla/pull/123",
         baseRefName: "main",
         headRefName: "fix/worktree-race",
       },
@@ -2747,7 +2747,7 @@ test("sends structured attachments with create_agent_request", async () => {
       mimeType: "application/github-pr",
       number: 123,
       title: "Fix race in worktree setup",
-      url: "https://github.com/getpaseo/paseo/pull/123",
+      url: "https://github.com/getrambla/rambla/pull/123",
       baseRefName: "main",
       headRefName: "fix/worktree-race",
     },
@@ -2881,7 +2881,7 @@ test("omitting create_agent_request worktree base-ref fields preserves legacy wi
   await expect(createPromise).rejects.toThrow("legacy git shape sentinel");
 });
 
-test("sends structured first-agent context attachments with create_paseo_worktree_request", async () => {
+test("sends structured first-agent context attachments with create_rambla_worktree_request", async () => {
   const logger = createMockLogger();
   const mock = createMockTransport();
 
@@ -2908,7 +2908,7 @@ test("sends structured first-agent context attachments with create_paseo_worktre
           mimeType: "application/github-pr",
           number: 123,
           title: "Fix race in worktree setup",
-          url: "https://github.com/getpaseo/paseo/pull/123",
+          url: "https://github.com/getrambla/rambla/pull/123",
         },
       ],
     },
@@ -2925,13 +2925,13 @@ test("sends structured first-agent context attachments with create_paseo_worktre
       mimeType: "application/github-pr",
       number: 123,
       title: "Fix race in worktree setup",
-      url: "https://github.com/getpaseo/paseo/pull/123",
+      url: "https://github.com/getrambla/rambla/pull/123",
     },
   ]);
 
   mock.triggerMessage(
     wrapSessionMessage({
-      type: "create_paseo_worktree_response",
+      type: "create_rambla_worktree_response",
       payload: {
         requestId: request.requestId,
         workspace: null,
@@ -3061,12 +3061,12 @@ test("searches GitHub repositories through the dotted RPC", async () => {
   await connectPromise;
 
   const searchPromise = client.searchGithubRepositories(
-    { query: "paseo", limit: 10 },
+    { query: "rambla", limit: 10 },
     "req-repositories",
   );
   expect(parseSentFrame(mock.sent[0])).toEqual({
     type: "workspace.github.search_repositories.request",
-    query: "paseo",
+    query: "rambla",
     limit: 10,
     requestId: "req-repositories",
   });
@@ -3079,13 +3079,13 @@ test("searches GitHub repositories through the dotted RPC", async () => {
         requestId: "req-repositories",
         repositories: [
           {
-            id: "R_paseo",
-            name: "paseo",
-            nameWithOwner: "getpaseo/paseo",
+            id: "R_rambla",
+            name: "rambla",
+            nameWithOwner: "getrambla/rambla",
             description: "Development environment in your pocket",
             visibility: "public",
             updatedAt: "2026-07-15T10:00:00Z",
-            cloneUrl: "git@github.com:getpaseo/paseo.git",
+            cloneUrl: "git@github.com:getrambla/rambla.git",
           },
         ],
         available: true,
@@ -3099,13 +3099,13 @@ test("searches GitHub repositories through the dotted RPC", async () => {
     requestId: "req-repositories",
     repositories: [
       {
-        id: "R_paseo",
-        name: "paseo",
-        nameWithOwner: "getpaseo/paseo",
+        id: "R_rambla",
+        name: "rambla",
+        nameWithOwner: "getrambla/rambla",
         description: "Development environment in your pocket",
         visibility: "public",
         updatedAt: "2026-07-15T10:00:00Z",
-        cloneUrl: "git@github.com:getpaseo/paseo.git",
+        cloneUrl: "git@github.com:getrambla/rambla.git",
       },
     ],
     available: true,
@@ -3282,7 +3282,7 @@ test("sends project.remove.request", async () => {
   await expect(removePromise).resolves.toEqual({ removedWorkspaceIds: ["ws-main"] });
 });
 
-test("sends worktree base-ref fields in create_paseo_worktree_request", async () => {
+test("sends worktree base-ref fields in create_rambla_worktree_request", async () => {
   const logger = createMockLogger();
   const mock = createMockTransport();
 
@@ -3314,7 +3314,7 @@ test("sends worktree base-ref fields in create_paseo_worktree_request", async ()
   expect(mock.sent).toHaveLength(1);
   const request = parseSentFrame(mock.sent[0]);
   expect(request).toEqual({
-    type: "create_paseo_worktree_request",
+    type: "create_rambla_worktree_request",
     cwd: "/tmp/project",
     projectId: "remote:github.com/acme/project",
     worktreeSlug: "review-pr-123",
@@ -3326,7 +3326,7 @@ test("sends worktree base-ref fields in create_paseo_worktree_request", async ()
 
   mock.triggerMessage(
     wrapSessionMessage({
-      type: "create_paseo_worktree_response",
+      type: "create_rambla_worktree_response",
       payload: {
         requestId: request.requestId,
         workspace: null,
@@ -3344,7 +3344,7 @@ test("sends worktree base-ref fields in create_paseo_worktree_request", async ()
   });
 });
 
-test("omitting create_paseo_worktree_request worktree base-ref fields preserves legacy wire shape", async () => {
+test("omitting create_rambla_worktree_request worktree base-ref fields preserves legacy wire shape", async () => {
   const logger = createMockLogger();
   const mock = createMockTransport();
 
@@ -3373,7 +3373,7 @@ test("omitting create_paseo_worktree_request worktree base-ref fields preserves 
     JSON.stringify({
       type: "session",
       message: {
-        type: "create_paseo_worktree_request",
+        type: "create_rambla_worktree_request",
         cwd: "/tmp/project",
         worktreeSlug: "feature-a",
         requestId: "req-worktree-legacy",
@@ -3383,7 +3383,7 @@ test("omitting create_paseo_worktree_request worktree base-ref fields preserves 
 
   mock.triggerMessage(
     wrapSessionMessage({
-      type: "create_paseo_worktree_response",
+      type: "create_rambla_worktree_response",
       payload: {
         requestId: "req-worktree-legacy",
         workspace: null,
@@ -3941,7 +3941,7 @@ test("requests directory suggestions via RPC", async () => {
       message: {
         type: "directory_suggestions_response",
         payload: {
-          directories: ["/Users/test/projects/paseo"],
+          directories: ["/Users/test/projects/rambla"],
           entries: [{ path: "README.md", kind: "file" }],
           error: null,
           requestId: "req-directories",
@@ -3951,7 +3951,7 @@ test("requests directory suggestions via RPC", async () => {
   );
 
   await expect(promise).resolves.toEqual({
-    directories: ["/Users/test/projects/paseo"],
+    directories: ["/Users/test/projects/rambla"],
     entries: [{ path: "README.md", kind: "file" }],
     error: null,
     requestId: "req-directories",
@@ -4144,8 +4144,8 @@ test("requests GitHub check details via namespaced RPC", async () => {
   const promise = client.checkoutGithubGetCheckDetails(
     {
       cwd: "/tmp/project",
-      repoOwner: "getpaseo",
-      repoName: "paseo",
+      repoOwner: "getrambla",
+      repoName: "rambla",
       checkRunId: 12345,
       workflowRunId: 456,
     },
@@ -4157,8 +4157,8 @@ test("requests GitHub check details via namespaced RPC", async () => {
   expect(request).toMatchObject({
     type: "checkout.github.get_check_details.request",
     cwd: "/tmp/project",
-    repoOwner: "getpaseo",
-    repoName: "paseo",
+    repoOwner: "getrambla",
+    repoName: "rambla",
     checkRunId: 12345,
     workflowRunId: 456,
     requestId: "req-check-details",

@@ -6,7 +6,7 @@ import { describe, expect, test, vi } from "vitest";
 
 import { ClaudeAgentClient } from "../agent/providers/claude/agent.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 
 function deferred(): { promise: Promise<void>; resolve: () => void } {
   let resolve!: () => void;
@@ -134,7 +134,7 @@ function createControlledClaudeQueryFactory(resultGate: Promise<void>) {
 describe("daemon E2E (claude live usage)", () => {
   test("publishes renderable active context usage through agent_update", async () => {
     const logger = pino({ level: "silent" });
-    const cwd = mkdtempSync(path.join(tmpdir(), "paseo-claude-live-usage-"));
+    const cwd = mkdtempSync(path.join(tmpdir(), "rambla-claude-live-usage-"));
     const resultGate = deferred();
     const daemon = await createTestRamblaDaemon({
       agentClients: {

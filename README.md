@@ -50,7 +50,7 @@ Run agents in parallel on your own machines. Ship from your phone or your desk.
 ## Plugins
 
 Add themes, workspace panels, commands, settings screens, and coding-agent providers with trusted
-TypeScript plugins. Install from a local directory or Git repository with `paseo plugin add <source>`.
+TypeScript plugins. Install from a local directory or Git repository with `rambla plugin add <source>`.
 
 See the [plugin docs](https://rambla.sh/docs/plugins) for your Rambla version, or start with the
 [0.8 beta quickstart](https://rambla.sh/docs/plugins/v0.8). Plugins run with access to your daemon
@@ -81,8 +81,8 @@ To connect from your phone, open **Settings → your host → Pair Device**.
 Install the CLI and start Rambla:
 
 ```bash
-npm install -g @getpaseo/cli
-paseo
+npm install -g @getrambla/cli
+rambla
 ```
 
 Rambla starts locally, then asks whether to enable the end-to-end encrypted relay for device pairing. If you decline, connect directly over TCP, Tailscale, or another VPN. This path is useful for servers and remote machines.
@@ -98,40 +98,40 @@ For full setup and configuration, see:
 Run the Rambla daemon and self-hosted web UI in Docker:
 
 ```bash
-docker run -d --name paseo \
+docker run -d --name rambla \
   -p 6767:6767 \
   -e RAMBLA_PASSWORD=change-me \
-  -v "$PWD/paseo-home:/home/paseo" \
+  -v "$PWD/rambla-home:/home/rambla" \
   -v "$PWD:/workspace" \
   ghcr.io/getrambla/rambla:latest
 ```
 
-Open `http://localhost:6767` after it starts. Extend the base image with the agent CLIs you use, then provide credentials through environment variables or the persistent `/home/paseo` volume. See the [Docker documentation](docs/docker.md) for full setup details.
+Open `http://localhost:6767` after it starts. Extend the base image with the agent CLIs you use, then provide credentials through environment variables or the persistent `/home/rambla` volume. See the [Docker documentation](docs/docker.md) for full setup details.
 
 ## CLI
 
 Everything you can do in the app, you can do from the terminal.
 
 ```bash
-paseo run --provider claude/opus-4.6 "implement user authentication"
-paseo run --provider codex/gpt-5.5 --worktree feature-x "implement feature X"
+rambla run --provider claude/opus-4.6 "implement user authentication"
+rambla run --provider codex/gpt-5.5 --worktree feature-x "implement feature X"
 
-paseo ls                           # list running agents
-paseo attach abc123                # stream live output
-paseo send abc123 "also add tests" # follow-up task
+rambla ls                           # list running agents
+rambla attach abc123                # stream live output
+rambla send abc123 "also add tests" # follow-up task
 
 # run on a remote daemon; --cwd is a path on that host
-paseo run --host workstation.local:6767 --cwd /workspace "run the full test suite"
+rambla run --host workstation.local:6767 --cwd /workspace "run the full test suite"
 ```
 
 See the [full CLI reference](https://rambla.sh/docs/cli) for more.
 
 ## TypeScript SDK
 
-Build issue integrations, dashboards, and orchestration services with `@getpaseo/client`:
+Build issue integrations, dashboards, and orchestration services with `@getrambla/client`:
 
 ```ts
-import { createRamblaClient } from "@getpaseo/client";
+import { createRamblaClient } from "@getrambla/client";
 
 const client = createRamblaClient({ url: "ws://127.0.0.1:6767/ws" });
 await client.connect();
@@ -160,9 +160,9 @@ npx skills add getrambla/rambla
 
 Then use them in any agent conversation:
 
-- `/paseo-handoff` — hand off work between agents. I use this to plan with Claude and then handoff to Codex to implement.
-- `/paseo-advisor` — spin up a single agent as an advisor for a second opinion, without delegating the work itself.
-- `/paseo-committee` — form a committee of two contrasting agents to step back, do root cause analysis, and produce a plan.
+- `/rambla-handoff` — hand off work between agents. I use this to plan with Claude and then handoff to Codex to implement.
+- `/rambla-advisor` — spin up a single agent as an advisor for a second opinion, without delegating the work itself.
+- `/rambla-committee` — form a committee of two contrasting agents to step back, do root cause analysis, and produce a plan.
 
 ## Development
 
@@ -170,7 +170,7 @@ Quick monorepo package map:
 
 - `packages/server`: Rambla daemon (agent process orchestration, WebSocket API, MCP server)
 - `packages/app`: Expo client (iOS, Android, web)
-- `packages/cli`: `paseo` CLI for daemon and agent workflows
+- `packages/cli`: `rambla` CLI for daemon and agent workflows
 - `packages/desktop`: Electron desktop app
 - `packages/relay`: Relay transport and encryption used by the daemon and clients
 - `packages/website`: Marketing site and documentation (`rambla.sh`)
@@ -196,8 +196,8 @@ npm run typecheck
 
 ## Related projects
 
-- [getpaseo/paseo-relay](https://github.com/getpaseo/paseo-relay) — official distributed relay, written in Elixir
-- [paseo-vscode](https://marketplace.visualstudio.com/items?itemName=hinnes.paseo-vscode) — VS Code extension
+- [getrambla/rambla-relay](https://github.com/getrambla/rambla-relay) — official distributed relay, written in Elixir
+- [rambla-vscode](https://marketplace.visualstudio.com/items?itemName=hinnes.rambla-vscode) — VS Code extension
 
 ## License
 

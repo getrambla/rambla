@@ -5,7 +5,7 @@ import {
   type PluginWorkspacePanelProps,
   useRpc,
   useWorkspace,
-} from "@getpaseo/plugin/client";
+} from "@getrambla/plugin/client";
 import { useCallback, useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import { incrementRpc } from "../shared/increment";
@@ -39,11 +39,11 @@ export function contributeClient(client: PluginClientContext) {
     pills.get(agentId)?.remove();
     pills.delete(agentId);
   };
-  const unsubscribe = client.paseo.agents.subscribe((update) => {
+  const unsubscribe = client.rambla.agents.subscribe((update) => {
     if (update.kind === "remove") remove(update.agentId);
     else register(update.agent);
   });
-  void client.paseo.agents
+  void client.rambla.agents
     .list()
     .then(({ entries }) => {
       for (const { agent } of entries) register(agent);

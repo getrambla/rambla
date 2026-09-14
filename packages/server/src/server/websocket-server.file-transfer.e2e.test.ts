@@ -6,7 +6,7 @@ import { WebSocket, type RawData } from "ws";
 import {
   decodeFileTransferFrame,
   FileTransferOpcode,
-} from "@getpaseo/protocol/binary-frames/index";
+} from "@getrambla/protocol/binary-frames/index";
 import { createTestRamblaDaemon, type TestRamblaDaemon } from "./test-utils/index.js";
 import { WSOutboundMessageSchema, type WSOutboundMessage } from "./messages.js";
 
@@ -29,7 +29,7 @@ afterEach(async () => {
 test(
   "a large file stays ordered, source-scoped, and does not block another socket",
   async () => {
-    const cwd = mkdtempSync(join(tmpdir(), "paseo-large-file-transfer-"));
+    const cwd = mkdtempSync(join(tmpdir(), "rambla-large-file-transfer-"));
     temporaryDirectories.push(cwd);
     const expected = Buffer.alloc(FILE_SIZE);
     for (let index = 0; index < expected.length; index += 1) expected[index] = index % 251;

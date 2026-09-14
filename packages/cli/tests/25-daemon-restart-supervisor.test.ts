@@ -74,9 +74,9 @@ interface DaemonStatus {
   pid: number | null;
 }
 
-async function readDaemonStatus(paseoHome: string): Promise<DaemonStatus> {
+async function readDaemonStatus(ramblaHome: string): Promise<DaemonStatus> {
   const result =
-    await $`RAMBLA_HOME=${paseoHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx paseo daemon status --home ${paseoHome} --json`.nothrow();
+    await $`RAMBLA_HOME=${ramblaHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx rambla daemon status --home ${ramblaHome} --json`.nothrow();
   if (result.exitCode !== 0) {
     return { localDaemon: null, pid: null };
   }
@@ -94,8 +94,8 @@ async function readDaemonStatus(paseoHome: string): Promise<DaemonStatus> {
   }
 }
 
-async function readCapturedSupervisorLogs(paseoHome: string, recentLogs: string): Promise<string> {
-  const durableLogs = await readFile(join(paseoHome, "daemon.log"), "utf8").catch(() => "");
+async function readCapturedSupervisorLogs(ramblaHome: string, recentLogs: string): Promise<string> {
+  const durableLogs = await readFile(join(ramblaHome, "daemon.log"), "utf8").catch(() => "");
   return `${recentLogs}\n${durableLogs}`;
 }
 
@@ -119,7 +119,7 @@ async function waitFor(
 console.log("=== Daemon Restart (supervisor regression) ===\n");
 
 const port = await getAvailablePort();
-const paseoHome = await mkdtemp(join(tmpdir(), "paseo-restart-supervisor-"));
+const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-restart-supervisor-"));
 const cliRoot = join(import.meta.dirname, "..");
 const host = `127.0.0.1:${port}`;
 
@@ -137,7 +137,7 @@ try {
       env: {
         ...process.env,
         ...testEnv,
-        RAMBLA_HOME: paseoHome,
+        RAMBLA_HOME: ramblaHome,
         RAMBLA_LISTEN: host,
         RAMBLA_RELAY_ENABLED: "false",
         CI: "true",
@@ -155,7 +155,7 @@ try {
 
   await waitFor(
     async () => {
-      const status = await readDaemonStatus(paseoHome);
+      const status = await readDaemonStatus(ramblaHome);
       return (
         status.localDaemon === "running" && status.pid !== null && isProcessRunning(status.pid)
       );
@@ -164,7 +164,7 @@ try {
     "daemon did not become running in time",
   );
 
-  const statusBeforeRestart = await readDaemonStatus(paseoHome);
+  const statusBeforeRestart = await readDaemonStatus(ramblaHome);
   const supervisorPid = statusBeforeRestart.pid;
   assert.strictEqual(
     statusBeforeRestart.localDaemon,
@@ -216,7 +216,7 @@ try {
     "worker pid should change after restart",
   );
 
-  const statusAfterRestart = await readDaemonStatus(paseoHome);
+  const statusAfterRestart = await readDaemonStatus(ramblaHome);
   assert.strictEqual(
     statusAfterRestart.localDaemon,
     "running",
@@ -227,7 +227,7 @@ try {
     supervisorPid,
     "supervisor pid should remain stable across restart",
   );
-  const capturedSupervisorLogs = await readCapturedSupervisorLogs(paseoHome, recentSupervisorLogs);
+  const capturedSupervisorLogs = await readCapturedSupervisorLogs(ramblaHome, recentSupervisorLogs);
   assert(
     capturedSupervisorLogs.includes('"msg":"Worker requested restart"') &&
       capturedSupervisorLogs.includes('"reason":"settings_update"'),
@@ -254,8 +254,8 @@ try {
     });
   }
 
-  await $`RAMBLA_HOME=${paseoHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx paseo daemon stop --home ${paseoHome} --force`.nothrow();
-  await rm(paseoHome, { recursive: true, force: true });
+  await $`RAMBLA_HOME=${ramblaHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx rambla daemon stop --home ${ramblaHome} --force`.nothrow();
+  await rm(ramblaHome, { recursive: true, force: true });
 }
 
 if (recentSupervisorLogs.trim().length === 0) {

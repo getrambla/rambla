@@ -8,16 +8,16 @@ import {
   buildWorkspaceScriptPayloads,
   createScriptStatusEmitter,
 } from "./script-status-projection.js";
-import { WorkspaceScriptPayloadSchema } from "@getpaseo/protocol/messages";
+import { WorkspaceScriptPayloadSchema } from "@getrambla/protocol/messages";
 import type { ScriptHealthState } from "./script-health-monitor.js";
 import { WorkspaceScriptRuntimeStore } from "./workspace-script-runtime-store.js";
 import { readRamblaConfig } from "../utils/worktree.js";
-import type { RamblaConfig } from "@getpaseo/protocol/paseo-config-schema";
+import type { RamblaConfig } from "@getrambla/protocol/rambla-config-schema";
 import { createTestLogger } from "../test-utils/test-logger.js";
 
 function createWorkspaceRepo(options?: {
   branchName?: string;
-  paseoConfig?: Record<string, unknown>;
+  ramblaConfig?: Record<string, unknown>;
 }): { tempDir: string; repoDir: string; cleanup: () => void } {
   const tempDir = realpathSync(mkdtempSync(path.join(tmpdir(), "script-projection-")));
   const repoDir = path.join(tempDir, "repo");
@@ -32,8 +32,8 @@ function createWorkspaceRepo(options?: {
   });
   execFileSync("git", ["config", "user.name", "Test"], { cwd: repoDir, stdio: "pipe" });
   writeFileSync(path.join(repoDir, "README.md"), "hello\n");
-  if (options?.paseoConfig) {
-    writeFileSync(path.join(repoDir, "paseo.json"), JSON.stringify(options.paseoConfig, null, 2));
+  if (options?.ramblaConfig) {
+    writeFileSync(path.join(repoDir, "rambla.json"), JSON.stringify(options.ramblaConfig, null, 2));
   }
   execFileSync("git", ["add", "."], { cwd: repoDir, stdio: "pipe" });
   execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "initial"], {
@@ -53,7 +53,7 @@ function createWorkspaceRepo(options?: {
 function buildPayloads(input: {
   workspaceId: string;
   workspaceDirectory: string;
-  paseoConfig?: RamblaConfig | null;
+  ramblaConfig?: RamblaConfig | null;
   routeStore?: ScriptRouteStore;
   serviceProxy?: ScriptRouteStore;
   runtimeStore: WorkspaceScriptRuntimeStore;
@@ -62,13 +62,13 @@ function buildPayloads(input: {
   gitMetadata?: { projectSlug: string; currentBranch: string | null };
   resolveHealth?: (hostname: string) => ScriptHealthState | null;
 }) {
-  const paseoConfig =
-    input.paseoConfig !== undefined ? input.paseoConfig : loadConfig(input.workspaceDirectory);
+  const ramblaConfig =
+    input.ramblaConfig !== undefined ? input.ramblaConfig : loadConfig(input.workspaceDirectory);
   const { routeStore, serviceProxy, ...rest } = input;
   return buildWorkspaceScriptPayloads({
     ...rest,
     serviceProxy: serviceProxy ?? routeStore ?? new ScriptRouteStore(),
-    paseoConfig,
+    ramblaConfig,
   });
 }
 
@@ -96,7 +96,7 @@ describe("script-status-projection", () => {
   it("projects plain scripts and services differently", () => {
     const workspaceId = "workspace-plain-and-service";
     const workspace = createWorkspaceRepo({
-      paseoConfig: {
+      ramblaConfig: {
         scripts: {
           typecheck: { command: "npm run typecheck" },
           web: { type: "service", command: "npm run web", port: 3000 },
@@ -158,7 +158,7 @@ describe("script-status-projection", () => {
     const workspaceId = "workspace-service-metadata";
     const workspace = createWorkspaceRepo({
       branchName: "local-branch-that-should-not-be-read",
-      paseoConfig: {
+      ramblaConfig: {
         scripts: {
           web: { type: "service", command: "npm run web", port: 3000 },
         },
@@ -203,7 +203,7 @@ describe("script-status-projection", () => {
   it("projects local and public service URLs while keeping proxyUrl public-first", () => {
     const workspaceId = "workspace-public-service";
     const workspace = createWorkspaceRepo({
-      paseoConfig: {
+      ramblaConfig: {
         scripts: {
           web: { type: "service", command: "npm run web", port: 3000 },
         },
@@ -247,7 +247,7 @@ describe("script-status-projection", () => {
     const workspaceId = "workspace-running-service";
     const workspace = createWorkspaceRepo({
       branchName: "feature/card",
-      paseoConfig: {
+      ramblaConfig: {
         scripts: {
           web: { type: "service", command: "npm run web" },
         },
@@ -304,7 +304,7 @@ describe("script-status-projection", () => {
   it("maps internal pending health to null on the wire", () => {
     const workspaceId = "workspace-pending-health";
     const workspace = createWorkspaceRepo({
-      paseoConfig: {
+      ramblaConfig: {
         scripts: {
           web: { type: "service", command: "npm run web" },
         },
@@ -449,9 +449,9 @@ describe("script-status-projection", () => {
     }
   });
 
-  it("readRamblaConfig fails with configPath and error when paseo.json is malformed", () => {
+  it("readRamblaConfig fails with configPath and error when rambla.json is malformed", () => {
     const workspace = createWorkspaceRepo();
-    const configPath = path.join(workspace.repoDir, "paseo.json");
+    const configPath = path.join(workspace.repoDir, "rambla.json");
     writeFileSync(
       configPath,
       '{\n<<<<<<< HEAD\n  "scripts": {}\n=======\n  "scripts": {}\n>>>>>>> origin/main\n}\n',
@@ -468,7 +468,7 @@ describe("script-status-projection", () => {
     }
   });
 
-  it("buildWorkspaceScriptPayloads given paseoConfig=null still surfaces orphaned runtime scripts", () => {
+  it("buildWorkspaceScriptPayloads given ramblaConfig=null still surfaces orphaned runtime scripts", () => {
     const workspaceId = "workspace-null-config";
     const workspace = createWorkspaceRepo();
     const routeStore = new ScriptRouteStore();
@@ -487,7 +487,7 @@ describe("script-status-projection", () => {
         buildPayloads({
           workspaceId,
           workspaceDirectory: workspace.repoDir,
-          paseoConfig: null,
+          ramblaConfig: null,
           routeStore,
           runtimeStore,
           daemonPort: 6767,
@@ -513,7 +513,7 @@ describe("script-status-projection", () => {
   it("createScriptStatusEmitter overlays health onto the projected workspace script list", async () => {
     const workspaceId = "workspace-emitter";
     const workspace = createWorkspaceRepo({
-      paseoConfig: {
+      ramblaConfig: {
         scripts: {
           api: { type: "service", command: "npm run api" },
           typecheck: { command: "npm run typecheck" },
