@@ -64,3 +64,12 @@ function loadAppVersion(): string {
   }
   return packageJson.version;
 }
+
+export async function loadProtocolSchemas(): Promise<
+  typeof import("@getrambla/protocol/messages")
+> {
+  const moduleUrl = pathToFileURL(
+    path.resolve(__dirname, "../../../../../packages/protocol/dist/messages.js"),
+  ).href;
+  return import(moduleUrl);
+}
