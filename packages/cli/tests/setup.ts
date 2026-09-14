@@ -20,6 +20,18 @@ const TEST_ENV_DEFAULTS = {
   RAMBLA_VOICE_MODE_ENABLED: process.env.RAMBLA_VOICE_MODE_ENABLED ?? "0",
 };
 
+function testEnvironment(ramblaHome: string): NodeJS.ProcessEnv {
+  return {
+    ...Object.fromEntries(
+      Object.entries(process.env).filter(([key]) => !key.startsWith("RAMBLA_")),
+    ),
+    ...TEST_ENV_DEFAULTS,
+    RAMBLA_HOME: ramblaHome,
+    HOME: ramblaHome,
+    USERPROFILE: ramblaHome,
+  };
+}
+
 function killPidTree(pid: number, signal: NodeJS.Signals): void {
   if (!Number.isInteger(pid) || pid <= 0) {
     return;
@@ -83,19 +95,25 @@ export async function createTempDirs(): Promise<{ ramblaHome: string; workDir: s
  * Wait for daemon to be ready by testing WebSocket connection
  * Uses `rambla agent ls` which connects via WebSocket
  */
-async function probeDaemon(port: number): Promise<boolean> {
+async function probeDaemon(port: number, ramblaHome: string): Promise<boolean> {
   try {
-    const result = await $`RAMBLA_HOST=localhost:${port} rambla agent ls`.nothrow();
+    const result = await $({
+      env: testEnvironment(ramblaHome),
+    })`rambla agent ls --host localhost:${port}`.nothrow();
     return result.exitCode === 0;
   } catch {
     return false;
   }
 }
 
-export async function waitForDaemon(port: number, timeout = 30000): Promise<void> {
+export async function waitForDaemon(
+  port: number,
+  ramblaHome: string,
+  timeout = 30000,
+): Promise<void> {
   const deadline = Date.now() + timeout;
   async function poll(): Promise<void> {
-    if (await probeDaemon(port)) return;
+    if (await probeDaemon(port, ramblaHome)) return;
     if (Date.now() >= deadline) {
       throw new Error(`Daemon failed to start on port ${port} within ${timeout}ms`);
     }
@@ -110,8 +128,14 @@ export async function waitForDaemon(port: number, timeout = 30000): Promise<void
  */
 export async function startDaemon(port: number, ramblaHome: string): Promise<ProcessPromise> {
   $.verbose = false;
-  const daemon =
-    $`RAMBLA_HOME=${ramblaHome} RAMBLA_LISTEN=127.0.0.1:${port} RAMBLA_RELAY_ENABLED=false RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${TEST_ENV_DEFAULTS.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${TEST_ENV_DEFAULTS.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${TEST_ENV_DEFAULTS.RAMBLA_VOICE_MODE_ENABLED} CI=true rambla daemon start --foreground`.nothrow();
+  const daemon = $({
+    env: {
+      ...testEnvironment(ramblaHome),
+      RAMBLA_LISTEN: `127.0.0.1:${port}`,
+      RAMBLA_RELAY_ENABLED: "false",
+      CI: "true",
+    },
+  })`rambla daemon run`.nothrow();
   return daemon;
 }
 
@@ -125,7 +149,7 @@ export async function createTestContext(): Promise<TestContext> {
   // Helper to run CLI commands against test daemon
   const rambla = (args: string[]): ProcessPromise => {
     $.verbose = false;
-    return $`RAMBLA_HOST=localhost:${port} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${TEST_ENV_DEFAULTS.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${TEST_ENV_DEFAULTS.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${TEST_ENV_DEFAULTS.RAMBLA_VOICE_MODE_ENABLED} rambla ${args}`.nothrow();
+    return $({ env: testEnvironment(ramblaHome) })`rambla --home ${ramblaHome} ${args}`.nothrow();
   };
 
   // Cleanup function
@@ -162,7 +186,7 @@ export async function createTestContext(): Promise<TestContext> {
 export async function createTestContextWithDaemon(): Promise<TestContext> {
   const ctx = await createTestContext();
   ctx.daemon = await startDaemon(ctx.port, ctx.ramblaHome);
-  await waitForDaemon(ctx.port);
+  await waitForDaemon(ctx.port, ctx.ramblaHome);
   return ctx;
 }
 

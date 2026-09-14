@@ -1,24 +1,16 @@
-import { mkdtempSync, rmSync, statSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 
 import { resolveRamblaHome } from "./rambla-home.js";
-import { PRIVATE_DIRECTORY_MODE } from "./private-files.js";
-
-const MODE_MASK = 0o777;
-
-function modeOf(filePath: string): number {
-  return statSync(filePath).mode & MODE_MASK;
-}
-
-describe.skipIf(process.platform === "win32")("resolveRamblaHome permissions", () => {
-  test("creates RAMBLA_HOME with private permissions", () => {
+describe("resolveRamblaHome", () => {
+  test("resolves RAMBLA_HOME without creating it", () => {
     const parent = mkdtempSync(path.join(tmpdir(), "rambla-home-parent-"));
     const ramblaHome = path.join(parent, "home");
     try {
       expect(resolveRamblaHome({ RAMBLA_HOME: ramblaHome })).toBe(ramblaHome);
-      expect(modeOf(ramblaHome)).toBe(PRIVATE_DIRECTORY_MODE);
+      expect(existsSync(ramblaHome)).toBe(false);
     } finally {
       rmSync(parent, { recursive: true, force: true });
     }

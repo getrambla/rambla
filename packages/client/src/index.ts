@@ -1,3 +1,5 @@
+import type { OwnedSubscription } from "./connection/index.js";
+export type { OwnedSubscription, SubscriptionObserver } from "./connection/index.js";
 import type { DaemonClientConfig } from "./daemon-client.js";
 import type { AgentPermissionResponse } from "@getrambla/protocol/agent-types";
 import type {
@@ -114,6 +116,7 @@ export type RamblaProjectUpdate = Extract<
 export type RamblaProjectUpdateHandler = (update: RamblaProjectUpdate) => void;
 
 export interface RamblaAgentListResult {
+  subscription?: OwnedSubscription<RamblaAgentListResult>;
   requestId: string;
   subscriptionId?: string | null;
   entries: FetchAgentsEntry[];
@@ -127,6 +130,7 @@ export type RamblaWorkspaceListOptions = Omit<
 };
 
 export interface RamblaWorkspaceListResult {
+  subscription?: OwnedSubscription<RamblaWorkspaceListResult>;
   requestId: string;
   subscriptionId?: string | null;
   entries: RamblaWorkspace[];
@@ -185,6 +189,12 @@ export interface RamblaProjectActions {
 }
 
 export interface RamblaWorkspaceActions {
+  list(options: RamblaWorkspaceListOptions & { subscribe: {} }): Promise<
+    RamblaWorkspaceListResult & {
+      subscriptionId: string;
+      subscription: OwnedSubscription<RamblaWorkspaceListResult>;
+    }
+  >;
   list(options?: RamblaWorkspaceListOptions): Promise<RamblaWorkspaceListResult>;
   ref(workspace: string | RamblaWorkspace): RamblaWorkspaceHandle;
   open(
@@ -295,7 +305,13 @@ export type RamblaAgentTimelineEvent =
   | {
       agentId: string;
       event: { type: "replacement"; epoch: string };
-    };
+    }
+  | {
+      agentId: string;
+      subscriptionId: string;
+      event: { type: "subscription_restored" };
+    }
+  | { agentId: string; event: { type: "error"; error: string } };
 
 export type RamblaAgentTimelineSubscription = ReturnType<DaemonClient["subscribeAgentTimeline"]>;
 
@@ -308,8 +324,10 @@ export interface RamblaAgentTimelineHandle {
    */
   refetch(options?: RamblaAgentTimelineRefetchOptions): Promise<FetchAgentTimelinePayload>;
   /**
-   * Subscribe to this agent and restore demand after reconnect. A replacement
-   * event invalidates previously fetched history; refetch the page you need.
+   * Delivers live events only. After reconnect, subscription_restored precedes
+   * subsequent updates. History may have been missed; use refetch() to request
+   * the range you need. No history is fetched automatically. A replacement event
+   * invalidates the previous epoch. Subscription errors release this observation.
    * Await the returned unsubscribe function's `ready` promise before starting
    * work that must be observed. It rejects if establishment fails.
    */
@@ -360,6 +378,12 @@ export interface RamblaAgentHandle {
 }
 
 export interface RamblaAgentActions {
+  list(options: RamblaAgentListOptions & { subscribe: {} }): Promise<
+    RamblaAgentListResult & {
+      subscriptionId: string;
+      subscription: OwnedSubscription<RamblaAgentListResult>;
+    }
+  >;
   list(options?: RamblaAgentListOptions): Promise<RamblaAgentListResult>;
   ref(agent: string | RamblaAgent): RamblaAgentHandle;
   create(options: RamblaAgentCreateOptions): Promise<RamblaAgentHandle>;
@@ -456,6 +480,8 @@ export interface RamblaConfigActions {
 }
 
 export interface RamblaApi {
+  dispose(): Promise<void>;
+  observeEvents: DaemonClient["observeEvents"];
   readonly terminals: RamblaTerminalActions;
   readonly workspaces: RamblaWorkspaceActions;
   readonly projects: RamblaProjectActions;
@@ -477,17 +503,60 @@ export function createRamblaClient(config: RamblaClientConfig): RamblaClient {
     clientId: config.clientId ?? createGeneratedClientId(),
     clientType: "cli",
   });
+  const api = createRamblaApi(daemonClient);
   return {
-    ...createRamblaApi(daemonClient),
+    ...api,
     connect: () => daemonClient.connect(),
-    close: () => daemonClient.close(),
+    close: async () => {
+      try {
+        await api.dispose();
+      } finally {
+        await daemonClient.close();
+      }
+    },
     ensureConnected: () => daemonClient.ensureConnected(),
     getConnectionState: () => daemonClient.getConnectionState(),
   };
 }
 
-export function createRamblaApi(daemonClient: DaemonClient): RamblaApi {
-  const createAgentHandle = createAgentHandleFactory(daemonClient);
+export function createRamblaApi(
+  daemonClient: DaemonClient,
+  scopeOptions?: { signal?: AbortSignal },
+): RamblaApi {
+  const handles = new Set<{ release(): Promise<void> }>();
+  const agentListeners = new Set<RamblaAgentUpdateHandler>();
+  const workspaceListeners = new Set<RamblaWorkspaceUpdateHandler>();
+  const lifetime = new AbortController();
+  const own = <T extends { release(): Promise<void> }>(create: () => T): T => {
+    if (lifetime.signal.aborted) throw new Error("Rambla API is disposed");
+    const handle = create();
+    handles.add(handle);
+    const release = handle.release.bind(handle);
+    handle.release = async () => {
+      await release();
+      handles.delete(handle);
+    };
+    return handle;
+  };
+  const listenAgents = (handler: RamblaAgentUpdateHandler) => {
+    if (lifetime.signal.aborted) throw new Error("Rambla API is disposed");
+    agentListeners.add(handler);
+    return () => {
+      agentListeners.delete(handler);
+    };
+  };
+  const listenWorkspaces = (handler: RamblaWorkspaceUpdateHandler) => {
+    if (lifetime.signal.aborted) throw new Error("Rambla API is disposed");
+    workspaceListeners.add(handler);
+    return () => {
+      workspaceListeners.delete(handler);
+    };
+  };
+  const createAgentHandle = createAgentHandleFactory(
+    daemonClient,
+    listenAgents,
+    (agentId, handler) => own(() => daemonClient.subscribeAgentTimeline(agentId, handler)),
+  );
   const createAgent = async (
     options: RamblaAgentCreateOptions,
     placement?: { workspaceId: string; cwd: string },
@@ -519,19 +588,115 @@ export function createRamblaApi(daemonClient: DaemonClient): RamblaApi {
     }
     return workspace.workspaceDirectory;
   });
-  const createWorkspaceHandle = createWorkspaceHandleFactory(daemonClient, createAgent, terminals);
+  const createWorkspaceHandle = createWorkspaceHandleFactory(
+    daemonClient,
+    createAgent,
+    terminals,
+    listenWorkspaces,
+  );
+
+  let disposal: Promise<void> | null = null;
+  const dispose = (): Promise<void> => {
+    if (disposal) return disposal;
+    lifetime.abort();
+    scopeOptions?.signal?.removeEventListener("abort", abort);
+    agentListeners.clear();
+    workspaceListeners.clear();
+    disposal = Promise.allSettled([...handles].map((handle) => handle.release())).then(
+      (results) => {
+        handles.clear();
+        const failures = results.flatMap((result) =>
+          result.status === "rejected" ? [result.reason] : [],
+        );
+        if (failures.length)
+          throw new AggregateError(failures, "Failed to release API subscriptions");
+        return undefined;
+      },
+    );
+    return disposal;
+  };
+  const abort = () => {
+    void dispose().catch((error) => console.error("API subscription cleanup failed", error));
+  };
+  if (scopeOptions?.signal?.aborted) abort();
+  else scopeOptions?.signal?.addEventListener("abort", abort, { once: true });
+
+  const observeEvents: DaemonClient["observeEvents"] = (events, options) =>
+    own(() => daemonClient.observeEvents(events, options));
+
+  const subscribeEvent = (
+    event: "project.update" | "providers_snapshot_update",
+    update: (message: SessionOutboundMessage) => void,
+  ): (() => void) => {
+    const observation = observeEvents([event]);
+    observation.subscribe({ snapshot: () => {}, update });
+    return () => {
+      void observation
+        .release()
+        .catch((error) => console.error("Event subscription cleanup failed", error));
+    };
+  };
+
+  function listWorkspaces(options: RamblaWorkspaceListOptions & { subscribe: {} }): Promise<
+    RamblaWorkspaceListResult & {
+      subscriptionId: string;
+      subscription: OwnedSubscription<RamblaWorkspaceListResult>;
+    }
+  >;
+  function listWorkspaces(options?: RamblaWorkspaceListOptions): Promise<RamblaWorkspaceListResult>;
+  async function listWorkspaces(
+    options?: RamblaWorkspaceListOptions,
+  ): Promise<RamblaWorkspaceListResult> {
+    if (!options?.subscribe) return daemonClient.fetchWorkspaces(options);
+    if (options.subscribe.subscriptionId !== undefined)
+      throw new Error("Subscription IDs are assigned by the host");
+    const subscription = own(() => daemonClient.observeWorkspaces(options));
+    subscription.subscribe({
+      snapshot: () => {},
+      update: (message) => {
+        if (message.type === "workspace_update")
+          for (const listener of workspaceListeners) listener(message.payload);
+      },
+    });
+    return { ...(await subscription.ready), subscription };
+  }
+
+  function listAgents(options: RamblaAgentListOptions & { subscribe: {} }): Promise<
+    RamblaAgentListResult & {
+      subscriptionId: string;
+      subscription: OwnedSubscription<RamblaAgentListResult>;
+    }
+  >;
+  function listAgents(options?: RamblaAgentListOptions): Promise<RamblaAgentListResult>;
+  async function listAgents(options?: RamblaAgentListOptions): Promise<RamblaAgentListResult> {
+    if (!options?.subscribe) return daemonClient.fetchAgents(options);
+    if (options.subscribe.subscriptionId !== undefined)
+      throw new Error("Subscription IDs are assigned by the host");
+    const subscription = own(() => daemonClient.observeAgents(options));
+    subscription.subscribe({
+      snapshot: () => {},
+      update: (message) => {
+        if (message.type === "agent_update")
+          for (const listener of agentListeners) listener(message.payload);
+      },
+    });
+    return { ...(await subscription.ready), subscription };
+  }
 
   return {
+    dispose,
+    observeEvents,
     terminals,
     projects: {
       list: (options) => daemonClient.listProjects(options),
-      subscribe: (handler) =>
-        daemonClient.on("project.update", (message) => {
-          handler(message.payload);
-        }),
+      subscribe: (handler) => {
+        return subscribeEvent("project.update", (message) => {
+          if (message.type === "project.update") handler(message.payload);
+        });
+      },
     },
     workspaces: {
-      list: (options) => daemonClient.fetchWorkspaces(options),
+      list: listWorkspaces,
       ref: (workspace) => createWorkspaceHandle(workspace),
       open: (input, requestId) =>
         openWorkspace(daemonClient, createWorkspaceHandle, input, requestId),
@@ -544,19 +709,13 @@ export function createRamblaApi(daemonClient: DaemonClient): RamblaApi {
       },
       archive: (workspace, requestId) =>
         daemonClient.archiveWorkspace(resolveWorkspaceId(workspace), requestId),
-      subscribe: (handler) =>
-        daemonClient.on("workspace_update", (message) => {
-          handler(message.payload);
-        }),
+      subscribe: listenWorkspaces,
     },
     agents: {
-      list: (options) => daemonClient.fetchAgents(options),
+      list: listAgents,
       ref: (agent) => createAgentHandle(agent),
       create: (options) => createAgent(options),
-      subscribe: (handler) =>
-        daemonClient.on("agent_update", (message) => {
-          handler(message.payload);
-        }),
+      subscribe: listenAgents,
     },
     providers: {
       listModels: (provider, options) => daemonClient.listProviderModels(provider, options),
@@ -567,14 +726,21 @@ export function createRamblaApi(daemonClient: DaemonClient): RamblaApi {
       },
       listAvailable: (options) => daemonClient.listAvailableProviders(options),
       snapshot: (options) => daemonClient.getProvidersSnapshot(options),
-      waitForReady: (options) => waitForProvidersReady(daemonClient, options),
+      waitForReady: (options) =>
+        waitForProvidersReady(
+          daemonClient,
+          observeEvents(["providers_snapshot_update"]),
+          lifetime.signal,
+          options,
+        ),
       refresh: (options) => daemonClient.refreshProvidersSnapshot(options),
       diagnostic: (provider, options) => daemonClient.getProviderDiagnostic(provider, options),
       listUsage: (options) => listProviderUsage(daemonClient, options),
-      subscribe: (handler) =>
-        daemonClient.on("providers_snapshot_update", (message) => {
-          handler(message.payload);
-        }),
+      subscribe: (handler) => {
+        return subscribeEvent("providers_snapshot_update", (message) => {
+          if (message.type === "providers_snapshot_update") handler(message.payload);
+        });
+      },
     },
     config: {
       get: (requestId) => daemonClient.getDaemonConfig(requestId),
@@ -594,6 +760,7 @@ function createWorkspaceHandleFactory(
   daemonClient: DaemonClient,
   createAgent: CreateAgent,
   terminals: RamblaTerminalActions,
+  listen: (handler: RamblaWorkspaceUpdateHandler) => () => void,
 ): WorkspaceHandleFactory {
   return (workspace) => {
     const id = typeof workspace === "string" ? workspace : workspace.id;
@@ -660,14 +827,12 @@ function createWorkspaceHandleFactory(
         return result;
       },
       subscribe: (handler) =>
-        daemonClient.on("workspace_update", (message) => {
-          const update = message.payload;
+        listen((update) => {
           if (update.kind === "upsert" && update.workspace.id === id) {
             current = update.workspace;
             handler(update);
           }
           if (update.kind === "remove" && update.id === id) {
-            current = null;
             handler(update);
           }
         }),
@@ -675,7 +840,11 @@ function createWorkspaceHandleFactory(
   };
 }
 
-function createAgentHandleFactory(daemonClient: DaemonClient): AgentHandleFactory {
+function createAgentHandleFactory(
+  daemonClient: DaemonClient,
+  listen: (handler: RamblaAgentUpdateHandler) => () => void,
+  subscribeTimeline: DaemonClient["subscribeAgentTimeline"],
+): AgentHandleFactory {
   return (agent) => {
     const id = typeof agent === "string" ? agent : agent.id;
     let current = typeof agent === "string" ? null : agent;
@@ -692,15 +861,27 @@ function createAgentHandleFactory(daemonClient: DaemonClient): AgentHandleFactor
           return result;
         },
         subscribe: (handler) =>
-          daemonClient.subscribeAgentTimeline(id, (message) => {
-            handler(
-              message.type === "agent_stream"
-                ? message.payload
-                : {
-                    agentId: message.payload.agentId,
-                    event: { type: "replacement", epoch: message.payload.epoch },
-                  },
-            );
+          subscribeTimeline(id, (message) => {
+            switch (message.type) {
+              case "agent_stream":
+                return handler(message.payload);
+              case "agent.timeline.subscription_restored":
+                return handler({
+                  agentId: id,
+                  subscriptionId: message.payload.subscriptionId,
+                  event: { type: "subscription_restored" },
+                });
+              case "agent.timeline.error":
+                return handler({
+                  agentId: id,
+                  event: { type: "error", error: message.payload.error },
+                });
+              case "agent.timeline.replacement":
+                return handler({
+                  agentId: id,
+                  event: { type: "replacement", epoch: message.payload.epoch },
+                });
+            }
           }),
       },
       get workspaceId() {
@@ -785,14 +966,12 @@ function createAgentHandleFactory(daemonClient: DaemonClient): AgentHandleFactor
         await daemonClient.detachAgent(id);
       },
       subscribe: (handler) =>
-        daemonClient.on("agent_update", (message) => {
-          const update = message.payload;
+        listen((update) => {
           if (update.kind === "upsert" && update.agent.id === id) {
             current = update.agent;
             handler(update);
           }
           if (update.kind === "remove" && update.agentId === id) {
-            current = null;
             handler(update);
           }
         }),
@@ -846,86 +1025,96 @@ function listProviderUsage(
   return daemonClient.listProviderUsage(options);
 }
 
-function waitForProvidersReady(
+async function waitForProvidersReady(
   daemonClient: DaemonClient,
+  observation: ReturnType<DaemonClient["observeEvents"]>,
+  signal: AbortSignal,
   options: RamblaProviderWaitOptions = {},
 ): Promise<RamblaProviderSnapshotResult> {
-  // COMPAT(providersSnapshotCwd): added in v0.3.2, remove gate after 2027-02-10.
-  if (daemonClient.getLastServerInfoMessage()?.features?.providersSnapshotCwd !== true) {
-    return Promise.reject(new Error("Update the host to wait for provider discovery."));
-  }
-
   const { timeoutMs = 60_000, ...snapshotOptions } = options;
 
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    let requestId: string | null = null;
-    let snapshotCwd: string | undefined;
-    const pendingUpdates = new Map<string | undefined, RamblaProviderSnapshotUpdate>();
-    let latestEntries: RamblaProviderSnapshotResult["entries"] = [];
+  try {
+    await observation.ready;
+    signal.throwIfAborted();
+    return await new Promise<RamblaProviderSnapshotResult>((resolve, reject) => {
+      let settled = false;
+      let requestId: string | null = null;
+      let snapshotCwd: string | undefined;
+      const pendingUpdates = new Map<string | undefined, RamblaProviderSnapshotUpdate>();
+      let latestEntries: RamblaProviderSnapshotResult["entries"] = [];
 
-    const cleanup = () => {
-      clearTimeout(timeout);
-      unsubscribe();
-    };
-    const finish = (snapshot: RamblaProviderSnapshotResult) => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      resolve(snapshot);
-    };
-    const fail = (error: unknown) => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      reject(error instanceof Error ? error : new Error(String(error)));
-    };
-    const updateMatches = (update: RamblaProviderSnapshotUpdate) => update.cwd === snapshotCwd;
+      const cleanup = () => {
+        clearTimeout(timeout);
+        unsubscribe();
+        signal.removeEventListener("abort", abort);
+      };
+      const finish = (snapshot: RamblaProviderSnapshotResult) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(snapshot);
+      };
+      const fail = (error: unknown) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(error instanceof Error ? error : new Error(String(error)));
+      };
+      const updateMatches = (update: RamblaProviderSnapshotUpdate) => update.cwd === snapshotCwd;
 
-    const unsubscribe = daemonClient.on("providers_snapshot_update", (message) => {
-      const update = message.payload;
-      if (!requestId) {
-        pendingUpdates.set(update.cwd, update);
-        return;
-      }
-      if (!updateMatches(update)) return;
-      latestEntries = update.entries;
-      if (update.entries.some((entry) => entry.status === "loading")) return;
-      finish({ ...update, requestId });
+      const unsubscribe = observation.subscribe({
+        snapshot: () => {},
+        update: (message) => {
+          if (message.type !== "providers_snapshot_update") return;
+          const update = message.payload;
+          if (!requestId) {
+            pendingUpdates.set(update.cwd, update);
+            return;
+          }
+          if (!updateMatches(update)) return;
+          latestEntries = update.entries;
+          if (update.entries.some((entry) => entry.status === "loading")) return;
+          finish({ ...update, requestId });
+        },
+      });
+      const abort = () => fail(new Error("Rambla API is disposed"));
+      signal.addEventListener("abort", abort, { once: true });
+
+      const timeout = setTimeout(() => {
+        const loading = latestEntries
+          .filter((entry) => entry.status === "loading")
+          .map((entry) => entry.provider)
+          .join(", ");
+        fail(
+          new Error(
+            loading
+              ? `Timed out waiting for providers: ${loading}`
+              : "Timed out waiting for provider discovery",
+          ),
+        );
+      }, timeoutMs);
+
+      void daemonClient
+        .getProvidersSnapshot(snapshotOptions)
+        .then((snapshot) => {
+          requestId = snapshot.requestId;
+          snapshotCwd = snapshot.cwd;
+          latestEntries = snapshot.entries;
+          if (!snapshot.entries.some((entry) => entry.status === "loading")) {
+            finish(snapshot);
+            return;
+          }
+          const pendingUpdate = pendingUpdates.get(snapshotCwd);
+          if (pendingUpdate && !pendingUpdate.entries.some((entry) => entry.status === "loading")) {
+            finish({ ...pendingUpdate, requestId });
+          }
+          return undefined;
+        })
+        .catch(fail);
     });
-
-    const timeout = setTimeout(() => {
-      const loading = latestEntries
-        .filter((entry) => entry.status === "loading")
-        .map((entry) => entry.provider)
-        .join(", ");
-      fail(
-        new Error(
-          loading
-            ? `Timed out waiting for providers: ${loading}`
-            : "Timed out waiting for provider discovery",
-        ),
-      );
-    }, timeoutMs);
-
-    void daemonClient
-      .getProvidersSnapshot(snapshotOptions)
-      .then((snapshot) => {
-        requestId = snapshot.requestId;
-        snapshotCwd = snapshot.cwd;
-        latestEntries = snapshot.entries;
-        if (!snapshot.entries.some((entry) => entry.status === "loading")) {
-          finish(snapshot);
-          return;
-        }
-        const pendingUpdate = pendingUpdates.get(snapshotCwd);
-        if (pendingUpdate && !pendingUpdate.entries.some((entry) => entry.status === "loading")) {
-          finish({ ...pendingUpdate, requestId });
-        }
-        return undefined;
-      })
-      .catch(fail);
-  });
+  } finally {
+    await observation.release();
+  }
 }
 
 function createGeneratedClientId(): string {

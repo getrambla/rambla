@@ -3,7 +3,8 @@ import type { Command } from "commander";
 import { isCancel, password as passwordPrompt } from "@clack/prompts";
 import {
   hashDaemonPassword,
-  loadPersistedConfig,
+  readPersistedConfig,
+  resolveRamblaHome,
   savePersistedConfig,
   type PersistedConfig,
 } from "@getrambla/server";
@@ -14,7 +15,6 @@ import type {
   OutputSchema,
   SingleResult,
 } from "../../output/index.js";
-import { resolveLocalRamblaHome } from "./local-daemon.js";
 
 const CONFIG_FILENAME = "config.json";
 
@@ -81,9 +81,9 @@ export async function setDaemonPasswordInConfig(
   newPassword: string,
   options: SetPasswordOptions = {},
 ): Promise<SetPasswordResult> {
-  const ramblaHome = resolveLocalRamblaHome(options.home);
+  const ramblaHome = resolveRamblaHome({ RAMBLA_HOME: options.home });
   const configPath = path.join(ramblaHome, CONFIG_FILENAME);
-  const persisted = loadPersistedConfig(ramblaHome);
+  const persisted = readPersistedConfig(ramblaHome);
   const nextConfig: PersistedConfig = {
     ...persisted,
     daemon: {
@@ -100,8 +100,8 @@ export async function setDaemonPasswordInConfig(
   return {
     action: "password_set",
     configPath,
-    restartCommand: "rambla daemon restart",
-    message: `Password written to ${configPath}\nRestart the daemon for the change to take effect.\nRun: rambla daemon restart`,
+    restartCommand: `rambla daemon restart --home ${JSON.stringify(ramblaHome)}`,
+    message: `Password written to ${configPath}\nRestart the daemon for the change to take effect.\nRun: rambla daemon restart --home ${JSON.stringify(ramblaHome)}`,
   };
 }
 
@@ -115,7 +115,7 @@ export async function runSetPasswordCommand(
       : (message: string) => passwordPrompt({ message });
   const newPassword = await promptForPassword(promptPassword);
   const result = await setDaemonPasswordInConfig(newPassword, {
-    home: typeof options.home === "string" ? options.home : undefined,
+    home: options.daemonTarget.kind === "instance" ? options.daemonTarget.home : undefined,
   });
 
   return {

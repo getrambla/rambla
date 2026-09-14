@@ -31,7 +31,7 @@ uninstall: stop systemctl-reload
 [script]
 clean: stop
     set -euo pipefail
-    rm -rf **/node_modules
+    rm -rf node_modules **/node_modules
     rm -rf packages/desktop/release packages/*/dist
     find . -name '*.tsbuildinfo' -not -path './node_modules/*' -delete
     rm -rf packages/app/.expo/types
@@ -163,11 +163,13 @@ status:
 [script]
 install-daemon: && install-service
     eval "$(mise env -s bash)"
+    npm install
     npm run build:server
 
 [script]
-install-service: systemctl-reload restart
+install-service: systemctl-reload && restart
     mkdir -p "$(dirname "{{unit}}")"
+    echo "installing unit to: {{unit}}"
     cat > {{unit}} <<EOF
     [Unit]
     Description=Rambla daemon
@@ -175,6 +177,7 @@ install-service: systemctl-reload restart
     [Service]
     Type=simple
     WorkingDirectory={{justfile_dir()}}
+    Environment=RAMBLA_RELAY_ENABLED="false"
     ExecStart={{justfile_dir()}}/packages/cli/bin/rambla start --foreground
     Restart=always
     RestartSec=5
@@ -220,6 +223,7 @@ install-service: systemctl-reload restart
 install-app: && install-desktop
     set -euo pipefail
     eval "$(mise env -s bash)"
+    # npm ci
     # SKIP linux packages with -- --dir
     npm run build:desktop -- --dir
 

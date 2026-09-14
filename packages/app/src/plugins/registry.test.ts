@@ -8,7 +8,7 @@ vi.mock("./navigation", () => ({
 }));
 vi.mock("./client-runtime", () => ({
   createPluginClientRuntime: () => ({
-    rambla: {},
+    rambla: { dispose: async () => {} },
     rpc: async () => undefined,
     openSurface: () => undefined,
     openPanel: () => undefined,

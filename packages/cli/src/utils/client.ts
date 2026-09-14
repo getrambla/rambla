@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
-import { loadConfig, resolveRamblaHome } from "@getrambla/server";
+import { waitForDaemonReady, resolveRamblaHome, type DaemonInstance } from "@getrambla/server";
+import { describeDaemonTarget, type DaemonTarget } from "./daemon-target.js";
+export type { DaemonTarget } from "./daemon-target.js";
 import {
   buildDaemonWebSocketUrl,
   buildRelayWebSocketUrl,
@@ -13,57 +14,44 @@ import {
 } from "@getrambla/protocol/connection-offer";
 import { parseSshTransportUri } from "@getrambla/protocol/ssh-transport";
 import { DaemonClient, type WebSocketLike } from "@getrambla/client/internal/daemon-client";
-import path from "node:path";
 import { WebSocket } from "ws";
 import { getOrCreateCliClientId } from "./client-id.js";
 import { resolveCliVersion } from "../version.js";
 import { createSshTunnel } from "../ssh/ssh-tunnel.js";
 
 export interface ConnectOptions {
-  host?: string;
+  target: DaemonTarget;
   timeout?: number;
+  instance?: DaemonInstance;
 }
-
-export interface DaemonConnectionCommandError {
-  code: "DAEMON_NOT_RUNNING";
-  message: string;
-  details: string;
-}
-
-const DEFAULT_HOST = "localhost:6767";
 const DEFAULT_TIMEOUT = 15000;
-const PID_FILENAME = "rambla.pid";
+type TransportTarget =
+  | { type: "tcp"; url: string }
+  | { type: "ipc"; url: string; socketPath: string };
 
-type DaemonTarget =
-  | {
-      type: "tcp";
-      url: string;
-    }
-  | {
-      type: "ipc";
-      url: string;
-      socketPath: string;
-    };
-
-/**
- * Get the daemon host from environment or options
- */
-export function getDaemonHost(options?: ConnectOptions): string {
-  return resolveDaemonHostCandidates(options)[0] ?? DEFAULT_HOST;
+export function getDaemonHost(options: ConnectOptions): string {
+  return describeDaemonTarget(options.target);
 }
 
-export function buildDaemonConnectionCommandError(options: {
-  host?: string;
-  error: unknown;
-}): DaemonConnectionCommandError {
-  const host = getDaemonHost({ host: options.host });
-  const message = options.error instanceof Error ? options.error.message : String(options.error);
+export function buildDaemonConnectionCommandError(options: ConnectOptions & { error: unknown }) {
+  const error = options.error;
+  let message = error instanceof Error ? error.message : String(error);
+  if (error && typeof error === "object" && "message" in error) message = String(error.message);
+  if (options.target.kind === "endpoint")
+    message = message.replaceAll(options.target.host, describeDaemonTarget(options.target));
+  if (message.startsWith("Cannot connect to daemon at "))
+    return error as { code: string; message: string; details: string };
+  let code = "DAEMON_UNREACHABLE";
+  if (typeof error === "object" && error !== null && "code" in error) code = String(error.code);
+  else if (message === "Password required") code = "AUTH_REQUIRED";
+  else if (message === "Incorrect password") code = "AUTH_FAILED";
   return {
-    code: "DAEMON_NOT_RUNNING",
-    message: `Cannot connect to daemon at ${host}: ${message}`,
-    details: host.trim().startsWith("ssh://")
-      ? "Start the Rambla daemon on the SSH host; SSH transport does not install or start it."
-      : "Start the daemon with: rambla daemon start",
+    code,
+    message: `Cannot connect to daemon at ${describeDaemonTarget(options.target)}: ${message}`,
+    details:
+      options.target.kind === "instance"
+        ? `Start with: rambla daemon start --home ${JSON.stringify(options.target.home)}`
+        : "Check the selected endpoint and credentials. SSH transport does not install or start the daemon.",
   };
 }
 
@@ -118,100 +106,13 @@ export function normalizeDaemonHost(raw: string): string | null {
   return trimmed.includes(":") ? trimmed : null;
 }
 
-export function resolveDefaultDaemonHost(env: NodeJS.ProcessEnv = process.env): string {
-  return resolveDefaultDaemonHosts(env)[0] ?? DEFAULT_HOST;
-}
-
-function isIpcDaemonHost(host: string | null): host is string {
-  return host !== null && (host.startsWith("unix://") || host.startsWith("pipe://"));
-}
-
-function isTcpDaemonHost(host: string | null): host is string {
-  return host !== null && !isIpcDaemonHost(host);
-}
-
-function readPidSocketTarget(ramblaHome: string): string | null {
-  const pidPath = path.join(ramblaHome, PID_FILENAME);
-  if (!existsSync(pidPath)) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(readFileSync(pidPath, "utf-8")) as {
-      listen?: unknown;
-      sockPath?: unknown;
-    };
-    if (typeof parsed.listen === "string") return parsed.listen;
-    if (typeof parsed.sockPath === "string") return parsed.sockPath;
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function resolveConfiguredIpcDaemonHost(env: NodeJS.ProcessEnv, ramblaHome: string): string | null {
-  const directEnvHost = normalizeDaemonHost(env.RAMBLA_LISTEN ?? "");
-  if (isIpcDaemonHost(directEnvHost)) {
-    return directEnvHost;
-  }
-
-  const pidHost = normalizeDaemonHost(readPidSocketTarget(ramblaHome) ?? "");
-  if (isIpcDaemonHost(pidHost)) {
-    return pidHost;
-  }
-
-  const config = loadConfig(ramblaHome, { env });
-  const configuredHost = normalizeDaemonHost(config.listen);
-  return isIpcDaemonHost(configuredHost) ? configuredHost : null;
-}
-
-function resolveConfiguredTcpDaemonHost(env: NodeJS.ProcessEnv, ramblaHome: string): string | null {
-  const configuredHost = normalizeDaemonHost(loadConfig(ramblaHome, { env }).listen);
-  if (!isTcpDaemonHost(configuredHost)) {
-    return null;
-  }
-  return configuredHost === "127.0.0.1:6767" ? null : configuredHost;
-}
-
-export function resolveDefaultDaemonHosts(env: NodeJS.ProcessEnv = process.env): string[] {
-  const ramblaHome = resolveRamblaHome(env);
-  const candidates: string[] = [];
-  const configuredIpcHost = resolveConfiguredIpcDaemonHost(env, ramblaHome);
-  if (configuredIpcHost) {
-    candidates.push(configuredIpcHost);
-  }
-  const configuredTcpHost = resolveConfiguredTcpDaemonHost(env, ramblaHome);
-  if (configuredTcpHost) {
-    candidates.push(configuredTcpHost);
-  }
-  candidates.push(DEFAULT_HOST);
-  return Array.from(new Set(candidates));
-}
-
-function resolveDaemonHostCandidates(options?: ConnectOptions): string[] {
-  const explicitHost = getExplicitDaemonHost(options?.host);
-  if (explicitHost) {
-    return [explicitHost];
-  }
-
-  return resolveDefaultDaemonHosts();
-}
-
-export function getExplicitDaemonHost(
-  host: string | undefined,
-  env: NodeJS.ProcessEnv = process.env,
-): string | undefined {
-  const explicitHost = host ?? env.RAMBLA_HOST;
-  return explicitHost?.trim() ? explicitHost : undefined;
-}
-
 function stripIpcPrefix(trimmed: string): string {
   if (trimmed.startsWith("unix://")) return trimmed.slice("unix://".length).trim();
   if (trimmed.startsWith("pipe://")) return trimmed.slice("pipe://".length).trim();
   return trimmed;
 }
 
-export function resolveDaemonTarget(host: string): DaemonTarget {
+export function resolveDaemonTarget(host: string): TransportTarget {
   const trimmed = normalizeDaemonHost(host);
   if (!trimmed) {
     throw new Error(`Invalid daemon target: ${host}`);
@@ -363,12 +264,21 @@ function parseHostOfferOrNull(host: string | undefined): ConnectionOffer | null 
   }
 }
 
-export async function connectToDaemon(options?: ConnectOptions): Promise<DaemonClient> {
-  const timeout = options?.timeout ?? DEFAULT_TIMEOUT;
-  const clientId = await getOrCreateCliClientId();
+async function connectSelectedDaemon(options: ConnectOptions): Promise<DaemonClient> {
+  const timeout = options.timeout ?? DEFAULT_TIMEOUT;
+  const deadline = Date.now() + timeout;
+  const explicitHost =
+    options.target.kind === "endpoint"
+      ? options.target.host
+      : (
+          await waitForDaemonReady(options.target.home, {
+            timeoutMs: timeout,
+            instance: options.instance,
+          })
+        ).listen;
+  const clientId = await getOrCreateCliClientId(resolveRamblaHome({}));
   const nodeWebSocketFactory = createNodeWebSocketFactory();
 
-  const explicitHost = getExplicitDaemonHost(options?.host);
   if (explicitHost?.trim().startsWith("ssh://")) {
     const target = parseSshTransportUri(explicitHost.trim());
     const tunnel = await createSshTunnel(target);
@@ -377,10 +287,20 @@ export async function connectToDaemon(options?: ConnectOptions): Promise<DaemonC
       tunnel.endpoint,
       password,
       clientId,
-      timeout,
+      Math.max(1, deadline - Date.now()),
       nodeWebSocketFactory,
     );
-    if ("client" in result) return result.client;
+    if ("client" in result) {
+      const close = result.client.close.bind(result.client);
+      result.client.close = async () => {
+        try {
+          await close();
+        } finally {
+          tunnel.close();
+        }
+      };
+      return result.client;
+    }
 
     const failure = tunnel.failureDetail();
     tunnel.close();
@@ -389,32 +309,37 @@ export async function connectToDaemon(options?: ConnectOptions): Promise<DaemonC
   }
   const offer = parseHostOfferOrNull(explicitHost);
   if (offer) {
-    return connectViaRelayOffer(offer, clientId, timeout, nodeWebSocketFactory);
+    return connectViaRelayOffer(
+      offer,
+      clientId,
+      Math.max(1, deadline - Date.now()),
+      nodeWebSocketFactory,
+    );
   }
 
-  const hosts = resolveDaemonHostCandidates(options);
+  const result = await tryConnectHost(
+    explicitHost,
+    resolveDaemonPassword(explicitHost),
+    clientId,
+    Math.max(1, deadline - Date.now()),
+    nodeWebSocketFactory,
+  );
+  if ("client" in result) return result.client;
+  throw result.error;
+}
 
-  async function tryNext(index: number, lastError: unknown): Promise<DaemonClient> {
-    if (index >= hosts.length) {
-      if (lastError instanceof Error) throw lastError;
-      throw new Error(`Unable to connect to Rambla daemon via ${hosts.join(", ")}`);
-    }
-    const host = hosts[index];
-    const password = resolveDaemonPassword(host);
-    const result = await tryConnectHost(host, password, clientId, timeout, nodeWebSocketFactory);
-    if ("client" in result) {
-      return result.client;
-    }
-    return tryNext(index + 1, result.error);
+export async function connectToDaemon(options: ConnectOptions): Promise<DaemonClient> {
+  try {
+    return await connectSelectedDaemon(options);
+  } catch (error) {
+    throw buildDaemonConnectionCommandError({ ...options, error });
   }
-
-  return tryNext(0, null);
 }
 
 /**
  * Try to connect to the daemon, returns null if connection fails
  */
-export async function tryConnectToDaemon(options?: ConnectOptions): Promise<DaemonClient | null> {
+export async function tryConnectToDaemon(options: ConnectOptions): Promise<DaemonClient | null> {
   try {
     return await connectToDaemon(options);
   } catch {

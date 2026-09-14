@@ -11,27 +11,23 @@
  */
 
 import assert from "node:assert";
-import { $ } from "zx";
+import { runLocalRambla } from "./helpers/local-cli.ts";
+import { getAvailablePort } from "./helpers/network.ts";
 import { mkdtemp, rm } from "fs/promises";
 import { tmpdir } from "os";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
-
-$.verbose = false;
+import { join } from "path";
 
 console.log("=== Delete Command Tests ===\n");
 
-const cliRoot = dirname(fileURLToPath(import.meta.url));
-const repoRoot = join(cliRoot, "..", "..", "..");
-const port = 10000 + Math.floor(Math.random() * 50000);
+const port = await getAvailablePort();
 const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-delete-test-home-"));
 
 async function runCli(args: string[]) {
-  return $`npm --prefix ${repoRoot} run cli -- ${args}`.nothrow();
+  return runLocalRambla(["--host", `localhost:${port}`, ...args], { RAMBLA_HOME: ramblaHome });
 }
 
 async function runDelete(args: string[]) {
-  return $`RAMBLA_HOST=localhost:${port} RAMBLA_HOME=${ramblaHome} npm --prefix ${repoRoot} run cli -- delete ${args}`.nothrow();
+  return runCli(["delete", ...args]);
 }
 
 try {
@@ -110,8 +106,7 @@ try {
 
   {
     console.log("Test 8: -q (quiet) flag is accepted with delete");
-    const result =
-      await $`RAMBLA_HOST=localhost:${port} RAMBLA_HOME=${ramblaHome} npm --prefix ${repoRoot} run cli -- -q delete abc123`.nothrow();
+    const result = await runCli(["-q", "delete", "abc123"]);
     const output = result.stdout + result.stderr;
     assert(!output.includes("unknown option"), "should accept -q flag");
     assert(!output.includes("error: option"), "should not have option parsing error");

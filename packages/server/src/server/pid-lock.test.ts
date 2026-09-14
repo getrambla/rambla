@@ -1,4 +1,4 @@
-import { mkdtemp, open, rm, utimes, writeFile } from "node:fs/promises";
+import { mkdtemp, open, rm, stat, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
@@ -15,7 +15,8 @@ import {
 
 describe("pid-lock ownership", () => {
   test("writes and releases lock for explicit owner pid", async () => {
-    const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-pid-lock-owner-"));
+    const parent = await mkdtemp(join(tmpdir(), "rambla-pid-lock-owner-"));
+    const ramblaHome = join(parent, "home");
     const ownerPid = process.pid + 10_000;
 
     try {
@@ -27,6 +28,9 @@ describe("pid-lock ownership", () => {
         ) => Promise<void>
       )(ramblaHome, null, { ownerPid });
 
+      if (process.platform !== "win32") {
+        expect((await stat(ramblaHome)).mode & 0o777).toBe(0o700);
+      }
       const lock = await getPidLockInfo(ramblaHome);
       expect(lock?.pid).toBe(ownerPid);
       expect(lock?.listen).toBeNull();
@@ -55,7 +59,7 @@ describe("pid-lock ownership", () => {
       const lockAfterOwnerRelease = await getPidLockInfo(ramblaHome);
       expect(lockAfterOwnerRelease).toBeNull();
     } finally {
-      await rm(ramblaHome, { recursive: true, force: true });
+      await rm(parent, { recursive: true, force: true });
     }
   });
 
@@ -92,7 +96,7 @@ describe("pid-lock ownership", () => {
     }
   });
 
-  test("reclaims a stale desktop heartbeat lock after desktop confirms the daemon is unreachable", async () => {
+  test("preserves a stale live desktop heartbeat lock", async () => {
     const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-pid-lock-stale-desktop-heartbeat-"));
     const replacementOwnerPid = process.pid + 10_000;
 
@@ -113,14 +117,13 @@ describe("pid-lock ownership", () => {
       const staleTime = new Date(Date.now() - 10 * 60_000);
       await utimes(pidPath, staleTime, staleTime);
 
-      await acquirePidLock(ramblaHome, null, {
-        ownerPid: replacementOwnerPid,
-        reclaimStaleDesktopLock: true,
-      });
+      await expect(
+        acquirePidLock(ramblaHome, null, { ownerPid: replacementOwnerPid }),
+      ).rejects.toThrow("Another Rambla daemon is already running");
 
       const lock = await getPidLockInfo(ramblaHome);
-      expect(lock?.pid).toBe(replacementOwnerPid);
-      expect(lock?.listen).toBeNull();
+      expect(lock?.pid).toBe(process.pid);
+      expect(lock?.listen).toBe("127.0.0.1:6767");
     } finally {
       await rm(ramblaHome, { recursive: true, force: true });
     }
@@ -156,7 +159,7 @@ describe("pid-lock ownership", () => {
     }
   });
 
-  test("reclaims a stale legacy desktop lock after desktop confirms the daemon is unreachable", async () => {
+  test("preserves a stale live legacy desktop lock", async () => {
     const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-pid-lock-legacy-desktop-"));
     const replacementOwnerPid = process.pid + 10_000;
     const pidPath = join(ramblaHome, "rambla.pid");
@@ -176,14 +179,13 @@ describe("pid-lock ownership", () => {
       const staleTime = new Date(Date.now() - 10 * 60_000);
       await utimes(pidPath, staleTime, staleTime);
 
-      await acquirePidLock(ramblaHome, null, {
-        ownerPid: replacementOwnerPid,
-        reclaimStaleDesktopLock: true,
-      });
+      await expect(
+        acquirePidLock(ramblaHome, null, { ownerPid: replacementOwnerPid }),
+      ).rejects.toThrow("Another Rambla daemon is already running");
 
       const lock = await getPidLockInfo(ramblaHome);
-      expect(lock?.pid).toBe(replacementOwnerPid);
-      expect(lock?.heartbeat).toBe(true);
+      expect(lock?.pid).toBe(process.pid);
+      expect(lock?.heartbeat).toBeUndefined();
     } finally {
       await rm(ramblaHome, { recursive: true, force: true });
     }

@@ -43,7 +43,7 @@ Set a different remote daemon port with `daemonPort`:
 rambla --host 'ssh://user@host?daemonPort=7777' ls -a
 ```
 
-Put `--host` before the command. `rambla daemon status` checks only the local daemon; use `rambla --host ssh://user@host ls` to verify a remote connection. `rambla --host ssh://user@host run --cwd /path/on/remote ...` requires a working directory that exists on the remote host.
+Put `--host` before the command. `rambla daemon status` observes the default local home; use `rambla --host ssh://user@host daemon status` to query a remote daemon. `rambla --host ssh://user@host run --cwd /path/on/remote ...` requires a working directory that exists on the remote host.
 
 In Rambla Desktop, open **Settings → Add host → Remote SSH** and enter the same `ssh://` destination.
 
