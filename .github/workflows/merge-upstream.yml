@@ -58,5 +58,8 @@ jobs:
 
       - name: Commit and push
         run: |
-          git diff --cached --quiet || git commit --no-edit
+          # Absent when upstream had nothing new and no merge was started.
+          if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+            git commit --no-edit
+          fi
           git push origin main upstream-rebrand

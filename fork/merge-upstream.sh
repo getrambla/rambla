@@ -51,8 +51,9 @@ git -C "$WT" read-tree -u --reset upstream/main
 
 git -C "$WT" add -A
 # Most days upstream has not moved and there is nothing new to rebrand.
-git -C "$WT" diff --cached --quiet ||
+if git -C "$WT" rev-parse -q --verify MERGE_HEAD >/dev/null; then
 	LEFTHOOK=0 git -C "$WT" commit -q -m "rebrand upstream through $TIP"
+fi
 
 git -C "$REPO" merge "$BRANCH" --no-commit --no-ff || true
 
