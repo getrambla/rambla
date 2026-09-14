@@ -58,6 +58,12 @@ jobs:
 
       - name: Commit and push
         run: |
+          # Refuse to record anything while the index still holds a conflict,
+          # rather than trusting the previous step to have caught it.
+          if [ -n "$(git ls-files --unmerged)" ]; then
+            echo "::error::unmerged paths in the index; refusing to commit"
+            exit 1
+          fi
           # Absent when upstream had nothing new and no merge was started.
           if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
             git commit --no-edit

@@ -55,7 +55,17 @@ if git -C "$WT" rev-parse -q --verify MERGE_HEAD >/dev/null; then
 	LEFTHOOK=0 git -C "$WT" commit -q -m "rebrand upstream through $TIP"
 fi
 
-git -C "$REPO" merge "$BRANCH" --no-commit --no-ff || true
+if ! git -C "$REPO" merge "$BRANCH" --no-commit --no-ff; then
+	# A merge can fail for reasons other than conflicts. Those leave the repo
+	# mid-merge with nothing to resolve, so undo them rather than hand the
+	# caller a half-finished state it cannot interpret. Conflicts are left in
+	# place: they are the one failure a human can act on.
+	if [ -z "$(git -C "$REPO" ls-files --unmerged)" ]; then
+		git -C "$REPO" merge --abort || true
+		echo "merge failed without conflicts; nothing was changed" >&2
+		exit 1
+	fi
+fi
 
 CONFLICTS=$(git -C "$REPO" diff --name-only --diff-filter=U)
 if [ -n "$CONFLICTS" ]; then
