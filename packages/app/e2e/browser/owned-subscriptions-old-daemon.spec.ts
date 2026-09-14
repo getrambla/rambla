@@ -113,6 +113,7 @@ test.skip("does not repeat an assistant block when the current app paginates a p
         page,
         "compatibility-after-reconnect: emit 1 coalesced agent stream updates",
       );
+      await agent.client.connect();
       await agent.client.waitForFinish(agent.agentId, 20_000);
       await page.screenshot({ path: test.info().outputPath("old-daemon-live-reconnect.png") });
     });

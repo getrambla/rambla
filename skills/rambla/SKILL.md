@@ -23,6 +23,8 @@ For a local daemon, `project create` defaults to the current directory and resol
 
 **`create_workspace`** — create a workspace independently of any agent. Required: `isolation` (`local` or `worktree`). Worktree isolation supports `mode: "branch-off" | "checkout-branch" | "checkout-pr"`: use `branchName`/`baseBranch` for a new branch, `branch` for an existing branch, or `prNumber` plus optional `forge`/`projectPath` for a change request. `worktreeSlug` controls the managed path. Returns the workspace descriptor centered on `workspaceId`.
 
+Choose `baseBranch` explicitly: `origin/main` selects the remote-tracking branch; `refs/heads/main` selects local main. Bare `main` prefers local main when it exists, otherwise origin/main. Rambla retains the resolved ref for workspace comparisons, even after rebasing the branch or changing its PR target.
+
 **`list_workspaces`** — list active workspaces.
 
 **`archive_workspace`** — `{ workspaceId }`. Archives the workspace, its agents, and its terminals. Local directories remain; Rambla removes an owned worktree only after its final active workspace reference is archived.
@@ -113,11 +115,11 @@ Don't poll `list_agents` or `get_agent_status` to "check on" a running agent. Th
 The CLI and tools use the same ownership semantics even where their syntax differs:
 
 ```bash
-rambla workspace create --isolation worktree --mode branch-off --new-branch fix-x --base main
+rambla workspace create --isolation worktree --mode branch-off --new-branch fix-x --base origin/main
 rambla workspace create --isolation worktree --mode checkout-branch --branch existing-work
 rambla workspace create --isolation worktree --mode checkout-pr --pr-number 42
 rambla run --provider codex/gpt-5.4 --mode full-access --workspace <workspace-id> "<prompt>"
-rambla run --provider codex/gpt-5.4 --mode full-access --new-workspace worktree --worktree-mode branch-off --new-branch fix-x --base main "<prompt>"
+rambla run --provider codex/gpt-5.4 --mode full-access --new-workspace worktree --worktree-mode branch-off --new-branch fix-x --base origin/main "<prompt>"
 rambla send <agent-id> "<follow-up>"
 rambla ls
 rambla schedule create --cron "*/15 * * * *" "ping main build"
