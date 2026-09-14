@@ -1,7 +1,7 @@
-import { createPaseoClient, type PaseoClient } from "@getpaseo/client";
+import { createRamblaClient, type RamblaClient } from "@getrambla/client";
 
-export function createClient(url: string): PaseoClient {
-  return createPaseoClient({
+export function createClient(url: string): RamblaClient {
+  return createRamblaClient({
     url,
   });
 }

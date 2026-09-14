@@ -1,14 +1,14 @@
 import type { Logger } from "pino";
 
 import type { TerminalManager } from "../../../terminal/terminal-manager.js";
-import type { CreatePaseoWorktreeInput } from "../../paseo-worktree-service.js";
+import type { CreateRamblaWorktreeInput } from "../../rambla-worktree-service.js";
 import { expandUserPath, resolvePathFromBase } from "../../path-utils.js";
 import { toWorktreeRequestError } from "../../worktree-errors.js";
 import type {
   AgentWorktreeSetupContinuation,
-  CreatePaseoWorktreeSetupContinuationInput,
-  CreatePaseoWorktreeWorkflowFn,
-  CreatePaseoWorktreeWorkflowResult,
+  CreateRamblaWorktreeSetupContinuationInput,
+  CreateRamblaWorktreeWorkflowFn,
+  CreateRamblaWorktreeWorkflowResult,
 } from "../../worktree-session.js";
 import type { AgentAttachment, FirstAgentContext, GitSetupOptions } from "../../messages.js";
 import type { AgentManager, CreateAgentOptions, ManagedAgent } from "../agent-manager.js";
@@ -39,11 +39,11 @@ export interface CreateAgentCommandDependencies {
   agentManager: AgentManager;
   agentStorage: AgentStorage;
   logger: Logger;
-  paseoHome?: string;
+  ramblaHome?: string;
   worktreesRoot?: string;
   terminalManager?: TerminalManager | null;
   providerSnapshotManager: Pick<ProviderSnapshotManager, "resolveCreateConfig">;
-  createPaseoWorktree?: CreatePaseoWorktreeWorkflowFn;
+  createRamblaWorktree?: CreateRamblaWorktreeWorkflowFn;
   // Mints a fresh directory workspace for a cwd and returns its id.
   ensureWorkspaceForCreate?: EnsureWorkspaceForCreate;
 }
@@ -99,9 +99,9 @@ export interface CreateAgentFromMcpInput {
   env?: Record<string, string>;
   onCreated?: (created: {
     agentId: string;
-    createdWorktree: CreatePaseoWorktreeWorkflowResult | null;
+    createdWorktree: CreateRamblaWorktreeWorkflowResult | null;
   }) => void;
-  onWorktreeCreated?: (createdWorktree: CreatePaseoWorktreeWorkflowResult) => void;
+  onWorktreeCreated?: (createdWorktree: CreateRamblaWorktreeWorkflowResult) => void;
   callerAgentId?: string;
   callerContext?: {
     lockedCwd?: string;
@@ -127,7 +127,7 @@ export interface CreateAgentCommandResult {
   background: boolean;
   initialPromptStarted: boolean;
   initialPromptError: unknown | null;
-  createdWorktree?: CreatePaseoWorktreeWorkflowResult;
+  createdWorktree?: CreateRamblaWorktreeWorkflowResult;
 }
 
 export type BoundCreateAgentCommand = (
@@ -168,7 +168,7 @@ interface ResolvedCreateAgent {
   background: boolean;
   promptFailure: CreateAgentPromptFailureMode;
   promptLogger?: Logger;
-  createdWorktree?: CreatePaseoWorktreeWorkflowResult;
+  createdWorktree?: CreateRamblaWorktreeWorkflowResult;
 }
 
 export async function createAgentCommand(
@@ -512,7 +512,7 @@ async function resolveMcpCwd(params: {
   resolvedCwd: string;
   setupContinuation?: AgentWorktreeSetupContinuation;
   createdWorkspaceId?: string;
-  createdWorktree?: CreatePaseoWorktreeWorkflowResult;
+  createdWorktree?: CreateRamblaWorktreeWorkflowResult;
 }> {
   const { dependencies, worktree } = params;
   if (!worktree) {
@@ -544,10 +544,10 @@ async function resolveMcpCwd(params: {
       githubPrNumber: worktree.githubPrNumber,
       firstAgentContext: { prompt: params.initialPrompt },
       runSetup: false,
-      paseoHome: dependencies.paseoHome,
+      ramblaHome: dependencies.ramblaHome,
       worktreesRoot: dependencies.worktreesRoot,
     },
-    createPaseoWorktree: dependencies.createPaseoWorktree,
+    createRamblaWorktree: dependencies.createRamblaWorktree,
     resolveDefaultBranch: baseBranch ? async () => baseBranch : undefined,
     setupContinuation: {
       kind: "agent",
@@ -576,20 +576,20 @@ async function resolveMcpCwd(params: {
 }
 
 interface CreateMcpWorktreeOptions {
-  input: CreatePaseoWorktreeInput;
-  createPaseoWorktree: CreatePaseoWorktreeWorkflowFn | undefined;
+  input: CreateRamblaWorktreeInput;
+  createRamblaWorktree: CreateRamblaWorktreeWorkflowFn | undefined;
   resolveDefaultBranch?: (repoRoot: string) => Promise<string>;
-  setupContinuation?: CreatePaseoWorktreeSetupContinuationInput;
+  setupContinuation?: CreateRamblaWorktreeSetupContinuationInput;
 }
 
 async function createMcpWorktree(
   options: CreateMcpWorktreeOptions,
-): Promise<CreatePaseoWorktreeWorkflowResult> {
+): Promise<CreateRamblaWorktreeWorkflowResult> {
   try {
-    if (!options.createPaseoWorktree) {
-      throw new Error("Paseo worktree service is not configured");
+    if (!options.createRamblaWorktree) {
+      throw new Error("Rambla worktree service is not configured");
     }
-    return await options.createPaseoWorktree(options.input, {
+    return await options.createRamblaWorktree(options.input, {
       ...(options.resolveDefaultBranch
         ? { resolveDefaultBranch: options.resolveDefaultBranch }
         : {}),

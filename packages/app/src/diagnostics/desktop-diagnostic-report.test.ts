@@ -12,17 +12,17 @@ function makeSources(): DesktopDiagnosticSources {
       listen: "127.0.0.1:6767",
       hostname: "host",
       pid: 4242,
-      home: "/paseo/home",
+      home: "/rambla/home",
       version: "1.2.3",
       desktopManaged: true,
       error: null,
     }),
     getDaemonLogs: async () => ({
-      logPath: "/paseo/home/daemon.log",
+      logPath: "/rambla/home/daemon.log",
       contents: "daemon line one\ndaemon line two",
     }),
     getAppLogs: async () => ({
-      logPath: "/logs/Paseo/main.log",
+      logPath: "/logs/Rambla/main.log",
       contents: "[login-shell-env] start\n[login-shell-env] failed",
     }),
     getUpdaterDiagnostics: async () => ({
@@ -30,23 +30,23 @@ function makeSources(): DesktopDiagnosticSources {
       currentVersion: "0.7.0",
       targetVersion: "0.7.2",
       targetVersionError: null,
-      shipItDirectory: "/cache/sh.paseo.desktop.ShipIt",
+      shipItDirectory: "/cache/sh.rambla.desktop.ShipIt",
       state: {
-        path: "/cache/sh.paseo.desktop.ShipIt/ShipItState.plist",
+        path: "/cache/sh.rambla.desktop.ShipIt/ShipItState.plist",
         exists: true,
         modifiedAt: "2026-09-04T11:22:19.000Z",
         contents: '{"launchAfterInstallation":true}',
         error: null,
       },
       stdout: {
-        path: "/cache/sh.paseo.desktop.ShipIt/ShipIt_stdout.log",
+        path: "/cache/sh.rambla.desktop.ShipIt/ShipIt_stdout.log",
         exists: false,
         modifiedAt: null,
         contents: "",
         error: null,
       },
       stderr: {
-        path: "/cache/sh.paseo.desktop.ShipIt/ShipIt_stderr.log",
+        path: "/cache/sh.rambla.desktop.ShipIt/ShipIt_stderr.log",
         exists: true,
         modifiedAt: "2026-09-01T08:39:20.000Z",
         contents: "Installation completed successfully",
@@ -110,8 +110,8 @@ describe("desktop diagnostic report", () => {
     const report = result.sections.join("\n\n");
 
     expect(result.status).toBe("done");
-    expect(report).toContain("  Log path: /paseo/home/daemon.log");
-    expect(report).toContain("  App log path: /logs/Paseo/main.log");
+    expect(report).toContain("  Log path: /rambla/home/daemon.log");
+    expect(report).toContain("  App log path: /logs/Rambla/main.log");
     expect(report).toContain("Desktop daemon log tail\n  daemon line one\n  daemon line two");
     expect(report).toContain(
       "Desktop app log tail\n  [login-shell-env] start\n  [login-shell-env] failed",

@@ -1,7 +1,7 @@
-import type { PaseoTerminal } from "@getpaseo/client";
+import type { RamblaTerminal } from "@getrambla/client";
 import type { OutputSchema } from "../../output/index.js";
 
-export type TerminalRow = PaseoTerminal;
+export type TerminalRow = RamblaTerminal;
 
 export interface TerminalKillRow {
   terminalId: string;

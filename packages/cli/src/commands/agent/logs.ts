@@ -5,9 +5,9 @@ import {
   fetchProjectedTimelineItems,
   LIVE_HISTORY_FETCH_TIMEOUT_MS,
 } from "../../utils/timeline.js";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
-import type { AgentTimelineItem } from "@getpaseo/protocol/agent-types";
-import { curateAgentActivity } from "@getpaseo/server";
+import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
+import type { AgentTimelineItem } from "@getrambla/protocol/agent-types";
+import { curateAgentActivity } from "@getrambla/server";
 
 export function addLogsOptions(cmd: Command): Command {
   return cmd
@@ -95,7 +95,7 @@ export async function runLogsCommand(
 
   if (!id) {
     console.error("Error: Agent ID required");
-    console.error("Usage: paseo agent logs <id>");
+    console.error("Usage: rambla agent logs <id>");
     process.exit(1);
   }
 
@@ -105,7 +105,7 @@ export async function runLogsCommand(
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`Error: Cannot connect to daemon at ${host}: ${message}`);
-    console.error("Start the daemon with: paseo daemon start");
+    console.error("Start the daemon with: rambla daemon start");
     process.exit(1);
   }
 
@@ -113,7 +113,7 @@ export async function runLogsCommand(
     const fetchResult = await client.fetchAgent({ agentId: id });
     if (!fetchResult) {
       console.error(`Error: No agent found matching: ${id}`);
-      console.error("Use `paseo ls` to list available agents");
+      console.error("Use `rambla ls` to list available agents");
       await client.close();
       process.exit(1);
     }

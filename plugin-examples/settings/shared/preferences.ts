@@ -1,4 +1,4 @@
-import { defineSettings } from "@getpaseo/plugin";
+import { defineSettings } from "@getrambla/plugin";
 import { z } from "zod";
 
 export const preferences = defineSettings({

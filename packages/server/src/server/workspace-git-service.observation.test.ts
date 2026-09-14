@@ -6,10 +6,10 @@ import { CheckoutDiffManager } from "./checkout-diff-manager.js";
 import type { FileObserver } from "./file-observer/index.js";
 import { WorkspaceGitServiceImpl } from "./workspace-git-service.js";
 
-const REPO_CWD = path.resolve("/tmp/paseo-observation-repo");
+const REPO_CWD = path.resolve("/tmp/rambla-observation-repo");
 const GIT_DIR = path.join(REPO_CWD, ".git");
-const WORKTREE_A = path.resolve("/tmp/paseo-observation-worktree-a");
-const WORKTREE_B = path.resolve("/tmp/paseo-observation-worktree-b");
+const WORKTREE_A = path.resolve("/tmp/rambla-observation-worktree-a");
+const WORKTREE_B = path.resolve("/tmp/rambla-observation-worktree-b");
 
 interface WatchEvent {
   path: string;
@@ -62,7 +62,7 @@ function createCheckoutFacts(cwd: string): CheckoutSnapshotFacts {
     remoteUrl: null,
     absoluteGitDir: path.join(cwd, ".git"),
     gitCommonDir: path.join(cwd, ".git"),
-    paseoWorktree: { isPaseoOwnedWorktree: false },
+    ramblaWorktree: { isRamblaOwnedWorktree: false },
     storedBaseRef: null,
     resolvedBaseRef: "main",
     mainRepoRoot: null,
@@ -101,7 +101,7 @@ function createCheckoutStatus(
     behindOfOrigin: null,
     hasRemote: false,
     remoteUrl: null,
-    isPaseoOwnedWorktree: false,
+    isRamblaOwnedWorktree: false,
     ...overrides,
   };
 }
@@ -161,7 +161,7 @@ function createService(
     defaultGetCheckoutShortstat;
   return new WorkspaceGitServiceImpl({
     logger,
-    paseoHome: "/tmp/paseo-home",
+    ramblaHome: "/tmp/rambla-home",
     fileObserver,
     deps: {
       subscribe: watcher.subscribe,
@@ -368,7 +368,7 @@ describe("WorkspaceGitService checkout observation", () => {
     });
     const diffManager = new CheckoutDiffManager({
       logger: createLogger(),
-      paseoHome: "/tmp/paseo-home",
+      ramblaHome: "/tmp/rambla-home",
       workspaceGitService: service,
     });
     const summaryListener = vi.fn();
@@ -1142,7 +1142,7 @@ describe("WorkspaceGitService checkout observation", () => {
     });
     const diffManager = new CheckoutDiffManager({
       logger: createLogger(),
-      paseoHome: "/tmp/paseo-home",
+      ramblaHome: "/tmp/rambla-home",
       workspaceGitService: service,
     });
     const summaryListener = vi.fn();
@@ -1197,7 +1197,7 @@ describe("WorkspaceGitService checkout observation", () => {
     const service = createService(watcher, { getCheckoutDiff, getCheckoutWorktreeState });
     const diffManager = new CheckoutDiffManager({
       logger: createLogger(),
-      paseoHome: "/tmp/paseo-home",
+      ramblaHome: "/tmp/rambla-home",
       workspaceGitService: service,
     });
     const diffSubscription = await diffManager.subscribe(
@@ -1344,9 +1344,9 @@ describe("WorkspaceGitService checkout observation", () => {
       await fetch.promise;
       return { changes: [], error: null };
     });
-    const commonGitDir = path.resolve("/tmp/paseo-shared-repository.git");
+    const commonGitDir = path.resolve("/tmp/rambla-shared-repository.git");
     const worktrees = Array.from({ length: 10 }, (_, index) =>
-      path.resolve(`/tmp/paseo-shared-worktree-${index}`),
+      path.resolve(`/tmp/rambla-shared-worktree-${index}`),
     );
     const getCheckoutSnapshotFacts = vi.fn(
       async (cwd: string): Promise<CheckoutSnapshotFacts> => ({
@@ -1613,7 +1613,7 @@ describe("WorkspaceGitService checkout observation", () => {
       {
         getCheckoutStatus,
         createWatcherLivenessCanary: vi.fn(() => ({
-          path: path.join(GIT_DIR, "paseo", ".watcher-canary-timeout"),
+          path: path.join(GIT_DIR, "rambla", ".watcher-canary-timeout"),
           filterEvents: (events: WatchEvent[]) => events,
           verify: verifyCanary,
         })),
@@ -2159,7 +2159,7 @@ describe("WorkspaceGitService checkout observation", () => {
     });
     const diffManager = new CheckoutDiffManager({
       logger: createLogger(),
-      paseoHome: "/tmp/paseo-home",
+      ramblaHome: "/tmp/rambla-home",
       workspaceGitService: service,
     });
     const listener = vi.fn();

@@ -3,12 +3,12 @@ import type {
   AgentPermissionResponse,
   AgentTimelineItem,
   AgentSessionConfig,
-} from "@getpaseo/protocol/agent-types";
-import type { PaseoApi } from "@getpaseo/client";
-import type { WorkspaceCreateRequest } from "@getpaseo/protocol/messages";
+} from "@getrambla/protocol/agent-types";
+import type { RamblaApi } from "@getrambla/client";
+import type { WorkspaceCreateRequest } from "@getrambla/protocol/messages";
 
 export interface PluginHookContext {
-  paseo: PaseoApi;
+  rambla: RamblaApi;
   signal: AbortSignal;
 }
 

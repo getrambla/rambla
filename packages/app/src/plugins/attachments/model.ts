@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { AgentAttachment } from "@getpaseo/protocol/messages";
-import { PluginAttachmentItemSchema, type PluginAttachmentItem } from "@getpaseo/plugin";
+import type { AgentAttachment } from "@getrambla/protocol/messages";
+import { PluginAttachmentItemSchema, type PluginAttachmentItem } from "@getrambla/plugin";
 import type { UserComposerAttachment } from "@/attachments/types";
 
 export const PluginResourceComposerAttachmentSchema = z.object({

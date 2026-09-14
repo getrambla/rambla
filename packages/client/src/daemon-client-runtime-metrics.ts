@@ -1,4 +1,4 @@
-import type { SessionOutboundMessage } from "@getpaseo/protocol/messages";
+import type { SessionOutboundMessage } from "@getrambla/protocol/messages";
 
 interface RuntimeMetricsLogger {
   info(obj: object, msg?: string): void;

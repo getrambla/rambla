@@ -121,9 +121,9 @@ import { VoiceAssistantWebSocketServer } from "./websocket-server.js";
 import { WorkspaceSetupRuntime } from "./workspace-setup-runtime.js";
 import { createWorkspaceLabelService } from "./workspace-labels/index.js";
 import { createGitHubService } from "../services/github-service.js";
-import { createPaseoWorktree as createRegisteredPaseoWorktree } from "./paseo-worktree-service.js";
+import { createRamblaWorktree as createRegisteredRamblaWorktree } from "./rambla-worktree-service.js";
 import { createWorkspaceProvisioningService } from "./session/workspace-provisioning/workspace-provisioning-service.js";
-import { createPaseoWorktreeWorkflow } from "./worktree-session.js";
+import { createRamblaWorktreeWorkflow } from "./worktree-session.js";
 import { DownloadTokenStore } from "./file-download/token-store.js";
 import type { OpenAiSpeechProviderConfig } from "./speech/providers/openai/config.js";
 import type { LocalSpeechProviderConfig } from "./speech/providers/local/config.js";
@@ -134,10 +134,10 @@ import { AgentStorage } from "./agent/agent-storage.js";
 import { attachAgentStoragePersistence } from "./persistence-hooks.js";
 import { createAgentMcpServer } from "./agent/mcp-server.js";
 import {
-  createPaseoToolCatalog,
-  type PaseoToolHostDependencies,
-} from "./agent/tools/paseo-tools.js";
-import type { PaseoToolRuntimeContext } from "./agent/tools/types.js";
+  createRamblaToolCatalog,
+  type RamblaToolHostDependencies,
+} from "./agent/tools/rambla-tools.js";
+import type { RamblaToolRuntimeContext } from "./agent/tools/types.js";
 import { createAgentProviderRuntime } from "./agent/provider-runtime.js";
 import { bootstrapWorkspaceRegistries } from "./workspace-registry-bootstrap.js";
 import { WorkspaceReconciliationService } from "./workspace-reconciliation-service.js";
@@ -151,7 +151,7 @@ import { ScheduleService } from "./schedule/service.js";
 import { DaemonConfigStore, type MutableDaemonConfig } from "./daemon-config-store.js";
 import { createOrchestrationSkills } from "./orchestration-skills/index.js";
 import { resolveConfigFromPersisted, type CliConfigOverrides } from "./config.js";
-import { resolvePaseoToolPolicy } from "./agent/paseo-tool-policy.js";
+import { resolveRamblaToolPolicy } from "./agent/rambla-tool-policy.js";
 import { BrowserToolsBroker } from "./browser-tools/broker.js";
 import { DaemonConfigBrowserToolsPolicy } from "./browser-tools/policy.js";
 import { WorkspaceGitServiceImpl } from "./workspace-git-service.js";
@@ -179,7 +179,7 @@ import type {
   FirstAgentContext,
   PluginSource,
   TerminalProfile,
-} from "@getpaseo/protocol/messages";
+} from "@getrambla/protocol/messages";
 import type {
   AgentProviderRuntimeSettingsMap,
   ProviderOverride,
@@ -355,18 +355,18 @@ function describeMcpDebugPayload(value: unknown): Record<string, unknown> {
   };
 }
 
-export type PaseoOpenAIConfig = OpenAiSpeechProviderConfig;
-export type PaseoLocalSpeechConfig = LocalSpeechProviderConfig;
+export type RamblaOpenAIConfig = OpenAiSpeechProviderConfig;
+export type RamblaLocalSpeechConfig = LocalSpeechProviderConfig;
 
-export interface PaseoSpeechSttLanguages {
+export interface RamblaSpeechSttLanguages {
   dictation: string;
   voice: string;
 }
 
-export interface PaseoSpeechConfig {
+export interface RamblaSpeechConfig {
   providers: RequestedSpeechProviders;
-  sttLanguages?: PaseoSpeechSttLanguages;
-  local?: PaseoLocalSpeechConfig;
+  sttLanguages?: RamblaSpeechSttLanguages;
+  local?: RamblaLocalSpeechConfig;
 }
 
 export type DaemonLifecycleIntent =
@@ -383,9 +383,9 @@ export type DaemonLifecycleIntent =
       reason: string;
     };
 
-export interface PaseoDaemonConfig {
+export interface RamblaDaemonConfig {
   listen: string;
-  paseoHome: string;
+  ramblaHome: string;
   daemonVersion?: string;
   desktopManaged?: boolean;
   worktreesRoot?: string;
@@ -429,8 +429,8 @@ export interface PaseoDaemonConfig {
   };
   appBaseUrl?: string;
   auth?: DaemonAuthConfig;
-  openai?: PaseoOpenAIConfig;
-  speech?: PaseoSpeechConfig;
+  openai?: RamblaOpenAIConfig;
+  speech?: RamblaSpeechConfig;
   voiceLlmProvider?: AgentProvider | null;
   voiceLlmProviderExplicit?: boolean;
   voiceLlmModel?: string | null;
@@ -459,8 +459,8 @@ export interface PaseoDaemonConfig {
   };
 }
 
-export interface PaseoDaemon {
-  config: PaseoDaemonConfig;
+export interface RamblaDaemon {
+  config: RamblaDaemonConfig;
   agentManager: AgentManager;
   agentStorage: AgentStorage;
   terminalManager: TerminalManager;
@@ -472,7 +472,7 @@ export interface PaseoDaemon {
   getListenTarget(): ListenTarget | null;
 }
 
-export interface PaseoDaemonDependencies {
+export interface RamblaDaemonDependencies {
   hubRelationshipRemote?: HubRelationshipRemote;
   hubRelationshipClock?: HubRelationshipClock;
   hubRelationshipRetryPolicy?: HubRelationshipRetryPolicy;
@@ -484,7 +484,7 @@ export interface PaseoDaemonDependencies {
 }
 
 function createBootstrapManagedProcessRegistry(
-  config: Pick<PaseoDaemonConfig, "paseoHome" | "managedProcesses">,
+  config: Pick<RamblaDaemonConfig, "ramblaHome" | "managedProcesses">,
   logger: Logger,
 ): ManagedProcessRegistry {
   if (config.managedProcesses) {
@@ -492,7 +492,7 @@ function createBootstrapManagedProcessRegistry(
   }
 
   return createManagedProcessRegistry({
-    paseoHome: config.paseoHome,
+    ramblaHome: config.ramblaHome,
     processTable: createSystemManagedProcessTable(),
     terminateProcess: terminateWithTreeKill,
     logger,
@@ -509,7 +509,7 @@ async function reconcileManagedProcessLedger(
   }
 }
 
-function mountWebUi(app: express.Application, config: PaseoDaemonConfig, logger: Logger): void {
+function mountWebUi(app: express.Application, config: RamblaDaemonConfig, logger: Logger): void {
   app.use(
     createWebUiMiddleware({
       enabled: config.webUi?.enabled ?? false,
@@ -520,11 +520,11 @@ function mountWebUi(app: express.Application, config: PaseoDaemonConfig, logger:
   );
 }
 
-function resolveExpressTrustProxySetting(config: PaseoDaemonConfig): true | string[] {
+function resolveExpressTrustProxySetting(config: RamblaDaemonConfig): true | string[] {
   return config.trustedProxies ?? ["loopback"];
 }
 
-function createInitialMutableDaemonConfig(config: PaseoDaemonConfig): MutableDaemonConfig {
+function createInitialMutableDaemonConfig(config: RamblaDaemonConfig): MutableDaemonConfig {
   const providers = config.providerOverrides ?? {};
 
   const initialConfig: MutableDaemonConfig = {
@@ -537,7 +537,7 @@ function createInitialMutableDaemonConfig(config: PaseoDaemonConfig): MutableDae
     cors: { allowedOrigins: config.corsAllowedOrigins },
     trustedProxies: config.trustedProxies ?? ["loopback"],
     git: config.git ?? resolveGitProcessPolicy({ env: process.env }),
-    app: { baseUrl: config.appBaseUrl ?? "https://app.paseo.sh" },
+    app: { baseUrl: config.appBaseUrl ?? "https://app.rambla.sh" },
     ...(config.providerCatalogRefreshTimeoutMs !== undefined
       ? { catalogRefreshTimeoutMs: config.providerCatalogRefreshTimeoutMs }
       : {}),
@@ -565,14 +565,14 @@ function createInitialMutableDaemonConfig(config: PaseoDaemonConfig): MutableDae
   return initialConfig;
 }
 
-export async function createPaseoDaemon(
-  config: PaseoDaemonConfig,
+export async function createRamblaDaemon(
+  config: RamblaDaemonConfig,
   rootLogger: Logger,
-  dependencies: PaseoDaemonDependencies = {},
-): Promise<PaseoDaemon> {
+  dependencies: RamblaDaemonDependencies = {},
+): Promise<RamblaDaemon> {
   configureGitProcessPolicy(config.git ?? resolveGitProcessPolicy({ env: process.env }));
   const logger = rootLogger.child({ module: "bootstrap" });
-  const obsoleteTimelineDirectory = path.join(config.paseoHome, "agent-timelines");
+  const obsoleteTimelineDirectory = path.join(config.ramblaHome, "agent-timelines");
   await rm(obsoleteTimelineDirectory, { recursive: true, force: true }).catch((error) => {
     logger.warn(
       { err: error, path: obsoleteTimelineDirectory },
@@ -583,12 +583,12 @@ export async function createPaseoDaemon(
   const elapsed = () => `${(performance.now() - bootstrapStart).toFixed(0)}ms`;
   const daemonVersion = config.daemonVersion ?? resolveDaemonVersion(import.meta.url);
   const initialMutableConfig = createInitialMutableDaemonConfig(config);
-  const daemonConfigStore = new DaemonConfigStore(config.paseoHome, initialMutableConfig, logger, {
+  const daemonConfigStore = new DaemonConfigStore(config.ramblaHome, initialMutableConfig, logger, {
     relayEnabledMutable: config.relayEnabledMutable ?? true,
     startupPersisted: config.configReload?.startupPersisted,
     reloadSource: {
       resolve: (persisted) => {
-        const reloaded = resolveConfigFromPersisted(config.paseoHome, persisted, {
+        const reloaded = resolveConfigFromPersisted(config.ramblaHome, persisted, {
           env: config.configReload?.env ?? process.env,
           cli: config.configReload?.cli,
           relayEnabledFallback: config.configReload?.relayEnabledFallback,
@@ -607,12 +607,12 @@ export async function createPaseoDaemon(
   const browserToolsPolicy = new DaemonConfigBrowserToolsPolicy(daemonConfigStore);
   const browserToolsBroker = new BrowserToolsBroker({});
   const pluginRuntime = new PluginService(logger, daemonConfigStore, daemonVersion, {
-    managedSources: new ManagedPluginSources(config.paseoHome),
-    settingsDirectory: path.join(config.paseoHome, "plugin-settings"),
+    managedSources: new ManagedPluginSources(config.ramblaHome),
+    settingsDirectory: path.join(config.ramblaHome, "plugin-settings"),
   });
 
-  const serverId = getOrCreateServerId(config.paseoHome, { logger });
-  const daemonKeyPair = await loadOrCreateDaemonKeyPair(config.paseoHome, logger);
+  const serverId = getOrCreateServerId(config.ramblaHome, { logger });
+  const daemonKeyPair = await loadOrCreateDaemonKeyPair(config.ramblaHome, logger);
   const managedProcesses = createBootstrapManagedProcessRegistry(config, logger);
   // Reconcile the helper-process ledger in the background so it never blocks the
   // daemon from coming up; terminating a live leftover can take a few seconds.
@@ -662,12 +662,12 @@ export async function createPaseoDaemon(
   const scriptRuntimeStore = new WorkspaceScriptRuntimeStore();
   const workspaceSetupRuntime = new WorkspaceSetupRuntime();
   let configuredHostnames = config.hostnames ?? config.allowedHosts;
-  let appBaseUrl = config.appBaseUrl ?? "https://app.paseo.sh";
+  let appBaseUrl = config.appBaseUrl ?? "https://app.rambla.sh";
   daemonConfigStore.onFieldChange("hostnames", (value) => {
     configuredHostnames = value as HostnamesConfig | undefined;
   });
   daemonConfigStore.onFieldChange("app.baseUrl", (value) => {
-    appBaseUrl = typeof value === "string" ? value : "https://app.paseo.sh";
+    appBaseUrl = typeof value === "string" ? value : "https://app.rambla.sh";
   });
   let wsServer: VoiceAssistantWebSocketServer | null = null;
   let serviceProxyListenTarget: ListenTarget | null = null;
@@ -715,8 +715,8 @@ export async function createPaseoDaemon(
 
   // CORS - allow same-origin + configured origins
   const fixedAllowedOrigins = [
-    // Packaged desktop renderers use the custom paseo:// protocol scheme.
-    "paseo://app",
+    // Packaged desktop renderers use the custom rambla:// protocol scheme.
+    "rambla://app",
     // For TCP, add localhost variants
     ...(listenTarget.type === "tcp"
       ? [
@@ -858,21 +858,21 @@ export async function createPaseoDaemon(
 
   const agentStorage = new AgentStorage(config.agentStoragePath, logger);
   const projectRegistry = new FileBackedProjectRegistry(
-    path.join(config.paseoHome, "projects", "projects.json"),
+    path.join(config.ramblaHome, "projects", "projects.json"),
     logger,
   );
   workspaceRegistry = new FileBackedWorkspaceRegistry(
-    path.join(config.paseoHome, "projects", "workspaces.json"),
+    path.join(config.ramblaHome, "projects", "workspaces.json"),
     logger,
   );
   const workspaceLabelService = createWorkspaceLabelService({
-    paseoHome: config.paseoHome,
+    ramblaHome: config.ramblaHome,
     workspaceRegistry,
   });
   const github = createGitHubService();
   const workspaceGitService = new WorkspaceGitServiceImpl({
     logger,
-    paseoHome: config.paseoHome,
+    ramblaHome: config.ramblaHome,
     worktreesRoot: config.worktreesRoot,
     deps: {
       forgeOverrides: { github },
@@ -894,7 +894,7 @@ export async function createPaseoDaemon(
     logger,
   });
   const agentProviderRuntime = await createAgentProviderRuntime({
-    paseoHome: config.paseoHome,
+    ramblaHome: config.ramblaHome,
     logger,
     snapshotManager: {
       refreshTimeoutMs: config.providerCatalogRefreshTimeoutMs,
@@ -929,8 +929,8 @@ export async function createPaseoDaemon(
       workspaceGitService.onWorkspaceStateMayHaveChanged(cwd);
     },
     mcpAuthToken: agentMcpAuthToken,
-    resolvePaseoToolPolicy: (provider) =>
-      resolvePaseoToolPolicy(provider, daemonConfigStore.get().providers),
+    resolveRamblaToolPolicy: (provider) =>
+      resolveRamblaToolPolicy(provider, daemonConfigStore.get().providers),
     logger,
   });
   const syncPluginProviders = () => {
@@ -950,7 +950,7 @@ export async function createPaseoDaemon(
   logger.info({ elapsed: elapsed() }, "Agent storage initialized");
   await bootstrapWorkspaceRegistries({
     serverId,
-    paseoHome: config.paseoHome,
+    ramblaHome: config.ramblaHome,
     agentStorage,
     projectRegistry,
     workspaceRegistry,
@@ -985,7 +985,7 @@ export async function createPaseoDaemon(
   });
   const checkoutDiffManager = new CheckoutDiffManager({
     logger,
-    paseoHome: config.paseoHome,
+    ramblaHome: config.ramblaHome,
     workspaceGitService,
   });
   const archiveWorkspaceRecordExternal = async (
@@ -1031,7 +1031,7 @@ export async function createPaseoDaemon(
         cwd: workspace.cwd,
         kind: workspace.kind,
         worktreeRoot: workspace.worktreeRoot,
-        isPaseoOwnedWorktree: workspace.isPaseoOwnedWorktree,
+        isRamblaOwnedWorktree: workspace.isRamblaOwnedWorktree,
         mainRepoRoot: workspace.mainRepoRoot,
       }));
   };
@@ -1088,8 +1088,8 @@ export async function createPaseoDaemon(
   });
 
   setupAutoArchiveOnMerge({
-    paseoHome: config.paseoHome,
-    paseoWorktreesBaseRoot: config.worktreesRoot,
+    ramblaHome: config.ramblaHome,
+    ramblaWorktreesBaseRoot: config.worktreesRoot,
     daemonConfigStore,
     workspaceGitService,
     github,
@@ -1107,16 +1107,16 @@ export async function createPaseoDaemon(
     emitWorkspaceUpdatesForWorkspaceIds: emitWorkspaceUpdatesExternal,
   });
 
-  const createPaseoWorktreeForTools = async (
-    input: Parameters<typeof createPaseoWorktreeWorkflow>[1],
-    serviceOptions?: Parameters<typeof createPaseoWorktreeWorkflow>[2],
+  const createRamblaWorktreeForTools = async (
+    input: Parameters<typeof createRamblaWorktreeWorkflow>[1],
+    serviceOptions?: Parameters<typeof createRamblaWorktreeWorkflow>[2],
   ) => {
-    return createPaseoWorktreeWorkflow(
+    return createRamblaWorktreeWorkflow(
       {
-        paseoHome: config.paseoHome,
+        ramblaHome: config.ramblaHome,
         worktreesRoot: config.worktreesRoot,
-        createPaseoWorktree: async (workflowInput, workflowOptions) => {
-          return createRegisteredPaseoWorktree(workflowInput, {
+        createRamblaWorktree: async (workflowInput, workflowOptions) => {
+          return createRegisteredRamblaWorktree(workflowInput, {
             github,
             ...(workflowOptions?.resolveDefaultBranch
               ? {
@@ -1164,11 +1164,11 @@ export async function createPaseoDaemon(
     agentManager,
     agentStorage,
     logger,
-    paseoHome: config.paseoHome,
+    ramblaHome: config.ramblaHome,
     worktreesRoot: config.worktreesRoot,
     terminalManager,
     providerSnapshotManager,
-    createPaseoWorktree: createPaseoWorktreeForTools,
+    createRamblaWorktree: createRamblaWorktreeForTools,
     ensureWorkspaceForCreate: ensureWorkspaceForCreateAndBroadcastExternal,
   };
   const createAgent = (input: Parameters<typeof createAgentCommand>[1]) =>
@@ -1176,8 +1176,8 @@ export async function createPaseoDaemon(
   const archiveWorkspaceByIdExternal = (workspaceId: string, requestId: string) =>
     archiveByScope(
       {
-        paseoHome: config.paseoHome,
-        paseoWorktreesBaseRoot: config.worktreesRoot,
+        ramblaHome: config.ramblaHome,
+        ramblaWorktreesBaseRoot: config.worktreesRoot,
         github,
         workspaceGitService,
         agentManager,
@@ -1199,13 +1199,13 @@ export async function createPaseoDaemon(
       { scope: { kind: "workspace", workspaceId }, requestId },
     );
   const hubAgentLifecycle = new CreateAgentLifecycleDispatch({
-    paseoHome: config.paseoHome,
+    ramblaHome: config.ramblaHome,
     worktreesRoot: config.worktreesRoot,
     agentManager,
     agentStorage,
     github,
     workspaceGitService,
-    createPaseoWorktreeWorkflow: createPaseoWorktreeForTools,
+    createRamblaWorktreeWorkflow: createRamblaWorktreeForTools,
     archiveAgentForClose: (agentId) =>
       archiveAgentCommand({ agentManager, agentStorage, logger }, agentId),
     findWorkspaceIdForCwd: findWorkspaceIdForCwdExternal,
@@ -1221,7 +1221,7 @@ export async function createPaseoDaemon(
     logger,
   });
   const hubRelationships = new HubRelationshipController({
-    paseoHome: config.paseoHome,
+    ramblaHome: config.ramblaHome,
     hostname: getHostname(),
     serverId,
     daemonPublicKey: daemonKeyPair.publicKeyB64,
@@ -1283,11 +1283,11 @@ export async function createPaseoDaemon(
     await emitWorkspaceUpdatesExternal([workspace.workspaceId]);
     return workspace;
   };
-  const createSchedulePaseoWorktreeExternal = async (input: {
+  const createScheduleRamblaWorktreeExternal = async (input: {
     cwd: string;
     firstAgentContext: FirstAgentContext;
   }) => {
-    const result = await createPaseoWorktreeForTools({
+    const result = await createRamblaWorktreeForTools({
       cwd: input.cwd,
       firstAgentContext: input.firstAgentContext,
     });
@@ -1297,8 +1297,8 @@ export async function createPaseoDaemon(
   const archiveScheduleWorkspaceExternal = async (workspaceId: string) => {
     await archiveByScope(
       {
-        paseoHome: config.paseoHome,
-        paseoWorktreesBaseRoot: config.worktreesRoot,
+        ramblaHome: config.ramblaHome,
+        ramblaWorktreesBaseRoot: config.worktreesRoot,
         github,
         workspaceGitService,
         agentManager,
@@ -1330,13 +1330,13 @@ export async function createPaseoDaemon(
     );
   };
   const scheduleService = new ScheduleService({
-    paseoHome: config.paseoHome,
+    ramblaHome: config.ramblaHome,
     logger,
     agentManager,
     agentStorage,
     createAgent,
     createDirectoryWorkspace: createScheduleLocalWorkspaceExternal,
-    createPaseoWorktreeWorkspace: createSchedulePaseoWorktreeExternal,
+    createRamblaWorktreeWorkspace: createScheduleRamblaWorktreeExternal,
     archiveWorkspace: archiveScheduleWorkspaceExternal,
   });
   await scheduleService.start();
@@ -1360,8 +1360,8 @@ export async function createPaseoDaemon(
   logger.info({ elapsed: elapsed() }, "Preparing voice and MCP runtime");
 
   const createAgentToolHostDependencies = (
-    runtime: PaseoToolRuntimeContext,
-  ): PaseoToolHostDependencies => ({
+    runtime: RamblaToolRuntimeContext,
+  ): RamblaToolHostDependencies => ({
     agentManager,
     agentStorage,
     terminalManager,
@@ -1404,18 +1404,18 @@ export async function createPaseoDaemon(
       spawnWorkspaceScript,
       assertAutomationAllowed: (workspaceId) =>
         assertWorkspaceAutomationAllowedForWorkspace(workspaceRegistry, workspaceId),
-      globalServicePorts: loadPersistedConfig(config.paseoHome).worktrees?.servicePorts,
+      globalServicePorts: loadPersistedConfig(config.ramblaHome).worktrees?.servicePorts,
     }),
     markWorkspaceArchiving: markWorkspaceArchivingExternal,
     clearWorkspaceArchiving: clearWorkspaceArchivingExternal,
     ensureWorkspaceForCreate: createAgentCommandDependencies.ensureWorkspaceForCreate,
-    createPaseoWorktree: createAgentCommandDependencies.createPaseoWorktree,
+    createRamblaWorktree: createAgentCommandDependencies.createRamblaWorktree,
     browserToolsEnabled: browserToolsPolicy.isEnabled(),
     browserToolsBroker,
-    paseoToolPolicy:
-      runtime.paseoToolPolicy ??
-      (runtime.callerAgentId ? agentManager.getPaseoToolPolicy(runtime.callerAgentId) : undefined),
-    paseoHome: config.paseoHome,
+    ramblaToolPolicy:
+      runtime.ramblaToolPolicy ??
+      (runtime.callerAgentId ? agentManager.getRamblaToolPolicy(runtime.callerAgentId) : undefined),
+    ramblaHome: config.ramblaHome,
     worktreesRoot: config.worktreesRoot,
     callerAgentId: runtime.callerAgentId,
     enableVoiceTools: runtime.enableVoiceTools,
@@ -1424,13 +1424,13 @@ export async function createPaseoDaemon(
     resolveCallerContext: (agentId) => wsServer?.resolveVoiceCallerContext(agentId) ?? null,
     logger,
   });
-  const createAgentToolCatalog = (runtime: PaseoToolRuntimeContext) =>
-    createPaseoToolCatalog(createAgentToolHostDependencies(runtime));
+  const createAgentToolCatalog = (runtime: RamblaToolRuntimeContext) =>
+    createRamblaToolCatalog(createAgentToolHostDependencies(runtime));
   const setAgentProviderToolsEnabled = (enabled: boolean) => {
-    agentProviderRuntime.setPaseoToolCatalog(enabled ? createAgentToolCatalog({}) : null);
+    agentProviderRuntime.setRamblaToolCatalog(enabled ? createAgentToolCatalog({}) : null);
   };
-  agentManager.setPaseoToolCatalogFactory(createAgentToolCatalog);
-  agentManager.setPaseoToolsEnabled(config.mcpInjectIntoAgents !== false);
+  agentManager.setRamblaToolCatalogFactory(createAgentToolCatalog);
+  agentManager.setRamblaToolsEnabled(config.mcpInjectIntoAgents !== false);
   setAgentProviderToolsEnabled(config.mcpEnabled !== false && config.mcpInjectIntoAgents !== false);
 
   let mcpEnabled = config.mcpEnabled ?? true;
@@ -1442,8 +1442,8 @@ export async function createPaseoDaemon(
       const agentMcpServer = await createAgentMcpServer(
         createAgentToolHostDependencies({
           callerAgentId,
-          paseoToolPolicy: callerAgentId
-            ? agentManager.getPaseoToolPolicy(callerAgentId)
+          ramblaToolPolicy: callerAgentId
+            ? agentManager.getRamblaToolPolicy(callerAgentId)
             : undefined,
         }),
       );
@@ -1603,26 +1603,26 @@ export async function createPaseoDaemon(
             agentMcpBaseUrl =
               !mcpEnabled || config.mcpInjectIntoAgents === false ? null : mcpBaseUrl;
             agentManager.setMcpBaseUrl(agentMcpBaseUrl);
-            agentManager.setPaseoToolsEnabled(mcpEnabled && config.mcpInjectIntoAgents !== false);
+            agentManager.setRamblaToolsEnabled(mcpEnabled && config.mcpInjectIntoAgents !== false);
             daemonConfigStore.onFieldChange("mcp.enabled", (value) => {
               mcpEnabled = value !== false;
               const inject = daemonConfigStore.get().mcp.injectIntoAgents !== false;
               agentManager.setMcpBaseUrl(mcpEnabled && inject ? mcpBaseUrl : null);
-              agentManager.setPaseoToolsEnabled(mcpEnabled && inject);
+              agentManager.setRamblaToolsEnabled(mcpEnabled && inject);
               setAgentProviderToolsEnabled(mcpEnabled && inject);
             });
             daemonConfigStore.onFieldChange("mcp.injectIntoAgents", (value) => {
               agentManager.setMcpBaseUrl(mcpEnabled && value ? mcpBaseUrl : null);
-              agentManager.setPaseoToolsEnabled(mcpEnabled && value !== false);
+              agentManager.setRamblaToolsEnabled(mcpEnabled && value !== false);
               setAgentProviderToolsEnabled(mcpEnabled && value !== false);
             });
             daemonConfigStore.onFieldChange("appendSystemPrompt", (value) => {
               agentManager.setAppendSystemPrompt(typeof value === "string" ? value : "");
             });
             const relayEnabled = config.relayEnabled ?? true;
-            const relayEndpoint = config.relayEndpoint ?? "relay.paseo.sh:443";
+            const relayEndpoint = config.relayEndpoint ?? "relay.rambla.sh:443";
             const relayPublicEndpoint = config.relayPublicEndpoint ?? relayEndpoint;
-            const relayUseTls = config.relayUseTls ?? relayEndpoint === "relay.paseo.sh:443";
+            const relayUseTls = config.relayUseTls ?? relayEndpoint === "relay.rambla.sh:443";
             const relayPublicUseTls = config.relayPublicUseTls ?? relayUseTls;
             if (boundListenTarget.type === "tcp") {
               logger.info(
@@ -1655,7 +1655,7 @@ export async function createPaseoDaemon(
               agentManager,
               agentStorage,
               downloadTokenStore,
-              config.paseoHome,
+              config.ramblaHome,
               daemonConfigStore,
               mcpBaseUrl,
               {
@@ -1718,7 +1718,7 @@ export async function createPaseoDaemon(
               orchestrationSkills,
               workspaceLabelService,
             );
-            pluginRuntime.bindPaseoSessionHost(wsServer);
+            pluginRuntime.bindRamblaSessionHost(wsServer);
             await pluginRuntime.start();
             wsServer.beginAcceptingConnections();
             relayRuntime = createRelayRuntime({

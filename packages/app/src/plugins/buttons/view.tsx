@@ -1,11 +1,11 @@
-import { PluginClientStateProvider } from "@getpaseo/plugin/client/host";
+import { PluginClientStateProvider } from "@getrambla/plugin/client/host";
 import type {
   PluginButtonBehavior,
   PluginButtonIcon,
   PluginButtonMenuEntry,
   PluginHostProps,
-} from "@getpaseo/plugin/client";
-import type { PluginTheme } from "@getpaseo/plugin";
+} from "@getrambla/plugin/client";
+import type { PluginTheme } from "@getrambla/plugin";
 import { useCallback, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { Platform, Pressable, Text, View, useWindowDimensions } from "react-native";
 import { StyleSheet, withUnistyles } from "react-native-unistyles";

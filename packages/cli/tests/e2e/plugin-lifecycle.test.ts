@@ -24,23 +24,23 @@ async function git(cwd: string, args: string[]): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const directory = await mkdtemp(path.join(tmpdir(), "paseo-plugin-cli-e2e-"));
-  const gitDirectory = await mkdtemp(path.join(tmpdir(), "paseo-plugin-git-cli-e2e-"));
+  const directory = await mkdtemp(path.join(tmpdir(), "rambla-plugin-cli-e2e-"));
+  const gitDirectory = await mkdtemp(path.join(tmpdir(), "rambla-plugin-git-cli-e2e-"));
   const context = await createE2ETestContext({ timeout: 45_000 });
   try {
     const scaffold = path.join(context.workDir, "authored-plugin");
-    const init = await context.paseo(["plugin", "init", scaffold, "--json"]);
+    const init = await context.rambla(["plugin", "init", scaffold, "--json"]);
     assert.equal(init.exitCode, 0, init.stderr);
-    const manifestPath = path.join(scaffold, "paseo-plugin.json");
+    const manifestPath = path.join(scaffold, "rambla-plugin.json");
     const manifest = await readPluginManifest(scaffold);
-    assert.deepEqual(manifest.requirements, { paseo: `>=${resolveCliVersion()}` });
+    assert.deepEqual(manifest.requirements, { rambla: `>=${resolveCliVersion()}` });
     await writeFile(
-      path.join(directory, "paseo-plugin.json"),
-      JSON.stringify({ id: "cli-e2e", requirements: { paseo: `>=${resolveCliVersion()}` } }),
+      path.join(directory, "rambla-plugin.json"),
+      JSON.stringify({ id: "cli-e2e", requirements: { rambla: `>=${resolveCliVersion()}` } }),
     );
     await writeFile(path.join(directory, "index.server.ts"), pluginSource);
 
-    const install = await context.paseo(["plugin", "install", directory, "--json"]);
+    const install = await context.rambla(["plugin", "install", directory, "--json"]);
     assert.equal(install.exitCode, 0, install.stderr);
     assert.equal(JSON.parse(install.stdout).id, "cli-e2e");
 
@@ -50,34 +50,34 @@ async function main(): Promise<void> {
 
     await writeFile(
       manifestPath,
-      JSON.stringify({ ...manifest, requirements: { paseo: ">=999.0.0" } }),
+      JSON.stringify({ ...manifest, requirements: { rambla: ">=999.0.0" } }),
     );
-    const incompatibleInstall = await context.paseo(["plugin", "install", scaffold, "--json"]);
+    const incompatibleInstall = await context.rambla(["plugin", "install", scaffold, "--json"]);
     assert.equal(incompatibleInstall.exitCode, 1);
-    assert.match(incompatibleInstall.stderr, /requires Paseo >=999.0.0/);
-    const afterRejection = await context.paseo(["plugin", "ls", "--json"]);
+    assert.match(incompatibleInstall.stderr, /requires Rambla >=999.0.0/);
+    const afterRejection = await context.rambla(["plugin", "ls", "--json"]);
     assert.equal(afterRejection.exitCode, 0, afterRejection.stderr);
     assert.deepEqual(
       JSON.parse(afterRejection.stdout).map((plugin: { id: string }) => plugin.id),
       ["cli-e2e"],
     );
     await writeFile(manifestPath, JSON.stringify(manifest));
-    const scaffoldInstall = await context.paseo(["plugin", "install", scaffold, "--json"]);
+    const scaffoldInstall = await context.rambla(["plugin", "install", scaffold, "--json"]);
     assert.equal(scaffoldInstall.exitCode, 0, scaffoldInstall.stderr);
     assert.equal(JSON.parse(scaffoldInstall.stdout).status, "running");
 
     await git(gitDirectory, ["init", "-b", "main"]);
-    await git(gitDirectory, ["config", "user.name", "Paseo Tests"]);
-    await git(gitDirectory, ["config", "user.email", "paseo@example.test"]);
+    await git(gitDirectory, ["config", "user.name", "Rambla Tests"]);
+    await git(gitDirectory, ["config", "user.email", "rambla@example.test"]);
     await writeFile(
-      path.join(gitDirectory, "paseo-plugin.json"),
-      JSON.stringify({ id: "git-cli-e2e", requirements: { paseo: `>=${resolveCliVersion()}` } }),
+      path.join(gitDirectory, "rambla-plugin.json"),
+      JSON.stringify({ id: "git-cli-e2e", requirements: { rambla: `>=${resolveCliVersion()}` } }),
     );
     await writeFile(path.join(gitDirectory, "index.server.ts"), pluginSource);
     await git(gitDirectory, ["add", "-A"]);
     await git(gitDirectory, ["commit", "-m", "initial"]);
 
-    const gitInstall = await context.paseo([
+    const gitInstall = await context.rambla([
       "plugin",
       "add",
       pathToFileURL(gitDirectory).href,
@@ -92,22 +92,22 @@ async function main(): Promise<void> {
     );
     await git(gitDirectory, ["add", "-A"]);
     await git(gitDirectory, ["commit", "-m", "update"]);
-    const status = await context.paseo(["plugin", "status", "git-cli-e2e", "--json"]);
+    const status = await context.rambla(["plugin", "status", "git-cli-e2e", "--json"]);
     assert.equal(status.exitCode, 0, status.stderr);
     assert.equal(JSON.parse(status.stdout)[0].status, "running");
     assert.equal(JSON.parse(status.stdout)[0].commit, JSON.parse(gitInstall.stdout).commit);
 
-    const update = await context.paseo(["plugin", "update", "git-cli-e2e", "--json"]);
+    const update = await context.rambla(["plugin", "update", "git-cli-e2e", "--json"]);
     assert.equal(update.exitCode, 0, update.stderr);
     assert.equal(JSON.parse(update.stdout)[0].updated, true);
 
     const installedCommit = JSON.parse(update.stdout)[0].currentCommit;
     const buildMarker = path.join(context.workDir, "incompatible-build-ran");
     await writeFile(
-      path.join(gitDirectory, "paseo-plugin.json"),
+      path.join(gitDirectory, "rambla-plugin.json"),
       JSON.stringify({
         id: "git-cli-e2e",
-        requirements: { paseo: ">=999.0.0" },
+        requirements: { rambla: ">=999.0.0" },
         build: [
           [
             process.execPath,
@@ -119,16 +119,16 @@ async function main(): Promise<void> {
       }),
     );
     await git(gitDirectory, ["add", "-A"]);
-    await git(gitDirectory, ["commit", "-m", "requires a future Paseo"]);
-    const incompatibleUpdate = await context.paseo(["plugin", "update", "git-cli-e2e", "--json"]);
+    await git(gitDirectory, ["commit", "-m", "requires a future Rambla"]);
+    const incompatibleUpdate = await context.rambla(["plugin", "update", "git-cli-e2e", "--json"]);
     assert.equal(incompatibleUpdate.exitCode, 1);
-    assert.match(incompatibleUpdate.stderr, /requires Paseo >=999.0.0/);
+    assert.match(incompatibleUpdate.stderr, /requires Rambla >=999.0.0/);
     await assert.rejects(readFile(buildMarker), { code: "ENOENT" });
-    const retained = await context.paseo(["plugin", "ls", "git-cli-e2e", "--json"]);
+    const retained = await context.rambla(["plugin", "ls", "git-cli-e2e", "--json"]);
     assert.equal(retained.exitCode, 0, retained.stderr);
     assert.equal(JSON.parse(retained.stdout)[0].commit, installedCommit);
     assert.equal(JSON.parse(retained.stdout)[0].status, "running");
-    const incompatibleAdd = await context.paseo([
+    const incompatibleAdd = await context.rambla([
       "plugin",
       "add",
       pathToFileURL(gitDirectory).href,
@@ -137,28 +137,28 @@ async function main(): Promise<void> {
       "--json",
     ]);
     assert.equal(incompatibleAdd.exitCode, 1);
-    assert.match(incompatibleAdd.stderr, /requires Paseo >=999.0.0/);
+    assert.match(incompatibleAdd.stderr, /requires Rambla >=999.0.0/);
     await assert.rejects(readFile(buildMarker), { code: "ENOENT" });
 
-    const reload = await context.paseo(["plugin", "reload", "cli-e2e", "--json"]);
+    const reload = await context.rambla(["plugin", "reload", "cli-e2e", "--json"]);
     assert.equal(reload.exitCode, 0, reload.stderr);
     assert.equal(JSON.parse(reload.stdout).status, "running");
 
-    const disable = await context.paseo(["plugin", "disable", "cli-e2e", "--json"]);
+    const disable = await context.rambla(["plugin", "disable", "cli-e2e", "--json"]);
     assert.equal(disable.exitCode, 0, disable.stderr);
     assert.equal(JSON.parse(disable.stdout).status, "disabled");
 
-    const enable = await context.paseo(["plugin", "enable", "cli-e2e", "--json"]);
+    const enable = await context.rambla(["plugin", "enable", "cli-e2e", "--json"]);
     assert.equal(enable.exitCode, 0, enable.stderr);
     assert.equal(JSON.parse(enable.stdout).status, "running");
 
-    const remove = await context.paseo(["plugin", "remove", "cli-e2e", "--json"]);
+    const remove = await context.rambla(["plugin", "remove", "cli-e2e", "--json"]);
     assert.equal(remove.exitCode, 0, remove.stderr);
-    const removeGit = await context.paseo(["plugin", "remove", "git-cli-e2e", "--json"]);
+    const removeGit = await context.rambla(["plugin", "remove", "git-cli-e2e", "--json"]);
     assert.equal(removeGit.exitCode, 0, removeGit.stderr);
-    const removeScaffold = await context.paseo(["plugin", "remove", "authored-plugin", "--json"]);
+    const removeScaffold = await context.rambla(["plugin", "remove", "authored-plugin", "--json"]);
     assert.equal(removeScaffold.exitCode, 0, removeScaffold.stderr);
-    const list = await context.paseo(["plugin", "ls", "--json"]);
+    const list = await context.rambla(["plugin", "ls", "--json"]);
     assert.equal(list.exitCode, 0, list.stderr);
     assert.deepEqual(JSON.parse(list.stdout), []);
   } finally {

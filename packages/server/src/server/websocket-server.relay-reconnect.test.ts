@@ -15,8 +15,8 @@ import {
   decodeTerminalStreamFrame,
   encodeTerminalStreamFrame,
   TerminalStreamOpcode,
-} from "@getpaseo/protocol/terminal-stream-protocol";
-import { CLIENT_CAPS } from "@getpaseo/protocol/client-capabilities";
+} from "@getrambla/protocol/terminal-stream-protocol";
+import { CLIENT_CAPS } from "@getrambla/protocol/client-capabilities";
 
 type SocketListener = (...args: unknown[]) => void;
 
@@ -253,7 +253,7 @@ function createServer(options?: {
     }),
     createStub<AgentStorage>({}),
     createStub<DownloadTokenStore>({}),
-    "/tmp/paseo-test",
+    "/tmp/rambla-test",
     createStub<DaemonConfigStore>(daemonConfigStore),
     null,
     { allowedOrigins: new Set(), startPaused: options?.startPaused },

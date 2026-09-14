@@ -4,13 +4,13 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "vitest";
 import { z } from "zod";
-import { settingsRpc } from "@getpaseo/plugin";
+import { settingsRpc } from "@getrambla/plugin";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/rambla-daemon.js";
 
 test("two clients share settings, observe changes, and preserve values through plugin lifecycle", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "settings-plugin-"));
-  const daemon = await createTestPaseoDaemon();
+  const daemon = await createTestRamblaDaemon();
   const first = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws`, appVersion: "0.7.2" });
   const second = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws`, appVersion: "0.7.2" });
   const rpc = settingsRpc("display");
@@ -19,15 +19,15 @@ test("two clients share settings, observe changes, and preserve values through p
   const changed: string[] = [];
   try {
     await writeFile(
-      path.join(directory, "paseo-plugin.json"),
+      path.join(directory, "rambla-plugin.json"),
       JSON.stringify({
         id: "settings-test",
-        requirements: { paseo: `>=${resolveDaemonVersion(import.meta.url)}` },
+        requirements: { rambla: `>=${resolveDaemonVersion(import.meta.url)}` },
       }),
     );
     await writeFile(
       path.join(directory, "index.server.ts"),
-      `import { defineSettings } from "@getpaseo/plugin";
+      `import { defineSettings } from "@getrambla/plugin";
 import { z } from "zod";
 export default function(server) { server.registerSettings(defineSettings({ id: "display", scope: "host", version: 1, schema: z.object({ enabled: z.boolean().default(true) }) })); return () => {}; }`,
     );

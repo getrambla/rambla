@@ -4,11 +4,11 @@ import type {
   PluginListItem,
   PluginLogEntry,
   PluginSourceUpdateItem,
-} from "@getpaseo/protocol/messages";
+} from "@getrambla/protocol/messages";
 import {
   formatPluginSourceReference,
   parsePluginSourceReference,
-} from "@getpaseo/protocol/plugin-source-reference";
+} from "@getrambla/protocol/plugin-source-reference";
 import type { CommandOptions, ListResult, OutputSchema, SingleResult } from "../../output/index.js";
 import { withOutput } from "../../output/index.js";
 import { addJsonAndDaemonHostOptions, addJsonOption } from "../../utils/command-options.js";
@@ -111,7 +111,7 @@ async function install(
   _command: Command,
 ): Promise<SingleResult<PluginListItem>> {
   process.stderr.write(
-    "Trusting plugin code: server code and Git build commands run unsandboxed on the daemon host; client code runs inside Paseo. Dependencies and future updates are part of the codebase you trust.\n",
+    "Trusting plugin code: server code and Git build commands run unsandboxed on the daemon host; client code runs inside Rambla. Dependencies and future updates are part of the codebase you trust.\n",
   );
   const isExplicitPath =
     path.isAbsolute(source) ||
@@ -202,7 +202,7 @@ export function createPluginCommand(): Command {
       .alias("add")
       .description("Trust and install a plugin from a directory or Git repository")
       .argument("<source>", "Host directory, Git source, or Git source:plugin/path")
-      .option("--id <id>", "Runtime plugin ID (defaults to paseo-plugin.json id)")
+      .option("--id <id>", "Runtime plugin ID (defaults to rambla-plugin.json id)")
       .option("--ref <ref>", "Git branch, tag, or commit")
       .option("--path <path>", "Legacy form of the :plugin/path source suffix"),
   ).action(withOutput(install));

@@ -1,0 +1,6 @@
+{
+  "id": "lifecycle-actions",
+  "requirements": {
+    "rambla": ">=0.8.0"
+  }
+}

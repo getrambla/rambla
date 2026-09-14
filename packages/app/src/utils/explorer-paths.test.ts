@@ -5,43 +5,43 @@ describe("buildAbsoluteExplorerPath", () => {
   it("builds a POSIX absolute path from a relative explorer path", () => {
     expect(
       buildAbsoluteExplorerPath({
-        workspaceRoot: "/workspaces/paseo",
+        workspaceRoot: "/workspaces/rambla",
         entryPath: "packages/app/src/components/file-explorer-pane.tsx",
       }),
-    ).toBe("/workspaces/paseo/packages/app/src/components/file-explorer-pane.tsx");
+    ).toBe("/workspaces/rambla/packages/app/src/components/file-explorer-pane.tsx");
   });
 
   it("returns workspace root when entry path points to explorer root", () => {
     expect(
       buildAbsoluteExplorerPath({
-        workspaceRoot: "/workspaces/paseo",
+        workspaceRoot: "/workspaces/rambla",
         entryPath: ".",
       }),
-    ).toBe("/workspaces/paseo");
+    ).toBe("/workspaces/rambla");
   });
 
   it("trims trailing separators from workspace root before joining", () => {
     expect(
       buildAbsoluteExplorerPath({
-        workspaceRoot: "/workspaces/paseo/",
+        workspaceRoot: "/workspaces/rambla/",
         entryPath: "README.md",
       }),
-    ).toBe("/workspaces/paseo/README.md");
+    ).toBe("/workspaces/rambla/README.md");
   });
 
   it("builds a Windows absolute path with backslash separators", () => {
     expect(
       buildAbsoluteExplorerPath({
-        workspaceRoot: "C:\\repo\\paseo",
+        workspaceRoot: "C:\\repo\\rambla",
         entryPath: "packages/app/src/components/file-explorer-pane.tsx",
       }),
-    ).toBe("C:\\repo\\paseo\\packages\\app\\src\\components\\file-explorer-pane.tsx");
+    ).toBe("C:\\repo\\rambla\\packages\\app\\src\\components\\file-explorer-pane.tsx");
   });
 
   it("passes through an already-absolute entry path", () => {
     expect(
       buildAbsoluteExplorerPath({
-        workspaceRoot: "/workspaces/paseo",
+        workspaceRoot: "/workspaces/rambla",
         entryPath: "/tmp/another/location.txt",
       }),
     ).toBe("/tmp/another/location.txt");

@@ -162,9 +162,9 @@ describe("resolveWorktreeCreationIntent", () => {
       number: 1790,
       baseRefName: "main",
       headRefName: "daemon-shutdown-diagnostics",
-      headOwnerLogin: "getpaseo",
-      headRepositorySshUrl: "git@github.com:getpaseo/paseo.git",
-      headRepositoryUrl: "https://github.com/getpaseo/paseo",
+      headOwnerLogin: "getrambla",
+      headRepositorySshUrl: "git@github.com:getrambla/rambla.git",
+      headRepositoryUrl: "https://github.com/getrambla/rambla",
       isCrossRepository: false,
     });
 
@@ -189,8 +189,8 @@ describe("resolveWorktreeCreationIntent", () => {
       baseRefName: "main",
       headRefName: "main",
       headOwnerLogin: "therainisme",
-      headRepositorySshUrl: "git@github.com:therainisme/paseo.git",
-      headRepositoryUrl: "https://github.com/therainisme/paseo",
+      headRepositorySshUrl: "git@github.com:therainisme/rambla.git",
+      headRepositoryUrl: "https://github.com/therainisme/rambla",
       isCrossRepository: true,
     });
 
@@ -204,9 +204,9 @@ describe("resolveWorktreeCreationIntent", () => {
       baseRefName: "main",
       checkoutRefs: [{ remoteName: "origin", remoteRef: "refs/pull/526/head" }],
       headRepositoryOwner: "therainisme",
-      headRepository: "therainisme/paseo",
+      headRepository: "therainisme/rambla",
       localBranchName: "therainisme/main",
-      pushRemoteUrl: "git@github.com:therainisme/paseo.git",
+      pushRemoteUrl: "git@github.com:therainisme/rambla.git",
     });
     expect(deps.headRefLookups).toEqual([]);
   });

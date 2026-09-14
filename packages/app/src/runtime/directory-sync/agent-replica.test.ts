@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { DaemonClient, FetchAgentsEntry } from "@getpaseo/client/internal/daemon-client";
-import type { AgentSnapshotPayload } from "@getpaseo/protocol/messages";
+import type { DaemonClient, FetchAgentsEntry } from "@getrambla/client/internal/daemon-client";
+import type { AgentSnapshotPayload } from "@getrambla/protocol/messages";
 import { selectAgentTurnPresentation, useSessionStore } from "@/stores/session-store";
 import { normalizeAgentSnapshot } from "@/utils/agent-snapshots";
 import type { DirectoryReplicaMutation } from "@/runtime/replica-cache";
@@ -45,7 +45,7 @@ function entry(agent: AgentSnapshotPayload): FetchAgentsEntry {
         currentBranch: null,
         remoteUrl: null,
         worktreeRoot: null,
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: null,
       },
     },

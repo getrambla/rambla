@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { PaseoApiProvider, PluginRpcProvider } from "@getpaseo/plugin/client/host";
+import { RamblaApiProvider, PluginRpcProvider } from "@getrambla/plugin/client/host";
 import type { ReactNode } from "react";
 import type { InstalledPlugin } from "./types";
 import type { PluginSurfaceRuntime } from "./surface-runtime";
@@ -15,9 +15,9 @@ export function PluginRuntimeBoundary({
 }) {
   return (
     <QueryClientProvider client={plugin.queryClient}>
-      <PaseoApiProvider paseo={runtime.paseo}>
+      <RamblaApiProvider rambla={runtime.rambla}>
         <PluginRpcProvider invoke={runtime.invoke}>{children}</PluginRpcProvider>
-      </PaseoApiProvider>
+      </RamblaApiProvider>
     </QueryClientProvider>
   );
 }

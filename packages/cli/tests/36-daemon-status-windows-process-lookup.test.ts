@@ -15,7 +15,7 @@ interface CommandResult {
   stderr: string;
 }
 
-function runLocalPaseo(args: string[], env: NodeJS.ProcessEnv): Promise<CommandResult> {
+function runLocalRambla(args: string[], env: NodeJS.ProcessEnv): Promise<CommandResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [CLI_ENTRY, ...args], {
       env: { ...process.env, ...env },
@@ -45,25 +45,25 @@ if (process.platform !== "win32") {
 
 console.log("=== Windows Daemon Status Process Lookup ===\n");
 
-const paseoHome = await mkdtemp(join(tmpdir(), "paseo-windows-status-home-"));
+const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-windows-status-home-"));
 const port = await getAvailablePort();
 const env = {
-  PASEO_HOME: paseoHome,
-  PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD: "0",
-  PASEO_DICTATION_ENABLED: "0",
-  PASEO_VOICE_MODE_ENABLED: "0",
+  RAMBLA_HOME: ramblaHome,
+  RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD: "0",
+  RAMBLA_DICTATION_ENABLED: "0",
+  RAMBLA_VOICE_MODE_ENABLED: "0",
 };
 
 try {
-  const start = await runLocalPaseo(["daemon", "restart", "--port", String(port)], env);
+  const start = await runLocalRambla(["daemon", "restart", "--port", String(port)], env);
   assert.strictEqual(
     start.exitCode,
     0,
     `daemon restart should succeed:\nstdout:\n${start.stdout}\nstderr:\n${start.stderr}`,
   );
 
-  const statusResult = await runLocalPaseo(
-    ["daemon", "status", "--home", paseoHome, "--json"],
+  const statusResult = await runLocalRambla(
+    ["daemon", "status", "--home", ramblaHome, "--json"],
     env,
   );
   assert.strictEqual(
@@ -90,8 +90,8 @@ try {
   );
   console.log("✓ daemon status resolves daemonNode on Windows\n");
 } finally {
-  await runLocalPaseo(["daemon", "stop", "--home", paseoHome, "--force"], env);
-  await rm(paseoHome, { recursive: true, force: true });
+  await runLocalRambla(["daemon", "stop", "--home", ramblaHome, "--force"], env);
+  await rm(ramblaHome, { recursive: true, force: true });
 }
 
 console.log("=== Windows daemon status process lookup passed ===");

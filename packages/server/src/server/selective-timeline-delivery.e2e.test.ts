@@ -4,10 +4,10 @@ import os from "node:os";
 import path from "node:path";
 import { createPersistedWorkspaceRecord } from "./workspace-registry.js";
 import { afterEach, beforeEach, expect, test } from "vitest";
-import { CLIENT_CAPS } from "@getpaseo/protocol/client-capabilities";
-import type { SessionOutboundMessage } from "@getpaseo/protocol/messages";
+import { CLIENT_CAPS } from "@getrambla/protocol/client-capabilities";
+import type { SessionOutboundMessage } from "@getrambla/protocol/messages";
 import { DaemonClient } from "./test-utils/daemon-client.js";
-import { createTestPaseoDaemon, type TestPaseoDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "./test-utils/rambla-daemon.js";
 import {
   MockLoadTestAgentClient,
   MockLoadTestAgentSession,
@@ -117,11 +117,11 @@ function legacyAttentionResult(message: SessionOutboundMessage) {
   };
 }
 
-let daemon: TestPaseoDaemon;
+let daemon: TestRamblaDaemon;
 const clients: ConnectedClient[] = [];
 
 beforeEach(async () => {
-  daemon = await createTestPaseoDaemon();
+  daemon = await createTestRamblaDaemon();
 });
 
 afterEach(async () => {
@@ -165,7 +165,7 @@ async function connect(input: {
 
 test("notification timeline items are sent only to clients that advertise support", async () => {
   await daemon.close();
-  daemon = await createTestPaseoDaemon({
+  daemon = await createTestRamblaDaemon({
     isDev: true,
     agentClients: { mock: new MockLoadTestAgentClient() },
   });
@@ -242,7 +242,7 @@ test("notification timeline items are sent only to clients that advertise suppor
 
 test("plugin timeline items are sent only to clients that advertise support", async () => {
   await daemon.close();
-  daemon = await createTestPaseoDaemon({
+  daemon = await createTestRamblaDaemon({
     isDev: true,
     agentClients: { mock: new MockLoadTestAgentClient() },
   });
@@ -330,7 +330,7 @@ test("plugin timeline items are sent only to clients that advertise support", as
 
 test("rewind routes replacement completion by source capability and subscription", async () => {
   await daemon.close();
-  daemon = await createTestPaseoDaemon({
+  daemon = await createTestRamblaDaemon({
     isDev: true,
     agentClients: { mock: new MockLoadTestAgentClient() },
   });
@@ -425,7 +425,7 @@ test("real WebSocket sessions enforce selective delivery, retained resets, downg
     ["A", "B", "C"].map((title) =>
       legacy.client.createAgent({
         provider: "codex",
-        cwd: daemon.paseoHome,
+        cwd: daemon.ramblaHome,
         title: `Selective ${title}`,
         workspaceId,
         modeId: "full-access",
@@ -560,8 +560,8 @@ test("real WebSocket sessions enforce selective delivery, retained resets, downg
 
 test("blocked setup remains readable on mixed-capability sockets sharing a session", async () => {
   await daemon.close();
-  const root = await mkdtemp(path.join(os.tmpdir(), "paseo-blocked-compat-"));
-  const projects = path.join(root, ".paseo", "projects");
+  const root = await mkdtemp(path.join(os.tmpdir(), "rambla-blocked-compat-"));
+  const projects = path.join(root, ".rambla", "projects");
   await mkdir(projects, { recursive: true });
   const workspace = createPersistedWorkspaceRecord({
     workspaceId: "blocked-workspace",
@@ -579,7 +579,7 @@ test("blocked setup remains readable on mixed-capability sockets sharing a sessi
     },
   });
   await writeFile(path.join(projects, "workspaces.json"), JSON.stringify([workspace]));
-  daemon = await createTestPaseoDaemon({ paseoHomeRoot: root });
+  daemon = await createTestRamblaDaemon({ ramblaHomeRoot: root });
   const legacy = await connect({ clientId: "setup-shared", selective: false });
   const capable = await connect({
     clientId: "setup-shared",
@@ -591,7 +591,7 @@ test("blocked setup remains readable on mixed-capability sockets sharing a sessi
   expect(oldStatus.snapshot).toMatchObject({
     status: "failed",
     error:
-      "Workspace setup is blocked pending approval of code from a fork pull request. Update Paseo to review and run setup.",
+      "Workspace setup is blocked pending approval of code from a fork pull request. Update Rambla to review and run setup.",
   });
   expect(newStatus.snapshot).toMatchObject({
     status: "blocked",
@@ -637,7 +637,7 @@ class CompatibilityProvider extends MockLoadTestAgentClient {
 test("plugin items are gated in provider child streams, child fetches, and rewind replay", async () => {
   await daemon.close();
   const provider = new CompatibilityProvider();
-  daemon = await createTestPaseoDaemon({ isDev: true, agentClients: { mock: provider } });
+  daemon = await createTestRamblaDaemon({ isDev: true, agentClients: { mock: provider } });
   const legacy = await connect({ clientId: "provider-shared", selective: false });
   const capable = await connect({
     clientId: "provider-shared",
@@ -730,7 +730,7 @@ test("plugin items are gated in provider child streams, child fetches, and rewin
 
 async function createAttentionWorkspace(client: DaemonClient): Promise<string> {
   const result = await client.createWorkspace({
-    source: { kind: "directory", path: daemon.paseoHome },
+    source: { kind: "directory", path: daemon.ramblaHome },
   });
   if (!result.workspace) throw new Error(result.error ?? "Expected workspace");
   return result.workspace.id;

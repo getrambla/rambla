@@ -1,10 +1,10 @@
-import { getErrorMessage } from "@getpaseo/protocol/error-utils";
+import { getErrorMessage } from "@getrambla/protocol/error-utils";
 import {
   daemonInstallOriginRuntime,
   validateDaemonInstallOrigin,
   type DaemonInstallOriginRuntime,
 } from "./install-origin.js";
-import { npmGlobalPaseoCli, type NpmGlobalPaseoCli } from "./npm-global-cli.js";
+import { npmGlobalRamblaCli, type NpmGlobalRamblaCli } from "./npm-global-cli.js";
 
 export type DaemonSelfUpdatePhase = "starting" | "downloading" | "installing" | "complete";
 
@@ -27,7 +27,7 @@ export interface DaemonSelfUpdateLogger {
 }
 
 export interface DaemonSelfUpdateRuntime {
-  npm: NpmGlobalPaseoCli;
+  npm: NpmGlobalRamblaCli;
   installOrigin: DaemonInstallOriginRuntime;
 }
 
@@ -39,12 +39,12 @@ export class DaemonSelfUpdateInProgressError extends Error {
 }
 
 const defaultRuntime: DaemonSelfUpdateRuntime = {
-  npm: npmGlobalPaseoCli,
+  npm: npmGlobalRamblaCli,
   installOrigin: daemonInstallOriginRuntime,
 };
 
 const DESKTOP_MANAGED_UPDATE_ERROR =
-  "This daemon is managed by Paseo Desktop. Update Paseo Desktop on the host.";
+  "This daemon is managed by Rambla Desktop. Update Rambla Desktop on the host.";
 
 export class DaemonSelfUpdater {
   private inProgress = false;

@@ -1,0 +1,6 @@
+{
+  "id": "catppuccin",
+  "requirements": {
+    "rambla": ">=0.8.0"
+  }
+}

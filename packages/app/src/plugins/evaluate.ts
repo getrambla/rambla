@@ -1,19 +1,19 @@
 import * as pluginUiRuntime from "./react-native/ui";
 import { useSettings } from "./settings/use-settings";
-import * as pluginSharedRuntime from "@getpaseo/plugin";
-import * as pluginClientRuntime from "@getpaseo/plugin/client";
+import * as pluginSharedRuntime from "@getrambla/plugin";
+import * as pluginClientRuntime from "@getrambla/plugin/client";
 import * as React from "react";
 import * as ReactJsxRuntime from "react/jsx-runtime";
 // eslint-disable-next-line no-restricted-imports -- plugin client runtime injects host ReactNative.
 import * as ReactNative from "react-native";
-// eslint-disable-next-line no-restricted-imports -- plugin bundles receive TanStack's real runtime, not Paseo's query wrappers.
+// eslint-disable-next-line no-restricted-imports -- plugin bundles receive TanStack's real runtime, not Rambla's query wrappers.
 import * as ReactQuery from "@tanstack/react-query";
 import * as Zod from "zod";
 import {
   type PluginAttachmentSourceContribution,
   type PluginCleanup,
   type PluginThemeContribution,
-} from "@getpaseo/plugin";
+} from "@getrambla/plugin";
 import {
   type PluginCommandCenterItemContribution,
   type PluginClientContext,
@@ -24,7 +24,7 @@ import {
   type PluginTimelineTransformerContribution,
   type PluginWorkspacePanelContribution,
   type PluginButtonRegistration,
-} from "@getpaseo/plugin/client";
+} from "@getrambla/plugin/client";
 import type { EvaluatedPlugin } from "./types";
 import type { ComponentType } from "react";
 import { resolvePluginIcon } from "./icons";
@@ -71,7 +71,7 @@ function requireId(value: string, label: string): string {
 
 export type PluginClientRuntime = Pick<
   PluginClientContext,
-  | "paseo"
+  | "rambla"
   | "rpc"
   | "openSettings"
   | "openSurface"
@@ -369,13 +369,13 @@ export function runPluginClientBundle(
     },
   };
   const runtimeRequire = (name: string): unknown => {
-    if (name === "@getpaseo/plugin/client/ui") return pluginUiRuntime;
+    if (name === "@getrambla/plugin/client/ui") return pluginUiRuntime;
     if (name === "react") return React;
     if (name === "react/jsx-runtime") return ReactJsxRuntime;
     if (name === "react-native") return ReactNative;
-    if (name === "@getpaseo/plugin") return pluginSharedRuntime;
-    if (name === "@getpaseo/plugin/client") return { ...pluginClientRuntime, useSettings };
-    if (name === "@getpaseo/plugin/client/react-native") {
+    if (name === "@getrambla/plugin") return pluginSharedRuntime;
+    if (name === "@getrambla/plugin/client") return { ...pluginClientRuntime, useSettings };
+    if (name === "@getrambla/plugin/client/react-native") {
       return pluginReactNativeRuntime;
     }
     if (name === "@tanstack/react-query") return ReactQuery;

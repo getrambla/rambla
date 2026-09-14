@@ -1,6 +1,6 @@
-import { PluginClientStateProvider } from "@getpaseo/plugin/client/host";
-import type { PluginHostProps, PluginTimelineItemProps } from "@getpaseo/plugin/client";
-import type { PluginTheme } from "@getpaseo/plugin";
+import { PluginClientStateProvider } from "@getrambla/plugin/client/host";
+import type { PluginHostProps, PluginTimelineItemProps } from "@getrambla/plugin/client";
+import type { PluginTheme } from "@getrambla/plugin";
 import React, { type ComponentType, useMemo } from "react";
 import { Platform, Text } from "react-native";
 import { StyleSheet, withUnistyles } from "react-native-unistyles";

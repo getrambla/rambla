@@ -1,5 +1,5 @@
 import type { DaemonClientConfig } from "./daemon-client.js";
-import type { AgentPermissionResponse } from "@getpaseo/protocol/agent-types";
+import type { AgentPermissionResponse } from "@getrambla/protocol/agent-types";
 import type {
   AgentSnapshotPayload,
   CreateAgentRequestMessage,
@@ -25,25 +25,25 @@ import type {
   SessionOutboundMessage,
   WorkspaceDescriptorPayload,
   WorkspaceCreateRequest,
-} from "@getpaseo/protocol/messages";
+} from "@getrambla/protocol/messages";
 import { DaemonClient } from "./daemon-client.js";
 import {
   createTerminalActions,
-  type PaseoTerminalActions,
-  type PaseoWorkspaceTerminalActions,
+  type RamblaTerminalActions,
+  type RamblaWorkspaceTerminalActions,
 } from "./terminals/index.js";
 export type {
-  PaseoTerminal,
-  PaseoTerminalActions,
-  PaseoTerminalHandle,
-  PaseoTerminalCreateOptions,
-  PaseoTerminalListOptions,
-  PaseoTerminalListResult,
-  PaseoTerminalCaptureOptions,
-  PaseoTerminalCaptureResult,
-  PaseoWorkspaceTerminalActions,
+  RamblaTerminal,
+  RamblaTerminalActions,
+  RamblaTerminalHandle,
+  RamblaTerminalCreateOptions,
+  RamblaTerminalListOptions,
+  RamblaTerminalListResult,
+  RamblaTerminalCaptureOptions,
+  RamblaTerminalCaptureResult,
+  RamblaWorkspaceTerminalActions,
 } from "./terminals/index.js";
-import type { PluginTimelineItem } from "@getpaseo/protocol/agent-types";
+import type { PluginTimelineItem } from "@getrambla/protocol/agent-types";
 import type {
   FetchAgentsEntry,
   FetchAgentsOptions,
@@ -68,14 +68,14 @@ export type ConnectionState =
   | { status: "disconnected"; reason?: string }
   | { status: "disposed" };
 
-export interface PaseoLogger {
+export interface RamblaLogger {
   debug(obj: object, msg?: string): void;
   info(obj: object, msg?: string): void;
   warn(obj: object, msg?: string): void;
   error(obj: object, msg?: string): void;
 }
 
-export interface PaseoClientConfig {
+export interface RamblaClientConfig {
   capabilities?: DaemonClientConfig["capabilities"];
   url: string;
   clientId?: string;
@@ -84,7 +84,7 @@ export interface PaseoClientConfig {
   password?: string;
   authHeader?: string;
   suppressSendErrors?: boolean;
-  logger?: PaseoLogger;
+  logger?: RamblaLogger;
   connectTimeoutMs?: number;
   e2ee?: {
     enabled?: boolean;
@@ -99,133 +99,133 @@ export interface PaseoClientConfig {
   runtimeMetricsWindowMs?: number;
 }
 
-export type PaseoWorkspace = WorkspaceDescriptorPayload;
-export type PaseoAgent = AgentSnapshotPayload;
-export type PaseoAgentListOptions = FetchAgentsOptions;
-export type PaseoProject = WorkspaceProjectDescriptorPayload;
-export type PaseoProjectListOptions = Omit<ProjectListRequestMessage, "type" | "requestId"> & {
+export type RamblaWorkspace = WorkspaceDescriptorPayload;
+export type RamblaAgent = AgentSnapshotPayload;
+export type RamblaAgentListOptions = FetchAgentsOptions;
+export type RamblaProject = WorkspaceProjectDescriptorPayload;
+export type RamblaProjectListOptions = Omit<ProjectListRequestMessage, "type" | "requestId"> & {
   requestId?: string;
 };
-export type PaseoProjectListResult = ProjectListResponseMessage["payload"];
-export type PaseoProjectUpdate = Extract<
+export type RamblaProjectListResult = ProjectListResponseMessage["payload"];
+export type RamblaProjectUpdate = Extract<
   SessionOutboundMessage,
   { type: "project.update" }
 >["payload"];
-export type PaseoProjectUpdateHandler = (update: PaseoProjectUpdate) => void;
+export type RamblaProjectUpdateHandler = (update: RamblaProjectUpdate) => void;
 
-export interface PaseoAgentListResult {
+export interface RamblaAgentListResult {
   requestId: string;
   subscriptionId?: string | null;
   entries: FetchAgentsEntry[];
   pageInfo: FetchAgentsPageInfo;
 }
-export type PaseoWorkspaceListOptions = Omit<
+export type RamblaWorkspaceListOptions = Omit<
   FetchWorkspacesRequestMessage,
   "type" | "requestId"
 > & {
   requestId?: string;
 };
 
-export interface PaseoWorkspaceListResult {
+export interface RamblaWorkspaceListResult {
   requestId: string;
   subscriptionId?: string | null;
-  entries: PaseoWorkspace[];
+  entries: RamblaWorkspace[];
   pageInfo: FetchWorkspacesResponseMessage["payload"]["pageInfo"];
 }
 
-export interface PaseoWorkspaceOpenOptions {
+export interface RamblaWorkspaceOpenOptions {
   cwd: string;
   requestId?: string;
 }
 
-export type PaseoWorkspaceCreateOptions = Omit<WorkspaceCreateRequest, "type" | "requestId"> & {
+export type RamblaWorkspaceCreateOptions = Omit<WorkspaceCreateRequest, "type" | "requestId"> & {
   requestId?: string;
 };
 
-export interface PaseoWorkspaceArchiveResult {
+export interface RamblaWorkspaceArchiveResult {
   requestId: string;
   workspaceId: string;
   archivedAt: string | null;
   error: string | null;
 }
 
-export type PaseoWorkspaceUpdate = Extract<
+export type RamblaWorkspaceUpdate = Extract<
   SessionOutboundMessage,
   { type: "workspace_update" }
 >["payload"];
 
-export type PaseoWorkspaceUpdateHandler = (update: PaseoWorkspaceUpdate) => void;
+export type RamblaWorkspaceUpdateHandler = (update: RamblaWorkspaceUpdate) => void;
 
-export interface PaseoWorkspaceHandle {
+export interface RamblaWorkspaceHandle {
   readonly id: string;
   readonly projectId: string | null;
   readonly directory: string | null;
   readonly name: string | null;
-  readonly status: PaseoWorkspace["status"] | null;
+  readonly status: RamblaWorkspace["status"] | null;
   readonly agents: {
-    create(options: PaseoWorkspaceAgentCreateOptions): Promise<PaseoAgentHandle>;
+    create(options: RamblaWorkspaceAgentCreateOptions): Promise<RamblaAgentHandle>;
   };
-  readonly terminals: PaseoWorkspaceTerminalActions;
-  current(): PaseoWorkspace | null;
-  refresh(options?: { requestId?: string }): Promise<PaseoWorkspace | null>;
+  readonly terminals: RamblaWorkspaceTerminalActions;
+  current(): RamblaWorkspace | null;
+  refresh(options?: { requestId?: string }): Promise<RamblaWorkspace | null>;
   setTitle(title: string | null, requestId?: string): Promise<{ title: string | null }>;
-  archive(requestId?: string): Promise<PaseoWorkspaceArchiveResult>;
+  archive(requestId?: string): Promise<RamblaWorkspaceArchiveResult>;
   /**
    * Subscribes to already-emitted daemon workspace_update events for this id.
    * This returns a local unsubscribe function; it does not own app cache state or
    * send a daemon unsubscribe RPC. Call `workspaces.list({ subscribe: {} })` when
    * the daemon should start streaming workspace directory updates.
    */
-  subscribe(handler: (update: PaseoWorkspaceUpdate) => void): () => void;
+  subscribe(handler: (update: RamblaWorkspaceUpdate) => void): () => void;
 }
 
-export interface PaseoProjectActions {
-  list(options?: PaseoProjectListOptions): Promise<PaseoProjectListResult>;
-  subscribe(handler: PaseoProjectUpdateHandler): () => void;
+export interface RamblaProjectActions {
+  list(options?: RamblaProjectListOptions): Promise<RamblaProjectListResult>;
+  subscribe(handler: RamblaProjectUpdateHandler): () => void;
 }
 
-export interface PaseoWorkspaceActions {
-  list(options?: PaseoWorkspaceListOptions): Promise<PaseoWorkspaceListResult>;
-  ref(workspace: string | PaseoWorkspace): PaseoWorkspaceHandle;
+export interface RamblaWorkspaceActions {
+  list(options?: RamblaWorkspaceListOptions): Promise<RamblaWorkspaceListResult>;
+  ref(workspace: string | RamblaWorkspace): RamblaWorkspaceHandle;
   open(
-    input: string | PaseoWorkspaceOpenOptions,
+    input: string | RamblaWorkspaceOpenOptions,
     requestId?: string,
-  ): Promise<PaseoWorkspaceHandle>;
-  create(options: PaseoWorkspaceCreateOptions): Promise<PaseoWorkspaceHandle>;
+  ): Promise<RamblaWorkspaceHandle>;
+  create(options: RamblaWorkspaceCreateOptions): Promise<RamblaWorkspaceHandle>;
   archive(
-    workspace: string | PaseoWorkspaceHandle,
+    workspace: string | RamblaWorkspaceHandle,
     requestId?: string,
-  ): Promise<PaseoWorkspaceArchiveResult>;
+  ): Promise<RamblaWorkspaceArchiveResult>;
   /**
    * Local event subscription over the low-level driver's workspace_update stream.
    * The returned function only removes this SDK listener.
    */
-  subscribe(handler: PaseoWorkspaceUpdateHandler): () => void;
+  subscribe(handler: RamblaWorkspaceUpdateHandler): () => void;
 }
 
-type PaseoAgentSessionConfig = CreateAgentRequestMessage["config"];
-export type PaseoAgentProvider = PaseoAgentSessionConfig["provider"];
+type RamblaAgentSessionConfig = CreateAgentRequestMessage["config"];
+export type RamblaAgentProvider = RamblaAgentSessionConfig["provider"];
 
-export type PaseoProviderFeatureValues = Record<string, unknown>;
+export type RamblaProviderFeatureValues = Record<string, unknown>;
 
-export interface PaseoAgentConfig {
+export interface RamblaAgentConfig {
   /** Provider and model in `provider/model` format. */
   provider: string;
-  modeId?: PaseoAgentSessionConfig["modeId"];
-  thinkingOptionId?: PaseoAgentSessionConfig["thinkingOptionId"];
-  featureValues?: PaseoProviderFeatureValues;
+  modeId?: RamblaAgentSessionConfig["modeId"];
+  thinkingOptionId?: RamblaAgentSessionConfig["thinkingOptionId"];
+  featureValues?: RamblaProviderFeatureValues;
   /** JSON-safe provider-native settings, validated by the selected provider. */
-  options?: PaseoAgentSessionConfig["providerOptions"];
-  systemPrompt?: PaseoAgentSessionConfig["systemPrompt"];
-  toolPolicy?: PaseoAgentSessionConfig["toolPolicy"];
-  mcpServers?: PaseoAgentSessionConfig["mcpServers"];
+  options?: RamblaAgentSessionConfig["providerOptions"];
+  systemPrompt?: RamblaAgentSessionConfig["systemPrompt"];
+  toolPolicy?: RamblaAgentSessionConfig["toolPolicy"];
+  mcpServers?: RamblaAgentSessionConfig["mcpServers"];
 }
 
-export interface PaseoAgentCreateOptions {
-  config: PaseoAgentConfig;
+export interface RamblaAgentCreateOptions {
+  config: RamblaAgentConfig;
   cwd: string;
-  parent?: string | PaseoAgentHandle;
-  title?: PaseoAgentSessionConfig["title"];
+  parent?: string | RamblaAgentHandle;
+  title?: RamblaAgentSessionConfig["title"];
   env?: CreateAgentRequestMessage["env"];
   prompt?: string;
   clientMessageId?: string;
@@ -239,14 +239,14 @@ export interface PaseoAgentCreateOptions {
   labels?: Record<string, string>;
 }
 
-export type PaseoWorkspaceAgentCreateOptions = Omit<PaseoAgentCreateOptions, "cwd">;
+export type RamblaWorkspaceAgentCreateOptions = Omit<RamblaAgentCreateOptions, "cwd">;
 
-export interface PaseoAgentRefetchResult {
-  agent: PaseoAgent;
+export interface RamblaAgentRefetchResult {
+  agent: RamblaAgent;
   project: ProjectPlacementPayload | null;
 }
 
-export interface PaseoAgentTimelineRefetchOptions {
+export interface RamblaAgentTimelineRefetchOptions {
   direction?: FetchAgentTimelineDirection;
   cursor?: FetchAgentTimelineCursor;
   limit?: number;
@@ -254,63 +254,69 @@ export interface PaseoAgentTimelineRefetchOptions {
   requestId?: string;
 }
 
-export interface PaseoAgentSendOptions {
+export interface RamblaAgentSendOptions {
   messageId?: string;
   images?: Array<{ data: string; mimeType: string }>;
   attachments?: SendAgentMessageRequest["attachments"];
 }
 
-export interface PaseoAgentRunOptions extends PaseoAgentSendOptions {
+export interface RamblaAgentRunOptions extends RamblaAgentSendOptions {
   timeoutMs?: number;
 }
 
-export type PaseoAgentRunResult = WaitForFinishResult;
-export type PaseoAgentPermissionResponse = AgentPermissionResponse;
+export type RamblaAgentRunResult = WaitForFinishResult;
+export type RamblaAgentPermissionResponse = AgentPermissionResponse;
 
-export interface PaseoAgentRespondToPermissionOptions {
+export interface RamblaAgentRespondToPermissionOptions {
   requestId: string;
-  response: PaseoAgentPermissionResponse;
+  response: RamblaAgentPermissionResponse;
 }
 
-export interface PaseoAgentCommandsOptions {
+export interface RamblaAgentCommandsOptions {
   requestId?: string;
 }
 
-export type PaseoAgentCommandsResult = ListCommandsResponse["payload"];
+export type RamblaAgentCommandsResult = ListCommandsResponse["payload"];
 
-export type PaseoAgentUpdate = Extract<SessionOutboundMessage, { type: "agent_update" }>["payload"];
+export type RamblaAgentUpdate = Extract<
+  SessionOutboundMessage,
+  { type: "agent_update" }
+>["payload"];
 
-export type PaseoAgentStream = Extract<SessionOutboundMessage, { type: "agent_stream" }>["payload"];
+export type RamblaAgentStream = Extract<
+  SessionOutboundMessage,
+  { type: "agent_stream" }
+>["payload"];
 
-export type PaseoAgentUpdateHandler = (update: PaseoAgentUpdate) => void;
+export type RamblaAgentUpdateHandler = (update: RamblaAgentUpdate) => void;
 
-export type PaseoAgentTimelineEvent =
-  | PaseoAgentStream
+export type RamblaAgentTimelineEvent =
+  | RamblaAgentStream
   | {
       agentId: string;
       event: { type: "replacement"; epoch: string };
     };
 
-export type PaseoAgentTimelineSubscription = ReturnType<DaemonClient["subscribeAgentTimeline"]>;
+export type RamblaAgentTimelineSubscription = ReturnType<DaemonClient["subscribeAgentTimeline"]>;
 
-export interface PaseoAgentTimelineHandle {
+export interface RamblaAgentTimelineHandle {
   append(item: Omit<PluginTimelineItem, "pluginId">): Promise<{ seq: number; epoch: string }>;
   /**
    * Fetches a fresh timeline page through the existing daemon RPC. If the daemon
    * includes an agent snapshot in the response, the parent handle is updated to
    * that value.
    */
-  refetch(options?: PaseoAgentTimelineRefetchOptions): Promise<FetchAgentTimelinePayload>;
+  refetch(options?: RamblaAgentTimelineRefetchOptions): Promise<FetchAgentTimelinePayload>;
   /**
    * Subscribe to this agent and restore demand after reconnect. A replacement
    * event invalidates previously fetched history; refetch the page you need.
    * Await the returned unsubscribe function's `ready` promise before starting
    * work that must be observed. It rejects if establishment fails.
    */
-  subscribe(handler: (event: PaseoAgentTimelineEvent) => void): PaseoAgentTimelineSubscription;
+  subscribe(handler: (event: RamblaAgentTimelineEvent) => void): RamblaAgentTimelineSubscription;
 }
 
-export interface PaseoAgentHandle {
+export interface RamblaAgentHandle {
   readonly id: string;
   /**
    * `workspaceId` through `archivedAt` mirror the last snapshot this handle
@@ -321,25 +327,25 @@ export interface PaseoAgentHandle {
    */
   readonly workspaceId: string | null;
   readonly cwd: string | null;
-  readonly status: PaseoAgent["status"] | null;
-  readonly capabilities: PaseoAgent["capabilities"] | null;
-  readonly availableModes: PaseoAgent["availableModes"] | null;
-  readonly pendingPermissions: PaseoAgent["pendingPermissions"] | null;
-  readonly activeTurn: NonNullable<PaseoAgent["activeTurn"]> | null;
-  readonly lastUsage: NonNullable<PaseoAgent["lastUsage"]> | null;
-  readonly lastError: NonNullable<PaseoAgent["lastError"]> | null;
-  readonly features: NonNullable<PaseoAgent["features"]> | null;
-  readonly runtimeInfo: NonNullable<PaseoAgent["runtimeInfo"]> | null;
-  readonly archivedAt: NonNullable<PaseoAgent["archivedAt"]> | null;
-  readonly timeline: PaseoAgentTimelineHandle;
-  current(): PaseoAgent | null;
-  refresh(requestId?: string): Promise<PaseoAgentRefetchResult | null>;
-  send(text: string, options?: PaseoAgentSendOptions): Promise<void>;
-  respondToPermission(options: PaseoAgentRespondToPermissionOptions): Promise<void>;
+  readonly status: RamblaAgent["status"] | null;
+  readonly capabilities: RamblaAgent["capabilities"] | null;
+  readonly availableModes: RamblaAgent["availableModes"] | null;
+  readonly pendingPermissions: RamblaAgent["pendingPermissions"] | null;
+  readonly activeTurn: NonNullable<RamblaAgent["activeTurn"]> | null;
+  readonly lastUsage: NonNullable<RamblaAgent["lastUsage"]> | null;
+  readonly lastError: NonNullable<RamblaAgent["lastError"]> | null;
+  readonly features: NonNullable<RamblaAgent["features"]> | null;
+  readonly runtimeInfo: NonNullable<RamblaAgent["runtimeInfo"]> | null;
+  readonly archivedAt: NonNullable<RamblaAgent["archivedAt"]> | null;
+  readonly timeline: RamblaAgentTimelineHandle;
+  current(): RamblaAgent | null;
+  refresh(requestId?: string): Promise<RamblaAgentRefetchResult | null>;
+  send(text: string, options?: RamblaAgentSendOptions): Promise<void>;
+  respondToPermission(options: RamblaAgentRespondToPermissionOptions): Promise<void>;
   /** Sends a prompt and resolves when that turn finishes or needs attention. */
-  run(text: string, options?: PaseoAgentRunOptions): Promise<PaseoAgentRunResult>;
+  run(text: string, options?: RamblaAgentRunOptions): Promise<RamblaAgentRunResult>;
   /** Waits for the current turn, including one started with `prompt`. */
-  waitForFinish(timeoutMs?: number): Promise<PaseoAgentRunResult>;
+  waitForFinish(timeoutMs?: number): Promise<RamblaAgentRunResult>;
   /**
    * Asks the running session for the slash commands and skills it actually
    * loaded. Providers answer from the live session, so this sees built-in and
@@ -347,89 +353,89 @@ export interface PaseoAgentHandle {
    * `error` string; a provider that cannot answer reports it there rather than
    * rejecting.
    */
-  commands(options?: PaseoAgentCommandsOptions): Promise<PaseoAgentCommandsResult>;
+  commands(options?: RamblaAgentCommandsOptions): Promise<RamblaAgentCommandsResult>;
   archive(): Promise<{ archivedAt: string }>;
   detach(): Promise<void>;
-  subscribe(handler: (update: PaseoAgentUpdate) => void): () => void;
+  subscribe(handler: (update: RamblaAgentUpdate) => void): () => void;
 }
 
-export interface PaseoAgentActions {
-  list(options?: PaseoAgentListOptions): Promise<PaseoAgentListResult>;
-  ref(agent: string | PaseoAgent): PaseoAgentHandle;
-  create(options: PaseoAgentCreateOptions): Promise<PaseoAgentHandle>;
+export interface RamblaAgentActions {
+  list(options?: RamblaAgentListOptions): Promise<RamblaAgentListResult>;
+  ref(agent: string | RamblaAgent): RamblaAgentHandle;
+  create(options: RamblaAgentCreateOptions): Promise<RamblaAgentHandle>;
   /**
    * Local event subscription over the low-level driver's agent_update stream.
    * The returned function only removes this SDK listener.
    */
-  subscribe(handler: PaseoAgentUpdateHandler): () => void;
+  subscribe(handler: RamblaAgentUpdateHandler): () => void;
 }
 
-export type PaseoProviderModelsResult = ListProviderModelsResponseMessage["payload"];
-export type PaseoProviderModesResult = ListProviderModesResponseMessage["payload"];
-type PaseoProviderFeaturesDraft = ListProviderFeaturesRequestMessage["draftConfig"];
-export interface PaseoProviderFeaturesInput extends Omit<
-  PaseoProviderFeaturesDraft,
+export type RamblaProviderModelsResult = ListProviderModelsResponseMessage["payload"];
+export type RamblaProviderModesResult = ListProviderModesResponseMessage["payload"];
+type RamblaProviderFeaturesDraft = ListProviderFeaturesRequestMessage["draftConfig"];
+export interface RamblaProviderFeaturesInput extends Omit<
+  RamblaProviderFeaturesDraft,
   "provider" | "model"
 > {
   /** Provider and model in `provider/model` format. */
   provider: string;
 }
-export type PaseoProviderFeaturesResult = ListProviderFeaturesResponseMessage["payload"];
-export type PaseoProviderAvailabilityResult = ListAvailableProvidersResponse["payload"];
-export type PaseoProviderSnapshotResult = GetProvidersSnapshotResponseMessage["payload"];
-export type PaseoProviderSnapshotUpdate = Extract<
+export type RamblaProviderFeaturesResult = ListProviderFeaturesResponseMessage["payload"];
+export type RamblaProviderAvailabilityResult = ListAvailableProvidersResponse["payload"];
+export type RamblaProviderSnapshotResult = GetProvidersSnapshotResponseMessage["payload"];
+export type RamblaProviderSnapshotUpdate = Extract<
   SessionOutboundMessage,
   { type: "providers_snapshot_update" }
 >["payload"];
-export type PaseoProviderRefreshResult = RefreshProvidersSnapshotResponseMessage["payload"];
-export type PaseoProviderDiagnosticResult = ProviderDiagnosticResponseMessage["payload"];
-export type PaseoProviderUsageResult = ProviderUsageListResponseMessage["payload"];
-export interface PaseoProviderUsageOptions {
+export type RamblaProviderRefreshResult = RefreshProvidersSnapshotResponseMessage["payload"];
+export type RamblaProviderDiagnosticResult = ProviderDiagnosticResponseMessage["payload"];
+export type RamblaProviderUsageResult = ProviderUsageListResponseMessage["payload"];
+export interface RamblaProviderUsageOptions {
   requestId?: string;
 }
 
-export interface PaseoProviderListOptions {
+export interface RamblaProviderListOptions {
   cwd?: string;
   requestId?: string;
 }
 
-export interface PaseoProviderRefreshOptions {
+export interface RamblaProviderRefreshOptions {
   cwd?: string;
-  providers?: PaseoAgentProvider[];
+  providers?: RamblaAgentProvider[];
   requestId?: string;
 }
 
-export interface PaseoProviderWaitOptions extends PaseoProviderListOptions {
+export interface RamblaProviderWaitOptions extends RamblaProviderListOptions {
   timeoutMs?: number;
 }
 
-export interface PaseoProviderActions {
+export interface RamblaProviderActions {
   listModels(
-    provider: PaseoAgentProvider,
-    options?: PaseoProviderListOptions,
-  ): Promise<PaseoProviderModelsResult>;
+    provider: RamblaAgentProvider,
+    options?: RamblaProviderListOptions,
+  ): Promise<RamblaProviderModelsResult>;
   listModes(
-    provider: PaseoAgentProvider,
-    options?: PaseoProviderListOptions,
-  ): Promise<PaseoProviderModesResult>;
+    provider: RamblaAgentProvider,
+    options?: RamblaProviderListOptions,
+  ): Promise<RamblaProviderModesResult>;
   listFeatures(
-    draftConfig: PaseoProviderFeaturesInput,
+    draftConfig: RamblaProviderFeaturesInput,
     options?: { requestId?: string },
-  ): Promise<PaseoProviderFeaturesResult>;
-  listAvailable(options?: { requestId?: string }): Promise<PaseoProviderAvailabilityResult>;
-  snapshot(options?: PaseoProviderListOptions): Promise<PaseoProviderSnapshotResult>;
+  ): Promise<RamblaProviderFeaturesResult>;
+  listAvailable(options?: { requestId?: string }): Promise<RamblaProviderAvailabilityResult>;
+  snapshot(options?: RamblaProviderListOptions): Promise<RamblaProviderSnapshotResult>;
   /** Resolves after the daemon's lazy provider discovery has finished. */
-  waitForReady(options?: PaseoProviderWaitOptions): Promise<PaseoProviderSnapshotResult>;
-  refresh(options?: PaseoProviderRefreshOptions): Promise<PaseoProviderRefreshResult>;
+  waitForReady(options?: RamblaProviderWaitOptions): Promise<RamblaProviderSnapshotResult>;
+  refresh(options?: RamblaProviderRefreshOptions): Promise<RamblaProviderRefreshResult>;
   diagnostic(
-    provider: PaseoAgentProvider,
+    provider: RamblaAgentProvider,
     options?: { requestId?: string },
-  ): Promise<PaseoProviderDiagnosticResult>;
-  listUsage(options?: PaseoProviderUsageOptions): Promise<PaseoProviderUsageResult>;
-  subscribe(handler: (update: PaseoProviderSnapshotUpdate) => void): () => void;
+  ): Promise<RamblaProviderDiagnosticResult>;
+  listUsage(options?: RamblaProviderUsageOptions): Promise<RamblaProviderUsageResult>;
+  subscribe(handler: (update: RamblaProviderSnapshotUpdate) => void): () => void;
 }
 
-export interface PaseoConfigActions {
+export interface RamblaConfigActions {
   /**
    * Reads daemon config through the existing config RPC. Provider profiles,
    * custom provider entries, keys/env, custom binaries, and provider enablement
@@ -449,30 +455,30 @@ export interface PaseoConfigActions {
   ): Promise<{ requestId: string; config: MutableDaemonConfig }>;
 }
 
-export interface PaseoApi {
-  readonly terminals: PaseoTerminalActions;
-  readonly workspaces: PaseoWorkspaceActions;
-  readonly projects: PaseoProjectActions;
-  readonly agents: PaseoAgentActions;
-  readonly providers: PaseoProviderActions;
-  readonly config: PaseoConfigActions;
+export interface RamblaApi {
+  readonly terminals: RamblaTerminalActions;
+  readonly workspaces: RamblaWorkspaceActions;
+  readonly projects: RamblaProjectActions;
+  readonly agents: RamblaAgentActions;
+  readonly providers: RamblaProviderActions;
+  readonly config: RamblaConfigActions;
 }
 
-export interface PaseoClient extends PaseoApi {
+export interface RamblaClient extends RamblaApi {
   connect(): Promise<void>;
   close(): Promise<void>;
   ensureConnected(): void;
   getConnectionState(): ConnectionState;
 }
 
-export function createPaseoClient(config: PaseoClientConfig): PaseoClient {
+export function createRamblaClient(config: RamblaClientConfig): RamblaClient {
   const daemonClient = new DaemonClient({
     ...config,
     clientId: config.clientId ?? createGeneratedClientId(),
     clientType: "cli",
   });
   return {
-    ...createPaseoApi(daemonClient),
+    ...createRamblaApi(daemonClient),
     connect: () => daemonClient.connect(),
     close: () => daemonClient.close(),
     ensureConnected: () => daemonClient.ensureConnected(),
@@ -480,10 +486,10 @@ export function createPaseoClient(config: PaseoClientConfig): PaseoClient {
   };
 }
 
-export function createPaseoApi(daemonClient: DaemonClient): PaseoApi {
+export function createRamblaApi(daemonClient: DaemonClient): RamblaApi {
   const createAgentHandle = createAgentHandleFactory(daemonClient);
   const createAgent = async (
-    options: PaseoAgentCreateOptions,
+    options: RamblaAgentCreateOptions,
     placement?: { workspaceId: string; cwd: string },
   ) => {
     const { config: agentConfig, cwd, parent, title, prompt, ...requestOptions } = options;
@@ -577,17 +583,17 @@ export function createPaseoApi(daemonClient: DaemonClient): PaseoApi {
   };
 }
 
-type WorkspaceHandleFactory = (workspace: string | PaseoWorkspace) => PaseoWorkspaceHandle;
-type AgentHandleFactory = (agent: string | PaseoAgent) => PaseoAgentHandle;
+type WorkspaceHandleFactory = (workspace: string | RamblaWorkspace) => RamblaWorkspaceHandle;
+type AgentHandleFactory = (agent: string | RamblaAgent) => RamblaAgentHandle;
 type CreateAgent = (
-  options: PaseoAgentCreateOptions,
+  options: RamblaAgentCreateOptions,
   placement?: { workspaceId: string; cwd: string },
-) => Promise<PaseoAgentHandle>;
+) => Promise<RamblaAgentHandle>;
 
 function createWorkspaceHandleFactory(
   daemonClient: DaemonClient,
   createAgent: CreateAgent,
-  terminals: PaseoTerminalActions,
+  terminals: RamblaTerminalActions,
 ): WorkspaceHandleFactory {
   return (workspace) => {
     const id = typeof workspace === "string" ? workspace : workspace.id;
@@ -674,7 +680,7 @@ function createAgentHandleFactory(daemonClient: DaemonClient): AgentHandleFactor
     const id = typeof agent === "string" ? agent : agent.id;
     let current = typeof agent === "string" ? null : agent;
 
-    const handle: PaseoAgentHandle = {
+    const handle: RamblaAgentHandle = {
       id,
       timeline: {
         append: (item) => daemonClient.appendAgentTimelineItem(id, item),
@@ -799,9 +805,9 @@ function createAgentHandleFactory(daemonClient: DaemonClient): AgentHandleFactor
 async function openWorkspace(
   daemonClient: DaemonClient,
   createWorkspaceHandle: WorkspaceHandleFactory,
-  input: string | PaseoWorkspaceOpenOptions,
+  input: string | RamblaWorkspaceOpenOptions,
   requestId?: string,
-): Promise<PaseoWorkspaceHandle> {
+): Promise<RamblaWorkspaceHandle> {
   const options = typeof input === "string" ? { cwd: input, requestId } : input;
   const result = await daemonClient.openProject(options.cwd, options.requestId);
   if (result.error || !result.workspace) {
@@ -810,11 +816,11 @@ async function openWorkspace(
   return createWorkspaceHandle(result.workspace);
 }
 
-function resolveWorkspaceId(workspace: string | PaseoWorkspaceHandle): string {
+function resolveWorkspaceId(workspace: string | RamblaWorkspaceHandle): string {
   return typeof workspace === "string" ? workspace : workspace.id;
 }
 
-function resolveAgentId(agent: string | PaseoAgentHandle): string {
+function resolveAgentId(agent: string | RamblaAgentHandle): string {
   return typeof agent === "string" ? agent : agent.id;
 }
 
@@ -831,8 +837,8 @@ function parseProviderModel(selection: string): { provider: string; model: strin
 
 function listProviderUsage(
   daemonClient: DaemonClient,
-  options?: PaseoProviderUsageOptions,
-): Promise<PaseoProviderUsageResult> {
+  options?: RamblaProviderUsageOptions,
+): Promise<RamblaProviderUsageResult> {
   // COMPAT(providerUsageList): added in v0.1.98, remove after 2027-02-28 once daemon floor >= v0.1.98.
   if (daemonClient.getLastServerInfoMessage()?.features?.providerUsageList !== true) {
     return Promise.reject(new Error("Update the host to list provider usage."));
@@ -842,8 +848,8 @@ function listProviderUsage(
 
 function waitForProvidersReady(
   daemonClient: DaemonClient,
-  options: PaseoProviderWaitOptions = {},
-): Promise<PaseoProviderSnapshotResult> {
+  options: RamblaProviderWaitOptions = {},
+): Promise<RamblaProviderSnapshotResult> {
   // COMPAT(providersSnapshotCwd): added in v0.3.2, remove gate after 2027-02-10.
   if (daemonClient.getLastServerInfoMessage()?.features?.providersSnapshotCwd !== true) {
     return Promise.reject(new Error("Update the host to wait for provider discovery."));
@@ -855,14 +861,14 @@ function waitForProvidersReady(
     let settled = false;
     let requestId: string | null = null;
     let snapshotCwd: string | undefined;
-    const pendingUpdates = new Map<string | undefined, PaseoProviderSnapshotUpdate>();
-    let latestEntries: PaseoProviderSnapshotResult["entries"] = [];
+    const pendingUpdates = new Map<string | undefined, RamblaProviderSnapshotUpdate>();
+    let latestEntries: RamblaProviderSnapshotResult["entries"] = [];
 
     const cleanup = () => {
       clearTimeout(timeout);
       unsubscribe();
     };
-    const finish = (snapshot: PaseoProviderSnapshotResult) => {
+    const finish = (snapshot: RamblaProviderSnapshotResult) => {
       if (settled) return;
       settled = true;
       cleanup();
@@ -874,7 +880,7 @@ function waitForProvidersReady(
       cleanup();
       reject(error instanceof Error ? error : new Error(String(error)));
     };
-    const updateMatches = (update: PaseoProviderSnapshotUpdate) => update.cwd === snapshotCwd;
+    const updateMatches = (update: RamblaProviderSnapshotUpdate) => update.cwd === snapshotCwd;
 
     const unsubscribe = daemonClient.on("providers_snapshot_update", (message) => {
       const update = message.payload;
@@ -927,5 +933,5 @@ function createGeneratedClientId(): string {
     typeof globalThis.crypto?.randomUUID === "function"
       ? globalThis.crypto.randomUUID()
       : Math.random().toString(36).slice(2);
-  return `paseo-sdk-${randomId}`;
+  return `rambla-sdk-${randomId}`;
 }

@@ -10,13 +10,13 @@ describe("project command-center protocol", () => {
     expect(
       SessionInboundMessageSchema.parse({
         type: "workspace.github.search_repositories.request",
-        query: "paseo",
+        query: "rambla",
         limit: 12,
         requestId: "req-search",
       }),
     ).toEqual({
       type: "workspace.github.search_repositories.request",
-      query: "paseo",
+      query: "rambla",
       limit: 12,
       requestId: "req-search",
     });
@@ -29,13 +29,13 @@ describe("project command-center protocol", () => {
           requestId: "req-search",
           repositories: [
             {
-              id: "R_paseo",
-              name: "paseo",
-              nameWithOwner: "getpaseo/paseo",
+              id: "R_rambla",
+              name: "rambla",
+              nameWithOwner: "getrambla/rambla",
               description: "Development environment in your pocket",
               visibility: "public",
               updatedAt: "2026-07-15T10:00:00Z",
-              cloneUrl: "git@github.com:getpaseo/paseo.git",
+              cloneUrl: "git@github.com:getrambla/rambla.git",
             },
           ],
           available: true,
@@ -47,13 +47,13 @@ describe("project command-center protocol", () => {
       requestId: "req-search",
       repositories: [
         {
-          id: "R_paseo",
-          name: "paseo",
-          nameWithOwner: "getpaseo/paseo",
+          id: "R_rambla",
+          name: "rambla",
+          nameWithOwner: "getrambla/rambla",
           description: "Development environment in your pocket",
           visibility: "public",
           updatedAt: "2026-07-15T10:00:00Z",
-          cloneUrl: "git@github.com:getpaseo/paseo.git",
+          cloneUrl: "git@github.com:getrambla/rambla.git",
         },
       ],
       available: true,
@@ -142,19 +142,19 @@ describe("project command-center protocol", () => {
           repositories: [
             {
               id: "repo",
-              name: " paseo ",
-              nameWithOwner: " getpaseo/paseo ",
+              name: " rambla ",
+              nameWithOwner: " getrambla/rambla ",
               description: null,
               visibility: "public",
               updatedAt: "2026-07-15T10:00:00Z",
-              cloneUrl: " https://github.com/getpaseo/paseo ",
+              cloneUrl: " https://github.com/getrambla/rambla ",
             },
           ],
           available: true,
           error: null,
         },
       }).payload.repositories[0]?.name,
-    ).toBe(" paseo ");
+    ).toBe(" rambla ");
   });
 
   it("keeps project command feature flags optional for older server_info payloads", () => {

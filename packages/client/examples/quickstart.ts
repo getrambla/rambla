@@ -1,6 +1,6 @@
-import { createPaseoClient } from "@getpaseo/client";
+import { createRamblaClient } from "@getrambla/client";
 
-const client = createPaseoClient({ url: "ws://127.0.0.1:6767/ws" });
+const client = createRamblaClient({ url: "ws://127.0.0.1:6767/ws" });
 
 await client.connect();
 

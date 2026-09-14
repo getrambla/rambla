@@ -7,13 +7,13 @@ import { loadConfig } from "./config.js";
 
 const roots: string[] = [];
 
-async function createPaseoHome(config: unknown): Promise<string> {
-  const root = await mkdtemp(path.join(os.tmpdir(), "paseo-config-browser-tools-"));
+async function createRamblaHome(config: unknown): Promise<string> {
+  const root = await mkdtemp(path.join(os.tmpdir(), "rambla-config-browser-tools-"));
   roots.push(root);
-  const paseoHome = path.join(root, ".paseo");
-  await mkdir(paseoHome, { recursive: true });
-  await writeFile(path.join(paseoHome, "config.json"), JSON.stringify(config, null, 2));
-  return paseoHome;
+  const ramblaHome = path.join(root, ".rambla");
+  await mkdir(ramblaHome, { recursive: true });
+  await writeFile(path.join(ramblaHome, "config.json"), JSON.stringify(config, null, 2));
+  return ramblaHome;
 }
 
 describe("daemon browser tools config", () => {
@@ -22,13 +22,13 @@ describe("daemon browser tools config", () => {
   });
 
   test("defaults browser tools off when config is absent", async () => {
-    const home = await createPaseoHome({ version: 1 });
+    const home = await createRamblaHome({ version: 1 });
 
     expect(loadConfig(home, { env: {} }).browserToolsEnabled).toBe(false);
   });
 
   test("loads browser tools opt-in from persisted daemon config", async () => {
-    const home = await createPaseoHome({
+    const home = await createRamblaHome({
       version: 1,
       daemon: { browserTools: { enabled: true } },
     });

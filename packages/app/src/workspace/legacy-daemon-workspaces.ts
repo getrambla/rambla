@@ -2,11 +2,11 @@ import type {
   DaemonClient,
   FetchAgentsEntry,
   FetchAgentsOptions,
-} from "@getpaseo/client/internal/daemon-client";
+} from "@getrambla/client/internal/daemon-client";
 import {
   deriveAgentStateBucket,
   getWorkspaceStateBucketPriority,
-} from "@getpaseo/protocol/agent-state-bucket";
+} from "@getrambla/protocol/agent-state-bucket";
 import {
   useSessionStore,
   type Agent,
@@ -245,7 +245,7 @@ function createLegacyWorkspace(
       ? {
           currentBranch: checkout.currentBranch,
           remoteUrl: checkout.remoteUrl,
-          isPaseoOwnedWorktree: checkout.isPaseoOwnedWorktree,
+          isRamblaOwnedWorktree: checkout.isRamblaOwnedWorktree,
           isDirty: null,
           aheadBehind: null,
           aheadOfOrigin: null,
@@ -263,7 +263,7 @@ function resolveLegacyWorkspaceKind(
   if (!checkout.isGit) {
     return "directory";
   }
-  if (checkout.isPaseoOwnedWorktree) {
+  if (checkout.isRamblaOwnedWorktree) {
     return "worktree";
   }
   return "checkout";

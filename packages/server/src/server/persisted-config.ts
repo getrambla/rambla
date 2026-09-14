@@ -15,8 +15,8 @@ import {
   PluginIdSchema,
   PluginSourceSchema,
   TerminalProfileSchema,
-} from "@getpaseo/protocol/messages";
-import { PaseoServicePortAllocationSchema } from "@getpaseo/protocol/paseo-config-schema";
+} from "@getrambla/protocol/messages";
+import { RamblaServicePortAllocationSchema } from "@getrambla/protocol/rambla-config-schema";
 
 export const LogLevelSchema = z.enum(["trace", "debug", "info", "warn", "error", "fatal"]);
 export const LogFormatSchema = z.enum(["pretty", "json"]);
@@ -84,7 +84,7 @@ const ProvidersSchema = z
 const WorktreesConfigSchema = z
   .object({
     root: z.string().min(1).optional(),
-    servicePorts: PaseoServicePortAllocationSchema.optional(),
+    servicePorts: RamblaServicePortAllocationSchema.optional(),
   })
   .strict();
 
@@ -349,14 +349,14 @@ const DEFAULT_PERSISTED_CONFIG = PersistedConfigSchema.parse({
   daemon: {
     listen: "127.0.0.1:6767",
     cors: {
-      allowedOrigins: ["https://app.paseo.sh"],
+      allowedOrigins: ["https://app.rambla.sh"],
     },
     relay: {
       enabled: false,
     },
   },
   app: {
-    baseUrl: "https://app.paseo.sh",
+    baseUrl: "https://app.rambla.sh",
   },
 }) as PersistedConfig;
 
@@ -365,8 +365,8 @@ interface LoggerLike {
   info(...args: unknown[]): void;
 }
 
-function getConfigPath(paseoHome: string): string {
-  return path.join(paseoHome, CONFIG_FILENAME);
+function getConfigPath(ramblaHome: string): string {
+  return path.join(ramblaHome, CONFIG_FILENAME);
 }
 
 function getLogger(logger: LoggerLike | undefined): LoggerLike | undefined {
@@ -412,9 +412,9 @@ function stripRemovedConfigFields(parsed: unknown): unknown {
   return root;
 }
 
-export function loadPersistedConfig(paseoHome: string, logger?: LoggerLike): PersistedConfig {
+export function loadPersistedConfig(ramblaHome: string, logger?: LoggerLike): PersistedConfig {
   const log = getLogger(logger);
-  const configPath = getConfigPath(paseoHome);
+  const configPath = getConfigPath(ramblaHome);
 
   if (!existsSync(configPath)) {
     try {
@@ -464,12 +464,12 @@ export function loadPersistedConfig(paseoHome: string, logger?: LoggerLike): Per
 }
 
 export function savePersistedConfig(
-  paseoHome: string,
+  ramblaHome: string,
   config: PersistedConfig,
   logger?: LoggerLike,
 ): void {
   const log = getLogger(logger);
-  const configPath = getConfigPath(paseoHome);
+  const configPath = getConfigPath(ramblaHome);
 
   const result = PersistedConfigSchema.safeParse(config);
   if (!result.success) {

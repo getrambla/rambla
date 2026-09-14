@@ -7,7 +7,7 @@ const { setTimeout: delay } = require("node:timers/promises");
 const { chromium } = require("playwright");
 const { extractFile } = require("@electron/asar");
 
-const EXECUTABLE_NAME = "Paseo";
+const EXECUTABLE_NAME = "Rambla";
 const SMOKE_TIMEOUT_MS = 60_000;
 const EXIT_TIMEOUT_MS = 10_000;
 const TERMINAL_CAPTURE_ATTEMPTS = 20;
@@ -54,14 +54,14 @@ function getExecutablePath(appPath) {
 
 function getCliShimPath(appPath) {
   if (process.platform === "darwin") {
-    return path.join(appPath, "Contents", "Resources", "bin", "paseo");
+    return path.join(appPath, "Contents", "Resources", "bin", "rambla");
   }
 
   if (process.platform === "win32") {
-    return path.join(appPath, "resources", "bin", "paseo.cmd");
+    return path.join(appPath, "resources", "bin", "rambla.cmd");
   }
 
-  return path.join(appPath, "resources", "bin", "paseo");
+  return path.join(appPath, "resources", "bin", "rambla");
 }
 
 function getMacMainExecutablePath(appPath) {
@@ -132,7 +132,7 @@ function shellQuoteCliArg(value) {
 function getTerminalHookSmokeCommand(marker) {
   if (process.platform === "win32") {
     const script = [
-      "& $env:PASEO_HOOK_CLI hooks codex Stop",
+      "& $env:RAMBLA_HOOK_CLI hooks codex Stop",
       "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }",
       `Write-Output '${marker}'`,
     ].join("; ");
@@ -140,7 +140,7 @@ function getTerminalHookSmokeCommand(marker) {
     return `powershell.exe -NoProfile -NonInteractive -EncodedCommand ${encodedScript}`;
   }
 
-  return `"$PASEO_HOOK_CLI" hooks codex Stop && echo ${marker}`;
+  return `"$RAMBLA_HOOK_CLI" hooks codex Stop && echo ${marker}`;
 }
 
 function getShellCommand(script) {
@@ -163,18 +163,18 @@ function createDefaultDaemonEnv(extraEnv) {
     ...extraEnv,
   };
 
-  delete env.PASEO_HOME;
-  delete env.PASEO_LISTEN;
+  delete env.RAMBLA_HOME;
+  delete env.RAMBLA_LISTEN;
   return env;
 }
 
 function createIsolatedDesktopEnv({ home, listen, userData, cdpPort }) {
   return {
     ...process.env,
-    PASEO_HOME: home,
-    PASEO_LISTEN: listen,
-    PASEO_ELECTRON_USER_DATA_DIR: userData,
-    PASEO_ELECTRON_FLAGS: `--remote-debugging-address=127.0.0.1 --remote-debugging-port=${cdpPort}`,
+    RAMBLA_HOME: home,
+    RAMBLA_LISTEN: listen,
+    RAMBLA_ELECTRON_USER_DATA_DIR: userData,
+    RAMBLA_ELECTRON_FLAGS: `--remote-debugging-address=127.0.0.1 --remote-debugging-port=${cdpPort}`,
   };
 }
 
@@ -317,7 +317,7 @@ function formatLogs({ stdout, stderr, userData, daemonHome }) {
 }
 
 async function writeFailureArtifacts({ page, stdout, stderr, userData, daemonHome, error }) {
-  const artifactDir = process.env.PASEO_DESKTOP_SMOKE_ARTIFACT_DIR?.trim();
+  const artifactDir = process.env.RAMBLA_DESKTOP_SMOKE_ARTIFACT_DIR?.trim();
   if (!artifactDir) {
     return;
   }
@@ -350,8 +350,8 @@ async function writeFailureArtifacts({ page, stdout, stderr, userData, daemonHom
         rootChildCount: document.querySelector("#root")?.childElementCount ?? 0,
         rootText: document.querySelector("#root")?.textContent?.trim().slice(0, 2_000) ?? "",
         bridgeKeys:
-          typeof window.paseoDesktop === "object" && window.paseoDesktop !== null
-            ? Object.keys(window.paseoDesktop)
+          typeof window.ramblaDesktop === "object" && window.ramblaDesktop !== null
+            ? Object.keys(window.ramblaDesktop)
             : [],
       }))
       .catch((evaluationError) => ({ evaluationError: String(evaluationError) }));
@@ -474,13 +474,13 @@ async function waitForPackagedAppPage(browser, deadline) {
     const page = browser
       .contexts()
       .flatMap((context) => context.pages())
-      .find((candidate) => candidate.url().startsWith("paseo://app/"));
+      .find((candidate) => candidate.url().startsWith("rambla://app/"));
     if (page) {
       return page;
     }
     await delay(250);
   }
-  throw new Error("Timed out waiting for the packaged paseo://app/ renderer");
+  throw new Error("Timed out waiting for the packaged rambla://app/ renderer");
 }
 
 async function assertPackagedRendererLoaded(page, deadline) {
@@ -494,8 +494,8 @@ async function assertPackagedRendererLoaded(page, deadline) {
   );
 
   const bridgeKeys = await page.evaluate(() =>
-    typeof window.paseoDesktop === "object" && window.paseoDesktop !== null
-      ? Object.keys(window.paseoDesktop)
+    typeof window.ramblaDesktop === "object" && window.ramblaDesktop !== null
+      ? Object.keys(window.ramblaDesktop)
       : [],
   );
   const missingBridgeKeys = REQUIRED_DESKTOP_BRIDGE_KEYS.filter((key) => !bridgeKeys.includes(key));
@@ -520,7 +520,7 @@ async function waitForRendererStartedDaemon({
 
   while (Date.now() < deadline) {
     try {
-      lastStatus = await page.evaluate(() => window.paseoDesktop.invoke("desktop_daemon_status"));
+      lastStatus = await page.evaluate(() => window.ramblaDesktop.invoke("desktop_daemon_status"));
       if (
         lastStatus?.status === "running" &&
         lastStatus.desktopManaged === true &&
@@ -653,8 +653,8 @@ async function smokeCliShim({ appPath, env }) {
 }
 
 async function smokeColdCliDaemonStart({ appPath }) {
-  const home = createTempDir("paseo-smoke-cli-daemon-home-");
-  const pidPath = path.join(home, "paseo.pid");
+  const home = createTempDir("rambla-smoke-cli-daemon-home-");
+  const pidPath = path.join(home, "rambla.pid");
   const port = await reserveLocalTcpPort();
   const listen = `127.0.0.1:${port}`;
   const env = createDefaultDaemonEnv();
@@ -727,8 +727,8 @@ function assertCleanDaemonStatusOutput(output) {
 }
 
 async function smokeCliTerminal({ appPath, env }) {
-  const cwd = createTempDir("paseo-smoke-terminal-cwd-");
-  const marker = `paseo-packaged-terminal-smoke-${Date.now()}`;
+  const cwd = createTempDir("rambla-smoke-terminal-cwd-");
+  const marker = `rambla-packaged-terminal-smoke-${Date.now()}`;
   const name = `packaged-smoke-${process.pid}-${Date.now()}`;
   let terminalId = null;
 
@@ -826,8 +826,8 @@ async function smokePackagedDesktopApp({ appPath }) {
   ensureLinuxSandboxPermissions(appPath);
   await smokeColdCliDaemonStart({ appPath });
 
-  const userData = createTempDir("paseo-smoke-user-data-");
-  const daemonHome = createTempDir("paseo-smoke-daemon-home-");
+  const userData = createTempDir("rambla-smoke-user-data-");
+  const daemonHome = createTempDir("rambla-smoke-daemon-home-");
   const daemonPort = await reserveLocalTcpPort();
   let cdpPort = await reserveLocalTcpPort();
   for (let attempt = 0; cdpPort === daemonPort && attempt < 10; attempt += 1) {
@@ -938,7 +938,7 @@ if (require.main === module) {
   const appIndex = process.argv.indexOf("--app");
   const appPath = appIndex >= 0 ? process.argv[appIndex + 1] : null;
   if (!appPath) {
-    process.stderr.write("Usage: node smoke-packaged-desktop-app.js --app <Paseo.app>\n");
+    process.stderr.write("Usage: node smoke-packaged-desktop-app.js --app <Rambla.app>\n");
     process.exit(2);
   }
 

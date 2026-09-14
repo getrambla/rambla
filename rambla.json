@@ -1,0 +1,32 @@
+{
+  "worktree": {
+    "setup": [
+      "npm ci",
+      "node ./scripts/seed-ios-native-cache.mjs",
+      "node ./scripts/seed-worktree-dev-state.mjs",
+      "npm run build:server",
+      "npm run build --workspace=@getrambla/expo-two-way-audio"
+    ]
+  },
+  "scripts": {
+    "daemon": {
+      "type": "service",
+      "command": "RAMBLA_DEV_MANAGED_HOME=1 RAMBLA_DEV_ROOT=\"${RAMBLA_WORKTREE_PATH:-$PWD}\" RAMBLA_HOME=\"${RAMBLA_WORKTREE_PATH:-$PWD}/.dev/rambla-home\" RAMBLA_SKIP_DEV_SERVER_BUILD=1 RAMBLA_LISTEN=0.0.0.0:${RAMBLA_PORT:-6768} ./scripts/dev-daemon.sh"
+    },
+    "app": {
+      "type": "service",
+      "command": "RAMBLA_DEV_MANAGED_HOME=1 RAMBLA_DEV_ROOT=\"${RAMBLA_WORKTREE_PATH:-$PWD}\" RAMBLA_HOME=\"${RAMBLA_WORKTREE_PATH:-$PWD}/.dev/rambla-home\" RAMBLA_LISTEN=0.0.0.0:${RAMBLA_SERVICE_DAEMON_PORT:-6768} RAMBLA_DEV_DAEMON_ENDPOINT=localhost:${RAMBLA_SERVICE_DAEMON_PORT:-6768} EXPO_PORT=${RAMBLA_PORT:-} ./scripts/dev-app.sh"
+    },
+    "desktop": {
+      "type": "service",
+      "command": "RAMBLA_DEV_MANAGED_HOME=1 RAMBLA_DEV_ROOT=\"${RAMBLA_WORKTREE_PATH:-$PWD}\" RAMBLA_HOME=\"${RAMBLA_WORKTREE_PATH:-$PWD}/.dev/rambla-home\" RAMBLA_LISTEN=0.0.0.0:${RAMBLA_SERVICE_DAEMON_PORT:-6768} RAMBLA_DEV_DAEMON_ENDPOINT=localhost:${RAMBLA_SERVICE_DAEMON_PORT:-6768} EXPO_PORT=${RAMBLA_PORT:-} exec ./packages/desktop/scripts/dev.sh"
+    },
+    "ios-simulator": {
+      "type": "service",
+      "command": "RAMBLA_DEV_MANAGED_HOME=1 RAMBLA_DEV_ROOT=\"$PWD\" RAMBLA_HOME=\"$PWD/.dev/rambla-home\" RAMBLA_LISTEN=0.0.0.0:${RAMBLA_SERVICE_DAEMON_PORT} RAMBLA_DEV_DAEMON_ENDPOINT=localhost:${RAMBLA_SERVICE_DAEMON_PORT} ./scripts/rambla-ios-simulator-service.sh"
+    },
+    "typecheck": {
+      "command": "npm run typecheck"
+    }
+  }
+}

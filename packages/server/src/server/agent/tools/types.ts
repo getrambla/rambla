@@ -1,47 +1,47 @@
 import type { z } from "zod";
-import type { ProviderPaseoToolsPolicy } from "@getpaseo/protocol/provider-config";
+import type { ProviderRamblaToolsPolicy } from "@getrambla/protocol/provider-config";
 
-export interface PaseoToolExecutionContext {
+export interface RamblaToolExecutionContext {
   signal?: AbortSignal;
-  sendUpdate?: (update: PaseoToolResult) => void;
+  sendUpdate?: (update: RamblaToolResult) => void;
 }
 
-export interface PaseoToolResult {
+export interface RamblaToolResult {
   content: Array<{ type: string; text?: string; [key: string]: unknown }>;
   structuredContent?: unknown;
   isError?: boolean;
 }
 
-export interface PaseoToolConfig {
+export interface RamblaToolConfig {
   title?: string;
   description?: string;
   inputSchema?: z.ZodRawShape | z.ZodType;
   outputSchema?: z.ZodRawShape;
 }
 
-export interface PaseoToolDefinition extends PaseoToolConfig {
+export interface RamblaToolDefinition extends RamblaToolConfig {
   name: string;
   description: string;
-  handler: (input: unknown, context: PaseoToolExecutionContext) => Promise<PaseoToolResult>;
+  handler: (input: unknown, context: RamblaToolExecutionContext) => Promise<RamblaToolResult>;
 }
 
-export interface PaseoToolCatalog {
-  tools: ReadonlyMap<string, PaseoToolDefinition>;
-  getTool(name: string): PaseoToolDefinition | undefined;
+export interface RamblaToolCatalog {
+  tools: ReadonlyMap<string, RamblaToolDefinition>;
+  getTool(name: string): RamblaToolDefinition | undefined;
   executeTool(
     name: string,
     input: unknown,
-    context?: PaseoToolExecutionContext,
-  ): Promise<PaseoToolResult>;
+    context?: RamblaToolExecutionContext,
+  ): Promise<RamblaToolResult>;
 }
 
-export interface PaseoToolRuntimeContext {
+export interface RamblaToolRuntimeContext {
   callerAgentId?: string;
-  paseoToolPolicy?: ProviderPaseoToolsPolicy;
+  ramblaToolPolicy?: ProviderRamblaToolsPolicy;
   enableVoiceTools?: boolean;
   voiceOnly?: boolean;
 }
 
-export type PaseoToolCatalogFactory = (
-  context: PaseoToolRuntimeContext,
-) => PaseoToolCatalog | Promise<PaseoToolCatalog>;
+export type RamblaToolCatalogFactory = (
+  context: RamblaToolRuntimeContext,
+) => RamblaToolCatalog | Promise<RamblaToolCatalog>;

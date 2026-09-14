@@ -9,8 +9,11 @@ import { captureTerminalLines, type CaptureTerminalLinesResult } from "./termina
 import { randomBytes, randomUUID } from "node:crypto";
 import { resolve, sep } from "node:path";
 import { assertAbsolutePath, isSameOrDescendantPath } from "../server/path-utils.js";
-import type { TerminalActivity, TerminalActivityState } from "@getpaseo/protocol/terminal-activity";
-import { deriveTerminalActivityStatusBucket } from "@getpaseo/protocol/terminal-activity";
+import type {
+  TerminalActivity,
+  TerminalActivityState,
+} from "@getrambla/protocol/terminal-activity";
+import { deriveTerminalActivityStatusBucket } from "@getrambla/protocol/terminal-activity";
 
 export interface TerminalListItem {
   id: string;
@@ -336,9 +339,9 @@ export function createTerminalManager(
           ? (managerOptions.getTerminalActivityUrl?.() ?? null)
           : options.activityUrl;
       const activityEnv = {
-        PASEO_TERMINAL_ID: terminalId,
-        PASEO_ACTIVITY_TOKEN: activityToken,
-        ...(terminalActivityUrl ? { PASEO_TERMINAL_ACTIVITY_URL: terminalActivityUrl } : {}),
+        RAMBLA_TERMINAL_ID: terminalId,
+        RAMBLA_ACTIVITY_TOKEN: activityToken,
+        ...(terminalActivityUrl ? { RAMBLA_TERMINAL_ACTIVITY_URL: terminalActivityUrl } : {}),
       };
       terminalActivityTokenById.set(terminalId, activityToken);
       let session: TerminalSession;
