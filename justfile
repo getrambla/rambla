@@ -39,7 +39,7 @@ clean: stop
 
 # CI status for a branch's tip commit, per job. Answers now; does not wait for slow jobs.
 [script]
-ci branch="main":
+ci branch="main" *args="":
     set -euo pipefail
     RED=$(tput -T xterm-256color setaf 1) YEL=$(tput -T xterm-256color setaf 3) GRN=$(tput -T xterm-256color setaf 2) OFF=$(tput -T xterm-256color sgr0)
 
@@ -101,15 +101,17 @@ ci branch="main":
     echo
     echo "${GRN}$passed passed${OFF}, ${RED}$failed failed${OFF}, ${YEL}$running still running${OFF}"
 
-    echo
-    echo "Upstream workflow changes not yet on origin/main (what the auto-merge would try to push):"
-    git fetch upstream main -q
-    if git diff --quiet origin/main...upstream/main -- .github/workflows/; then
-        echo "${GRN}none — .github/workflows/ matches upstream${OFF}"
-    else
-        echo "${YEL}"
-        git --no-pager diff origin/main...upstream/main -- .github/workflows/
-        echo "${OFF}"
+    if [[ " {{args}} " == *" --workflow "* ]]; then
+        echo
+        echo "Upstream workflow changes not yet on origin/main (what the auto-merge would try to push):"
+        git fetch upstream main -q
+        if git diff --quiet origin/main...upstream/main -- .github/workflows/; then
+            echo "${GRN}none — .github/workflows/ matches upstream${OFF}"
+        else
+            echo "${YEL}"
+            git --no-pager diff origin/main...upstream/main -- .github/workflows/
+            echo "${OFF}"
+        fi
     fi
 
     if [ "$failed" -gt 0 ]; then
@@ -121,7 +123,7 @@ ci branch="main":
             gh api "repos/getrambla/rambla/actions/jobs/$job/logs" \
                 --allow-escape-sequences 2>/dev/null \
                 | sed 's/\x1b\[[0-9;]*m//g; s/^[0-9T:.Z-]*Z //' \
-                | grep -E 'FAIL |AssertionError|Expected:|Received:|error TS|npm error code|fatal:' \
+                | grep -E 'FAIL |AssertionError|Expected:|Received:|error TS|npm error code|fatal:|^ *[0-9]+\) \[|^ *Error: ' \
                 | sort -u | head -15 || true
         done
         exit 1

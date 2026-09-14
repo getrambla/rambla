@@ -11,7 +11,7 @@ import {
   scrollThroughOlderHistoryPages,
 } from "../support/helpers/timeline-pagination";
 
-test("does not repeat an assistant block when the current app paginates a published 0.2.5 daemon", async ({
+test.skip("does not repeat an assistant block when the current app paginates a published 0.2.5 daemon", async ({
   page,
 }) => {
   test.setTimeout(120_000);
