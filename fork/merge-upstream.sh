@@ -50,7 +50,9 @@ git -C "$WT" read-tree -u --reset upstream/main
 "$REPO/node_modules/.bin/oxfmt" "$WT" >/dev/null
 
 git -C "$WT" add -A
-LEFTHOOK=0 git -C "$WT" commit -q -m "rebrand upstream through $TIP"
+# Most days upstream has not moved and there is nothing new to rebrand.
+git -C "$WT" diff --cached --quiet ||
+	LEFTHOOK=0 git -C "$WT" commit -q -m "rebrand upstream through $TIP"
 
 git -C "$REPO" merge "$BRANCH" --no-commit --no-ff || true
 

@@ -58,5 +58,5 @@ jobs:
 
       - name: Commit and push
         run: |
-          git commit --no-edit
+          git diff --cached --quiet || git commit --no-edit
           git push origin main upstream-rebrand
