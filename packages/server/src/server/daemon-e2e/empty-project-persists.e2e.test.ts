@@ -86,7 +86,9 @@ test("archiving the last workspace leaves the project parent with no workspaces"
   const previousSupervised = process.env.RAMBLA_SUPERVISED;
   process.env.RAMBLA_SUPERVISED = "0";
   try {
-    const repoRoot = realpathSync(mkdtempSync(path.join(os.tmpdir(), "rambla-empty-project-repo-")));
+    const repoRoot = realpathSync(
+      mkdtempSync(path.join(os.tmpdir(), "rambla-empty-project-repo-")),
+    );
     const ramblaHomeRoot = realpathSync(
       mkdtempSync(path.join(os.tmpdir(), "rambla-empty-project-home-")),
     );

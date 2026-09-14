@@ -103,7 +103,8 @@ function createWorkflowForRequestTest(options: {
 }) {
   return async (input: Parameters<CreateRamblaWorktreeFn>[0]) => {
     const createRamblaWorktree =
-      options.createRamblaWorktree ?? createRamblaWorktreeForTest({ ramblaHome: options.ramblaHome });
+      options.createRamblaWorktree ??
+      createRamblaWorktreeForTest({ ramblaHome: options.ramblaHome });
     return createRamblaWorktreeWorkflow(
       {
         ramblaHome: options.ramblaHome,
@@ -1823,8 +1824,10 @@ describe("handleCreateRamblaWorktreeRequest", () => {
       const response = emitted.find(
         (
           message,
-        ): message is Extract<SessionOutboundMessage, { type: "create_rambla_worktree_response" }> =>
-          message.type === "create_rambla_worktree_response",
+        ): message is Extract<
+          SessionOutboundMessage,
+          { type: "create_rambla_worktree_response" }
+        > => message.type === "create_rambla_worktree_response",
       );
       expect(response?.payload.error).toBeNull();
     } finally {
@@ -1872,8 +1875,10 @@ describe("handleCreateRamblaWorktreeRequest", () => {
       const response = emitted.find(
         (
           message,
-        ): message is Extract<SessionOutboundMessage, { type: "create_rambla_worktree_response" }> =>
-          message.type === "create_rambla_worktree_response",
+        ): message is Extract<
+          SessionOutboundMessage,
+          { type: "create_rambla_worktree_response" }
+        > => message.type === "create_rambla_worktree_response",
       );
       expect(response?.payload.error).toBeNull();
       expect(response?.payload.workspace?.id).toBeTruthy();
@@ -1944,8 +1949,10 @@ describe("handleCreateRamblaWorktreeRequest", () => {
       const response = emitted.find(
         (
           message,
-        ): message is Extract<SessionOutboundMessage, { type: "create_rambla_worktree_response" }> =>
-          message.type === "create_rambla_worktree_response",
+        ): message is Extract<
+          SessionOutboundMessage,
+          { type: "create_rambla_worktree_response" }
+        > => message.type === "create_rambla_worktree_response",
       );
       expect(response?.payload.workspace).toBeNull();
       expect(response?.payload.error).toBe('action "checkout" requires refName or checkoutSource');
@@ -1983,8 +1990,10 @@ describe("handleCreateRamblaWorktreeRequest", () => {
       const response = emitted.find(
         (
           message,
-        ): message is Extract<SessionOutboundMessage, { type: "create_rambla_worktree_response" }> =>
-          message.type === "create_rambla_worktree_response",
+        ): message is Extract<
+          SessionOutboundMessage,
+          { type: "create_rambla_worktree_response" }
+        > => message.type === "create_rambla_worktree_response",
       );
       expect(response?.payload.workspace).toBeNull();
       expect(response?.payload.error).toBe("Unknown branch: missing-branch");

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { RamblaConfigRawSchema, RamblaConfigSchema } from "@getrambla/protocol/rambla-config-schema";
+import {
+  RamblaConfigRawSchema,
+  RamblaConfigSchema,
+} from "@getrambla/protocol/rambla-config-schema";
 
 describe("rambla config schema", () => {
   it("parses an empty config without metadata generation", () => {

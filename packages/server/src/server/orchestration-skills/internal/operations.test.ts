@@ -380,7 +380,11 @@ describe("custom skill selection", () => {
 
     await installSkills(sandbox.targets, only("rambla"));
 
-    expect(await installedIn(sandbox.targets, "rambla-orchestrator")).toEqual([false, false, false]);
+    expect(await installedIn(sandbox.targets, "rambla-orchestrator")).toEqual([
+      false,
+      false,
+      false,
+    ]);
   });
 });
 

@@ -224,12 +224,12 @@ $RAMBLA_HOME/agents/{cwd-with-dashes}/{agent-id}.json
 
 Each agent is a single JSON file. Fields relevant to this doc:
 
-| Field                                        | Type          | Meaning                                                                            |
-| -------------------------------------------- | ------------- | ---------------------------------------------------------------------------------- |
-| `id`                                         | `string`      | Stable identifier                                                                  |
-| `archivedAt`                                 | `string?`     | Soft-delete timestamp (ISO 8601)                                                   |
+| Field                                         | Type          | Meaning                                                                            |
+| --------------------------------------------- | ------------- | ---------------------------------------------------------------------------------- |
+| `id`                                          | `string`      | Stable identifier                                                                  |
+| `archivedAt`                                  | `string?`     | Soft-delete timestamp (ISO 8601)                                                   |
 | `labels["rambla.parent-agent-id"]`            | `string?`     | Parent agent ID, set automatically for agent-scoped creation and removed by detach |
 | `labels["rambla.open-agent-tab.<client-id>"]` | `string?`     | `"true"` protects an open tab on that client; detach clears every matching label   |
-| `lastStatus`                                 | `AgentStatus` | `initializing` / `idle` / `running` / `error` / `closed`                           |
+| `lastStatus`                                  | `AgentStatus` | `initializing` / `idle` / `running` / `error` / `closed`                           |
 
 See [`docs/data-model.md`](./data-model.md) for the full agent record.

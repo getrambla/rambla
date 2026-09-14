@@ -48,12 +48,12 @@ describe("plugin scaffold", () => {
       const cliPackageJson = JSON.parse(
         await readFile(new URL("../../../package.json", import.meta.url), "utf8"),
       ) as { version: string };
-      expect(JSON.parse(await readFile(path.join(directory, "rambla-plugin.json"), "utf8"))).toEqual(
-        {
-          id: "hello-plugin",
-          requirements: { rambla: `>=${cliPackageJson.version}` },
-        },
-      );
+      expect(
+        JSON.parse(await readFile(path.join(directory, "rambla-plugin.json"), "utf8")),
+      ).toEqual({
+        id: "hello-plugin",
+        requirements: { rambla: `>=${cliPackageJson.version}` },
+      });
       expect(JSON.parse(await readFile(path.join(directory, "package.json"), "utf8"))).toEqual({
         name: "hello-plugin",
         private: true,

@@ -42,9 +42,11 @@ test.describe("Add Project GitHub flow", () => {
       await chooseAddProjectMethod(page, "github");
 
       await addProjectFlowInput(page).fill("getrambla/rambla");
-      await expect(addProjectFlow(page).getByText("getrambla/rambla", { exact: true })).toBeVisible({
-        timeout: 30_000,
-      });
+      await expect(addProjectFlow(page).getByText("getrambla/rambla", { exact: true })).toBeVisible(
+        {
+          timeout: 30_000,
+        },
+      );
       await addProjectFlowInput(page).fill("");
 
       const repositoryRow = addProjectFlow(page).getByText(repository.fullName, { exact: true });

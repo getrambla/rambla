@@ -106,9 +106,9 @@ describe("file uploads", () => {
 
     expect(results.slice(0, 3)).toEqual([null, null, null]);
     expect(results[3]?.payload.error).toBeNull();
-    expect(readFileSync(join(ramblaHome, "uploads", "upload_req-queued", "notes.txt"), "utf8")).toBe(
-      "hello world",
-    );
+    expect(
+      readFileSync(join(ramblaHome, "uploads", "upload_req-queued", "notes.txt"), "utf8"),
+    ).toBe("hello world");
   });
 
   it("replaces duplicate upload starts without letting the old stale timeout evict the replacement", async () => {

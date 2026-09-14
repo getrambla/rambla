@@ -45,7 +45,9 @@ export interface InitializedLocalSpeech {
   cleanup: () => void;
 }
 
-function resolveConfiguredLocalModels(speechConfig: RamblaSpeechConfig | null): ResolvedLocalModels {
+function resolveConfiguredLocalModels(
+  speechConfig: RamblaSpeechConfig | null,
+): ResolvedLocalModels {
   return {
     dictationLocalSttModel: LocalSttModelIdSchema.parse(
       speechConfig?.local?.models.dictationStt ?? DEFAULT_LOCAL_STT_MODEL,

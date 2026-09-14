@@ -67,24 +67,24 @@ is a compile error.
 
 Use this table as the complete registration checklist.
 
-| Old registration and location                                                                 | New registration and location                                                                                |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `plugin.handle(contract, handler)` in the old root entry                                      | `server.handle(contract, handler)` in `index.server.ts`                                                      |
-| `plugin.addSurface(id, Component)` in the old root entry                                      | `client.addSurface(id, Component)` in `index.client.tsx`                                                     |
-| `plugin.addSidebarItem(item)` in the old root entry                                           | `client.addSidebarItem(item)` in `index.client.tsx`                                                          |
-| `plugin.addWorkspacePanel(panel)` in the old root entry                                       | `client.addWorkspacePanel(panel)` in `index.client.tsx`                                                      |
-| `plugin.addCommandCenterItem(item)` in the old root entry                                     | `client.addCommandCenterItem(item)` in `index.client.tsx`                                                    |
-| `plugin.addClientSlashCommand(command)` in the old root entry                                 | `client.addSlashCommand(command)` in `index.client.tsx`                                                      |
-| `plugin.addClientSide(fn)` in the old root entry                                              | Delete the wrapper and move the body of `fn` into the default client entry function                          |
-| `client.addComposerPill(pill)` inside the old client callback                                 | `client.addComposerPill(pill)` inside `index.client.tsx` or an imported `client/` function                   |
-| New header contribution                                                                       | `client.addHeaderButton({ id, workspaceId, button })`                                                        |
-| `plugin.addAttachmentSource(source)` in the old root entry                                    | `client.addAttachmentSource(source)` in `index.client.tsx`                                                   |
-| New settings screen contribution                                                              | `client.addSettingsScreen(screen)` in `index.client.tsx`; see [settings screens](reference#settings-screens) |
-| `plugin.addTheme(theme)` in the old root entry                                                | `client.addTheme(theme)` in `index.client.tsx`                                                               |
-| `plugin.addTimelineTransformer(transformer)` in the old root entry                            | `client.addTimelineTransformer(transformer)` in `index.client.tsx`                                           |
-| `plugin.addTimelineRenderer(renderer)` in the old root entry                                  | `client.addTimelineRenderer(renderer)` in `index.client.tsx`                                                 |
-| `import { defineRpc, defineAttachmentSource } from "@getrambla/plugin/server"` in shared files | `import { defineRpc, defineAttachmentSource } from "@getrambla/plugin"`                                       |
-| `ZodOutput<typeof contract.input>` handler parameter types                                    | `RpcInput<typeof contract>` from `@getrambla/plugin`; `RpcOutput` for return types                            |
+| Old registration and location                                                                  | New registration and location                                                                                |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `plugin.handle(contract, handler)` in the old root entry                                       | `server.handle(contract, handler)` in `index.server.ts`                                                      |
+| `plugin.addSurface(id, Component)` in the old root entry                                       | `client.addSurface(id, Component)` in `index.client.tsx`                                                     |
+| `plugin.addSidebarItem(item)` in the old root entry                                            | `client.addSidebarItem(item)` in `index.client.tsx`                                                          |
+| `plugin.addWorkspacePanel(panel)` in the old root entry                                        | `client.addWorkspacePanel(panel)` in `index.client.tsx`                                                      |
+| `plugin.addCommandCenterItem(item)` in the old root entry                                      | `client.addCommandCenterItem(item)` in `index.client.tsx`                                                    |
+| `plugin.addClientSlashCommand(command)` in the old root entry                                  | `client.addSlashCommand(command)` in `index.client.tsx`                                                      |
+| `plugin.addClientSide(fn)` in the old root entry                                               | Delete the wrapper and move the body of `fn` into the default client entry function                          |
+| `client.addComposerPill(pill)` inside the old client callback                                  | `client.addComposerPill(pill)` inside `index.client.tsx` or an imported `client/` function                   |
+| New header contribution                                                                        | `client.addHeaderButton({ id, workspaceId, button })`                                                        |
+| `plugin.addAttachmentSource(source)` in the old root entry                                     | `client.addAttachmentSource(source)` in `index.client.tsx`                                                   |
+| New settings screen contribution                                                               | `client.addSettingsScreen(screen)` in `index.client.tsx`; see [settings screens](reference#settings-screens) |
+| `plugin.addTheme(theme)` in the old root entry                                                 | `client.addTheme(theme)` in `index.client.tsx`                                                               |
+| `plugin.addTimelineTransformer(transformer)` in the old root entry                             | `client.addTimelineTransformer(transformer)` in `index.client.tsx`                                           |
+| `plugin.addTimelineRenderer(renderer)` in the old root entry                                   | `client.addTimelineRenderer(renderer)` in `index.client.tsx`                                                 |
+| `import { defineRpc, defineAttachmentSource } from "@getrambla/plugin/server"` in shared files | `import { defineRpc, defineAttachmentSource } from "@getrambla/plugin"`                                      |
+| `ZodOutput<typeof contract.input>` handler parameter types                                     | `RpcInput<typeof contract>` from `@getrambla/plugin`; `RpcOutput` for return types                           |
 
 Import `PluginClientContext` from `@getrambla/plugin/client` and `PluginServerContext` from
 `@getrambla/plugin/server`. Remove imports of the old context type. Client registrations return idempotent removal functions, except header buttons and composer pills, which return `{ update, remove }` handles. Preserve any remover the plugin calls before teardown; Rambla removes outstanding
@@ -135,8 +135,8 @@ schemas, and plain data types stay on the root. These rules include type imports
 
 Move the remaining SDK subpaths under their runtime owner:
 
-| Old entry                       | 0.8 entry                              |
-| ------------------------------- | -------------------------------------- |
+| Old entry                        | 0.8 entry                               |
+| -------------------------------- | --------------------------------------- |
 | `@getrambla/plugin/react-native` | `@getrambla/plugin/client/react-native` |
 | `@getrambla/plugin/ui`           | `@getrambla/plugin/client/ui`           |
 | `@getrambla/plugin/provider`     | `@getrambla/plugin/server/provider`     |
@@ -154,8 +154,8 @@ its registration; that registration belongs in the client entry.
 
 | Compiler or load error                                                                                                     | Meaning and fix                                                                                                           |
 | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `This plugin has no requirements.rambla`                                                                                    | Complete the migration and declare the range in step 7.                                                                   |
-| `This plugin was made for an older version of Rambla`                                                                       | The directory still has only the old root entry. Create a runtime entry, move registrations, then delete the old file.    |
+| `This plugin has no requirements.rambla`                                                                                   | Complete the migration and declare the range in step 7.                                                                   |
+| `This plugin was made for an older version of Rambla`                                                                      | The directory still has only the old root entry. Create a runtime entry, move registrations, then delete the old file.    |
 | `Plugin entry points are missing: expected index.client.ts or index.client.tsx and/or index.server.ts or index.server.tsx` | No supported entry exists. Add at least one exact filename.                                                               |
 | `server-only module cannot be imported into the plugin client bundle: <file>`                                              | A client import reaches `server/`. Move the call behind an RPC and import its contract from `shared/`.                    |
 | `client-only module cannot be imported into the plugin server bundle: <file>`                                              | A server import reaches `client/`. Move that registration and import to the client entry.                                 |

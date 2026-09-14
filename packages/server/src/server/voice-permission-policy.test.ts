@@ -40,7 +40,9 @@ describe("isVoicePermissionAllowed", () => {
       buildRequest({
         name: "codextool",
         metadata: {
-          questions: [{ question: "Allow codextool to call rambla_voice.speak for user feedback?" }],
+          questions: [
+            { question: "Allow codextool to call rambla_voice.speak for user feedback?" },
+          ],
         },
       }),
     );

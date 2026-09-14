@@ -12,7 +12,10 @@ import { findExecutable } from "../executable-resolution/executable-resolution.j
 import type { TerminalCell, TerminalState } from "@getrambla/protocol/messages";
 import { TerminalInputModeTracker } from "@getrambla/protocol/terminal-input-mode";
 import { TerminalActivityTracker } from "./activity/terminal-activity-tracker.js";
-import type { TerminalActivity, TerminalActivityState } from "@getrambla/protocol/terminal-activity";
+import type {
+  TerminalActivity,
+  TerminalActivityState,
+} from "@getrambla/protocol/terminal-activity";
 
 const { Terminal } = xterm;
 const require = createRequire(import.meta.url);
@@ -502,7 +505,9 @@ export function buildTerminalEnvironment(
   );
   const envWithHookCli = injectRamblaHookCli(
     envWithAgentHooks,
-    input.ramblaHookCliPath === undefined ? resolveRamblaCliExecutablePath() : input.ramblaHookCliPath,
+    input.ramblaHookCliPath === undefined
+      ? resolveRamblaCliExecutablePath()
+      : input.ramblaHookCliPath,
   );
 
   if (basename(input.shell) !== "zsh") {

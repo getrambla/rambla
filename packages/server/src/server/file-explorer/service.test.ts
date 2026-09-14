@@ -481,7 +481,15 @@ describe("file explorer service", () => {
       await writeFile(path.join(root, "tracked-folder", "inside.txt"), "tracked", "utf8");
       await runGitCommand(["add", "."], { cwd: root });
       await runGitCommand(
-        ["-c", "user.name=Rambla Test", "-c", "user.email=test@rambla.local", "commit", "-m", "base"],
+        [
+          "-c",
+          "user.name=Rambla Test",
+          "-c",
+          "user.email=test@rambla.local",
+          "commit",
+          "-m",
+          "base",
+        ],
         { cwd: root },
       );
 
@@ -525,7 +533,15 @@ describe("file explorer service", () => {
       await writeFile(path.join(root, "Loose.txt"), "untracked", "utf8");
       await runGitCommand(["add", "Tracked.txt"], { cwd: root });
       await runGitCommand(
-        ["-c", "user.name=Rambla Test", "-c", "user.email=test@rambla.local", "commit", "-m", "base"],
+        [
+          "-c",
+          "user.name=Rambla Test",
+          "-c",
+          "user.email=test@rambla.local",
+          "commit",
+          "-m",
+          "base",
+        ],
         { cwd: root },
       );
 

@@ -552,7 +552,7 @@ product behavior that changed.
 
 | Avoid                                                        | Write                                                 |
 | ------------------------------------------------------------ | ----------------------------------------------------- |
-| Rambla stays responsive with many idle Git workspaces         | Removed periodic Git polling for idle workspaces      |
+| Rambla stays responsive with many idle Git workspaces        | Removed periodic Git polling for idle workspaces      |
 | Incompatible saved app data no longer crashes after upgrades | Fixed crash when persisted cache was incompatible     |
 | Splitting layouts no longer remounts the active agent        | Fixed scroll position resetting when splitting a pane |
 | Mobile model selector is faster and more straightforward     | Added search to the mobile model selector             |

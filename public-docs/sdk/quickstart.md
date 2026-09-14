@@ -60,12 +60,12 @@ if (result.status === "idle") {
 
 `waitForFinish()` waits up to 10 minutes by default; pass milliseconds to change it. It returns one of four statuses:
 
-| Status       | Meaning                                                           |
-| ------------ | ----------------------------------------------------------------- |
-| `idle`       | The turn finished and the agent can take another prompt.          |
+| Status       | Meaning                                                            |
+| ------------ | ------------------------------------------------------------------ |
+| `idle`       | The turn finished and the agent can take another prompt.           |
 | `permission` | The agent needs a person to answer a permission request in Rambla. |
-| `error`      | The provider ended the turn with an error.                        |
-| `timeout`    | The deadline elapsed. The agent is still running.                 |
+| `error`      | The provider ended the turn with an error.                         |
+| `timeout`    | The deadline elapsed. The agent is still running.                  |
 
 ## Disconnect
 

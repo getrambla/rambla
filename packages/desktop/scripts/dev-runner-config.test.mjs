@@ -13,7 +13,9 @@ describe("desktop dev process ownership", () => {
     );
     const devScript = readFileSync(new URL("./dev.sh", import.meta.url), "utf8");
 
-    expect(ramblaConfig.scripts.desktop.command).toContain("exec ./packages/desktop/scripts/dev.sh");
+    expect(ramblaConfig.scripts.desktop.command).toContain(
+      "exec ./packages/desktop/scripts/dev.sh",
+    );
     expect(devScript).toContain('npm --prefix "$DESKTOP_DIR" run build:main');
     expect(devScript).toContain('exec node "$SCRIPT_DIR/dev-runner.mjs"');
   });

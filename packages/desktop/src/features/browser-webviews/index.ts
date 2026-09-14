@@ -98,7 +98,10 @@ export function unregisterRamblaBrowser(browserId: string): void {
   browserRegistry.unregisterBrowser(browserId);
 }
 
-export function unregisterRamblaBrowserFromHost(hostWebContentsId: number, browserId: string): void {
+export function unregisterRamblaBrowserFromHost(
+  hostWebContentsId: number,
+  browserId: string,
+): void {
   browserRegistry.unregisterBrowserFromHost(hostWebContentsId, browserId);
 }
 

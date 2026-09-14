@@ -64,7 +64,8 @@ export async function startLocalElixirRelay(): Promise<LocalElixirRelay> {
   }
 
   const relayRoot =
-    process.env.RAMBLA_RELAY_CHECKOUT ?? path.resolve(__dirname, "../../../../../..", "rambla-relay");
+    process.env.RAMBLA_RELAY_CHECKOUT ??
+    path.resolve(__dirname, "../../../../../..", "rambla-relay");
   if (!existsSync(path.join(relayRoot, "mix.exs"))) {
     throw new Error(
       `Expected the Elixir relay checkout at ${relayRoot}. Set RAMBLA_RELAY_CHECKOUT to override it.`,

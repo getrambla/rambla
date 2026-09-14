@@ -278,9 +278,15 @@ export interface RamblaAgentCommandsOptions {
 
 export type RamblaAgentCommandsResult = ListCommandsResponse["payload"];
 
-export type RamblaAgentUpdate = Extract<SessionOutboundMessage, { type: "agent_update" }>["payload"];
+export type RamblaAgentUpdate = Extract<
+  SessionOutboundMessage,
+  { type: "agent_update" }
+>["payload"];
 
-export type RamblaAgentStream = Extract<SessionOutboundMessage, { type: "agent_stream" }>["payload"];
+export type RamblaAgentStream = Extract<
+  SessionOutboundMessage,
+  { type: "agent_stream" }
+>["payload"];
 
 export type RamblaAgentUpdateHandler = (update: RamblaAgentUpdate) => void;
 

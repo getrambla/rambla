@@ -15,7 +15,9 @@ describe("shortenPath", () => {
   });
 
   it("leaves Windows paths unchanged", () => {
-    expect(shortenPath("C:\\Users\\moboudra\\dev\\rambla")).toBe("C:\\Users\\moboudra\\dev\\rambla");
+    expect(shortenPath("C:\\Users\\moboudra\\dev\\rambla")).toBe(
+      "C:\\Users\\moboudra\\dev\\rambla",
+    );
   });
 
   it("returns an empty string for null or undefined", () => {

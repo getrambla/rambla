@@ -567,7 +567,9 @@ test("copying an assistant selection preserves Markdown structure and links", as
 
     // The block's own Copy button had the same hazard: a Markdown fence body ends in
     // a newline, and the button copied it raw.
-    const typescriptFence = assistantMessage.locator('[data-rambla-markdown-language="typescript"]');
+    const typescriptFence = assistantMessage.locator(
+      '[data-rambla-markdown-language="typescript"]',
+    );
     // The button is opacity 0 / pointerEvents none until the fence is hovered.
     await typescriptFence.hover();
     await typescriptFence.locator("[data-rambla-markdown-ignore]").click();

@@ -97,7 +97,8 @@ export async function createTestRamblaDaemon(
   let lastError: unknown;
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const { config, ramblaHomeRoot, ramblaHome, staticDir } = await prepareTestDaemonConfig(options);
+    const { config, ramblaHomeRoot, ramblaHome, staticDir } =
+      await prepareTestDaemonConfig(options);
     const logger = options.logger ?? pino({ level: "silent" });
     const daemon = await createRamblaDaemon(config, logger, {
       serverFeatureOverrides: {

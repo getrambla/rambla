@@ -92,7 +92,10 @@ describe("mapPrPaneData", () => {
 
   it("returns null when status has no number and no parseable PR URL", () => {
     expect(
-      mapPrPaneData(status({ number: undefined, url: "https://github.com/getrambla/rambla" }), null),
+      mapPrPaneData(
+        status({ number: undefined, url: "https://github.com/getrambla/rambla" }),
+        null,
+      ),
     ).toBeNull();
   });
 

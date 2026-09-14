@@ -134,7 +134,9 @@ export function createCli(): Command {
     .action(withOutput(runDaemonStatusCommand));
 
   addJsonAndDaemonHostOptions(
-    program.command("reload").description('Reload daemon config (alias for "rambla daemon reload")'),
+    program
+      .command("reload")
+      .description('Reload daemon config (alias for "rambla daemon reload")'),
   ).action(withOutput(runDaemonReloadCommand));
 
   addJsonOption(

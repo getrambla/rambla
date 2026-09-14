@@ -10,8 +10,8 @@ category: Orchestration
 
 Skills give your agents reusable instructions for delegation, handoffs, and reviews. You can also [ask for these workflows directly](/docs/orchestration-workflows) without installing skills.
 
-| Skill              | Use it to                                                            |
-| ------------------ | -------------------------------------------------------------------- |
+| Skill               | Use it to                                                            |
+| ------------------- | -------------------------------------------------------------------- |
 | `/rambla`           | Look up how to manage agents, workspaces, schedules, and heartbeats. |
 | `/rambla-handoff`   | Transfer a task and its context to another agent.                    |
 | `/rambla-committee` | Get two independent analyses of a difficult problem.                 |

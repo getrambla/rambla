@@ -1,4 +1,8 @@
-import type { PluginButton, PluginButtonBehavior, PluginButtonIcon } from "@getrambla/plugin/client";
+import type {
+  PluginButton,
+  PluginButtonBehavior,
+  PluginButtonIcon,
+} from "@getrambla/plugin/client";
 
 export interface ButtonValidation {
   validateIconName(name: string): void;

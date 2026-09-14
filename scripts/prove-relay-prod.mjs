@@ -21,7 +21,8 @@ function parseArgs(argv) {
 const args = parseArgs(process.argv);
 
 const serverId = args["server-id"] ?? process.env.RAMBLA_SERVER_ID;
-const daemonPublicKeyB64 = args["daemon-public-key-b64"] ?? process.env.RAMBLA_DAEMON_PUBLIC_KEY_B64;
+const daemonPublicKeyB64 =
+  args["daemon-public-key-b64"] ?? process.env.RAMBLA_DAEMON_PUBLIC_KEY_B64;
 const relayEndpoint =
   args["relay-endpoint"] ?? process.env.RAMBLA_RELAY_ENDPOINT ?? "relay.rambla.sh:443";
 const baseUrl = args["base-url"] ?? process.env.RAMBLA_APP_URL ?? "https://app.rambla.sh";

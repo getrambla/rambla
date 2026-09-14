@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { getRamblaToolLeafName, isRamblaToolName } from "@getrambla/protocol/tool-name-normalization";
+import {
+  getRamblaToolLeafName,
+  isRamblaToolName,
+} from "@getrambla/protocol/tool-name-normalization";
 
 describe("isRamblaToolName", () => {
   it("detects Claude Code format", () => {

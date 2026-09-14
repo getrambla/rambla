@@ -29,7 +29,9 @@ describe("path equivalence", () => {
   });
 
   test("checks POSIX root containment without prefix false positives", () => {
-    expect(isPathInsideRoot("/opt/rambla", "/opt/rambla/node_modules/@getrambla/server")).toBe(true);
+    expect(isPathInsideRoot("/opt/rambla", "/opt/rambla/node_modules/@getrambla/server")).toBe(
+      true,
+    );
     expect(isPathInsideRoot("/opt/rambla", "/opt/rambla-other")).toBe(false);
   });
 

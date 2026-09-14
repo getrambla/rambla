@@ -7,7 +7,13 @@ export function useRamblaContextValue(): RamblaApi | null {
   return useContext(RamblaApiContext);
 }
 
-export function RamblaApiProvider({ children, rambla }: { children: ReactNode; rambla: RamblaApi }) {
+export function RamblaApiProvider({
+  children,
+  rambla,
+}: {
+  children: ReactNode;
+  rambla: RamblaApi;
+}) {
   return <RamblaApiContext.Provider value={rambla}>{children}</RamblaApiContext.Provider>;
 }
 

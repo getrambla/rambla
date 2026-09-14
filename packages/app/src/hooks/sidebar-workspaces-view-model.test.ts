@@ -400,7 +400,9 @@ describe("shared sidebar workspace model", () => {
       ["host-a:main", "done", "main"],
       ["host-b:feature", "running", "feature/status-flow"],
     ]);
-    expect(model.projectNamesByViewKey).toEqual(new Map([["getrambla/rambla", "getrambla/rambla"]]));
+    expect(model.projectNamesByViewKey).toEqual(
+      new Map([["getrambla/rambla", "getrambla/rambla"]]),
+    );
   });
 
   it("preserves unchanged row identities when another workspace updates", () => {

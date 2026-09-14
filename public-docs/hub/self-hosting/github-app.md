@@ -20,8 +20,8 @@ On a local HTTP Hub, the Apps guide lets you configure repository access and exp
 
 GitHub uses these Hub URLs:
 
-| Setting      | Hub URL                                                |
-| ------------ | ------------------------------------------------------ |
+| Setting      | Hub URL                                                 |
+| ------------ | ------------------------------------------------------- |
 | Homepage URL | `<RAMBLA_HUB_APP_URL>`                                  |
 | Callback URL | `<RAMBLA_HUB_APP_URL>/api/integrations/github/callback` |
 | Setup URL    | `<RAMBLA_HUB_APP_URL>/api/integrations/github/setup`    |

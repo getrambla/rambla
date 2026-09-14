@@ -331,11 +331,14 @@ describe("Codex active-turn steering admission", () => {
     const commandResolution = deferred<{ commandName: string } | null>();
     const resolverEntered = deferred<void>();
     const appServer = createFakeCodexAppServer();
-    const { session, ramblaTurnId } = await startPublicSteeringSession(appServer, async (prompt) => {
-      if (prompt !== "/held") return null;
-      resolverEntered.resolve();
-      return commandResolution.promise;
-    });
+    const { session, ramblaTurnId } = await startPublicSteeringSession(
+      appServer,
+      async (prompt) => {
+        if (prompt !== "/held") return null;
+        resolverEntered.resolve();
+        return commandResolution.promise;
+      },
+    );
 
     const steer = session.steerActiveTurn!("/held", {
       expectedTurnId: ramblaTurnId,

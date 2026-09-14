@@ -90,7 +90,7 @@ Each agent is stored as a separate JSON file, grouped by project directory.
 | `lastActivityAt`     | `string?` (ISO 8601)                     | Last activity timestamp                                                                                                                                                                                                                                                                                                                                                             |
 | `lastUserMessageAt`  | `string?` (ISO 8601)                     | Last user message timestamp                                                                                                                                                                                                                                                                                                                                                         |
 | `title`              | `string?`                                | User-visible title                                                                                                                                                                                                                                                                                                                                                                  |
-| `labels`             | `Record<string, string>`                 | Key-value labels (default `{}`). Rambla uses `rambla.parent-agent-id` for parentage and client-scoped `rambla.open-agent-tab.*` labels while managed subagent tabs are open — see [agent-lifecycle.md](./agent-lifecycle.md)                                                                                                                                                           |
+| `labels`             | `Record<string, string>`                 | Key-value labels (default `{}`). Rambla uses `rambla.parent-agent-id` for parentage and client-scoped `rambla.open-agent-tab.*` labels while managed subagent tabs are open — see [agent-lifecycle.md](./agent-lifecycle.md)                                                                                                                                                        |
 | `lastStatus`         | `AgentStatus`                            | One of: `"initializing"`, `"idle"`, `"running"`, `"error"`, `"closed"`. `closed` means the record is resumable but has no live provider runtime; archive remains represented separately by `archivedAt`.                                                                                                                                                                            |
 | `lastModeId`         | `string?`                                | Last active mode ID                                                                                                                                                                                                                                                                                                                                                                 |
 | `config`             | `SerializableConfig?`                    | Agent session configuration (see below)                                                                                                                                                                                                                                                                                                                                             |
@@ -338,8 +338,8 @@ requests.
 
 Environment variables override `config.json`:
 
-| Environment variable                 | Setting                  |
-| ------------------------------------ | ------------------------ |
+| Environment variable                  | Setting                  |
+| ------------------------------------- | ------------------------ |
 | `RAMBLA_GIT_MAX_PROCESSES_PER_SECOND` | `maxProcessesPerSecond`  |
 | `RAMBLA_GIT_MAX_PROCESS_CONCURRENCY`  | `maxProcessConcurrency`  |
 | `RAMBLA_GIT_CONCURRENCY`              | Legacy concurrency alias |
@@ -354,8 +354,8 @@ Local speech model ids are intentionally narrow: STT uses `parakeet-tdt-0.6b-v2-
 
 Set these to select OpenAI instead of local speech:
 
-| Env var                        | Applies to                      |
-| ------------------------------ | ------------------------------- |
+| Env var                         | Applies to                      |
+| ------------------------------- | ------------------------------- |
 | `RAMBLA_VOICE_STT_PROVIDER`     | Voice mode STT provider         |
 | `RAMBLA_DICTATION_STT_PROVIDER` | Composer dictation STT provider |
 | `RAMBLA_VOICE_TTS_PROVIDER`     | Voice mode TTS provider         |
@@ -488,8 +488,8 @@ Array of workspace records. A workspace is a specific working directory within a
 | `title`                        | `string \| null`                                             | User-set name override layered over `displayName`. Null means "use `displayName`".                                                                                                            |
 | `branch`                       | `string \| null`                                             | The current Git branch for git-backed workspaces. Separate from `displayName`/`title`; a background branch refresh never rewrites the name.                                                   |
 | `worktreeRoot`                 | `string \| null`                                             | Backing checkout/worktree root. May differ from `cwd` for exact subprojects and remains persisted after the worktree is deleted so restore can reproduce the placement.                       |
-| `baseBranch`                   | `string \| null`                                             | Normalized branch the Rambla worktree was created from; null for directories, local checkouts, and checkout-branch worktrees                                                                   |
-| `isRamblaOwnedWorktree`         | `boolean`                                                    | Whether Rambla owns and may remove/recreate the backing `worktreeRoot`                                                                                                                         |
+| `baseBranch`                   | `string \| null`                                             | Normalized branch the Rambla worktree was created from; null for directories, local checkouts, and checkout-branch worktrees                                                                  |
+| `isRamblaOwnedWorktree`        | `boolean`                                                    | Whether Rambla owns and may remove/recreate the backing `worktreeRoot`                                                                                                                        |
 | `mainRepoRoot`                 | `string \| null`                                             | Main repository root for worktree checkouts, independent of both exact `cwd` and backing `worktreeRoot`                                                                                       |
 | `createdAt`                    | `string` (ISO 8601)                                          |                                                                                                                                                                                               |
 | `updatedAt`                    | `string` (ISO 8601)                                          |                                                                                                                                                                                               |
@@ -552,9 +552,9 @@ These small files are not validated as full Zod schemas but are persisted under 
 
 | Path                  | Format                                                         | Notes                                                                             |
 | --------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `server-id`           | Plain text, e.g. `srv_<base64url>`                             | Stable per-`$RAMBLA_HOME` daemon ID. Overridable via `RAMBLA_SERVER_ID` env.        |
+| `server-id`           | Plain text, e.g. `srv_<base64url>`                             | Stable per-`$RAMBLA_HOME` daemon ID. Overridable via `RAMBLA_SERVER_ID` env.      |
 | `daemon-keypair.json` | `{ v: 2, publicKeyB64, secretKeyB64 }` (libsodium box keypair) | E2EE relay identity. Written with mode `0600`. Regenerated if file is unreadable. |
-| `rambla.pid`           | JSON `{ pid, startedAt, ... }`                                 | PID lock; prevents two daemons sharing one `$RAMBLA_HOME`.                         |
+| `rambla.pid`          | JSON `{ pid, startedAt, ... }`                                 | PID lock; prevents two daemons sharing one `$RAMBLA_HOME`.                        |
 | `daemon.log`          | Pino log output                                                | Default location; path/rotation configurable via `log.file` in `config.json`.     |
 
 ---

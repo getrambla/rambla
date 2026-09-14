@@ -91,7 +91,9 @@ export function createTerminalActions(
     return daemonClient;
   }
 
-  const list = async (options: RamblaTerminalListOptions = {}): Promise<RamblaTerminalListResult> => {
+  const list = async (
+    options: RamblaTerminalListOptions = {},
+  ): Promise<RamblaTerminalListResult> => {
     const result = await client().listTerminals(options.cwd, options.requestId, {
       workspaceId: options.workspaceId,
     });

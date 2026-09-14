@@ -404,13 +404,13 @@ that reads what it needs from `process.env` and invoke it as
 
 Every `scripts` entry with `"type": "service"` receives these environment variables:
 
-| Variable                    | Value                                                                                                                     |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Variable                     | Value                                                                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `RAMBLA_SERVICE_<NAME>_URL`  | Proxied URL for a declared peer service. Prefer this for peer discovery; it survives peer restarts.                       |
 | `RAMBLA_SERVICE_<NAME>_PORT` | Raw ephemeral port for a declared peer service. Use only as a bypass escape hatch; it can go stale if that peer restarts. |
-| `RAMBLA_URL`                 | Self alias for `RAMBLA_SERVICE_<SELF>_URL`.                                                                                |
-| `RAMBLA_PORT`                | Self alias for `RAMBLA_SERVICE_<SELF>_PORT`.                                                                               |
-| `HOST`                      | Bind host for the service process.                                                                                        |
+| `RAMBLA_URL`                 | Self alias for `RAMBLA_SERVICE_<SELF>_URL`.                                                                               |
+| `RAMBLA_PORT`                | Self alias for `RAMBLA_SERVICE_<SELF>_PORT`.                                                                              |
+| `HOST`                       | Bind host for the service process.                                                                                        |
 
 Service proxy hostnames use the double-dash shape: `web--feature-auth--project.localhost` or, on the default branch, `web--project.localhost`. Optional public aliases use the same leftmost label under the configured public base host.
 

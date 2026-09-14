@@ -1635,7 +1635,11 @@ const x = 1;
     expect(status.isRamblaOwnedWorktree).toBe(true);
     expect(realpathSync.native(status.mainRepoRoot ?? "")).toBe(realpathSync.native(repoDir));
 
-    const diff = await getCheckoutDiff(result.worktreePath, { mode: "uncommitted" }, { ramblaHome });
+    const diff = await getCheckoutDiff(
+      result.worktreePath,
+      { mode: "uncommitted" },
+      { ramblaHome },
+    );
     expect(diff.diff).toContain("-hello");
     expect(diff.diff).toContain("+worktree change");
 

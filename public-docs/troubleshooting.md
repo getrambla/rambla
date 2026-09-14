@@ -76,8 +76,8 @@ This login-shell step runs on macOS and Linux. On Windows, Rambla uses the envir
 
 Desktop app log location:
 
-| Platform | Path                            |
-| -------- | ------------------------------- |
+| Platform | Path                             |
+| -------- | -------------------------------- |
 | macOS    | `~/Library/Logs/Rambla/main.log` |
 | Linux    | `~/.config/Rambla/logs/main.log` |
 | Windows  | `%APPDATA%\Rambla\logs\main.log` |

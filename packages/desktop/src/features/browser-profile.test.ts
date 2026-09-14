@@ -93,7 +93,13 @@ describe("legacy browser profiles", () => {
   test("accepts only unique saved browser ids and resolves their old partitions", () => {
     const uuid = "123e4567-e89b-42d3-a456-426614174000";
     const fallbackId = "1700000000000-abcd";
-    const browserIds = readLegacyRamblaBrowserIds([uuid, fallbackId, uuid, "not-a-browser-id", 123]);
+    const browserIds = readLegacyRamblaBrowserIds([
+      uuid,
+      fallbackId,
+      uuid,
+      "not-a-browser-id",
+      123,
+    ]);
     const partitions: string[] = [];
     const sessions = getRamblaBrowserProfileSessions(
       {

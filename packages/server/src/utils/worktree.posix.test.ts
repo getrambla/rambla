@@ -478,7 +478,11 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       }
       expect(localStatus.aheadBehind).toEqual({ ahead: 0, behind: 0 });
       await expect(
-        getCheckoutDiff(localResult.worktreePath, { mode: "base", baseRef: "main" }, { ramblaHome }),
+        getCheckoutDiff(
+          localResult.worktreePath,
+          { mode: "base", baseRef: "main" },
+          { ramblaHome },
+        ),
       ).resolves.toMatchObject({ diff: "" });
       expect(readFileSync(join(originResult.worktreePath, "file.txt"), "utf8")).toBe(
         "from-origin\n",

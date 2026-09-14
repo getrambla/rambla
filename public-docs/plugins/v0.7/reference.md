@@ -74,16 +74,16 @@ Rambla builds separate client and server bundles from `index.ts`. It rejects imp
 
 Rambla provides these modules to client code:
 
-| Module                          | Use it for                            |
-| ------------------------------- | ------------------------------------- |
+| Module                           | Use it for                            |
+| -------------------------------- | ------------------------------------- |
 | `@getrambla/plugin`              | Contribution contracts and data hooks |
-| `@getrambla/plugin/react-native` | Rambla UI components and UI hooks      |
+| `@getrambla/plugin/react-native` | Rambla UI components and UI hooks     |
 | `@getrambla/plugin/server`       | Shared RPC and attachment contracts   |
-| `@tanstack/react-query`         | Request state and caching             |
-| `react`                         | Components and hooks                  |
-| `react/jsx-runtime`             | Compiled JSX                          |
-| `react-native`                  | Cross-platform UI                     |
-| `zod`                           | Shared schemas                        |
+| `@tanstack/react-query`          | Request state and caching             |
+| `react`                          | Components and hooks                  |
+| `react/jsx-runtime`              | Compiled JSX                          |
+| `react-native`                   | Cross-platform UI                     |
+| `zod`                            | Shared schemas                        |
 
 These exact module specifiers use the host's runtime instances. A client bundle that requests another host module fails with `Module "<name>" is not available in plugin client code`.
 
@@ -168,7 +168,7 @@ export default function contribute(plugin: PluginContext) {
 
 | Field        | Meaning                                                                                                                      |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `theme`      | Typed `PluginTheme` color tokens for the active Rambla theme.                                                                 |
+| `theme`      | Typed `PluginTheme` color tokens for the active Rambla theme.                                                                |
 | `host`       | Selected host `id` and display `label`.                                                                                      |
 | `layout`     | `compact` and the `ios`, `android`, or `web` platform.                                                                       |
 | `navigation` | Optional client navigation. `openAgent({ agentId })` and `openWorkspace({ workspaceId })` open targets on the selected host. |
@@ -605,7 +605,7 @@ Every callback receives:
 | Field                     | Context             | Meaning                                                                                                         |
 | ------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `context`                 | All                 | Matching discriminator.                                                                                         |
-| `rambla`                   | All                 | Selected host's existing `RamblaApi`.                                                                            |
+| `rambla`                  | All                 | Selected host's existing `RamblaApi`.                                                                           |
 | `rpc(contract, input)`    | All                 | Typed call to this installation's daemon-side plugin handler.                                                   |
 | `openSurface(id)`         | All                 | Opens one of this plugin's registered global surfaces.                                                          |
 | `workspace`               | Workspace and agent | Synchronous workspace snapshot.                                                                                 |
@@ -1013,6 +1013,6 @@ Use `rambla plugin ls` to read the current status and error.
 | Sidebar item is missing      | The plugin is `running`, the item references an existing surface, the icon name is valid, and the client is on the installation's host. |
 | Client module is unavailable | Import only the host-provided client modules listed above.                                                                              |
 | RPC rejects                  | Check both Zod schemas and the daemon-side handler error.                                                                               |
-| Edited code does not appear  | Run `npm run typecheck`, then `rambla plugin reload <id>`.                                                                               |
-| Reload fails                 | Read `rambla plugin ls` and `rambla plugin logs <id>`, fix the source error, then reload; Rambla does not restore the previous bundle.     |
-| Plugin exits unexpectedly    | Read `rambla plugin logs <id>` for retained initialization, cleanup, stderr, and final crash output.                                     |
+| Edited code does not appear  | Run `npm run typecheck`, then `rambla plugin reload <id>`.                                                                              |
+| Reload fails                 | Read `rambla plugin ls` and `rambla plugin logs <id>`, fix the source error, then reload; Rambla does not restore the previous bundle.  |
+| Plugin exits unexpectedly    | Read `rambla plugin logs <id>` for retained initialization, cleanup, stderr, and final crash output.                                    |

@@ -283,7 +283,9 @@ test("does not overwrite a committed exact-project config with source checkout e
     createDeps(),
   );
 
-  expect(readFileSync(path.join(result.workspace.cwd, "rambla.json"), "utf8")).toBe(committedConfig);
+  expect(readFileSync(path.join(result.workspace.cwd, "rambla.json"), "utf8")).toBe(
+    committedConfig,
+  );
   expect(
     execFileSync("git", ["status", "--porcelain"], {
       cwd: result.worktree.worktreePath,

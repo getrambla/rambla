@@ -19,7 +19,10 @@ describe("buildWorkingDirectorySuggestions", () => {
       query: "pso",
     });
 
-    expect(results).toEqual(["/Users/me/projects/rambla-desktop", "/Users/me/projects/rambla-plan"]);
+    expect(results).toEqual([
+      "/Users/me/projects/rambla-desktop",
+      "/Users/me/projects/rambla-plan",
+    ]);
   });
 
   it("does not reinterpret daemon-ranked suggestions", () => {

@@ -45,8 +45,8 @@ The Apps guide gives you a webhook manifest and asks for the App ID, Client ID, 
 
 Slack calls:
 
-| Provider setting | Hub URL                                               |
-| ---------------- | ----------------------------------------------------- |
+| Provider setting | Hub URL                                                |
+| ---------------- | ------------------------------------------------------ |
 | Redirect URL     | `<RAMBLA_HUB_APP_URL>/api/integrations/slack/callback` |
 | Request URL      | `<RAMBLA_HUB_APP_URL>/api/integrations/slack/events`   |
 

@@ -115,7 +115,13 @@ describe("PluginTimelineItemView", () => {
   it("validates and renders the matching plugin component", () => {
     pluginRegistry.installCatalog(
       "host-1",
-      [{ id: "reports", requirements: { rambla: `>=${appPackage.version}` }, clientBundle: bundle }],
+      [
+        {
+          id: "reports",
+          requirements: { rambla: `>=${appPackage.version}` },
+          clientBundle: bundle,
+        },
+      ],
       {
         client: daemonClient,
       },

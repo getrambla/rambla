@@ -141,7 +141,9 @@ describe("test-daemon-connection connectToDaemon", () => {
     );
     await result.client.close();
 
-    expect(probe.createdConfigs()[0]?.url).toBe("rambla+desktop://socket?path=%2Ftmp%2Frambla.sock");
+    expect(probe.createdConfigs()[0]?.url).toBe(
+      "rambla+desktop://socket?path=%2Ftmp%2Frambla.sock",
+    );
   });
 
   it("uses the desktop transport for Remote SSH connections", async () => {

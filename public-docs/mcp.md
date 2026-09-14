@@ -12,9 +12,9 @@ category: Orchestration
 
 ## Configuration
 
-| Setting                       | Default | Purpose                                            |
-| ----------------------------- | ------- | -------------------------------------------------- |
-| `daemon.mcp.enabled`          | `true`  | Run the MCP server.                                |
+| Setting                       | Default | Purpose                                             |
+| ----------------------------- | ------- | --------------------------------------------------- |
+| `daemon.mcp.enabled`          | `true`  | Run the MCP server.                                 |
 | `daemon.mcp.injectIntoAgents` | `false` | Give agents launched by Rambla access to its tools. |
 
 Depending on the provider, Rambla delivers tools through its native tool interface or MCP. The capabilities are the same. Start a new agent or reload an existing one after changing injection settings.
@@ -118,7 +118,7 @@ These tools manage scripts configured in a workspace's `rambla.json`. Each requi
 | Tool                     | Function                                                                                |
 | ------------------------ | --------------------------------------------------------------------------------------- |
 | `list_workspace_scripts` | List configured scripts with lifecycle, terminal, port, proxy URL, and health metadata. |
-| `start_workspace_script` | Start a configured script through Rambla's managed launcher.                             |
+| `start_workspace_script` | Start a configured script through Rambla's managed launcher.                            |
 | `stop_workspace_script`  | Stop a running script through its supervised terminal.                                  |
 
 See [Git worktrees](/docs/worktrees#scripts-and-services) for `rambla.json` configuration.

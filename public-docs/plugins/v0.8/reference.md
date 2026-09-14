@@ -79,10 +79,10 @@ and cannot show this new diagnostic.
 
 ### Runtime entries
 
-| Entry              | Runtime               | Receives              | Required                                                                        |
-| ------------------ | --------------------- | --------------------- | ------------------------------------------------------------------------------- |
+| Entry              | Runtime                | Receives              | Required                                                                        |
+| ------------------ | ---------------------- | --------------------- | ------------------------------------------------------------------------------- |
 | `index.client.tsx` | Rambla app, per client | `PluginClientContext` | When the plugin has any UI, callback, theme, or attachment source               |
-| `index.server.ts`  | Daemon subprocess     | `PluginServerContext` | When the plugin contributes handlers, hooks, settings persistence, or providers |
+| `index.server.ts`  | Daemon subprocess      | `PluginServerContext` | When the plugin contributes handlers, hooks, settings persistence, or providers |
 
 At least one entry is required; both accept `.ts` or `.tsx`. A directory that still has only the
 old `index.ts` fails to load and points at the [migration guide](/docs/plugins/v0.8/migration).
@@ -119,17 +119,17 @@ dependencies. `/client/host` is private to the app host; plugins cannot import i
 
 Rambla provides these modules to client code:
 
-| Module                                 | Use it for                                                                                        |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Module                                  | Use it for                                                                                        |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `@getrambla/plugin`                     | Shared data, `defineRpc`, `defineSettings`, `defineAttachmentSource`, `RpcInput`, and `RpcOutput` |
 | `@getrambla/plugin/client/ui`           | Named, composable settings components                                                             |
-| `@getrambla/plugin/client/react-native` | Rambla UI components and UI hooks                                                                  |
-| `@getrambla/plugin/client`              | Client contribution contexts, `useRambla`, `useRpc`, `useSettings`, and data hooks                 |
-| `@tanstack/react-query`                | Request state and caching                                                                         |
-| `react`                                | Components and hooks                                                                              |
-| `react/jsx-runtime`                    | Compiled JSX                                                                                      |
-| `react-native`                         | Cross-platform UI                                                                                 |
-| `zod`                                  | Shared schemas                                                                                    |
+| `@getrambla/plugin/client/react-native` | Rambla UI components and UI hooks                                                                 |
+| `@getrambla/plugin/client`              | Client contribution contexts, `useRambla`, `useRpc`, `useSettings`, and data hooks                |
+| `@tanstack/react-query`                 | Request state and caching                                                                         |
+| `react`                                 | Components and hooks                                                                              |
+| `react/jsx-runtime`                     | Compiled JSX                                                                                      |
+| `react-native`                          | Cross-platform UI                                                                                 |
+| `zod`                                   | Shared schemas                                                                                    |
 
 The host owns its paired React and renderer versions. The SDK's React peer range permits patch
 versions for tooling and Node consumers; it does not change the app's pinned React version or
@@ -254,8 +254,8 @@ export default function contribute(server: PluginServerContext) {
 }
 ```
 
-| Register                        | Callback receives                  | Return                                                       |
-| ------------------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| Register                        | Callback receives                   | Return                                                       |
+| ------------------------------- | ----------------------------------- | ------------------------------------------------------------ |
 | `server.on(name, callback)`     | `(event, { rambla, signal })`       | `void` or `Promise<void>`                                    |
 | `server.before(name, callback)` | `({ request }, { rambla, signal })` | Modified request, or `undefined` to keep it; async supported |
 
@@ -540,7 +540,7 @@ saved; environment overrides are not persisted with it.
 
 | Contract                           | Behavior                                                                                                  |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `context.rambla`                    | Existing SDK connected to this daemon                                                                     |
+| `context.rambla`                   | Existing SDK connected to this daemon                                                                     |
 | `context.signal`                   | Aborted on invocation timeout or plugin stop; pass to external requests                                   |
 | Input data                         | Detached snapshot; change state through returned requests or SDK commands                                 |
 | Registration result                | Idempotent remover, e.g. `const remove = server.on(...); remove();`                                       |
@@ -616,7 +616,7 @@ export default function contribute(client: PluginClientContext) {
 
 | Field        | Meaning                                                                                                                      |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `theme`      | Typed `PluginTheme` color tokens for the active Rambla theme.                                                                 |
+| `theme`      | Typed `PluginTheme` color tokens for the active Rambla theme.                                                                |
 | `host`       | Selected host `id` and display `label`.                                                                                      |
 | `layout`     | `compact` and the `ios`, `android`, or `web` platform.                                                                       |
 | `navigation` | Optional client navigation. `openAgent({ agentId })` and `openWorkspace({ workspaceId })` open targets on the selected host. |
@@ -1013,15 +1013,15 @@ export function DisplaySettings() {
 }
 ```
 
-| Component                          | Props and behavior                                                                                                                       |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `SettingsGroup`, `SettingsSection` | Required `title`, `children`; optional `info` tooltip, `trailing` content, `testID`. Own section spacing and headings.                   |
-| `SettingsCard`                     | `children`, optional `testID`. Owns the card surface and dividers between direct children. Give mapped rows stable React keys.           |
-| `SettingsRow`                      | Required `label`; optional `hint`, `error`, `children`, `testID`. Wrap any custom control or content.                                    |
-| `SettingsSwitch`                   | Row props plus required `value: boolean`, `onValueChange`; optional `disabled`.                                                          |
+| Component                          | Props and behavior                                                                                                                        |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `SettingsGroup`, `SettingsSection` | Required `title`, `children`; optional `info` tooltip, `trailing` content, `testID`. Own section spacing and headings.                    |
+| `SettingsCard`                     | `children`, optional `testID`. Owns the card surface and dividers between direct children. Give mapped rows stable React keys.            |
+| `SettingsRow`                      | Required `label`; optional `hint`, `error`, `children`, `testID`. Wrap any custom control or content.                                     |
+| `SettingsSwitch`                   | Row props plus required `value: boolean`, `onValueChange`; optional `disabled`.                                                           |
 | `SettingsSelect`                   | Row props plus required string `value`, `options: { label, value }[]`, `onValueChange`; optional `disabled`. Uses Rambla's adaptive menu. |
-| `SettingsInput`                    | Row props plus required `onChangeText`; optional `initialValue`, `placeholder`, `disabled`, `secureTextEntry`, `ref`.                    |
-| `SettingsAction`                   | Row props plus required `actionLabel`, `onPress`; optional `disabled`.                                                                   |
+| `SettingsInput`                    | Row props plus required `onChangeText`; optional `initialValue`, `placeholder`, `disabled`, `secureTextEntry`, `ref`.                     |
+| `SettingsAction`                   | Row props plus required `actionLabel`, `onPress`; optional `disabled`.                                                                    |
 
 `SettingsInput` owns in-progress text. `initialValue` seeds it when mounted. Its ref exposes
 `focus()`, `blur()`, `getText()`, and `replaceText(text)` for explicit programmatic changes.
@@ -1251,7 +1251,7 @@ Every callback receives:
 | Field                     | Context             | Meaning                                                                                                         |
 | ------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `context`                 | All                 | Matching discriminator.                                                                                         |
-| `rambla`                   | All                 | Selected host's existing `RamblaApi`.                                                                            |
+| `rambla`                  | All                 | Selected host's existing `RamblaApi`.                                                                           |
 | `rpc(contract, input)`    | All                 | Typed call to this installation's daemon-side plugin handler.                                                   |
 | `openSurface(id)`         | All                 | Opens one of this plugin's registered global surfaces.                                                          |
 | `workspace`               | Workspace and agent | Synchronous workspace snapshot.                                                                                 |
@@ -1755,7 +1755,7 @@ Use `rambla plugin ls` to read the current status and error.
 
 | Symptom                                                               | Check                                                                                                                                   |
 | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `This plugin was made for an older version of Rambla`                  | The directory has only an `index.ts` entry. Follow the [migration guide](/docs/plugins/v0.8/migration).                                 |
+| `This plugin was made for an older version of Rambla`                 | The directory has only an `index.ts` entry. Follow the [migration guide](/docs/plugins/v0.8/migration).                                 |
 | `Plugin entry points are missing`                                     | Neither `index.client.tsx` nor `index.server.ts` exists with that exact name.                                                           |
 | `server-only module cannot be imported into the plugin client bundle` | Client code imports `server/`. Move the work behind an RPC and import its contract from `shared/`.                                      |
 | `client-only module cannot be imported into the plugin server bundle` | Server code imports `client/`. Register that contribution from `index.client.tsx` instead.                                              |
@@ -1763,6 +1763,6 @@ Use `rambla plugin ls` to read the current status and error.
 | Sidebar item is missing                                               | The plugin is `running`, the item references an existing surface, the icon name is valid, and the client is on the installation's host. |
 | Client module is unavailable                                          | Import only the host-provided client modules listed above.                                                                              |
 | RPC rejects                                                           | Check both Zod schemas and the daemon-side handler error.                                                                               |
-| Edited code does not appear                                           | Run `npm run typecheck`, then `rambla plugin reload <id>`.                                                                               |
-| Reload fails                                                          | Read `rambla plugin ls` and `rambla plugin logs <id>`, fix the source error, then reload; Rambla does not restore the previous bundle.     |
-| Plugin exits unexpectedly                                             | Read `rambla plugin logs <id>` for retained initialization, cleanup, stderr, and final crash output.                                     |
+| Edited code does not appear                                           | Run `npm run typecheck`, then `rambla plugin reload <id>`.                                                                              |
+| Reload fails                                                          | Read `rambla plugin ls` and `rambla plugin logs <id>`, fix the source error, then reload; Rambla does not restore the previous bundle.  |
+| Plugin exits unexpectedly                                             | Read `rambla plugin logs <id>` for retained initialization, cleanup, stderr, and final crash output.                                    |

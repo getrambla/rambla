@@ -1218,7 +1218,10 @@ export const createWorktree = async ({
   worktreesRoot,
 }: CreateWorktreeOptions): Promise<WorktreeConfig> => {
   const sourcePlan = await resolveWorktreeSourcePlan({ cwd, source, desiredSlug: worktreeSlug });
-  let worktreePath = join(await getRamblaWorktreesRoot(cwd, ramblaHome, worktreesRoot), worktreeSlug);
+  let worktreePath = join(
+    await getRamblaWorktreesRoot(cwd, ramblaHome, worktreesRoot),
+    worktreeSlug,
+  );
   mkdirSync(dirname(worktreePath), { recursive: true });
 
   // Also handle worktree path collision

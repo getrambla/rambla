@@ -28,7 +28,10 @@ describe("plugin manifest", () => {
     const directory = await mkdtemp(path.join(tmpdir(), "rambla-plugin-manifest-"));
     directories.push(directory);
     const manifest = path.join(directory, "rambla-plugin.json");
-    await writeFile(manifest, JSON.stringify({ id: "example", requirements: { rambla: "^0.8.0" } }));
+    await writeFile(
+      manifest,
+      JSON.stringify({ id: "example", requirements: { rambla: "^0.8.0" } }),
+    );
     await expect(readPluginManifest(directory)).resolves.toEqual({
       id: "example",
       requirements: { rambla: "^0.8.0" },

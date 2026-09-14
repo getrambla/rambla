@@ -1131,7 +1131,11 @@ describe("skills controller", () => {
 
     expect(result.confirmationRequired).toBeNull();
     expect(result.selection).toEqual({ mode: "custom", skills: ["rambla"] });
-    expect(await installedEverywhere(harness.targets)).toEqual([["rambla"], ["rambla"], ["rambla"]]);
+    expect(await installedEverywhere(harness.targets)).toEqual([
+      ["rambla"],
+      ["rambla"],
+      ["rambla"],
+    ]);
   });
 
   it("asks again when another directory appears before the retry", async () => {
@@ -1179,7 +1183,11 @@ describe("skills controller", () => {
     const result = await harness.controller.save({ mode: "custom", skills: ["rambla"] });
 
     expect(result.confirmationRequired).toBeNull();
-    expect(await installedEverywhere(harness.targets)).toEqual([["rambla"], ["rambla"], ["rambla"]]);
+    expect(await installedEverywhere(harness.targets)).toEqual([
+      ["rambla"],
+      ["rambla"],
+      ["rambla"],
+    ]);
   });
 
   it("preserves a regular file at a skill path when save convergence fails", async () => {
@@ -1211,7 +1219,11 @@ describe("skills controller", () => {
     ]);
 
     expect(saved.selection).toEqual({ mode: "custom", skills: ["rambla"] });
-    expect(await installedEverywhere(harness.targets)).toEqual([["rambla"], ["rambla"], ["rambla"]]);
+    expect(await installedEverywhere(harness.targets)).toEqual([
+      ["rambla"],
+      ["rambla"],
+      ["rambla"],
+    ]);
     expect(await harness.controller.status()).toEqual({
       state: "up-to-date",
       ops: [],

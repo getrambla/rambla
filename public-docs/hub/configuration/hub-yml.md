@@ -94,7 +94,7 @@ Each agent is one complete provider configuration:
 | ------------------ | -------- | ---------------------------------------------------------------- |
 | `provider`         | yes      | Provider ID.                                                     |
 | `model`            | no       | Provider model ID.                                               |
-| `mode`             | no       | Rambla mode ID.                                                   |
+| `mode`             | no       | Rambla mode ID.                                                  |
 | `thinkingOptionId` | no       | Provider thinking option.                                        |
 | `options`          | no       | JSON-safe provider-native options, preserving names and nesting. |
 
@@ -261,11 +261,11 @@ See [Workflows](/docs/hub/workflows) for complete routing examples.
 
 Self-contained dashboard trigger documents accept `run.continuation`:
 
-| Value                                                    | Behavior                                                                                                                |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `{mode: conversation}`                                   | Default. Reuse the project's agent for the event's conversation; create a new agent when the event has no conversation. |
+| Value                                                     | Behavior                                                                                                                |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `{mode: conversation}`                                    | Default. Reuse the project's agent for the event's conversation; create a new agent when the event has no conversation. |
 | `{mode: key, key: "support-${{ rambla.inputs.ticket }}"}` | Reuse the project's agent for the evaluated custom key.                                                                 |
-| `{mode: new}`                                            | Create a new agent for each arrival.                                                                                    |
+| `{mode: new}`                                             | Create a new agent for each arrival.                                                                                    |
 
 Keys use the existing expression syntax and must resolve to a non-empty string of at most 512 characters. Custom keys and provider conversation identities occupy separate namespaces. The same key in different projects does not share an agent.
 

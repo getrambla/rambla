@@ -346,7 +346,10 @@ describe("agent MCP end-to-end (offline)", () => {
       agentClients: createMcpRecordingAgentClients(disabledRecorder),
       agentStoragePath: path.join(disabledRamblaHome, "agents"),
     };
-    const disabledDaemon = await createRamblaDaemon(disabledDaemonConfig, pino({ level: "silent" }));
+    const disabledDaemon = await createRamblaDaemon(
+      disabledDaemonConfig,
+      pino({ level: "silent" }),
+    );
     await disabledDaemon.start();
 
     const disabledClient = await createMcpClient(`http://127.0.0.1:${disabledPort}/mcp/agents`);

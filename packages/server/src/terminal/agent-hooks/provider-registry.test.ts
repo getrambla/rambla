@@ -62,7 +62,9 @@ describe("terminal agent hook provider registry", () => {
       join(opencodeConfigDir, "plugins", "rambla-terminal-activity.js"),
     ]);
     expect(existsSync(join(codexHome, "hooks.json"))).toBe(true);
-    expect(existsSync(join(opencodeConfigDir, "plugins", "rambla-terminal-activity.js"))).toBe(true);
+    expect(existsSync(join(opencodeConfigDir, "plugins", "rambla-terminal-activity.js"))).toBe(
+      true,
+    );
     expect(logger.entries).toEqual([
       {
         bindings: expect.objectContaining({ err: expect.any(Error), provider: "claude" }),

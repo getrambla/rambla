@@ -338,7 +338,8 @@ export class DaemonConfigStore {
     });
     this.relayEnabledMutable = options.relayEnabledMutable ?? true;
     this.reloadSource = options.reloadSource;
-    this.startupPersisted = options.startupPersisted ?? loadPersistedConfig(ramblaHome, this.logger);
+    this.startupPersisted =
+      options.startupPersisted ?? loadPersistedConfig(ramblaHome, this.logger);
     this.lastKnownPersisted = this.startupPersisted;
   }
 

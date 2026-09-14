@@ -18,7 +18,9 @@ describe("deriveProjectKey", () => {
   });
 
   test("normalizes GitHub casing", () => {
-    expect(derive("git@github.com:GetRambla/Rambla.git")).toBe("remote:github.com/getrambla/rambla");
+    expect(derive("git@github.com:GetRambla/Rambla.git")).toBe(
+      "remote:github.com/getrambla/rambla",
+    );
   });
 
   test("preserves self-hosted paths and explicit ports", () => {

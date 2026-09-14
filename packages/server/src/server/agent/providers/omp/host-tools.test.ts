@@ -2,7 +2,11 @@ import pino from "pino";
 import { describe, expect, test } from "vitest";
 import { z } from "zod";
 
-import type { RamblaToolCatalog, RamblaToolDefinition, RamblaToolResult } from "../../tools/types.js";
+import type {
+  RamblaToolCatalog,
+  RamblaToolDefinition,
+  RamblaToolResult,
+} from "../../tools/types.js";
 import {
   clearOmpHostToolState,
   handleOmpHostToolRuntimeEvent,

@@ -22,15 +22,15 @@ Required configuration:
 
 Common optional configuration:
 
-| Field                   | Type          | Default        | Meaning                                          |
-| ----------------------- | ------------- | -------------- | ------------------------------------------------ |
-| `clientId`              | `string`      | Generated      | Stable identifier for logs and subscriptions.    |
-| `password`              | `string`      | Unset          | Daemon password.                                 |
-| `authHeader`            | `string`      | Unset          | Complete authorization-header value for a proxy. |
-| `connectTimeoutMs`      | `number`      | Client default | Connection deadline.                             |
-| `reconnect.enabled`     | `boolean`     | Client default | Reconnect after an unexpected disconnect.        |
-| `reconnect.baseDelayMs` | `number`      | Client default | Initial reconnect delay.                         |
-| `reconnect.maxDelayMs`  | `number`      | Client default | Maximum reconnect delay.                         |
+| Field                   | Type           | Default        | Meaning                                          |
+| ----------------------- | -------------- | -------------- | ------------------------------------------------ |
+| `clientId`              | `string`       | Generated      | Stable identifier for logs and subscriptions.    |
+| `password`              | `string`       | Unset          | Daemon password.                                 |
+| `authHeader`            | `string`       | Unset          | Complete authorization-header value for a proxy. |
+| `connectTimeoutMs`      | `number`       | Client default | Connection deadline.                             |
+| `reconnect.enabled`     | `boolean`      | Client default | Reconnect after an unexpected disconnect.        |
+| `reconnect.baseDelayMs` | `number`       | Client default | Initial reconnect delay.                         |
+| `reconnect.maxDelayMs`  | `number`       | Client default | Maximum reconnect delay.                         |
 | `logger`                | `RamblaLogger` | Unset          | Debug, info, warning, and error sink.            |
 
 Relay E2EE clients can also pass `e2ee.enabled` and `e2ee.daemonPublicKeyB64`. `appVersion`, `runtimeGeneration`, and runtime-metrics options exist for Rambla client surfaces; ordinary integrations can omit them.
@@ -48,12 +48,12 @@ Create a new client after `close()`.
 
 ## `client.agents`
 
-| Method               | Result                 | Behavior                                                                                                     |
-| -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Method               | Result                  | Behavior                                                                                                     |
+| -------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `list(options?)`     | `RamblaAgentListResult` | Lists a page of agents. `scope`, `filter`, `sort`, `page`, and `subscribe` match the daemon directory query. |
 | `create(options)`    | `RamblaAgentHandle`     | Creates an agent and a fresh workspace for `cwd`. Requires `config`.                                         |
 | `ref(agentOrId)`     | `RamblaAgentHandle`     | Creates a local handle without fetching.                                                                     |
-| `subscribe(handler)` | Unsubscribe function   | Listens for connection-local agent directory updates. Call `list({ subscribe })` first.                      |
+| `subscribe(handler)` | Unsubscribe function    | Listens for connection-local agent directory updates. Call `list({ subscribe })` first.                      |
 
 Creation options include `config`, `cwd`, `parent`, `title`, `prompt`, `env`, `outputSchema`, `images`, `attachments`, `git`, `worktree`, `autoArchive`, and `labels`.
 
@@ -72,31 +72,31 @@ Creation options include `config`, `cwd`, `parent`, `title`, `prompt`, `env`, `o
 
 ### Agent handle
 
-| Member                         | Result                            | Behavior                                                                                                |
-| ------------------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `id`                           | `string`                          | Stable daemon agent ID.                                                                                 |
-| `workspaceId`                  | `string \| null`                  | Current workspace placement.                                                                            |
-| `cwd`                          | `string \| null`                  | Current working directory.                                                                              |
-| `status`                       | Agent status or `null`            | Current lifecycle status.                                                                               |
-| `capabilities`                 | Capability flags or `null`        | What the provider session supports.                                                                     |
-| `availableModes`               | Agent modes or `null`             | Modes the session can switch to.                                                                        |
-| `pendingPermissions`           | Permission requests or `null`     | Requests waiting on an answer.                                                                          |
-| `activeTurn`                   | Active turn or `null`             | The turn in flight, with `turnId` and `startedAt`.                                                      |
-| `lastUsage`                    | Usage or `null`                   | Token counts, cost, and context-window use from the last turn.                                          |
-| `lastError`                    | `string \| null`                  | Last error the daemon recorded for the agent.                                                           |
-| `features`                     | Agent features or `null`          | Provider feature toggles and selects with their current values.                                         |
-| `runtimeInfo`                  | Runtime info or `null`            | Live provider, session ID, model, thinking option, and mode.                                            |
-| `archivedAt`                   | `string \| null`                  | Archive timestamp; `null` while the agent is active.                                                    |
+| Member                         | Result                             | Behavior                                                                                                |
+| ------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `id`                           | `string`                           | Stable daemon agent ID.                                                                                 |
+| `workspaceId`                  | `string \| null`                   | Current workspace placement.                                                                            |
+| `cwd`                          | `string \| null`                   | Current working directory.                                                                              |
+| `status`                       | Agent status or `null`             | Current lifecycle status.                                                                               |
+| `capabilities`                 | Capability flags or `null`         | What the provider session supports.                                                                     |
+| `availableModes`               | Agent modes or `null`              | Modes the session can switch to.                                                                        |
+| `pendingPermissions`           | Permission requests or `null`      | Requests waiting on an answer.                                                                          |
+| `activeTurn`                   | Active turn or `null`              | The turn in flight, with `turnId` and `startedAt`.                                                      |
+| `lastUsage`                    | Usage or `null`                    | Token counts, cost, and context-window use from the last turn.                                          |
+| `lastError`                    | `string \| null`                   | Last error the daemon recorded for the agent.                                                           |
+| `features`                     | Agent features or `null`           | Provider feature toggles and selects with their current values.                                         |
+| `runtimeInfo`                  | Runtime info or `null`             | Live provider, session ID, model, thinking option, and mode.                                            |
+| `archivedAt`                   | `string \| null`                   | Archive timestamp; `null` while the agent is active.                                                    |
 | `current()`                    | `RamblaAgent \| null`              | Current detailed value observed by this handle; never fetches.                                          |
 | `refresh(requestId?)`          | `RamblaAgentRefetchResult \| null` | Fetches the current agent and project placement.                                                        |
-| `send(text, options?)`         | `Promise<void>`                   | Resolves when the daemon accepts the prompt.                                                            |
-| `respondToPermission(options)` | `Promise<void>`                   | Answers a pending permission by `requestId` with an allow or deny `response`.                           |
+| `send(text, options?)`         | `Promise<void>`                    | Resolves when the daemon accepts the prompt.                                                            |
+| `respondToPermission(options)` | `Promise<void>`                    | Answers a pending permission by `requestId` with an allow or deny `response`.                           |
 | `run(text, options?)`          | `RamblaAgentRunResult`             | Sends a prompt and waits for that turn. `timeoutMs` controls the wait; it defaults to 10 minutes.       |
 | `waitForFinish(timeoutMs?)`    | `RamblaAgentRunResult`             | Waits for the active turn, including an initial prompt. Default timeout: 10 minutes.                    |
 | `commands(options?)`           | `RamblaAgentCommandsResult`        | Asks the live session for its slash commands and skills, including built-in ones. Options: `requestId`. |
-| `subscribe(handler)`           | Unsubscribe function              | Filters agent-directory updates to this ID and refreshes the handle properties.                         |
-| `archive()`                    | `{ archivedAt }`                  | Soft-deletes the agent and closes its runtime.                                                          |
-| `detach()`                     | `Promise<void>`                   | Removes the parent relationship without stopping the agent.                                             |
+| `subscribe(handler)`           | Unsubscribe function               | Filters agent-directory updates to this ID and refreshes the handle properties.                         |
+| `archive()`                    | `{ archivedAt }`                   | Soft-deletes the agent and closes its runtime.                                                          |
+| `detach()`                     | `Promise<void>`                    | Removes the parent relationship without stopping the agent.                                             |
 
 `workspaceId` through `archivedAt` mirror the last snapshot the handle observed. A handle from `ref()` reads `null` for all of them until `refresh()`, `run()`, `waitForFinish()`, a timeline refetch, or `subscribe()` delivers a snapshot. Optional values in an observed snapshot also read as `null`. Call `current()` when you need the whole snapshot or need to distinguish those states.
 
@@ -112,23 +112,23 @@ Creation options include `config`, `cwd`, `parent`, `title`, `prompt`, `env`, `o
 
 ## `client.projects`
 
-| Method               | Result                   | Behavior                                                                                |
-| -------------------- | ------------------------ | --------------------------------------------------------------------------------------- |
+| Method               | Result                    | Behavior                                                                                |
+| -------------------- | ------------------------- | --------------------------------------------------------------------------------------- |
 | `list(options?)`     | `RamblaProjectListResult` | Lists every registered project, including projects with no active workspaces.           |
-| `subscribe(handler)` | Unsubscribe function     | Listens only for future project upserts/removals. Pair with `list()` for initial state. |
+| `subscribe(handler)` | Unsubscribe function      | Listens only for future project upserts/removals. Pair with `list()` for initial state. |
 
 To build a complete project cache without an initialization gap, subscribe and buffer updates before awaiting `list()`. Initialize the cache from the list result, then apply buffered updates in arrival order.
 
 ## `client.workspaces`
 
-| Method                   | Result                        | Behavior                                                                          |
-| ------------------------ | ----------------------------- | --------------------------------------------------------------------------------- |
+| Method                   | Result                         | Behavior                                                                          |
+| ------------------------ | ------------------------------ | --------------------------------------------------------------------------------- |
 | `list(options?)`         | `RamblaWorkspaceListResult`    | Lists, filters, pages, or subscribes to the workspace directory.                  |
 | `open(cwd)`              | `RamblaWorkspaceHandle`        | Reuses the active workspace for a directory or creates one.                       |
-| `create(options)`        | `RamblaWorkspaceHandle`        | Always creates a fresh directory-backed or Rambla-worktree workspace.              |
+| `create(options)`        | `RamblaWorkspaceHandle`        | Always creates a fresh directory-backed or Rambla-worktree workspace.             |
 | `ref(workspaceOrId)`     | `RamblaWorkspaceHandle`        | Creates a local handle.                                                           |
 | `archive(workspaceOrId)` | `RamblaWorkspaceArchiveResult` | Archives without first creating a handle.                                         |
-| `subscribe(handler)`     | Unsubscribe function          | Listens for connection-local workspace updates. Call `list({ subscribe })` first. |
+| `subscribe(handler)`     | Unsubscribe function           | Listens for connection-local workspace updates. Call `list({ subscribe })` first. |
 
 A workspace handle exposes `id`, `projectId`, `directory`, `name`, `status`, `current()`, `refresh()`, `setTitle(title)`, `archive()`, and `subscribe()`. Pass `null` to `setTitle` to restore the derived workspace name. Use `workspace.agents.create(options)` to create an agent without repeating the workspace ID or directory.
 
@@ -136,8 +136,8 @@ A workspace handle exposes `id`, `projectId`, `directory`, `name`, `status`, `cu
 
 Terminal operations require a host that supports workspace terminals. An older host receives no terminal request; the SDK throws an update-host error.
 
-| Method              | Result                             | Behavior                                                                           |
-| ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------- |
+| Method              | Result                              | Behavior                                                                           |
+| ------------------- | ----------------------------------- | ---------------------------------------------------------------------------------- |
 | `create(options)`   | `Promise<RamblaTerminalHandle>`     | Creates a terminal owned by the required `workspaceId`.                            |
 | `list(options?)`    | `Promise<RamblaTerminalListResult>` | Returns `{ entries, requestId }`. Omit filters to list all terminals on this host. |
 | `ref(terminalOrId)` | `RamblaTerminalHandle`              | Creates a local handle without fetching or attaching a terminal stream.            |
@@ -157,14 +157,14 @@ List options are `workspaceId`, `cwd`, and `requestId`. `workspaceId` selects ow
 
 Terminal handles expose:
 
-| Method              | Result                                | Behavior                                                                                         |
-| ------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Method              | Result                                 | Behavior                                                                                         |
+| ------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `current()`         | `RamblaTerminal \| null`               | Last snapshot from creation, `ref(snapshot)`, or refresh. A handle made from an ID starts empty. |
 | `refresh(options?)` | `Promise<RamblaTerminal \| null>`      | Fetches the terminal snapshot, or `null` when it no longer exists. Accepts `requestId`.          |
-| `write(data)`       | `number`                              | Sends literal text without interpreting key names. Returns the input's UTF-16 length.            |
-| `sendKeys(keys)`    | `number`                              | Expands key tokens and sends the combined input. Returns its UTF-16 length.                      |
+| `write(data)`       | `number`                               | Sends literal text without interpreting key names. Returns the input's UTF-16 length.            |
+| `sendKeys(keys)`    | `number`                               | Expands key tokens and sends the combined input. Returns its UTF-16 length.                      |
 | `capture(options?)` | `Promise<RamblaTerminalCaptureResult>` | Returns `{ terminalId, lines, totalLines, requestId }`.                                          |
-| `kill(requestId?)`  | `Promise<void>`                       | Waits for terminal teardown. Killing an already-removed terminal succeeds.                       |
+| `kill(requestId?)`  | `Promise<void>`                        | Waits for terminal teardown. Killing an already-removed terminal succeeds.                       |
 
 `sendKeys()` recognizes `Enter`, `Tab`, `Escape`, `Space`, `BSpace`, `C-c`, `C-d`, `C-z`, `C-l`, `C-a`, and `C-e`. Other strings pass through literally. Input methods send without waiting for command execution or acknowledging that the terminal consumed the input.
 
@@ -174,18 +174,18 @@ Use `workspace.terminals.create(options?)` and `workspace.terminals.list(options
 
 ## `client.providers`
 
-| Method                           | Result                        | Behavior                                                                                                                                                 |
-| -------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Method                           | Result                         | Behavior                                                                                                                                                 |
+| -------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `waitForReady(options?)`         | `RamblaProviderSnapshotResult` | Waits until no provider is loading. Default timeout: 60 seconds. Rejects with an update-host error when the daemon cannot correlate workspace snapshots. |
 | `snapshot(options?)`             | `RamblaProviderSnapshotResult` | Returns the current catalog immediately.                                                                                                                 |
-| `refresh(options?)`              | Acknowledgement               | Forces catalog refresh for all or selected providers.                                                                                                    |
-| `listAvailable()`                | Availability result           | Reports installed provider availability.                                                                                                                 |
-| `listModels(provider, options?)` | Models result                 | Discovers models for one provider and directory.                                                                                                         |
-| `listModes(provider, options?)`  | Modes result                  | Discovers permission or operating modes.                                                                                                                 |
-| `listFeatures(draftConfig)`      | Features result               | Discovers features for the current draft provider configuration.                                                                                         |
-| `diagnostic(provider)`           | Diagnostic result             | Returns human-readable setup diagnostics.                                                                                                                |
+| `refresh(options?)`              | Acknowledgement                | Forces catalog refresh for all or selected providers.                                                                                                    |
+| `listAvailable()`                | Availability result            | Reports installed provider availability.                                                                                                                 |
+| `listModels(provider, options?)` | Models result                  | Discovers models for one provider and directory.                                                                                                         |
+| `listModes(provider, options?)`  | Modes result                   | Discovers permission or operating modes.                                                                                                                 |
+| `listFeatures(draftConfig)`      | Features result                | Discovers features for the current draft provider configuration.                                                                                         |
+| `diagnostic(provider)`           | Diagnostic result              | Returns human-readable setup diagnostics.                                                                                                                |
 | `listUsage(options?)`            | `RamblaProviderUsageResult`    | Returns normalized subscription windows, balances, and provider details. Rejects with an update-host error when unsupported. Options: `requestId`.       |
-| `subscribe(handler)`             | Unsubscribe function          | Listens for catalog updates.                                                                                                                             |
+| `subscribe(handler)`             | Unsubscribe function           | Listens for catalog updates.                                                                                                                             |
 
 ## `client.config`
 

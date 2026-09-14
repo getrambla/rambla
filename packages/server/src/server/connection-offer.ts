@@ -1,6 +1,9 @@
 import os from "node:os";
 
-import { ConnectionOfferV2Schema, type ConnectionOffer } from "@getrambla/protocol/connection-offer";
+import {
+  ConnectionOfferV2Schema,
+  type ConnectionOffer,
+} from "@getrambla/protocol/connection-offer";
 
 interface BuildOfferEndpointsArgs {
   listenHost: string;

@@ -26,7 +26,10 @@ test("agent fetch RPCs tolerate an agent whose workspace project record is gone"
   let client: DaemonClient | null = null;
 
   try {
-    daemon = await createTestRamblaDaemon({ ramblaHomeRoot: fixture.ramblaHomeRoot, cleanup: false });
+    daemon = await createTestRamblaDaemon({
+      ramblaHomeRoot: fixture.ramblaHomeRoot,
+      cleanup: false,
+    });
     client = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
     await client.connect();
 

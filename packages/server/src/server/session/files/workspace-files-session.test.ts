@@ -593,8 +593,8 @@ describe("WorkspaceFilesSession", () => {
     }
     expect(message.payload.error).toBeNull();
     expect(message.payload.file?.fileName).toBe("notes.txt");
-    expect(readFileSync(join(ramblaHome, "uploads", "upload_req-upload", "notes.txt"), "utf8")).toBe(
-      "hello world",
-    );
+    expect(
+      readFileSync(join(ramblaHome, "uploads", "upload_req-upload", "notes.txt"), "utf8"),
+    ).toBe("hello world");
   });
 });

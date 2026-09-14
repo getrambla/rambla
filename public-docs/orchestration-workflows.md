@@ -91,7 +91,7 @@ The agent resumes the task on that cadence. For a fresh agent on each run, [crea
 
 Open the **Subagents track** near the composer to inspect delegated work.
 
-|              | Rambla subagents                                | Native provider subagents                      |
+|              | Rambla subagents                               | Native provider subagents                      |
 | ------------ | ---------------------------------------------- | ---------------------------------------------- |
 | Provider     | Any configured provider                        | Chosen within the parent provider's own system |
 | Workspace    | Current or explicitly selected workspace       | Managed by the provider                        |

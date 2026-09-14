@@ -6,7 +6,10 @@ import type {
   TerminalStateSnapshotOptions,
 } from "./terminal.js";
 import type { TerminalState } from "@getrambla/protocol/messages";
-import type { TerminalActivity, TerminalActivityState } from "@getrambla/protocol/terminal-activity";
+import type {
+  TerminalActivity,
+  TerminalActivityState,
+} from "@getrambla/protocol/terminal-activity";
 import type { CaptureTerminalLinesResult } from "./terminal-capture.js";
 
 export interface WorkerTerminalInfo {

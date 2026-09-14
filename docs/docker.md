@@ -113,18 +113,18 @@ or `compose.environment`; Rambla passes them to launched agents.
 
 ## Volumes
 
-| Mount         | Purpose                                                                  |
-| ------------- | ------------------------------------------------------------------------ |
+| Mount          | Purpose                                                                    |
+| -------------- | -------------------------------------------------------------------------- |
 | `/home/rambla` | Rambla state under `.rambla` plus agent config such as `.codex`, `.claude` |
-| `/workspace`  | Code that Rambla and launched agents can read and write                   |
+| `/workspace`   | Code that Rambla and launched agents can read and write                    |
 
 The image defaults:
 
-| Variable       | Default               |
-| -------------- | --------------------- |
-| `HOME`         | `/home/rambla`         |
+| Variable        | Default                |
+| --------------- | ---------------------- |
+| `HOME`          | `/home/rambla`         |
 | `RAMBLA_HOME`   | `/home/rambla/.rambla` |
-| `RAMBLA_LISTEN` | `0.0.0.0:6767`        |
+| `RAMBLA_LISTEN` | `0.0.0.0:6767`         |
 
 If you bind-mount host directories on Linux, make sure the container user can
 write them. The built-in `rambla` user has uid/gid `1000:1000`. For a different
