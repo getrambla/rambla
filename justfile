@@ -177,8 +177,7 @@ install-service: systemctl-reload && restart
     [Service]
     Type=simple
     WorkingDirectory={{justfile_dir()}}
-    Environment=RAMBLA_RELAY_ENABLED="false"
-    ExecStart={{justfile_dir()}}/packages/cli/bin/rambla start --foreground
+    ExecStart={{justfile_dir()}}/packages/cli/bin/rambla daemon run
     Restart=always
     RestartSec=5
 
