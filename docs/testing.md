@@ -119,8 +119,8 @@ Pull-request CI runs the Linux x64 smoke under Xvfb when the cumulative PR diff 
 To exercise the smoke locally on Linux:
 
 ```bash
-PASEO_DESKTOP_SMOKE=1 \
-PASEO_DESKTOP_SMOKE_ARTIFACT_DIR=/tmp/paseo-desktop-smoke \
+RAMBLA_DESKTOP_SMOKE=1 \
+RAMBLA_DESKTOP_SMOKE_ARTIFACT_DIR=/tmp/paseo-desktop-smoke \
 npm run build:desktop -- --publish never --linux --x64 --dir
 ```
 
@@ -172,7 +172,7 @@ Codex MultiAgentV2 real tests use local Codex authentication rather than the Ope
 
 ### Test setup
 
-- Server: `packages/server/src/test-utils/vitest-setup.ts` loads `.env.test`, sets `PASEO_SUPERVISED=0`, and disables Git/SSH prompts. Add new global env shims here, not in individual tests.
+- Server: `packages/server/src/test-utils/vitest-setup.ts` loads `.env.test`, sets `RAMBLA_SUPERVISED=0`, and disables Git/SSH prompts. Add new global env shims here, not in individual tests.
 - App: `packages/app/vitest.setup.ts` provides `expo`/`__DEV__` shims and stubs a few native-only modules (`react-native-unistyles`, `react-native-svg`, `expo-linking`, `@xterm/addon-ligatures`). Stubbing here is for modules that have no meaningful Node behavior — not a license to mock app code.
 
 ## Running tests locally
@@ -185,7 +185,7 @@ Test suites in this repo are heavy. Running them in bulk freezes the machine, es
 - Never re-run a suite another agent already reported green.
 - For full-suite confidence, push to CI and check GitHub Actions.
 - Never run the full Playwright E2E suite locally — defer whole-suite verification to CI. Targeted Playwright specs are allowed when you changed or need to prove that specific flow.
-- App Playwright shares one warmed Metro server per run and gives every Playwright worker its own isolated daemon and `PASEO_HOME`. Spec files run concurrently without exposing one file's projects, agents, terminals, history, or provider configuration to another worker; tests within a file remain together so file-level setup is not repeated.
+- App Playwright shares one warmed Metro server per run and gives every Playwright worker its own isolated daemon and `RAMBLA_HOME`. Spec files run concurrently without exposing one file's projects, agents, terminals, history, or provider configuration to another worker; tests within a file remain together so file-level setup is not repeated.
 - Playwright specs that exercise only the daemon import `daemonTest` from the shared fixtures so they do not create a browser context or page.
 - Helpers that create projects or workspaces own those records until cleanup. Their clients remove the daemon project on close, and an automatic fixture fails any test that still leaks a project record. Deleting only the temporary directory is not cleanup. Agent helpers pass the intended `workspaceId` through to agent creation; they never infer ownership from `cwd`.
 - Tests whose subject is daemon-global state, such as an empty history or daemon restart, start a dedicated host explicitly. Filenames and directories describe product behavior, never execution order or isolation mechanics.

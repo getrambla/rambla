@@ -65,8 +65,8 @@ describe("parseScheduleCreateInput cwd/host validation", () => {
     );
   });
 
-  test("PASEO_HOST without cwd → throws MISSING_CWD", () => {
-    vi.stubEnv("PASEO_HOST", "dev:6767");
+  test("RAMBLA_HOST without cwd → throws MISSING_CWD", () => {
+    vi.stubEnv("RAMBLA_HOST", "dev:6767");
 
     expect(() => parseScheduleCreateInput(baseOptions)).toThrow(
       expect.objectContaining({

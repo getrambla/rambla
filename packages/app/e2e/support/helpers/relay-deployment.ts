@@ -52,7 +52,7 @@ export async function connectDaemonWebAppOnlyThroughRelay(
     const html = await response.text();
     await route.fulfill({
       response,
-      body: html.replace(/<script>window\.__PASEO_INITIAL_DAEMON_CONNECTION__=.*?<\/script>/, ""),
+      body: html.replace(/<script>window\.__RAMBLA_INITIAL_DAEMON_CONNECTION__=.*?<\/script>/, ""),
     });
   });
   await page.addInitScript(

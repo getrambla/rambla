@@ -16,7 +16,7 @@ import type { TerminalActivity, TerminalActivityState } from "@getpaseo/protocol
 
 const { Terminal } = xterm;
 const require = createRequire(import.meta.url);
-const PASEO_CLI_BIN_ENTRY = "@getpaseo/cli/bin/rambla";
+const RAMBLA_CLI_BIN_ENTRY = "@getpaseo/cli/bin/rambla";
 let nodePtySpawnHelperChecked = false;
 const TERMINAL_TITLE_DEBOUNCE_MS = 150;
 const TERMINAL_EXIT_OUTPUT_LINE_LIMIT = 12;
@@ -399,7 +399,7 @@ export function resolvePaseoCliBinDir(): string | null {
 }
 
 export function resolvePaseoCliExecutablePath(): string | null {
-  const configuredCli = process.env.PASEO_CLI?.trim();
+  const configuredCli = process.env.RAMBLA_CLI?.trim();
   if (configuredCli) {
     return resolvePath(configuredCli);
   }
@@ -423,7 +423,7 @@ export function resolvePaseoCliExecutablePath(): string | null {
 
 function resolvePaseoCliBinEntrypoint(): string | null {
   try {
-    return require.resolve(PASEO_CLI_BIN_ENTRY);
+    return require.resolve(RAMBLA_CLI_BIN_ENTRY);
   } catch {
     return null;
   }
@@ -512,7 +512,7 @@ export function buildTerminalEnvironment(
   const originalZdotdir = envWithHookCli.ZDOTDIR ?? "";
   return {
     ...envWithHookCli,
-    PASEO_ZSH_ZDOTDIR: originalZdotdir,
+    RAMBLA_ZSH_ZDOTDIR: originalZdotdir,
     ZDOTDIR: prepareZshShellIntegrationRuntimeDir(input.zshShellIntegrationDir),
   };
 }
@@ -527,7 +527,7 @@ function injectPaseoHookCli(
 
   return {
     ...env,
-    PASEO_HOOK_CLI: resolvePath(resolveExternalProcessPath(cliPath)),
+    RAMBLA_HOOK_CLI: resolvePath(resolveExternalProcessPath(cliPath)),
   };
 }
 
@@ -951,7 +951,7 @@ export async function createTerminal(options: CreateTerminalOptions): Promise<Te
       env: {
         ...env,
         ...activityEnv,
-        PASEO_WORKSPACE_ID: workspaceId,
+        RAMBLA_WORKSPACE_ID: workspaceId,
       },
     }),
   });

@@ -338,7 +338,7 @@ describe("Hub commands", () => {
       {
         code: "HUB_API_KEY_REQUIRED",
         message:
-          "No stored Hub login matches https://hub.rambla.sh. Run `paseo hub login https://hub.rambla.sh`, pass --api-key <secret>, or set PASEO_HUB_API_KEY.",
+          "No stored Hub login matches https://hub.rambla.sh. Run `paseo hub login https://hub.rambla.sh`, pass --api-key <secret>, or set RAMBLA_HUB_API_KEY.",
       },
     );
 
@@ -356,7 +356,7 @@ describe("Hub commands", () => {
     const result = await runHubProjects(
       { hub: "https://explicit.test", apiKey: "explicit-secret", json: true },
       {
-        env: { PASEO_HUB_URL: "https://env.test", PASEO_HUB_API_KEY: "env-secret" },
+        env: { RAMBLA_HUB_URL: "https://env.test", RAMBLA_HUB_API_KEY: "env-secret" },
         credentials,
         hub: {
           listProjects: async (origin, credential) => {

@@ -4,7 +4,7 @@ export interface AgentWorkingDirectorySource {
   lastActivityAt?: Date | null;
 }
 
-const PASEO_WORKTREE_PATH_PATTERN = /(^|\/)\.rambla\/worktrees(\/|$)/;
+const RAMBLA_WORKTREE_PATH_PATTERN = /(^|\/)\.rambla\/worktrees(\/|$)/;
 
 export function collectAgentWorkingDirectorySuggestions(
   sources: Iterable<AgentWorkingDirectorySource>,
@@ -39,7 +39,7 @@ export function collectAgentWorkingDirectorySuggestions(
 }
 
 function isPaseoOwnedWorktreePath(cwd: string): boolean {
-  return PASEO_WORKTREE_PATH_PATTERN.test(cwd.replace(/\\/g, "/"));
+  return RAMBLA_WORKTREE_PATH_PATTERN.test(cwd.replace(/\\/g, "/"));
 }
 
 function toEpochMs(date: Date | null | undefined): number {

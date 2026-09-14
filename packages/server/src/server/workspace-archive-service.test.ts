@@ -226,7 +226,7 @@ describe("archiveByScope", () => {
       JSON.stringify({
         worktree: {
           teardown: [
-            "node -e \"require('fs').writeFileSync(process.env.PASEO_SOURCE_CHECKOUT_PATH + '/shared-teardown.log', 'ok')\"",
+            "node -e \"require('fs').writeFileSync(process.env.RAMBLA_SOURCE_CHECKOUT_PATH + '/shared-teardown.log', 'ok')\"",
           ],
         },
       }),
@@ -407,7 +407,7 @@ describe("archiveByScope", () => {
       JSON.stringify({
         worktree: {
           teardown: [
-            "node -e \"require('fs').writeFileSync(process.env.PASEO_SOURCE_CHECKOUT_PATH + '/nested-teardown.log', process.cwd())\"",
+            "node -e \"require('fs').writeFileSync(process.env.RAMBLA_SOURCE_CHECKOUT_PATH + '/nested-teardown.log', process.cwd())\"",
           ],
         },
       }),
@@ -464,7 +464,7 @@ describe("archiveByScope", () => {
       JSON.stringify({
         worktree: {
           teardown: [
-            "node -e \"const fs=require('fs');const out=process.env.PASEO_SOURCE_CHECKOUT_PATH+'/root-scope-teardown.log';if(fs.existsSync(out))process.exit(2);fs.writeFileSync(out,'ok')\"",
+            "node -e \"const fs=require('fs');const out=process.env.RAMBLA_SOURCE_CHECKOUT_PATH+'/root-scope-teardown.log';if(fs.existsSync(out))process.exit(2);fs.writeFileSync(out,'ok')\"",
           ],
         },
       }),
@@ -474,7 +474,7 @@ describe("archiveByScope", () => {
       JSON.stringify({
         worktree: {
           teardown: [
-            "node -e \"require('fs').writeFileSync(process.env.PASEO_SOURCE_CHECKOUT_PATH+'/nested-scope-teardown.log','ok')\"",
+            "node -e \"require('fs').writeFileSync(process.env.RAMBLA_SOURCE_CHECKOUT_PATH+'/nested-scope-teardown.log','ok')\"",
           ],
         },
       }),

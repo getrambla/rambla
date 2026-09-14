@@ -12,7 +12,7 @@ import type { TerminalStreamEvent } from "@getpaseo/client/internal/terminal-str
 import { DaemonClient } from "../test-utils/daemon-client.js";
 import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
 
-const BYTE_DONE_MARKER = "__PASEO_BYTE_PACKAGE_LOCK_DONE__";
+const BYTE_DONE_MARKER = "__RAMBLA_BYTE_PACKAGE_LOCK_DONE__";
 const BYTE_TEST_SIZE = { rows: 24, cols: 100 };
 
 interface PackageLockTerminalCwd {

@@ -214,7 +214,7 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         run: npm run test:e2e:browser-tabs --workspace=@getpaseo/desktop
         env:
-          PASEO_DESKTOP_BROWSER_E2E_ARTIFACT_DIR: ${{ runner.temp }}/desktop-browser-e2e
+          RAMBLA_DESKTOP_BROWSER_E2E_ARTIFACT_DIR: ${{ runner.temp }}/desktop-browser-e2e
 
       - name: Upload desktop browser diagnostics
         uses: actions/upload-artifact@v4
@@ -230,8 +230,8 @@ jobs:
         run: npm run build:desktop -- --publish never --linux --x64 --dir
         env:
           EP_GH_IGNORE_TIME: true
-          PASEO_DESKTOP_SMOKE: "1"
-          PASEO_DESKTOP_SMOKE_ARTIFACT_DIR: ${{ runner.temp }}/desktop-smoke
+          RAMBLA_DESKTOP_SMOKE: "1"
+          RAMBLA_DESKTOP_SMOKE_ARTIFACT_DIR: ${{ runner.temp }}/desktop-smoke
 
       - name: Upload packaged smoke diagnostics
         uses: actions/upload-artifact@v4
@@ -423,11 +423,11 @@ jobs:
     if: ${{ !cancelled() && (needs.changes.outputs.full != 'false' || needs.changes.outputs.cli != 'false') }}
     runs-on: ubuntu-latest
     env:
-      PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD: "0"
-      PASEO_DICTATION_ENABLED: "0"
-      PASEO_VOICE_MODE_ENABLED: "0"
-      PASEO_CLI_TEST_SHARD: "1"
-      PASEO_CLI_TEST_SHARD_TOTAL: "3"
+      RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD: "0"
+      RAMBLA_DICTATION_ENABLED: "0"
+      RAMBLA_VOICE_MODE_ENABLED: "0"
+      RAMBLA_CLI_TEST_SHARD: "1"
+      RAMBLA_CLI_TEST_SHARD_TOTAL: "3"
     steps: &cli_test_steps
       - uses: actions/checkout@v4
 
@@ -454,11 +454,11 @@ jobs:
     if: ${{ !cancelled() && (needs.changes.outputs.full != 'false' || needs.changes.outputs.cli != 'false') }}
     runs-on: ubuntu-latest
     env:
-      PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD: "0"
-      PASEO_DICTATION_ENABLED: "0"
-      PASEO_VOICE_MODE_ENABLED: "0"
-      PASEO_CLI_TEST_SHARD: "2"
-      PASEO_CLI_TEST_SHARD_TOTAL: "3"
+      RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD: "0"
+      RAMBLA_DICTATION_ENABLED: "0"
+      RAMBLA_VOICE_MODE_ENABLED: "0"
+      RAMBLA_CLI_TEST_SHARD: "2"
+      RAMBLA_CLI_TEST_SHARD_TOTAL: "3"
     steps: *cli_test_steps
 
   cli-tests-3:
@@ -467,9 +467,9 @@ jobs:
     if: ${{ !cancelled() && (needs.changes.outputs.full != 'false' || needs.changes.outputs.cli != 'false') }}
     runs-on: ubuntu-latest
     env:
-      PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD: "0"
-      PASEO_DICTATION_ENABLED: "0"
-      PASEO_VOICE_MODE_ENABLED: "0"
-      PASEO_CLI_TEST_SHARD: "3"
-      PASEO_CLI_TEST_SHARD_TOTAL: "3"
+      RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD: "0"
+      RAMBLA_DICTATION_ENABLED: "0"
+      RAMBLA_VOICE_MODE_ENABLED: "0"
+      RAMBLA_CLI_TEST_SHARD: "3"
+      RAMBLA_CLI_TEST_SHARD_TOTAL: "3"
     steps: *cli_test_steps

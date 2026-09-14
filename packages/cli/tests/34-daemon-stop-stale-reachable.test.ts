@@ -18,9 +18,9 @@ $.verbose = false;
 
 const pollIntervalMs = 100;
 const testEnv = {
-  PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD: process.env.PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD ?? "0",
-  PASEO_DICTATION_ENABLED: process.env.PASEO_DICTATION_ENABLED ?? "0",
-  PASEO_VOICE_MODE_ENABLED: process.env.PASEO_VOICE_MODE_ENABLED ?? "0",
+  RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD: process.env.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD ?? "0",
+  RAMBLA_DICTATION_ENABLED: process.env.RAMBLA_DICTATION_ENABLED ?? "0",
+  RAMBLA_VOICE_MODE_ENABLED: process.env.RAMBLA_VOICE_MODE_ENABLED ?? "0",
 };
 
 function sleep(ms: number): Promise<void> {
@@ -65,7 +65,7 @@ interface DaemonStatus {
 
 async function readDaemonStatus(paseoHome: string): Promise<DaemonStatus> {
   const result =
-    await $`PASEO_HOME=${paseoHome} PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD} PASEO_DICTATION_ENABLED=${testEnv.PASEO_DICTATION_ENABLED} PASEO_VOICE_MODE_ENABLED=${testEnv.PASEO_VOICE_MODE_ENABLED} npx paseo daemon status --home ${paseoHome} --json`.nothrow();
+    await $`RAMBLA_HOME=${paseoHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx paseo daemon status --home ${paseoHome} --json`.nothrow();
   if (result.exitCode !== 0) {
     return { localDaemon: null, connectedDaemon: null, pid: null };
   }
@@ -135,9 +135,9 @@ try {
       env: {
         ...process.env,
         ...testEnv,
-        PASEO_HOME: paseoHome,
-        PASEO_LISTEN: host,
-        PASEO_RELAY_ENABLED: "false",
+        RAMBLA_HOME: paseoHome,
+        RAMBLA_LISTEN: host,
+        RAMBLA_RELAY_ENABLED: "false",
         CI: "true",
       },
       stdio: ["ignore", "pipe", "pipe"],
@@ -162,7 +162,7 @@ try {
     "Test 2: `paseo daemon stop` should stop reachable worker instead of saying not_running",
   );
   const stopResult =
-    await $`PASEO_HOME=${paseoHome} PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD} PASEO_DICTATION_ENABLED=${testEnv.PASEO_DICTATION_ENABLED} PASEO_VOICE_MODE_ENABLED=${testEnv.PASEO_VOICE_MODE_ENABLED} npx paseo daemon stop --home ${paseoHome} --json`.nothrow();
+    await $`RAMBLA_HOME=${paseoHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx paseo daemon stop --home ${paseoHome} --json`.nothrow();
   assert.strictEqual(stopResult.exitCode, 0, `stop should succeed: ${stopResult.stderr}`);
   const stopJson = JSON.parse(stopResult.stdout) as {
     action?: unknown;
@@ -200,7 +200,7 @@ try {
     });
   }
 
-  await $`PASEO_HOME=${paseoHome} PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD} PASEO_DICTATION_ENABLED=${testEnv.PASEO_DICTATION_ENABLED} PASEO_VOICE_MODE_ENABLED=${testEnv.PASEO_VOICE_MODE_ENABLED} npx paseo daemon stop --home ${paseoHome} --force`.nothrow();
+  await $`RAMBLA_HOME=${paseoHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx paseo daemon stop --home ${paseoHome} --force`.nothrow();
   await rm(paseoHome, { recursive: true, force: true });
 }
 

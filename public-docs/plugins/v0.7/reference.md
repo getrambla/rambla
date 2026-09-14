@@ -865,7 +865,7 @@ sequence, and message.
 Paseo retains up to 500 entries and 256 KiB per plugin in memory. Individual lines are capped at
 16 KiB. Reload, disable, compilation failure, initialization failure, and process failure retain the
 tail. Removing the plugin clears it, and a daemon restart starts a new tail. Structured copies are
-also written to the daemon log at `$PASEO_HOME/daemon.log`.
+also written to the daemon log at `$RAMBLA_HOME/daemon.log`.
 
 Only daemon-side output is captured. Logs from client surfaces remain in the app runtime. Do not log
 credentials, access tokens, or other secrets: connected users can read the retained tail, and the

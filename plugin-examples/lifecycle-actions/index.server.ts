@@ -60,7 +60,7 @@ export default function contribute(server: PluginServerContext) {
       ...request,
       env: {
         ...request.env,
-        PASEO_HOOK_CREATE_EXAMPLE: "created",
+        RAMBLA_HOOK_CREATE_EXAMPLE: "created",
       },
     };
   });
@@ -86,7 +86,7 @@ export default function contribute(server: PluginServerContext) {
       ...request,
       env: {
         ...request.env,
-        PASEO_HOOK_OPEN_EXAMPLE: "opened",
+        RAMBLA_HOOK_OPEN_EXAMPLE: "opened",
       },
     };
   });

@@ -123,7 +123,7 @@ function envWithHome(home?: string): NodeJS.ProcessEnv {
     return process.env;
   }
 
-  return { ...process.env, PASEO_HOME: home };
+  return { ...process.env, RAMBLA_HOME: home };
 }
 
 function buildRunnerArgs(options: DaemonStartOptions): string[] {
@@ -157,24 +157,24 @@ function buildRunnerArgs(options: DaemonStartOptions): string[] {
 function buildChildEnv(options: DaemonStartOptions): NodeJS.ProcessEnv {
   const childEnv: NodeJS.ProcessEnv = { ...process.env };
   if (options.home) {
-    childEnv.PASEO_HOME = options.home;
+    childEnv.RAMBLA_HOME = options.home;
   }
   if (options.listen) {
-    childEnv.PASEO_LISTEN = options.listen;
+    childEnv.RAMBLA_LISTEN = options.listen;
   } else if (options.port) {
-    childEnv.PASEO_LISTEN = `127.0.0.1:${options.port}`;
+    childEnv.RAMBLA_LISTEN = `127.0.0.1:${options.port}`;
   }
   if (options.hostnames) {
-    childEnv.PASEO_HOSTNAMES = options.hostnames;
+    childEnv.RAMBLA_HOSTNAMES = options.hostnames;
   }
   if (options.relayUseTls === true) {
-    childEnv.PASEO_RELAY_USE_TLS = "true";
+    childEnv.RAMBLA_RELAY_USE_TLS = "true";
   }
   if (options.webUi === true) {
-    childEnv.PASEO_WEB_UI_ENABLED = "true";
+    childEnv.RAMBLA_WEB_UI_ENABLED = "true";
   }
   if (options.webUi === false) {
-    childEnv.PASEO_WEB_UI_ENABLED = "false";
+    childEnv.RAMBLA_WEB_UI_ENABLED = "false";
   }
   return childEnv;
 }
@@ -539,14 +539,14 @@ export function resolveLocalDaemonState(options: { home?: string } = {}): LocalD
     ...envWithHome(options.home),
     // Status should reflect local persisted config + pid file, not inherited daemon env overrides.
     // This is CLI-side defensive scrubbing; the daemon RPC is authoritative when available.
-    PASEO_LISTEN: undefined,
-    PASEO_HOSTNAMES: undefined,
-    PASEO_ALLOWED_HOSTS: undefined,
-    PASEO_RELAY_ENABLED: undefined,
-    PASEO_RELAY_ENDPOINT: undefined,
-    PASEO_RELAY_PUBLIC_ENDPOINT: undefined,
-    PASEO_RELAY_USE_TLS: undefined,
-    PASEO_RELAY_PUBLIC_USE_TLS: undefined,
+    RAMBLA_LISTEN: undefined,
+    RAMBLA_HOSTNAMES: undefined,
+    RAMBLA_ALLOWED_HOSTS: undefined,
+    RAMBLA_RELAY_ENABLED: undefined,
+    RAMBLA_RELAY_ENDPOINT: undefined,
+    RAMBLA_RELAY_PUBLIC_ENDPOINT: undefined,
+    RAMBLA_RELAY_USE_TLS: undefined,
+    RAMBLA_RELAY_PUBLIC_USE_TLS: undefined,
   };
   const home = resolvePaseoHome(env);
   const config = loadConfig(home, { env });

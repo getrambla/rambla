@@ -31,7 +31,7 @@ has_files() {
 }
 
 seed_worktree_paseo_home() {
-  local source_home="${PASEO_DEV_SEED_HOME:-$HOME/.rambla}"
+  local source_home="${RAMBLA_DEV_SEED_HOME:-$HOME/.rambla}"
   local target_home="$1"
 
   if [ ! -d "$source_home" ]; then
@@ -44,7 +44,7 @@ seed_worktree_paseo_home() {
     return
   fi
 
-  if [ "${PASEO_DEV_RESET_HOME:-0}" = "1" ]; then
+  if [ "${RAMBLA_DEV_RESET_HOME:-0}" = "1" ]; then
     rm -rf "$target_home"
   elif has_files "$target_home"; then
     echo "  Seed:    skipped (${target_home} already has data)"
@@ -63,11 +63,11 @@ seed_worktree_paseo_home() {
 }
 
 configure_dev_daemon_config() {
-  if [ -z "${PASEO_LISTEN:-}" ]; then
+  if [ -z "${RAMBLA_LISTEN:-}" ]; then
     return
   fi
 
-  mkdir -p "$PASEO_HOME"
+  mkdir -p "$RAMBLA_HOME"
   node -e '
 const fs = require("fs");
 const [path, listen] = [process.argv[1], process.argv[2]];
@@ -79,55 +79,55 @@ cfg.daemon.listen = listen;
 cfg.daemon.cors = cfg.daemon.cors || {};
 cfg.daemon.cors.allowedOrigins = ["*"];
 fs.writeFileSync(path, JSON.stringify(cfg, null, 2));
-' "$PASEO_HOME/config.json" "$PASEO_LISTEN"
+' "$RAMBLA_HOME/config.json" "$RAMBLA_LISTEN"
 }
 
 resolve_dev_daemon_endpoint() {
-  if [ -n "${PASEO_DEV_DAEMON_ENDPOINT:-}" ]; then
-    echo "$PASEO_DEV_DAEMON_ENDPOINT"
+  if [ -n "${RAMBLA_DEV_DAEMON_ENDPOINT:-}" ]; then
+    echo "$RAMBLA_DEV_DAEMON_ENDPOINT"
     return
   fi
 
-  case "${PASEO_LISTEN:-127.0.0.1:6768}" in
-    0.0.0.0:*) echo "localhost:${PASEO_LISTEN#0.0.0.0:}" ;;
-    127.0.0.1:*) echo "localhost:${PASEO_LISTEN#127.0.0.1:}" ;;
-    *) echo "$PASEO_LISTEN" ;;
+  case "${RAMBLA_LISTEN:-127.0.0.1:6768}" in
+    0.0.0.0:*) echo "localhost:${RAMBLA_LISTEN#0.0.0.0:}" ;;
+    127.0.0.1:*) echo "localhost:${RAMBLA_LISTEN#127.0.0.1:}" ;;
+    *) echo "$RAMBLA_LISTEN" ;;
   esac
 }
 
 configure_dev_paseo_home() {
-  if [ -n "${PASEO_HOME:-}" ]; then
-    export PASEO_HOME
-    if [ -n "${PASEO_DEV_SEED_HOME:-}" ]; then
-      seed_worktree_paseo_home "$PASEO_HOME"
+  if [ -n "${RAMBLA_HOME:-}" ]; then
+    export RAMBLA_HOME
+    if [ -n "${RAMBLA_DEV_SEED_HOME:-}" ]; then
+      seed_worktree_paseo_home "$RAMBLA_HOME"
     fi
-    mkdir -p "$PASEO_HOME"
-    if [ "${PASEO_DEV_MANAGED_HOME:-0}" = "1" ] || [ -n "${PASEO_DEV_SEED_HOME:-}" ]; then
+    mkdir -p "$RAMBLA_HOME"
+    if [ "${RAMBLA_DEV_MANAGED_HOME:-0}" = "1" ] || [ -n "${RAMBLA_DEV_SEED_HOME:-}" ]; then
       configure_dev_daemon_config
     fi
     return
   fi
 
-  export PASEO_HOME
+  export RAMBLA_HOME
   local dev_root
-  dev_root="${PASEO_DEV_ROOT:-$(default_dev_paseo_root)}"
-  PASEO_HOME="$dev_root/.dev/paseo-home"
-  export PASEO_DEV_MANAGED_HOME=1
+  dev_root="${RAMBLA_DEV_ROOT:-$(default_dev_paseo_root)}"
+  RAMBLA_HOME="$dev_root/.dev/paseo-home"
+  export RAMBLA_DEV_MANAGED_HOME=1
 
-  if [ -n "${PASEO_DEV_SEED_HOME:-}" ]; then
-    seed_worktree_paseo_home "$PASEO_HOME"
+  if [ -n "${RAMBLA_DEV_SEED_HOME:-}" ]; then
+    seed_worktree_paseo_home "$RAMBLA_HOME"
   fi
 
-  mkdir -p "$PASEO_HOME"
+  mkdir -p "$RAMBLA_HOME"
   configure_dev_daemon_config
 }
 
 configure_dev_command_env() {
-  if [ -z "${PASEO_LISTEN:-}" ]; then
-    if [ -n "${PASEO_SERVICE_DAEMON_PORT:-}" ]; then
-      export PASEO_LISTEN="0.0.0.0:${PASEO_SERVICE_DAEMON_PORT}"
+  if [ -z "${RAMBLA_LISTEN:-}" ]; then
+    if [ -n "${RAMBLA_SERVICE_DAEMON_PORT:-}" ]; then
+      export RAMBLA_LISTEN="0.0.0.0:${RAMBLA_SERVICE_DAEMON_PORT}"
     else
-      export PASEO_LISTEN="127.0.0.1:6768"
+      export RAMBLA_LISTEN="127.0.0.1:6768"
     fi
   fi
 

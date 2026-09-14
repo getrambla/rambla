@@ -311,7 +311,7 @@ test.skipIf(process.platform === "win32")(
       JSON.stringify({
         worktree: {
           setup: [
-            `node -e "const fs=require('fs'),path=require('path');const source=process.env.PASEO_SOURCE_CHECKOUT_PATH;const worktree=process.env.PASEO_WORKTREE_PATH;const target=path.join(worktree,'node_modules/react-native-svg/lib/typescript');fs.writeFileSync(path.join(source,'setup-started'),'started');while(!fs.existsSync(path.join(source,'stop-setup'))){try{fs.mkdirSync(target,{recursive:true});fs.writeFileSync(path.join(target,'active'),String(Date.now()))}catch{}}"`,
+            `node -e "const fs=require('fs'),path=require('path');const source=process.env.RAMBLA_SOURCE_CHECKOUT_PATH;const worktree=process.env.RAMBLA_WORKTREE_PATH;const target=path.join(worktree,'node_modules/react-native-svg/lib/typescript');fs.writeFileSync(path.join(source,'setup-started'),'started');while(!fs.existsSync(path.join(source,'stop-setup'))){try{fs.mkdirSync(target,{recursive:true});fs.writeFileSync(path.join(target,'active'),String(Date.now()))}catch{}}"`,
           ],
         },
       }),

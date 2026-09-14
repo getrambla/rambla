@@ -6,7 +6,7 @@ const { isDeepStrictEqual } = require("node:util");
 const { app, BrowserWindow, ipcMain, Menu, nativeImage, screen, session } = require("electron");
 
 const ROOT = __dirname;
-const OUT_DIR = process.env.PASEO_CAPTURE_HARNESS_OUT_DIR || path.join(ROOT, "out");
+const OUT_DIR = process.env.RAMBLA_CAPTURE_HARNESS_OUT_DIR || path.join(ROOT, "out");
 const PRODUCTION_BROWSER_KEYBOARD_DIR = path.join(
   ROOT,
   "..",
@@ -36,19 +36,19 @@ const BROWSER_PROFILE_TIMEOUT_MS = 15000;
 const CAPTURE_RETRY_INTERVAL_MS = 200;
 const REPEAT_COUNT = 5;
 const FRESH_REPEAT_COUNT = 3;
-const SOAK_MS = Number(process.env.PASEO_CAPTURE_HARNESS_SOAK_MS || 75000);
-const HARNESS_GROUP = process.env.PASEO_CAPTURE_HARNESS_GROUP || "permanent-parking";
-const BROWSER_PROFILE_PHASE = process.env.PASEO_CAPTURE_HARNESS_PHASE || "";
+const SOAK_MS = Number(process.env.RAMBLA_CAPTURE_HARNESS_SOAK_MS || 75000);
+const HARNESS_GROUP = process.env.RAMBLA_CAPTURE_HARNESS_GROUP || "permanent-parking";
+const BROWSER_PROFILE_PHASE = process.env.RAMBLA_CAPTURE_HARNESS_PHASE || "";
 const BROWSER_PROFILE_ORIGIN_FILE = path.join(OUT_DIR, "browser-profile-origin.txt");
 const BROWSER_PROFILE_VALUE_FILE = path.join(OUT_DIR, "browser-profile-value.txt");
 const PERMANENT_STATE_FILTER = new Set(
-  (process.env.PASEO_CAPTURE_HARNESS_STATES || "P1")
+  (process.env.RAMBLA_CAPTURE_HARNESS_STATES || "P1")
     .split(",")
     .map((state) => state.trim())
     .filter(Boolean),
 );
 const PERMANENT_VARIANT_FILTER = new Set(
-  (process.env.PASEO_CAPTURE_HARNESS_VARIANTS || "attach-off")
+  (process.env.RAMBLA_CAPTURE_HARNESS_VARIANTS || "attach-off")
     .split(",")
     .map((variant) => variant.trim())
     .filter(Boolean),
@@ -1373,7 +1373,7 @@ const AUTOMATION_SNAPSHOT_PROBE = String.raw`(() => {
           : { ok: false, reason: 'stale_ref' };
       }
     };
-    Object.defineProperty(window, '__PASEO_BROWSER_AUTOMATION__', { configurable: true, value: api });
+    Object.defineProperty(window, '__RAMBLA_BROWSER_AUTOMATION__', { configurable: true, value: api });
     return api;
   }
   function roleFor(element) {
@@ -1443,7 +1443,7 @@ async function automationRefPoint(guest, ref, fingerprint) {
         return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
       };
       while (performance.now() <= deadline) {
-        const resolved = window.__PASEO_BROWSER_AUTOMATION__.resolve(ref, fingerprint);
+        const resolved = window.__RAMBLA_BROWSER_AUTOMATION__.resolve(ref, fingerprint);
         if (!resolved.ok || !resolved.element?.isConnected) return { ok: false, reason: 'stale_ref' };
         const element = resolved.element;
         const rect = element.getBoundingClientRect();
@@ -1612,7 +1612,7 @@ async function automationEvaluate(guest, functionSource, refEntry) {
       const args = [];
       ${
         refEntry
-          ? `const resolved = window.__PASEO_BROWSER_AUTOMATION__.resolve(${JSON.stringify(refEntry.ref)}, ${JSON.stringify(refEntry.fingerprint)});
+          ? `const resolved = window.__RAMBLA_BROWSER_AUTOMATION__.resolve(${JSON.stringify(refEntry.ref)}, ${JSON.stringify(refEntry.fingerprint)});
       if (!resolved.ok) return { ok: false, reason: "stale_ref" };
       args.push(resolved.element);`
           : ""
@@ -1631,7 +1631,7 @@ const AUTOMATION_DIALOG_POLICY = {
 };
 
 const AUTOMATION_PROMPT_SHIM_INSTALL = String.raw`(() => {
-  const stateKey = "__PASEO_BROWSER_AUTOMATION_DIALOG_STATE__";
+  const stateKey = "__RAMBLA_BROWSER_AUTOMATION_DIALOG_STATE__";
   const state = window[stateKey] || { prompts: [], installed: false };
   window[stateKey] = state;
   if (state.installed) return true;
@@ -1650,7 +1650,7 @@ const AUTOMATION_PROMPT_SHIM_INSTALL = String.raw`(() => {
 })()`;
 
 const AUTOMATION_PROMPT_SHIM_DRAIN = String.raw`(() => {
-  const state = window.__PASEO_BROWSER_AUTOMATION_DIALOG_STATE__;
+  const state = window.__RAMBLA_BROWSER_AUTOMATION_DIALOG_STATE__;
   if (!state || !Array.isArray(state.prompts)) return [];
   return state.prompts.splice(0);
 })()`;
@@ -2199,7 +2199,7 @@ async function runAutomationGroup() {
     }
     await guest.executeJavaScript("window.pushFixtureState()", true);
     const pushStateResult = await guest.executeJavaScript(
-      `window.__PASEO_BROWSER_AUTOMATION__.resolve(${JSON.stringify(saveRef.ref)}, ${JSON.stringify(saveRef.fingerprint)}).ok`,
+      `window.__RAMBLA_BROWSER_AUTOMATION__.resolve(${JSON.stringify(saveRef.ref)}, ${JSON.stringify(saveRef.fingerprint)}).ok`,
       true,
     );
     if (pushStateResult !== true) {
@@ -2390,7 +2390,7 @@ async function runAutomationGroup() {
 
     await guest.executeJavaScript("window.sameUrlRerender()", true);
     const rerenderResult = await guest.executeJavaScript(
-      `window.__PASEO_BROWSER_AUTOMATION__.resolve(${JSON.stringify(saveRef.ref)}, ${JSON.stringify(saveRef.fingerprint)}).reason`,
+      `window.__RAMBLA_BROWSER_AUTOMATION__.resolve(${JSON.stringify(saveRef.ref)}, ${JSON.stringify(saveRef.fingerprint)}).reason`,
       true,
     );
     if (rerenderResult !== "stale_ref") {
@@ -2408,7 +2408,7 @@ async function runAutomationGroup() {
       guest.debugger.attach("1.3");
     }
     const evaluated = await guest.debugger.sendCommand("Runtime.evaluate", {
-      expression: `(() => window.__PASEO_BROWSER_AUTOMATION__.resolve(${JSON.stringify(uploadRef.ref)}, ${JSON.stringify(uploadRef.fingerprint)}).element)()`,
+      expression: `(() => window.__RAMBLA_BROWSER_AUTOMATION__.resolve(${JSON.stringify(uploadRef.ref)}, ${JSON.stringify(uploadRef.fingerprint)}).element)()`,
       objectGroup: "paseo-browser-automation",
       returnByValue: false,
     });

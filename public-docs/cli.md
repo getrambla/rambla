@@ -53,7 +53,7 @@ From a human shell, a bare `paseo run` creates a new local workspace for the cur
 
 Worktree creation accepts `--worktree-mode branch-off|checkout-branch|checkout-pr` plus the matching `--new-branch`/`--base`, `--branch`, or `--pr-number`/`--forge` options. Use `--worktree-slug` to choose the managed directory slug.
 
-When an existing Paseo agent runs the same command, Paseo recognizes it through `PASEO_AGENT_ID`. Without explicit placement, the new agent becomes its subagent in the same workspace. `--workspace` can place that subagent elsewhere without changing its parent.
+When an existing Paseo agent runs the same command, Paseo recognizes it through `RAMBLA_AGENT_ID`. Without explicit placement, the new agent becomes its subagent in the same workspace. `--workspace` can place that subagent elsewhere without changing its parent.
 
 Use `--output-schema` to return only matching JSON output. You can pass a schema file path or an inline JSON schema object. This mode cannot be used with `--background`.
 
@@ -79,7 +79,7 @@ paseo project delete <project-id>
 
 `--reset` restores the name derived from the project directory. Deleting a project archives its active workspaces and removes the project from Paseo. It does not delete the project directory.
 
-For a local daemon, `paseo project create [path]` defaults to the current directory and resolves relative paths on the CLI machine. When you use the global `--host` option or `PASEO_HOST`, provide a path that the target daemon can access:
+For a local daemon, `paseo project create [path]` defaults to the current directory and resolves relative paths on the CLI machine. When you use the global `--host` option or `RAMBLA_HOST`, provide a path that the target daemon can access:
 
 ```bash
 paseo --host devbox:6767 project create /srv/repos/api
@@ -287,7 +287,7 @@ paseo daemon stop              # Stop the daemon
 
 Reload validates the whole file, applies runtime-safe changes, and reports `appliedPaths`, `restartRequiredPaths`, and `overrideControlledPaths`. Human output prints `paseo daemon restart` only when a changed setting needs it. Use `--json` or `--format yaml` for the structured result. Run `paseo --host <target> reload` to reload a remote daemon's own configuration file. An older host that does not support reload returns an update-host error.
 
-Use `PASEO_HOME` to run multiple isolated daemon instances.
+Use `RAMBLA_HOME` to run multiple isolated daemon instances.
 
 ## Hub
 
@@ -308,7 +308,7 @@ Run deploy from the repository root. By default it reads every direct `.rambla/t
 
 Pass `-p, --project <slug>` for an existing legacy bundle: `.rambla/hub.yml`, direct `.rambla/workflows/*.yml` files, and referenced workflow partials. See [Deploy from the CLI](/docs/hub/configuration#deploy-from-the-cli).
 
-`login` opens the Hub approval page and stores a durable organization-scoped CLI credential under `PASEO_HOME`. In an interactive terminal it offers to connect this daemon, then separately asks whether to allow Hub automations to run agents. Connection defaults to yes; execution permission defaults to no. It then links to Hub's **Triggers** page and prints `paseo hub init` for setup as code. `--json` and non-TTY login remain login-only and never prompt. The stored login is separate from the daemon relationship created by `connect`.
+`login` opens the Hub approval page and stores a durable organization-scoped CLI credential under `RAMBLA_HOME`. In an interactive terminal it offers to connect this daemon, then separately asks whether to allow Hub automations to run agents. Connection defaults to yes; execution permission defaults to no. It then links to Hub's **Triggers** page and prints `paseo hub init` for setup as code. `--json` and non-TTY login remain login-only and never prompt. The stored login is separate from the daemon relationship created by `connect`.
 
 `init` requires a TTY. It signs in and connects the daemon as needed, then lists the organization's app connections that can back a starter trigger. One usable connection is selected automatically; with several, you choose a **Trigger connection**. If none is ready, setup sends you to **Hub → Apps** and stops before selecting an agent or writing files.
 
@@ -316,7 +316,7 @@ Setup asks which agent provider, model, and mode to run. Providers must be enabl
 
 Interactive logout checks the same-origin daemon relationship and asks whether to disconnect before deleting the login. Declining removes only the login. JSON and noninteractive logout never prompt or disconnect implicitly; `--disconnect-daemon` is the explicit automation path, and `--force` applies to that daemon disconnection. If a requested disconnection fails, the login is preserved.
 
-Every command resolves and normalizes its destination before Hub or daemon work. Origin precedence is an explicit command origin or `--hub`, then `PASEO_HUB_URL`, then the active stored login origin, then the hosted default `https://hub.rambla.sh`. The hosted default never overrides an active login. Credential precedence is `--api-key <secret>`, then `PASEO_HUB_API_KEY`, then a stored login for the exact resolved origin. A stored credential is never sent to a different origin. API keys passed through flags or the environment are not stored.
+Every command resolves and normalizes its destination before Hub or daemon work. Origin precedence is an explicit command origin or `--hub`, then `RAMBLA_HUB_URL`, then the active stored login origin, then the hosted default `https://hub.rambla.sh`. The hosted default never overrides an active login. Credential precedence is `--api-key <secret>`, then `RAMBLA_HUB_API_KEY`, then a stored login for the exact resolved origin. A stored credential is never sent to a different origin. API keys passed through flags or the environment are not stored.
 
 Human output reports the resolved destination before each action. JSON output keeps stdout machine-readable and includes the normalized Hub origin. Bundle diagnostics identify paths without printing configuration contents or credentials.
 
@@ -343,7 +343,7 @@ paseo --host 'https://app.rambla.sh/#offer=eyJ2IjoyLC...' ls
 paseo --host "$OFFER_URL" run "fix the failing tests"
 ```
 
-You can also set it once via `PASEO_HOST` instead of passing `--host` on every command. An explicit flag overrides the environment variable.
+You can also set it once via `RAMBLA_HOST` instead of passing `--host` on every command. An explicit flag overrides the environment variable.
 
 ## Multi-agent workflows
 

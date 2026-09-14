@@ -27,10 +27,10 @@ npm run test:e2e:mobile
 
 The runner uses an isolated Agent Device state directory, verifies or starts Metro for this checkout, prewarms the iOS runner, discovers each script's platform from its `context` header, and cleans its sessions, runner lease, daemon, and any Metro process it started. Attempt results, timings, logs, and failure artifacts go under `.dev/agent-device-artifacts`.
 
-Set `PASEO_MOBILE_E2E_METRO_PORT` when this worktree already has Metro on a non-default port:
+Set `RAMBLA_MOBILE_E2E_METRO_PORT` when this worktree already has Metro on a non-default port:
 
 ```bash
-PASEO_MOBILE_E2E_METRO_PORT=62093 npm run test:e2e:mobile
+RAMBLA_MOBILE_E2E_METRO_PORT=62093 npm run test:e2e:mobile
 ```
 
 [native-terminal-basic.ios.ad](../packages/app/e2e/mobile/agent-device/native-terminal-basic.ios.ad) and [native-terminal-basic.android.ad](../packages/app/e2e/mobile/agent-device/native-terminal-basic.android.ad) are the smallest examples. Each opens a fresh terminal, types a command at zero delay, submits it, and asserts its distinct output. The app must be connected to a daemon with an active workspace.
@@ -44,7 +44,7 @@ ANDROID_SERIAL=emulator-5554 node packages/app/e2e/mobile/terminal-keyboard/andr
 
 Use a real docked software keyboard. The harness taps Ctrl, Esc, and Enter and checks Android's
 focused input identity and IME hide/show events. It saves screenshots and logs under
-`.dev/agent-device-artifacts/terminal-keyboard-android`. Set `PASEO_TERMINAL_KEYBOARD_APP_ID=sh.rambla`
+`.dev/agent-device-artifacts/terminal-keyboard-android`. Set `RAMBLA_TERMINAL_KEYBOARD_APP_ID=sh.rambla`
 to test an installed production build. It never submits a chat message.
 
 When replay diverges, read its ranked selector suggestions. Edit the script deliberately and rerun it from the beginning. `--update` is retained for compatibility but no longer rewrites scripts.
@@ -188,7 +188,7 @@ New workspace scenarios should compose the reusable subflows in `packages/app/ma
 - `new-workspace-select-codex-gpt54.yaml`
 - `new-workspace-submit-and-assert-created.yaml`
 
-The workspace-create shell scripts render those subflows into a temp directory before running Maestro, which keeps nested `runFlow` paths and `${PASEO_MAESTRO_*}` placeholders working together.
+The workspace-create shell scripts render those subflows into a temp directory before running Maestro, which keeps nested `runFlow` paths and `${RAMBLA_MAESTRO_*}` placeholders working together.
 
 ### Inputs that Maestro types into
 
@@ -470,4 +470,4 @@ xcrun simctl ui booted appearance dark     # set dark
 xcrun simctl ui booted appearance light    # set light
 ```
 
-Expo dev server logs are in the tmux pane running `npm run dev`. Daemon logs are at `$PASEO_HOME/daemon.log` (see [development.md](development.md)).
+Expo dev server logs are in the tmux pane running `npm run dev`. Daemon logs are at `$RAMBLA_HOME/daemon.log` (see [development.md](development.md)).

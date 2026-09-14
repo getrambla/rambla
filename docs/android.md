@@ -72,7 +72,7 @@ npm run android:clear          # Remove generated Android project
 For a production-ID release APK that local Android profiling tools can attach to:
 
 ```bash
-PASEO_PROFILE_BUILD=1 npm run android:production
+RAMBLA_PROFILE_BUILD=1 npm run android:production
 ```
 
 This keeps the `sh.rambla` package id, release Hermes bundle, and release optimizations. It adds
@@ -101,20 +101,20 @@ rm -rf android
 
 ```bash
 REACT_NATIVE_PACKAGER_HOSTNAME=10.0.2.2 \
-  EXPO_PUBLIC_LOCAL_DAEMON=10.0.2.2:$PASEO_SERVICE_DAEMON_PORT \
+  EXPO_PUBLIC_LOCAL_DAEMON=10.0.2.2:$RAMBLA_SERVICE_DAEMON_PORT \
   npm run android
 ```
 
 - **`REACT_NATIVE_PACKAGER_HOSTNAME=10.0.2.2`** — without it, Expo bakes your Mac's LAN IP into the dev client's Metro URL, which the emulator can't route to, and the app dies with `Failed to connect to /<lan-ip>:8081` before any JS loads.
-- **`EXPO_PUBLIC_LOCAL_DAEMON=10.0.2.2:<port>`** — the client's daemon endpoint (`packages/app/src/runtime/host-runtime.ts`); when unset it defaults to `localhost:6767`, the production daemon. Use `$PASEO_SERVICE_DAEMON_PORT` for a worktree daemon running as a Paseo service, or `6768` for a standalone `npm run dev:server`. It is inlined into the JS bundle at Metro bundle time, so set it on the build command and clear the Metro cache (`npx expo start -c`) if a change doesn't take.
+- **`EXPO_PUBLIC_LOCAL_DAEMON=10.0.2.2:<port>`** — the client's daemon endpoint (`packages/app/src/runtime/host-runtime.ts`); when unset it defaults to `localhost:6767`, the production daemon. Use `$RAMBLA_SERVICE_DAEMON_PORT` for a worktree daemon running as a Paseo service, or `6768` for a standalone `npm run dev:server`. It is inlined into the JS bundle at Metro bundle time, so set it on the build command and clear the Metro cache (`npx expo start -c`) if a change doesn't take.
 
 **Alternative — `adb reverse` + `localhost`** (if `10.0.2.2` misbehaves):
 
 ```bash
 adb reverse tcp:8081 tcp:8081
-adb reverse tcp:$PASEO_SERVICE_DAEMON_PORT tcp:$PASEO_SERVICE_DAEMON_PORT
+adb reverse tcp:$RAMBLA_SERVICE_DAEMON_PORT tcp:$RAMBLA_SERVICE_DAEMON_PORT
 REACT_NATIVE_PACKAGER_HOSTNAME=localhost \
-  EXPO_PUBLIC_LOCAL_DAEMON=localhost:$PASEO_SERVICE_DAEMON_PORT \
+  EXPO_PUBLIC_LOCAL_DAEMON=localhost:$RAMBLA_SERVICE_DAEMON_PORT \
   npm run android
 ```
 
@@ -122,13 +122,13 @@ This is the Android counterpart of the iOS local-simulator flow in [development.
 
 ## F-Droid / source-only Android builds
 
-F-Droid builds should set `PASEO_FDROID_BUILD=1` when running Expo prebuild:
+F-Droid builds should set `RAMBLA_FDROID_BUILD=1` when running Expo prebuild:
 
 ```bash
 cd packages/app
-PASEO_FDROID_BUILD=1 APP_VARIANT=production npx expo prebuild --platform android --clean --non-interactive
+RAMBLA_FDROID_BUILD=1 APP_VARIANT=production npx expo prebuild --platform android --clean --non-interactive
 cd android
-PASEO_FDROID_BUILD=1 ./gradlew assembleRelease --no-daemon --max-workers=1 -Dorg.gradle.parallel=false
+RAMBLA_FDROID_BUILD=1 ./gradlew assembleRelease --no-daemon --max-workers=1 -Dorg.gradle.parallel=false
 ```
 
 The flag must be present for both prebuild and Gradle because Gradle starts Metro for the release bundle. Keep the source build serial and daemon-free as shown above: compiling every Expo module can exhaust memory when Gradle workers run in parallel. The profile enables source-built Expo modules, excludes the proprietary camera, Firebase notification, and Expo development-client native modules, disables Gradle dependency metadata, and substitutes JavaScript stubs for camera and notifications. The resulting app supports direct and pasted-link pairing but not QR scanning or push notifications.
@@ -136,7 +136,7 @@ The flag must be present for both prebuild and Gradle because Gradle starts Metr
 For a single-ABI APK, pass React Native's architecture property to Gradle:
 
 ```bash
-PASEO_FDROID_BUILD=1 ./gradlew assembleRelease \
+RAMBLA_FDROID_BUILD=1 ./gradlew assembleRelease \
   -PreactNativeArchitectures=arm64-v8a \
   --no-daemon --max-workers=1 -Dorg.gradle.parallel=false
 ```

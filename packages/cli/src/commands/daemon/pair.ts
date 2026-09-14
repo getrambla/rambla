@@ -168,7 +168,7 @@ export async function runPairCommand(
   options: PairOptions,
   dependencyOverrides: Partial<PairCommandDependencies> = {},
 ): Promise<void> {
-  if (options.home) process.env.PASEO_HOME = options.home;
+  if (options.home) process.env.RAMBLA_HOME = options.home;
   const dependencies: PairCommandDependencies = {
     resolveOffer: resolveLocalPairingOffer,
     confirmRelay: confirmRelayPairing,

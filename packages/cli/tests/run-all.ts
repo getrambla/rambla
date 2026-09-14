@@ -5,7 +5,7 @@
  *
  * Runs all test phases as separate subprocesses with a bounded worker pool
  * so independent tests run concurrently. Each test file already isolates
- * its own daemon (ephemeral port + tmp PASEO_HOME), so parallelism is safe.
+ * its own daemon (ephemeral port + tmp RAMBLA_HOME), so parallelism is safe.
  */
 
 import { spawn } from "child_process";
@@ -23,13 +23,13 @@ const repoRoot = join(__dirname, "..", "..", "..");
 const rootNodeModulesBin = join(repoRoot, "node_modules", ".bin");
 const args = process.argv.slice(2);
 const testEnvDefaults = {
-  PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD: process.env.PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD ?? "0",
-  PASEO_DICTATION_ENABLED: process.env.PASEO_DICTATION_ENABLED ?? "0",
-  PASEO_VOICE_MODE_ENABLED: process.env.PASEO_VOICE_MODE_ENABLED ?? "0",
+  RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD: process.env.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD ?? "0",
+  RAMBLA_DICTATION_ENABLED: process.env.RAMBLA_DICTATION_ENABLED ?? "0",
+  RAMBLA_VOICE_MODE_ENABLED: process.env.RAMBLA_VOICE_MODE_ENABLED ?? "0",
 };
 
 const DEFAULT_CONCURRENCY = 4;
-const concurrencyEnv = process.env.PASEO_CLI_TEST_CONCURRENCY;
+const concurrencyEnv = process.env.RAMBLA_CLI_TEST_CONCURRENCY;
 const parsedConcurrency = concurrencyEnv ? Number.parseInt(concurrencyEnv, 10) : NaN;
 const concurrency =
   Number.isFinite(parsedConcurrency) && parsedConcurrency > 0
@@ -42,11 +42,11 @@ function parsePositiveInt(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-const shardTotal = parsePositiveInt(process.env.PASEO_CLI_TEST_SHARD_TOTAL, 1);
-const shardIndexRaw = parsePositiveInt(process.env.PASEO_CLI_TEST_SHARD, 1);
+const shardTotal = parsePositiveInt(process.env.RAMBLA_CLI_TEST_SHARD_TOTAL, 1);
+const shardIndexRaw = parsePositiveInt(process.env.RAMBLA_CLI_TEST_SHARD, 1);
 if (shardIndexRaw < 1 || shardIndexRaw > shardTotal) {
   throw new Error(
-    `PASEO_CLI_TEST_SHARD=${shardIndexRaw} out of range for SHARD_TOTAL=${shardTotal}`,
+    `RAMBLA_CLI_TEST_SHARD=${shardIndexRaw} out of range for SHARD_TOTAL=${shardTotal}`,
   );
 }
 const shardIndex = shardIndexRaw - 1;
@@ -204,9 +204,9 @@ async function runSingleTest(testFile: string): Promise<TestOutcome> {
           ...process.env,
           PATH: [rootNodeModulesBin, process.env.PATH].filter(Boolean).join(delimiter),
           npm_config_cache: npmCache,
-          PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD: testEnvDefaults.PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD,
-          PASEO_DICTATION_ENABLED: testEnvDefaults.PASEO_DICTATION_ENABLED,
-          PASEO_VOICE_MODE_ENABLED: testEnvDefaults.PASEO_VOICE_MODE_ENABLED,
+          RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD: testEnvDefaults.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD,
+          RAMBLA_DICTATION_ENABLED: testEnvDefaults.RAMBLA_DICTATION_ENABLED,
+          RAMBLA_VOICE_MODE_ENABLED: testEnvDefaults.RAMBLA_VOICE_MODE_ENABLED,
         },
         stdio: ["ignore", "pipe", "pipe"],
       });

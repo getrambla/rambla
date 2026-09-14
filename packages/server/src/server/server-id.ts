@@ -27,10 +27,10 @@ function generateServerId(): string {
 }
 
 /**
- * Stable daemon identifier scoped to a given $PASEO_HOME.
+ * Stable daemon identifier scoped to a given $RAMBLA_HOME.
  *
- * - Persisted to `$PASEO_HOME/server-id`
- * - Can be overridden via `PASEO_SERVER_ID` (useful for tests)
+ * - Persisted to `$RAMBLA_HOME/server-id`
+ * - Can be overridden via `RAMBLA_SERVER_ID` (useful for tests)
  */
 export function getOrCreateServerId(
   paseoHome: string,
@@ -41,8 +41,8 @@ export function getOrCreateServerId(
   const serverIdPath = getServerIdPath(paseoHome);
 
   const envOverride =
-    typeof env.PASEO_SERVER_ID === "string" && env.PASEO_SERVER_ID.trim().length > 0
-      ? env.PASEO_SERVER_ID.trim()
+    typeof env.RAMBLA_SERVER_ID === "string" && env.RAMBLA_SERVER_ID.trim().length > 0
+      ? env.RAMBLA_SERVER_ID.trim()
       : null;
 
   if (envOverride) {
@@ -50,9 +50,9 @@ export function getOrCreateServerId(
     if (!existsSync(serverIdPath)) {
       try {
         writePrivateFileAtomicSync(serverIdPath, `${envOverride}\n`);
-        log?.info({ serverId: envOverride }, "Persisted PASEO_SERVER_ID override");
+        log?.info({ serverId: envOverride }, "Persisted RAMBLA_SERVER_ID override");
       } catch (error) {
-        log?.warn({ error }, "Failed to persist PASEO_SERVER_ID override");
+        log?.warn({ error }, "Failed to persist RAMBLA_SERVER_ID override");
       }
     } else {
       ensurePrivateFile(serverIdPath);

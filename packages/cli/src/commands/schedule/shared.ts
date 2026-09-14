@@ -122,7 +122,7 @@ function resolveScheduleTarget(args: {
   if (targetValue === "self") {
     // COMPAT(scheduleSelfTarget): heartbeat creation moved to `paseo heartbeat create`.
     // Added in v0.2.0; remove after 2027-01-17.
-    const currentAgentId = process.env.PASEO_AGENT_ID?.trim();
+    const currentAgentId = process.env.RAMBLA_AGENT_ID?.trim();
     if (!currentAgentId) {
       throw {
         code: "INVALID_TARGET",

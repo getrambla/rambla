@@ -19,7 +19,7 @@ describe("server config", () => {
     roots.push(paseoHome);
 
     const desktopConfig = loadConfig(paseoHome, {
-      env: { PASEO_DESKTOP_MANAGED: "1" },
+      env: { RAMBLA_DESKTOP_MANAGED: "1" },
     });
     const standaloneConfig = loadConfig(paseoHome, { env: {} });
 
@@ -63,13 +63,13 @@ describe("server config", () => {
     roots.push(paseoHome);
     const config = loadConfig(paseoHome, {
       env: {
-        PASEO_LISTEN: "127.0.0.1:7000",
-        PASEO_PASSWORD: "secret",
-        PASEO_RELAY_ENDPOINT: "relay.example.test:443",
-        PASEO_TRUSTED_PROXIES: "true",
-        PASEO_WEB_UI_ENABLED: "true",
-        PASEO_LOG_FILE_PATH: "custom.log",
-        PASEO_VOICE_LLM_PROVIDER: "codex",
+        RAMBLA_LISTEN: "127.0.0.1:7000",
+        RAMBLA_PASSWORD: "secret",
+        RAMBLA_RELAY_ENDPOINT: "relay.example.test:443",
+        RAMBLA_TRUSTED_PROXIES: "true",
+        RAMBLA_WEB_UI_ENABLED: "true",
+        RAMBLA_LOG_FILE_PATH: "custom.log",
+        RAMBLA_VOICE_LLM_PROVIDER: "codex",
       },
       cli: { relayUseTls: false },
     });
@@ -138,9 +138,9 @@ describe("server config", () => {
       {
         env: {
           OPENAI_API_KEY: "test-api-key",
-          PASEO_DICTATION_LOCAL_STT_MODEL: "parakeet-tdt-0.6b-v2-int8",
-          PASEO_VOICE_LOCAL_STT_MODEL: "parakeet-tdt-0.6b-v2-int8",
-          PASEO_VOICE_LOCAL_TTS_MODEL: "kokoro-en-v0_19",
+          RAMBLA_DICTATION_LOCAL_STT_MODEL: "parakeet-tdt-0.6b-v2-int8",
+          RAMBLA_VOICE_LOCAL_STT_MODEL: "parakeet-tdt-0.6b-v2-int8",
+          RAMBLA_VOICE_LOCAL_TTS_MODEL: "kokoro-en-v0_19",
           STT_CONFIDENCE_THRESHOLD: "0.5",
           STT_MODEL: "whisper-1",
           TTS_MODEL: "tts-1",

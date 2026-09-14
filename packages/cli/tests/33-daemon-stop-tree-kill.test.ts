@@ -16,9 +16,9 @@ import { $ } from "zx";
 $.verbose = false;
 
 const testEnv = {
-  PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD: process.env.PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD ?? "0",
-  PASEO_DICTATION_ENABLED: process.env.PASEO_DICTATION_ENABLED ?? "0",
-  PASEO_VOICE_MODE_ENABLED: process.env.PASEO_VOICE_MODE_ENABLED ?? "0",
+  RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD: process.env.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD ?? "0",
+  RAMBLA_DICTATION_ENABLED: process.env.RAMBLA_DICTATION_ENABLED ?? "0",
+  RAMBLA_VOICE_MODE_ENABLED: process.env.RAMBLA_VOICE_MODE_ENABLED ?? "0",
 };
 
 function sleep(ms: number): Promise<void> {
@@ -139,7 +139,7 @@ try {
 
   console.log("Test 2: forced daemon stop kills owner and separate-PGID descendant");
   const stopResult =
-    await $`PASEO_HOME=${paseoHome} PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD} PASEO_DICTATION_ENABLED=${testEnv.PASEO_DICTATION_ENABLED} PASEO_VOICE_MODE_ENABLED=${testEnv.PASEO_VOICE_MODE_ENABLED} npx paseo daemon stop --home ${paseoHome} --json --timeout 1 --force --kill-timeout 2`.nothrow();
+    await $`RAMBLA_HOME=${paseoHome} RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD=${testEnv.RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD} RAMBLA_DICTATION_ENABLED=${testEnv.RAMBLA_DICTATION_ENABLED} RAMBLA_VOICE_MODE_ENABLED=${testEnv.RAMBLA_VOICE_MODE_ENABLED} npx paseo daemon stop --home ${paseoHome} --json --timeout 1 --force --kill-timeout 2`.nothrow();
   assert.strictEqual(stopResult.exitCode, 0, `stop should succeed: ${stopResult.stderr}`);
   const parsed = JSON.parse(stopResult.stdout) as {
     action?: unknown;

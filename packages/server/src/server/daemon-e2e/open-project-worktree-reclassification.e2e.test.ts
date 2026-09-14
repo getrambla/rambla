@@ -30,8 +30,8 @@ afterEach(async () => {
 });
 
 test("openProject preserves a worktree's exact-root project without rehoming it", async () => {
-  const previousSupervised = process.env.PASEO_SUPERVISED;
-  process.env.PASEO_SUPERVISED = "0";
+  const previousSupervised = process.env.RAMBLA_SUPERVISED;
+  process.env.RAMBLA_SUPERVISED = "0";
   try {
     const repoRoot = realpathSync(mkdtempSync(path.join(os.tmpdir(), "paseo-open-project-repo-")));
     const worktreeRoot = realpathSync(
@@ -121,7 +121,7 @@ test("openProject preserves a worktree's exact-root project without rehoming it"
       persistedWorkspaces.find((workspace) => workspace.workspaceId === worktreeRoot)?.projectId,
     ).toBe(worktreeRoot);
   } finally {
-    process.env.PASEO_SUPERVISED = previousSupervised;
+    process.env.RAMBLA_SUPERVISED = previousSupervised;
   }
 }, 30_000);
 

@@ -2743,7 +2743,7 @@ export const en = {
         newScript: "New script",
         editScript: "Edit {{name}}",
         runAsService: "Run as a service",
-        serviceHint: "Rambla supervises the process and assigns a port via $PASEO_PORT",
+        serviceHint: "Rambla supervises the process and assigns a port via $RAMBLA_PORT",
         actions: {
           add: "Add script",
           edit: "Edit",

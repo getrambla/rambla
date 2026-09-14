@@ -35,13 +35,13 @@ preload is available:
 
 ```bash
 npm run build:main --workspace=@getpaseo/desktop
-PASEO_CAPTURE_HARNESS_GROUP=automation npm run capture-harness --workspace=@getpaseo/desktop
+RAMBLA_CAPTURE_HARNESS_GROUP=automation npm run capture-harness --workspace=@getpaseo/desktop
 ```
 
 Run the shared browser profile fixture with:
 
 ```bash
-PASEO_CAPTURE_HARNESS_GROUP=browser-profile npm run capture-harness --workspace=@getpaseo/desktop
+RAMBLA_CAPTURE_HARNESS_GROUP=browser-profile npm run capture-harness --workspace=@getpaseo/desktop
 ```
 
 The browser profile group runs two Electron processes in sequence. It verifies that each

@@ -73,7 +73,7 @@ import {
 import {
   clearPaseoBrowserProfile,
   getLegacyPaseoBrowserProfileSession,
-  PASEO_BROWSER_PROFILE_PARTITION,
+  RAMBLA_BROWSER_PROFILE_PARTITION,
   getPaseoBrowserProfileSession,
   getPaseoBrowserProfileSessions,
   listPaseoBrowserProfileGuests,
@@ -109,12 +109,12 @@ import { AgentNavigationInbox, parseAgentDeepLinkFromArgv } from "./agent-naviga
 
 const DEV_SERVER_URL = process.env.EXPO_DEV_URL ?? "http://localhost:8081";
 const APP_SCHEME = "rambla";
-const PASEO_DEBUG = process.env.PASEO_DEBUG === "1";
-const DISABLE_SINGLE_INSTANCE_LOCK = process.env.PASEO_DISABLE_SINGLE_INSTANCE_LOCK === "1";
-const APP_NAME = process.env.PASEO_TEST_APP_NAME?.trim() || "Rambla";
+const RAMBLA_DEBUG = process.env.RAMBLA_DEBUG === "1";
+const DISABLE_SINGLE_INSTANCE_LOCK = process.env.RAMBLA_DISABLE_SINGLE_INSTANCE_LOCK === "1";
+const APP_NAME = process.env.RAMBLA_TEST_APP_NAME?.trim() || "Rambla";
 const DESKTOP_WINDOW_CHROME_MODE = resolveDesktopWindowChromeMode({
   platform: process.platform,
-  override: process.env.PASEO_DESKTOP_WINDOW_CONTROLS,
+  override: process.env.RAMBLA_DESKTOP_WINDOW_CONTROLS,
   isPackaged: app.isPackaged,
 });
 const UPDATE_QUIT_DEADLINE_MS = 5_000;
@@ -228,7 +228,7 @@ function getBrowserPopupWindowOptions(
     show: true,
     autoHideMenuBar: true,
     webPreferences: {
-      partition: PASEO_BROWSER_PROFILE_PARTITION,
+      partition: RAMBLA_BROWSER_PROFILE_PARTITION,
       nodeIntegration: false,
       nodeIntegrationInSubFrames: false,
       nodeIntegrationInWorker: false,
@@ -296,7 +296,7 @@ function installBrowserWindowOpenHandler(input: {
 // In dev mode, detect git worktrees and isolate each instance so multiple
 // Electron windows can run side-by-side (separate userData = separate lock).
 let devWorktreeName: string | null = null;
-const forcedUserDataDir = process.env.PASEO_ELECTRON_USER_DATA_DIR?.trim();
+const forcedUserDataDir = process.env.RAMBLA_ELECTRON_USER_DATA_DIR?.trim();
 if (forcedUserDataDir) {
   app.setPath("userData", forcedUserDataDir);
   log.info("[dev-user-data] forced userData dir:", forcedUserDataDir);
@@ -337,10 +337,10 @@ if (process.platform === "linux" && process.env.APPIMAGE) {
   app.commandLine.appendSwitch("no-sandbox");
 }
 
-// Allow users to pass Chromium flags via PASEO_ELECTRON_FLAGS for debugging
+// Allow users to pass Chromium flags via RAMBLA_ELECTRON_FLAGS for debugging
 // rendering issues (e.g. "--disable-gpu --ozone-platform=x11").
 // Must run before app.whenReady().
-const electronFlags = process.env.PASEO_ELECTRON_FLAGS?.trim();
+const electronFlags = process.env.RAMBLA_ELECTRON_FLAGS?.trim();
 if (electronFlags) {
   for (const token of electronFlags.split(/\s+/)) {
     const [key, ...rest] = token.replace(/^--/, "").split("=");
@@ -361,7 +361,7 @@ let pendingAgentNavigation = parseAgentDeepLinkFromArgv(process.argv);
 // racing a global.
 let desktopWindowOwner: DesktopWindowOwner<AgentDeepLinkTarget>;
 
-if (PASEO_DEBUG) {
+if (RAMBLA_DEBUG) {
   log.info("[open-project] argv:", process.argv);
   log.info("[open-project] isDefaultApp:", process.defaultApp);
   log.info("[open-project] pendingOpenProjectPath:", pendingOpenProjectPath);
@@ -609,7 +609,7 @@ function getDevBuildLabel(): string | null {
   if (app.isPackaged) {
     return null;
   }
-  return process.env.EXPO_PUBLIC_PASEO_DEV_BUILD_LABEL?.trim() || null;
+  return process.env.EXPO_PUBLIC_RAMBLA_DEV_BUILD_LABEL?.trim() || null;
 }
 
 let cachedEffectiveIconPath: string | null = null;
@@ -859,7 +859,7 @@ app.on("open-url", (event, url) => {
 
 function setupSingleInstanceLock(): boolean {
   if (DISABLE_SINGLE_INSTANCE_LOCK) {
-    log.info("[single-instance] disabled by PASEO_DISABLE_SINGLE_INSTANCE_LOCK");
+    log.info("[single-instance] disabled by RAMBLA_DISABLE_SINGLE_INSTANCE_LOCK");
     return true;
   }
 

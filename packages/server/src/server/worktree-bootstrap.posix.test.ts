@@ -303,7 +303,7 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
         join(repoDir, "paseo.json"),
         JSON.stringify({
           worktree: {
-            setup: ['echo "$PASEO_WORKTREE_PORT" > setup-port.txt'],
+            setup: ['echo "$RAMBLA_WORKTREE_PORT" > setup-port.txt'],
             terminals: [
               {
                 name: "Port Terminal",
@@ -400,9 +400,9 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
       expect(setupPort.length).toBeGreaterThan(0);
       expect(registeredEnvs).toHaveLength(1);
       expect(registeredEnvs[0]?.cwd).toBe(worktreeBootstrap.worktree.worktreePath);
-      expect(registeredEnvs[0]?.env.PASEO_WORKTREE_PORT).toBe(setupPort);
+      expect(registeredEnvs[0]?.env.RAMBLA_WORKTREE_PORT).toBe(setupPort);
       expect(createTerminalEnvs.length).toBeGreaterThan(0);
-      expect(createTerminalEnvs[0]?.PASEO_WORKTREE_PORT).toBe(setupPort);
+      expect(createTerminalEnvs[0]?.RAMBLA_WORKTREE_PORT).toBe(setupPort);
       expect(createTerminalWorkspaceIds).toEqual(["ws-shared-runtime-port"]);
 
       const terminalToolCall = persisted.find(
@@ -471,32 +471,32 @@ describe.skipIf(isPlatform("win32"))("worktree-bootstrap POSIX-only", () => {
       const apiEnv = readEnvFile(apiEnvPath);
       const webEnv = readEnvFile(webEnvPath);
 
-      expect(apiEnv.PASEO_SERVICE_API_URL).toBe(
+      expect(apiEnv.RAMBLA_SERVICE_API_URL).toBe(
         "http://api--feature-peer-env--repo.localhost:6767",
       );
-      expect(apiEnv.PASEO_SERVICE_WEB_URL).toBe(
+      expect(apiEnv.RAMBLA_SERVICE_WEB_URL).toBe(
         "http://web--feature-peer-env--repo.localhost:6767",
       );
-      expect(apiEnv.PASEO_SERVICE_API_PORT).toEqual(expect.stringMatching(/^\d+$/));
-      expect(apiEnv.PASEO_SERVICE_WEB_PORT).toEqual(expect.stringMatching(/^\d+$/));
-      expect(apiEnv.PASEO_URL).toBe(apiEnv.PASEO_SERVICE_API_URL);
-      expect(apiEnv.PASEO_PORT).toBe(apiEnv.PASEO_SERVICE_API_PORT);
+      expect(apiEnv.RAMBLA_SERVICE_API_PORT).toEqual(expect.stringMatching(/^\d+$/));
+      expect(apiEnv.RAMBLA_SERVICE_WEB_PORT).toEqual(expect.stringMatching(/^\d+$/));
+      expect(apiEnv.RAMBLA_URL).toBe(apiEnv.RAMBLA_SERVICE_API_URL);
+      expect(apiEnv.RAMBLA_PORT).toBe(apiEnv.RAMBLA_SERVICE_API_PORT);
       expect(apiEnv).not.toHaveProperty("PORT");
 
-      expect(webEnv.PASEO_SERVICE_API_URL).toBe(
+      expect(webEnv.RAMBLA_SERVICE_API_URL).toBe(
         "http://api--feature-peer-env--repo.localhost:6767",
       );
-      expect(webEnv.PASEO_SERVICE_WEB_URL).toBe(
+      expect(webEnv.RAMBLA_SERVICE_WEB_URL).toBe(
         "http://web--feature-peer-env--repo.localhost:6767",
       );
-      expect(webEnv.PASEO_SERVICE_API_PORT).toBe(apiEnv.PASEO_SERVICE_API_PORT);
-      expect(webEnv.PASEO_SERVICE_WEB_PORT).toBe(apiEnv.PASEO_SERVICE_WEB_PORT);
-      expect(webEnv.PASEO_URL).toBe(webEnv.PASEO_SERVICE_WEB_URL);
-      expect(webEnv.PASEO_PORT).toBe(webEnv.PASEO_SERVICE_WEB_PORT);
+      expect(webEnv.RAMBLA_SERVICE_API_PORT).toBe(apiEnv.RAMBLA_SERVICE_API_PORT);
+      expect(webEnv.RAMBLA_SERVICE_WEB_PORT).toBe(apiEnv.RAMBLA_SERVICE_WEB_PORT);
+      expect(webEnv.RAMBLA_URL).toBe(webEnv.RAMBLA_SERVICE_WEB_URL);
+      expect(webEnv.RAMBLA_PORT).toBe(webEnv.RAMBLA_SERVICE_WEB_PORT);
       expect(webEnv).not.toHaveProperty("PORT");
 
-      const apiPort = Number(apiEnv.PASEO_SERVICE_API_PORT);
-      const webPort = Number(apiEnv.PASEO_SERVICE_WEB_PORT);
+      const apiPort = Number(apiEnv.RAMBLA_SERVICE_API_PORT);
+      const webPort = Number(apiEnv.RAMBLA_SERVICE_WEB_PORT);
       expect(Number.isInteger(apiPort)).toBe(true);
       expect(Number.isInteger(webPort)).toBe(true);
       expect(routeStore.listRoutes()).toEqual([

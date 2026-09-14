@@ -348,7 +348,7 @@ type OpenCodeAgentConfig = Omit<AgentSessionConfig, "providerOptions"> & {
   providerOptions: OpenCodeProviderOptions;
 };
 
-const OPENCODE_SESSION_ENV_KEYS = new Set(["PASEO_AGENT_ID", "PASEO_AGENT_CWD"]);
+const OPENCODE_SESSION_ENV_KEYS = new Set(["RAMBLA_AGENT_ID", "RAMBLA_AGENT_CWD"]);
 
 function requiresDedicatedOpenCodeServer(
   config: OpenCodeAgentConfig,

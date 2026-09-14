@@ -91,7 +91,7 @@ Docker에서 Paseo 데몬과 셀프 호스팅 웹 UI를 실행하세요:
 ```bash
 docker run -d --name paseo \
   -p 6767:6767 \
-  -e PASEO_PASSWORD=change-me \
+  -e RAMBLA_PASSWORD=change-me \
   -v "$PWD/paseo-home:/home/paseo" \
   -v "$PWD:/workspace" \
   ghcr.io/getrambla/rambla:latest

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { PASEO_BROWSER_PROFILE_PARTITION } from "../browser-profile.js";
+import { RAMBLA_BROWSER_PROFILE_PARTITION } from "../browser-profile.js";
 import {
   getPaseoBrowserIdForWebContents,
   getPaseoBrowserWorkspaceId,
@@ -53,7 +53,7 @@ describe("browser webview attachment", () => {
     expect(
       isPaseoBrowserWebviewAttach({
         src: "https://example.com",
-        partition: PASEO_BROWSER_PROFILE_PARTITION,
+        partition: RAMBLA_BROWSER_PROFILE_PARTITION,
       }),
     ).toBe(true);
     expect(

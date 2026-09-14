@@ -150,7 +150,7 @@ function readPidSocketTarget(paseoHome: string): string | null {
 }
 
 function resolveConfiguredIpcDaemonHost(env: NodeJS.ProcessEnv, paseoHome: string): string | null {
-  const directEnvHost = normalizeDaemonHost(env.PASEO_LISTEN ?? "");
+  const directEnvHost = normalizeDaemonHost(env.RAMBLA_LISTEN ?? "");
   if (isIpcDaemonHost(directEnvHost)) {
     return directEnvHost;
   }
@@ -201,7 +201,7 @@ export function getExplicitDaemonHost(
   host: string | undefined,
   env: NodeJS.ProcessEnv = process.env,
 ): string | undefined {
-  const explicitHost = host ?? env.PASEO_HOST;
+  const explicitHost = host ?? env.RAMBLA_HOST;
   return explicitHost?.trim() ? explicitHost : undefined;
 }
 
@@ -256,7 +256,7 @@ export function resolveDaemonPassword(host: string): string | undefined {
     const fromUri = parseConnectionUri(trimmed).password;
     if (fromUri) return fromUri;
   }
-  const fromEnv = process.env.PASEO_PASSWORD;
+  const fromEnv = process.env.RAMBLA_PASSWORD;
   return fromEnv && fromEnv.length > 0 ? fromEnv : undefined;
 }
 

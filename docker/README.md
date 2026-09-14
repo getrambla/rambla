@@ -8,7 +8,7 @@ HTTP origin. Start it, then open the daemon URL in a browser.
 ```bash
 docker run -d --name paseo \
   -p 6767:6767 \
-  -e PASEO_PASSWORD=change-me \
+  -e RAMBLA_PASSWORD=change-me \
   -v "$PWD/paseo-home:/home/paseo" \
   -v "$PWD:/workspace" \
   ghcr.io/getrambla/rambla:latest

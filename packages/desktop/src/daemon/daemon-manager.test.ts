@@ -453,8 +453,8 @@ describe("daemon-manager commands", () => {
         detached: true,
         stdio: ["ignore", "ignore", "ignore"],
         envOverlay: expect.objectContaining({
-          PASEO_CLI: getBundledCliShimPath(),
-          PASEO_WEB_UI_ENABLED: "false",
+          RAMBLA_CLI: getBundledCliShimPath(),
+          RAMBLA_WEB_UI_ENABLED: "false",
         }),
       }),
     );

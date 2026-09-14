@@ -41,7 +41,7 @@ in
         then "/var/lib/rambla"
         else "/home/''${cfg.user}/.rambla"
       '';
-      description = "Directory for Rambla state (PASEO_HOME). Stores agent data, config, and logs.";
+      description = "Directory for Rambla state (RAMBLA_HOME). Stores agent data, config, and logs.";
     };
 
     port = lib.mkOption {
@@ -97,8 +97,8 @@ in
           - `"hosted"` (default): use the upstream `app.rambla.sh` relay.
             Preserves the current behavior; no extra options needed.
           - `"remote"`: connect to a self-hosted relay at
-            `relay.host:relay.port`. Sets `PASEO_RELAY_ENDPOINT` and
-            `PASEO_RELAY_USE_TLS` for the daemon.
+            `relay.host:relay.port`. Sets `RAMBLA_RELAY_ENDPOINT` and
+            `RAMBLA_RELAY_USE_TLS` for the daemon.
 
           A `"local"` mode (running a relay on the same host as a systemd
           unit) is not yet implemented — the relay package currently only
@@ -159,7 +159,7 @@ in
       default = { };
       example = lib.literalExpression ''
         {
-          PASEO_RELAY_ENDPOINT = "relay.rambla.sh:443";
+          RAMBLA_RELAY_ENDPOINT = "relay.rambla.sh:443";
         }
       '';
       description = "Extra environment variables for the Rambla daemon.";
@@ -180,7 +180,7 @@ in
         }
       '';
       description = ''
-        Declarative content for `$PASEO_HOME/config.json`. Rendered to JSON
+        Declarative content for `$RAMBLA_HOME/config.json`. Rendered to JSON
         and installed on every service start.
 
         Runtime mutations to `config.json` (e.g. via `rambla daemon set-password`
@@ -230,8 +230,8 @@ in
       '';
 
       environment = {
-        PASEO_HOME = cfg.dataDir;
-        PASEO_LISTEN = "${cfg.listenAddress}:${toString cfg.port}";
+        RAMBLA_HOME = cfg.dataDir;
+        RAMBLA_LISTEN = "${cfg.listenAddress}:${toString cfg.port}";
       } // lib.optionalAttrs cfg.inheritUserEnvironment (
         let
           # Match dataDir's convention. We can't read users.users.<name>.home
@@ -257,14 +257,14 @@ in
           ));
         }
       ) // lib.optionalAttrs (cfg.hostnames == true) {
-        PASEO_HOSTNAMES = "true";
+        RAMBLA_HOSTNAMES = "true";
       } // lib.optionalAttrs (lib.isList cfg.hostnames && cfg.hostnames != [ ]) {
-        PASEO_HOSTNAMES = lib.concatStringsSep "," cfg.hostnames;
+        RAMBLA_HOSTNAMES = lib.concatStringsSep "," cfg.hostnames;
       } // lib.optionalAttrs (cfg.relay.enable && cfg.relay.mode == "remote") {
-        PASEO_RELAY_ENDPOINT = "${cfg.relay.host}:${toString cfg.relay.port}";
-        PASEO_RELAY_USE_TLS = if cfg.relay.useTls then "true" else "false";
+        RAMBLA_RELAY_ENDPOINT = "${cfg.relay.host}:${toString cfg.relay.port}";
+        RAMBLA_RELAY_USE_TLS = if cfg.relay.useTls then "true" else "false";
       } // lib.optionalAttrs (cfg.relay.enable && cfg.relay.mode == "remote" && cfg.relay.publicUseTls != null) {
-        PASEO_RELAY_PUBLIC_USE_TLS = if cfg.relay.publicUseTls then "true" else "false";
+        RAMBLA_RELAY_PUBLIC_USE_TLS = if cfg.relay.publicUseTls then "true" else "false";
       } // cfg.environment;
 
       serviceConfig = {

@@ -100,7 +100,7 @@ body:
       description: |
         Paste relevant log output. Strongly preferred for crashes and daemon issues.
 
-        - **Daemon log:** `~/.rambla/daemon.log` (override with `$PASEO_HOME`)
+        - **Daemon log:** `~/.rambla/daemon.log` (override with `$RAMBLA_HOME`)
         - **Electron log (macOS):** `~/Library/Logs/Paseo/main.log`
         - **Electron log (Windows):** `%APPDATA%\Paseo\logs\main.log`
         - **Electron log (Linux):** `~/.config/Paseo/logs/main.log`

@@ -5099,8 +5099,8 @@ export class AgentManager {
       agentId,
       env: {
         ...env,
-        PASEO_AGENT_ID: agentId,
-        PASEO_AGENT_CWD: cwd,
+        RAMBLA_AGENT_ID: agentId,
+        RAMBLA_AGENT_CWD: cwd,
       },
     };
     if (

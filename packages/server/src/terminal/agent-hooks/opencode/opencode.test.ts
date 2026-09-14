@@ -254,7 +254,7 @@ function loadInstalledPlugin(terminalId = "terminal-1", exited = Promise.resolve
     source.replace("export default", "globalThis.plugin ="),
     {
       AbortController,
-      process: { env: { PASEO_TERMINAL_ID: terminalId } },
+      process: { env: { RAMBLA_TERMINAL_ID: terminalId } },
       Bun: {
         spawn(command: string[]) {
           commands.push(command);

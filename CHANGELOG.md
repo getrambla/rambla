@@ -1556,7 +1556,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 - Checkout shortstat now counts untracked files ([#608](https://github.com/getpaseo/paseo/issues/608), [#762](https://github.com/getpaseo/paseo/pull/762) by [@somus](https://github.com/somus))
 - Relay endpoints on port 443 use TLS automatically ([#774](https://github.com/getpaseo/paseo/pull/774) by [@caoer](https://github.com/caoer))
 - Desktop CLI passthrough TTY handling — interactive commands now behave correctly when launched from the desktop app
-- The CLI honors the `PASEO_PASSWORD` environment variable for password-protected daemons
+- The CLI honors the `RAMBLA_PASSWORD` environment variable for password-protected daemons
 - Daemon shutdown terminates all child processes cleanly using tree-kill
 - Agent spawn paths handle missing executables and unusual install layouts more reliably
 - OpenCode now forwards provider retry errors instead of silently swallowing them
@@ -2195,7 +2195,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 ### Added
 
 - Added `paseo archive` as a top-level alias for `paseo agent archive`
-- Added the `PASEO_AGENT_ID` environment variable for Claude and Codex agents
+- Added the `RAMBLA_AGENT_ID` environment variable for Claude and Codex agents
 - Added a redesigned command autocomplete with a detail card and dropdown styling
 - Linked Android download surfaces to the Google Play Store
 

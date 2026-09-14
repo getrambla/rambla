@@ -2682,7 +2682,7 @@ export const ru: TranslationResources = {
         newScript: "Новый скрипт",
         editScript: "Изменить {{name}}",
         runAsService: "Запускать как сервис",
-        serviceHint: "Rambla управляет процессом и назначает порт через переменную $PASEO_PORT.",
+        serviceHint: "Rambla управляет процессом и назначает порт через переменную $RAMBLA_PORT.",
         actions: {
           add: "Добавить скрипт",
           edit: "Редактировать",

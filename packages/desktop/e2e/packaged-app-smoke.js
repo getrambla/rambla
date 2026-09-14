@@ -132,7 +132,7 @@ function shellQuoteCliArg(value) {
 function getTerminalHookSmokeCommand(marker) {
   if (process.platform === "win32") {
     const script = [
-      "& $env:PASEO_HOOK_CLI hooks codex Stop",
+      "& $env:RAMBLA_HOOK_CLI hooks codex Stop",
       "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }",
       `Write-Output '${marker}'`,
     ].join("; ");
@@ -140,7 +140,7 @@ function getTerminalHookSmokeCommand(marker) {
     return `powershell.exe -NoProfile -NonInteractive -EncodedCommand ${encodedScript}`;
   }
 
-  return `"$PASEO_HOOK_CLI" hooks codex Stop && echo ${marker}`;
+  return `"$RAMBLA_HOOK_CLI" hooks codex Stop && echo ${marker}`;
 }
 
 function getShellCommand(script) {
@@ -163,18 +163,18 @@ function createDefaultDaemonEnv(extraEnv) {
     ...extraEnv,
   };
 
-  delete env.PASEO_HOME;
-  delete env.PASEO_LISTEN;
+  delete env.RAMBLA_HOME;
+  delete env.RAMBLA_LISTEN;
   return env;
 }
 
 function createIsolatedDesktopEnv({ home, listen, userData, cdpPort }) {
   return {
     ...process.env,
-    PASEO_HOME: home,
-    PASEO_LISTEN: listen,
-    PASEO_ELECTRON_USER_DATA_DIR: userData,
-    PASEO_ELECTRON_FLAGS: `--remote-debugging-address=127.0.0.1 --remote-debugging-port=${cdpPort}`,
+    RAMBLA_HOME: home,
+    RAMBLA_LISTEN: listen,
+    RAMBLA_ELECTRON_USER_DATA_DIR: userData,
+    RAMBLA_ELECTRON_FLAGS: `--remote-debugging-address=127.0.0.1 --remote-debugging-port=${cdpPort}`,
   };
 }
 
@@ -317,7 +317,7 @@ function formatLogs({ stdout, stderr, userData, daemonHome }) {
 }
 
 async function writeFailureArtifacts({ page, stdout, stderr, userData, daemonHome, error }) {
-  const artifactDir = process.env.PASEO_DESKTOP_SMOKE_ARTIFACT_DIR?.trim();
+  const artifactDir = process.env.RAMBLA_DESKTOP_SMOKE_ARTIFACT_DIR?.trim();
   if (!artifactDir) {
     return;
   }

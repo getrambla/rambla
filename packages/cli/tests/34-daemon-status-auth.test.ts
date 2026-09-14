@@ -7,16 +7,16 @@ import { startTestDaemon } from "./helpers/test-daemon.ts";
 console.log("=== Daemon Status Auth ===\n");
 
 const daemon = await startTestDaemon({
-  env: { PASEO_PASSWORD: "shared-secret" },
+  env: { RAMBLA_PASSWORD: "shared-secret" },
 });
 
 try {
   {
     console.log("Test 1: status reports password requirement without marking daemon unreachable");
     const result = await runLocalPaseo(["daemon", "status", "--json"], {
-      PASEO_HOME: daemon.paseoHome,
-      PASEO_HOST: "",
-      PASEO_PASSWORD: "",
+      RAMBLA_HOME: daemon.paseoHome,
+      RAMBLA_HOST: "",
+      RAMBLA_PASSWORD: "",
     });
 
     assert.strictEqual(result.exitCode, 0, "status should still succeed");
@@ -34,9 +34,9 @@ try {
   {
     console.log("Test 2: status reports rejected supplied password separately");
     const result = await runLocalPaseo(["daemon", "status", "--json"], {
-      PASEO_HOME: daemon.paseoHome,
-      PASEO_HOST: "",
-      PASEO_PASSWORD: "wrong-secret",
+      RAMBLA_HOME: daemon.paseoHome,
+      RAMBLA_HOST: "",
+      RAMBLA_PASSWORD: "wrong-secret",
     });
 
     assert.strictEqual(result.exitCode, 0, "status should still succeed");
@@ -52,9 +52,9 @@ try {
   {
     console.log("Test 3: status reaches the same daemon when password is supplied");
     const result = await runLocalPaseo(["daemon", "status", "--json"], {
-      PASEO_HOME: daemon.paseoHome,
-      PASEO_HOST: "",
-      PASEO_PASSWORD: "shared-secret",
+      RAMBLA_HOME: daemon.paseoHome,
+      RAMBLA_HOST: "",
+      RAMBLA_PASSWORD: "shared-secret",
     });
 
     assert.strictEqual(result.exitCode, 0, "status should succeed with password");

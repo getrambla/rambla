@@ -13,21 +13,21 @@ The official image:
 - builds `@getpaseo/server` and `@getpaseo/cli` from source-built workspace tarballs
 - runs the daemon as the non-root `paseo` user
 - listens on `0.0.0.0:6767` inside the container
-- enables the bundled daemon web UI with `PASEO_WEB_UI_ENABLED=true`
+- enables the bundled daemon web UI with `RAMBLA_WEB_UI_ENABLED=true`
 - stores daemon state and agent credentials under `/home/paseo`
 - leaves agent CLIs out of the base image
 
 Open the container's HTTP origin, for example `http://localhost:6767`, to load
 the web UI. The served app receives a same-origin connection hint and connects
 back to that daemon. Static UI files load without daemon auth; API and
-WebSocket requests still require `PASEO_PASSWORD` when one is configured.
+WebSocket requests still require `RAMBLA_PASSWORD` when one is configured.
 
 ## Quick Start
 
 ```bash
 docker run -d --name paseo \
   -p 6767:6767 \
-  -e PASEO_PASSWORD=change-me \
+  -e RAMBLA_PASSWORD=change-me \
   -v "$PWD/paseo-home:/home/paseo" \
   -v "$PWD:/workspace" \
   ghcr.io/getrambla/rambla:latest
@@ -39,7 +39,7 @@ Then open:
 http://localhost:6767
 ```
 
-If you set `PASEO_PASSWORD`, enter the same password when adding the direct
+If you set `RAMBLA_PASSWORD`, enter the same password when adding the direct
 daemon connection in the web UI or another Paseo client.
 
 ## Docker Compose
@@ -62,7 +62,7 @@ services:
     ports:
       - "6767:6767"
     environment:
-      PASEO_PASSWORD: "change-me"
+      RAMBLA_PASSWORD: "change-me"
     volumes:
       - ./paseo-home:/home/paseo
       - ./workspace:/workspace
@@ -123,8 +123,8 @@ The image defaults:
 | Variable       | Default               |
 | -------------- | --------------------- |
 | `HOME`         | `/home/paseo`         |
-| `PASEO_HOME`   | `/home/paseo/.rambla` |
-| `PASEO_LISTEN` | `0.0.0.0:6767`        |
+| `RAMBLA_HOME`   | `/home/paseo/.rambla` |
+| `RAMBLA_LISTEN` | `0.0.0.0:6767`        |
 
 If you bind-mount host directories on Linux, make sure the container user can
 write them. The built-in `paseo` user has uid/gid `1000:1000`. For a different
@@ -162,19 +162,19 @@ server {
 }
 ```
 
-If you reach the daemon by DNS name, set `PASEO_HOSTNAMES` so host-header
+If you reach the daemon by DNS name, set `RAMBLA_HOSTNAMES` so host-header
 validation allows that name:
 
 ```yaml
 environment:
-  PASEO_HOSTNAMES: "paseo.example.com,.lan"
+  RAMBLA_HOSTNAMES: "paseo.example.com,.lan"
 ```
 
 IPs and `localhost` are allowed by default.
 
 ## Security
 
-- Set `PASEO_PASSWORD` for any published port or network-reachable deployment.
+- Set `RAMBLA_PASSWORD` for any published port or network-reachable deployment.
 - Prefer HTTPS at the reverse proxy for direct browser access.
 - Use the [official Paseo relay](https://github.com/getpaseo/paseo-relay) for
   untrusted networks or mobile access when you do not want to expose the daemon
@@ -197,7 +197,7 @@ To assert the source tree version while building:
 
 ```bash
 docker build \
-  --build-arg PASEO_VERSION=0.1.102 \
+  --build-arg RAMBLA_VERSION=0.1.102 \
   -t paseo:0.1.102 \
   -f docker/base/Dockerfile \
   .
@@ -228,9 +228,9 @@ The published image is multi-arch for `linux/amd64` and `linux/arm64`.
 
 ## Troubleshooting
 
-- **The web UI loads but cannot connect**: if `PASEO_PASSWORD` is set, add a
+- **The web UI loads but cannot connect**: if `RAMBLA_PASSWORD` is set, add a
   direct connection with the same password.
-- **403 Host not allowed**: set `PASEO_HOSTNAMES` to the DNS names you use.
+- **403 Host not allowed**: set `RAMBLA_HOSTNAMES` to the DNS names you use.
 - **Provider not available**: install that agent CLI in a child image or mount a
   runtime where the binary is on `PATH`.
 - **Permission errors in `/workspace`**: make the mounted directory writable by

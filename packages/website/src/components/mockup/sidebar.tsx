@@ -47,7 +47,7 @@ interface WorkspaceRow {
   selected?: boolean;
 }
 
-const PASEO: Avatar = { kind: "paseo" };
+const RAMBLA: Avatar = { kind: "paseo" };
 const BLANK_PAGE: Avatar = { kind: "blank-page" };
 
 const PINNED_ROWS: WorkspaceRow[] = [
@@ -63,7 +63,7 @@ const WORKING_ROWS: WorkspaceRow[] = [
   {
     id: "safe-area",
     title: "Fix commit safe area in emulators",
-    avatar: PASEO,
+    avatar: RAMBLA,
     time: "4m",
     running: true,
   },
@@ -80,7 +80,7 @@ const READY_TO_REVIEW_ROWS: WorkspaceRow[] = [
   {
     id: "lineage",
     title: "Rambla homepage",
-    avatar: PASEO,
+    avatar: RAMBLA,
     pr: "3981",
     passed: true,
     time: "now",
@@ -97,7 +97,7 @@ const READY_TO_REVIEW_ROWS: WorkspaceRow[] = [
 ];
 
 const DONE_ROWS: WorkspaceRow[] = [
-  { id: "beta", title: "Release v0.7.0-beta.2", avatar: PASEO, time: "2h" },
+  { id: "beta", title: "Release v0.7.0-beta.2", avatar: RAMBLA, time: "2h" },
   {
     id: "blank-page-focus",
     title: "Preserve focus between pages",
@@ -109,7 +109,7 @@ const DONE_ROWS: WorkspaceRow[] = [
   {
     id: "perms",
     title: "Design semantic permission sy…",
-    avatar: PASEO,
+    avatar: RAMBLA,
     host: "my-server",
     pr: "3981",
     passed: true,
@@ -118,18 +118,18 @@ const DONE_ROWS: WorkspaceRow[] = [
   {
     id: "modules",
     title: "Plan modules and abstractions",
-    avatar: PASEO,
+    avatar: RAMBLA,
     pr: "3884",
     passed: true,
     time: "1d",
   },
-  { id: "resume", title: "Resume in-progress work", avatar: PASEO, time: "3d" },
-  { id: "undef", title: "Undefined task", avatar: PASEO, time: "3d" },
-  { id: "codex-issue", title: "Diagnose cloud/Codex issue re…", avatar: PASEO, time: "4d" },
-  { id: "cws", title: "Diagnose create_workspace 37…", avatar: PASEO, time: "4d" },
-  { id: "taps", title: "Diagnose tap interactions", avatar: PASEO, time: "4d" },
-  { id: "clarify", title: "Clarify task requirements", avatar: PASEO, time: "5d" },
-  { id: "abc", title: "Task for abcdefghi", avatar: PASEO, time: "5d" },
+  { id: "resume", title: "Resume in-progress work", avatar: RAMBLA, time: "3d" },
+  { id: "undef", title: "Undefined task", avatar: RAMBLA, time: "3d" },
+  { id: "codex-issue", title: "Diagnose cloud/Codex issue re…", avatar: RAMBLA, time: "4d" },
+  { id: "cws", title: "Diagnose create_workspace 37…", avatar: RAMBLA, time: "4d" },
+  { id: "taps", title: "Diagnose tap interactions", avatar: RAMBLA, time: "4d" },
+  { id: "clarify", title: "Clarify task requirements", avatar: RAMBLA, time: "5d" },
+  { id: "abc", title: "Task for abcdefghi", avatar: RAMBLA, time: "5d" },
 ];
 
 // --- pieces -----------------------------------------------------------------

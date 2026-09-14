@@ -747,11 +747,11 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       const paseoConfig = {
         worktree: {
           setup: [
-            'echo "source=$PASEO_SOURCE_CHECKOUT_PATH" > setup.log',
-            'echo "root_alias=$PASEO_ROOT_PATH" >> setup.log',
-            'echo "worktree=$PASEO_WORKTREE_PATH" >> setup.log',
-            'echo "branch=$PASEO_BRANCH_NAME" >> setup.log',
-            'echo "port=$PASEO_WORKTREE_PORT" >> setup.log',
+            'echo "source=$RAMBLA_SOURCE_CHECKOUT_PATH" > setup.log',
+            'echo "root_alias=$RAMBLA_ROOT_PATH" >> setup.log',
+            'echo "worktree=$RAMBLA_WORKTREE_PATH" >> setup.log',
+            'echo "branch=$RAMBLA_BRANCH_NAME" >> setup.log',
+            'echo "port=$RAMBLA_WORKTREE_PORT" >> setup.log',
           ],
         },
       };
@@ -846,11 +846,11 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           branchName: "main",
           cleanupOnFailure: false,
           runtimeEnv: {
-            PASEO_SOURCE_CHECKOUT_PATH: repoDir,
-            PASEO_ROOT_PATH: repoDir,
-            PASEO_WORKTREE_PATH: repoDir,
-            PASEO_BRANCH_NAME: "main",
-            PASEO_WORKTREE_PORT: "12345",
+            RAMBLA_SOURCE_CHECKOUT_PATH: repoDir,
+            RAMBLA_ROOT_PATH: repoDir,
+            RAMBLA_WORKTREE_PATH: repoDir,
+            RAMBLA_BRANCH_NAME: "main",
+            RAMBLA_WORKTREE_PORT: "12345",
           },
         });
       } finally {
@@ -901,10 +901,10 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
               'echo "second" >> setup-array.log',
             ],
             teardown: [
-              'echo "first" > "$PASEO_SOURCE_CHECKOUT_PATH/teardown-array.log"',
+              'echo "first" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown-array.log"',
               null,
               "",
-              'echo "second" >> "$PASEO_SOURCE_CHECKOUT_PATH/teardown-array.log"',
+              'echo "second" >> "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown-array.log"',
             ],
           },
         }),
@@ -915,8 +915,8 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         'echo "second" >> setup-array.log',
       ]);
       expect(getWorktreeTeardownCommands(repoDir)).toEqual([
-        'echo "first" > "$PASEO_SOURCE_CHECKOUT_PATH/teardown-array.log"',
-        'echo "second" >> "$PASEO_SOURCE_CHECKOUT_PATH/teardown-array.log"',
+        'echo "first" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown-array.log"',
+        'echo "second" >> "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown-array.log"',
       ]);
     });
 
@@ -992,7 +992,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         branchName: result.branchName,
       });
 
-      expect(second.PASEO_WORKTREE_PORT).toBe(first.PASEO_WORKTREE_PORT);
+      expect(second.RAMBLA_WORKTREE_PORT).toBe(first.RAMBLA_WORKTREE_PORT);
     });
 
     it("fails runtime env resolution when persisted port is in use", async () => {
@@ -1009,7 +1009,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         worktreePath: result.worktreePath,
         branchName: result.branchName,
       });
-      const port = Number(env.PASEO_WORKTREE_PORT);
+      const port = Number(env.RAMBLA_WORKTREE_PORT);
 
       const server = net.createServer();
       await new Promise<void>((resolve, reject) => {
@@ -1428,11 +1428,11 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       const paseoConfig = {
         worktree: {
           teardown: [
-            'echo "source=$PASEO_SOURCE_CHECKOUT_PATH" > "$PASEO_SOURCE_CHECKOUT_PATH/teardown.log"',
-            'echo "root_alias=$PASEO_ROOT_PATH" >> "$PASEO_SOURCE_CHECKOUT_PATH/teardown.log"',
-            'echo "worktree=$PASEO_WORKTREE_PATH" >> "$PASEO_SOURCE_CHECKOUT_PATH/teardown.log"',
-            'echo "branch=$PASEO_BRANCH_NAME" >> "$PASEO_SOURCE_CHECKOUT_PATH/teardown.log"',
-            'echo "port=$PASEO_WORKTREE_PORT" >> "$PASEO_SOURCE_CHECKOUT_PATH/teardown.log"',
+            'echo "source=$RAMBLA_SOURCE_CHECKOUT_PATH" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown.log"',
+            'echo "root_alias=$RAMBLA_ROOT_PATH" >> "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown.log"',
+            'echo "worktree=$RAMBLA_WORKTREE_PATH" >> "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown.log"',
+            'echo "branch=$RAMBLA_BRANCH_NAME" >> "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown.log"',
+            'echo "port=$RAMBLA_WORKTREE_PORT" >> "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown.log"',
           ],
         },
       };
@@ -1462,14 +1462,14 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       expect(teardownLog).toContain(`root_alias=${repoDir}`);
       expect(teardownLog).toContain(`worktree=${created.worktreePath}`);
       expect(teardownLog).toContain("branch=teardown-branch");
-      expect(teardownLog).toContain(`port=${runtimeEnv.PASEO_WORKTREE_PORT}`);
+      expect(teardownLog).toContain(`port=${runtimeEnv.RAMBLA_WORKTREE_PORT}`);
     });
 
     it("runs string teardown scripts from paseo.json as a single shell command", async () => {
       const paseoConfig = {
         worktree: {
           teardown:
-            'cleanup_message="teardown string"\necho "$cleanup_message" > "$PASEO_SOURCE_CHECKOUT_PATH/teardown.log"',
+            'cleanup_message="teardown string"\necho "$cleanup_message" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown.log"',
         },
       };
       writeFileSync(join(repoDir, "paseo.json"), JSON.stringify(paseoConfig));
@@ -1489,16 +1489,16 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       await deletePaseoWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome });
 
       expect(getWorktreeTeardownCommands(repoDir)).toEqual([
-        'cleanup_message="teardown string"\necho "$cleanup_message" > "$PASEO_SOURCE_CHECKOUT_PATH/teardown.log"',
+        'cleanup_message="teardown string"\necho "$cleanup_message" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown.log"',
       ]);
       expect(readFileSync(join(repoDir, "teardown.log"), "utf8").trim()).toBe("teardown string");
     });
 
-    it("omits PASEO_WORKTREE_PORT from teardown env when runtime metadata is missing", async () => {
+    it("omits RAMBLA_WORKTREE_PORT from teardown env when runtime metadata is missing", async () => {
       const paseoConfig = {
         worktree: {
           teardown: [
-            'echo "port=${PASEO_WORKTREE_PORT-unset}" > "$PASEO_SOURCE_CHECKOUT_PATH/teardown-port.log"',
+            'echo "port=${RAMBLA_WORKTREE_PORT-unset}" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown-port.log"',
           ],
         },
       };
@@ -1528,7 +1528,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       const paseoConfig = {
         worktree: {
           teardown: [
-            'echo "started" > "$PASEO_SOURCE_CHECKOUT_PATH/teardown-start.log"',
+            'echo "started" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown-start.log"',
             "echo boom 1>&2; exit 9",
           ],
         },

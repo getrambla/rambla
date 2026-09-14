@@ -2675,7 +2675,7 @@ export const ptBR: TranslationResources = {
         newScript: "Novo script",
         editScript: "Editar {{name}}",
         runAsService: "Executar como serviço",
-        serviceHint: "O Rambla supervisiona o processo e atribui uma porta via $PASEO_PORT",
+        serviceHint: "O Rambla supervisiona o processo e atribui uma porta via $RAMBLA_PORT",
         actions: {
           add: "Adicionar script",
           edit: "Editar",

@@ -101,7 +101,7 @@ buildNpmPackage {
     npm run build --workspace=@getpaseo/expo-two-way-audio
 
     # Expo web export for the Electron renderer
-    ( cd packages/app && PASEO_WEB_PLATFORM=electron npx expo export --platform web )
+    ( cd packages/app && RAMBLA_WEB_PLATFORM=electron npx expo export --platform web )
 
     # Desktop main process
     npm run build:main --workspace=@getpaseo/desktop
@@ -149,7 +149,7 @@ buildNpmPackage {
       # complete monorepo used to ship every build-time dependency (including
       # Electron, Expo tooling, and cross-platform builder binaries), making the
       # desktop output larger than 2 GiB.
-      PASEO_TRACE_DESKTOP=1 node scripts/trace-daemon.mjs > desktop-files.txt
+      RAMBLA_TRACE_DESKTOP=1 node scripts/trace-daemon.mjs > desktop-files.txt
 
       while IFS= read -r path; do
         [ -z "$path" ] && continue

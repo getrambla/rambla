@@ -90,7 +90,7 @@ If the same reverse proxy serves the daemon web UI over HTTPS, it must also set 
 }
 ```
 
-`PASEO_TRUSTED_PROXIES` accepts the same comma-separated values, for example `loopback,172.16.0.0/12`. Use `true` only when the final trusted proxy overwrites client-supplied `X-Forwarded-*` headers.
+`RAMBLA_TRUSTED_PROXIES` accepts the same comma-separated values, for example `loopback,172.16.0.0/12`. Use `true` only when the final trusted proxy overwrites client-supplied `X-Forwarded-*` headers.
 
 Nginx example:
 
@@ -136,6 +136,6 @@ The listen address and public base URL can also be set via environment variables
 
 | Variable                              | Description                                                               |
 | ------------------------------------- | ------------------------------------------------------------------------- |
-| `PASEO_SERVICE_PROXY_ENABLED`         | Compatibility shim; `false` suppresses optional public/listen layers only |
-| `PASEO_SERVICE_PROXY_LISTEN`          | Starts the optional service-only listener, e.g. `0.0.0.0:8080`            |
-| `PASEO_SERVICE_PROXY_PUBLIC_BASE_URL` | Adds public service aliases and links                                     |
+| `RAMBLA_SERVICE_PROXY_ENABLED`         | Compatibility shim; `false` suppresses optional public/listen layers only |
+| `RAMBLA_SERVICE_PROXY_LISTEN`          | Starts the optional service-only listener, e.g. `0.0.0.0:8080`            |
+| `RAMBLA_SERVICE_PROXY_PUBLIC_BASE_URL` | Adds public service aliases and links                                     |

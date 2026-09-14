@@ -2,26 +2,26 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)"
-STATE_DIR="${PASEO_COMPOSER_KEYBOARD_STATE_DIR:-${REPO_ROOT}/.dev/agent-device-composer-keyboard}"
+STATE_DIR="${RAMBLA_COMPOSER_KEYBOARD_STATE_DIR:-${REPO_ROOT}/.dev/agent-device-composer-keyboard}"
 ARTIFACTS_DIR="${REPO_ROOT}/.dev/agent-device-artifacts/composer-keyboard-android"
-SESSION="${PASEO_COMPOSER_KEYBOARD_SESSION:-composer-keyboard-android}"
-APP_ID="${PASEO_COMPOSER_KEYBOARD_APP_ID:-sh.rambla.debug}"
-DEVICE="${PASEO_COMPOSER_KEYBOARD_DEVICE:-paseo-api35}"
+SESSION="${RAMBLA_COMPOSER_KEYBOARD_SESSION:-composer-keyboard-android}"
+APP_ID="${RAMBLA_COMPOSER_KEYBOARD_APP_ID:-sh.rambla.debug}"
+DEVICE="${RAMBLA_COMPOSER_KEYBOARD_DEVICE:-paseo-api35}"
 HELPER_IME="com.callstack.agentdevice.imehelper/.TestInputMethodService"
 GBOARD_IME="com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
 ASSERT="${REPO_ROOT}/packages/app/e2e/mobile/composer-keyboard/assert-composer-keyboard.mjs"
 STALL_HERMES="${REPO_ROOT}/packages/app/e2e/mobile/composer-keyboard/stall-hermes.mjs"
-METRO_PORT="${PASEO_MOBILE_E2E_METRO_PORT:-8082}"
-DAEMON_HOST="${PASEO_COMPOSER_KEYBOARD_DAEMON_HOST:-127.0.0.1:6770}"
-DAEMON_HOME="${PASEO_COMPOSER_KEYBOARD_DAEMON_HOME:-${REPO_ROOT}/.dev/composer-e2e-home}"
-SERVER_ID="${PASEO_COMPOSER_KEYBOARD_SERVER_ID:-}"
+METRO_PORT="${RAMBLA_MOBILE_E2E_METRO_PORT:-8082}"
+DAEMON_HOST="${RAMBLA_COMPOSER_KEYBOARD_DAEMON_HOST:-127.0.0.1:6770}"
+DAEMON_HOME="${RAMBLA_COMPOSER_KEYBOARD_DAEMON_HOME:-${REPO_ROOT}/.dev/composer-e2e-home}"
+SERVER_ID="${RAMBLA_COMPOSER_KEYBOARD_SERVER_ID:-}"
 MESSAGE=$'keyboard invariant line one\nline two\nline three\nline four'
 LONG_MESSAGE="$(node -e 'process.stdout.write(Array.from({ length: 180 }, (_, index) => `line${index + 1}`).join(" "))')"
 AGENT_TITLE="Keyboard dismiss QA $(date +%s)"
 
 if [[ -z "${SERVER_ID}" ]]; then
   if [[ ! -f "${DAEMON_HOME}/server-id" ]]; then
-    echo "Missing ${DAEMON_HOME}/server-id; set PASEO_COMPOSER_KEYBOARD_SERVER_ID" >&2
+    echo "Missing ${DAEMON_HOME}/server-id; set RAMBLA_COMPOSER_KEYBOARD_SERVER_ID" >&2
     exit 1
   fi
   SERVER_ID="$(<"${DAEMON_HOME}/server-id")"
@@ -135,7 +135,7 @@ trap cleanup EXIT INT TERM
 cleanup
 mkdir -p "${STATE_DIR}" "${ARTIFACTS_DIR}"
 
-workspaces_json="$(env -u PASEO_CALLER_AGENT_ID -u PASEO_AGENT_ID -u PASEO_WORKSPACE_ID \
+workspaces_json="$(env -u RAMBLA_CALLER_AGENT_ID -u RAMBLA_AGENT_ID -u RAMBLA_WORKSPACE_ID \
   npm run --silent cli -- workspace ls --json --host "${DAEMON_HOST}")"
 workspace_id="$(node -e '
   const workspaces = JSON.parse(require("node:fs").readFileSync(0, "utf8"));
@@ -157,7 +157,7 @@ adb shell am start \
 sleep 3
 
 # Create the fixture while the client is connected so its directory replica observes the insert.
-run_json="$(env -u PASEO_CALLER_AGENT_ID -u PASEO_AGENT_ID -u PASEO_WORKSPACE_ID \
+run_json="$(env -u RAMBLA_CALLER_AGENT_ID -u RAMBLA_AGENT_ID -u RAMBLA_WORKSPACE_ID \
   npm run --silent cli -- run "Exercise the composer keyboard invariant flow" \
   --background \
   --title "${AGENT_TITLE}" \

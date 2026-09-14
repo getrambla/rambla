@@ -2691,7 +2691,7 @@ export const es: TranslationResources = {
         newScript: "Nuevo guión",
         editScript: "Editar{{name}}",
         runAsService: "Ejecutar como servicio",
-        serviceHint: "Rambla supervisa el proceso y asigna un puerto vía $PASEO_PORT",
+        serviceHint: "Rambla supervisa el proceso y asigna un puerto vía $RAMBLA_PORT",
         actions: {
           add: "Agregar guión",
           edit: "Editar",

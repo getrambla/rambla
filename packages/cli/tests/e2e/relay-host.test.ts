@@ -180,9 +180,9 @@ async function waitForDaemonRelayRegistered(offerUrl: string, timeoutMs = 30_000
     ctx = await createE2ETestContext({
       timeout: 60_000,
       env: {
-        PASEO_RELAY_ENABLED: "true",
-        PASEO_RELAY_ENDPOINT: relayEndpoint,
-        PASEO_RELAY_PUBLIC_ENDPOINT: relayEndpoint,
+        RAMBLA_RELAY_ENABLED: "true",
+        RAMBLA_RELAY_ENDPOINT: relayEndpoint,
+        RAMBLA_RELAY_PUBLIC_ENDPOINT: relayEndpoint,
       },
     });
 
@@ -220,7 +220,7 @@ async function waitForDaemonRelayRegistered(offerUrl: string, timeoutMs = 30_000
 
     const relay = await ctx.paseo(["ls", "--json", "--host", offerUrl], {
       timeout: 30_000,
-      env: { PASEO_HOST: offerUrl },
+      env: { RAMBLA_HOST: offerUrl },
     });
     expect(relay.exitCode, `relay ls failed: ${relay.stderr}\nstdout: ${relay.stdout}`).toBe(0);
     const relayAgents = JSON.parse(relay.stdout.trim() || "[]");

@@ -9,7 +9,7 @@ routes = [{ pattern = "relay.rambla.sh", custom_domain = true }]
 enabled = true
 
 [vars]
-PASEO_RELAY_UPSTREAM = "https://paseo-relay-next.fly.dev"
+RAMBLA_RELAY_UPSTREAM = "https://paseo-relay-next.fly.dev"
 
 [[durable_objects.bindings]]
 name = "RELAY"

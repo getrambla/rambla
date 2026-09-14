@@ -3,7 +3,7 @@
 /**
  * Phase 2: Daemon Command Tests
  *
- * Tests daemon commands with an isolated PASEO_HOME.
+ * Tests daemon commands with an isolated RAMBLA_HOME.
  *
  * Tests:
  * - daemon --help shows subcommands
@@ -34,7 +34,7 @@ const paseoHome = await mkdtemp(join(tmpdir(), "paseo-test-home-"));
 const require = createRequire(import.meta.url);
 
 function daemonCommand(args: string[]) {
-  return runLocalPaseo(["daemon", ...args], { PASEO_HOME: paseoHome });
+  return runLocalPaseo(["daemon", ...args], { RAMBLA_HOME: paseoHome });
 }
 
 async function stopChildProcess(child: ChildProcess): Promise<void> {
@@ -179,7 +179,7 @@ try {
   {
     console.log("Test 5b: daemon status ignores a global --host");
     const result = await runLocalPaseo(["--host", "localhost:1", "daemon", "status", "--json"], {
-      PASEO_HOME: paseoHome,
+      RAMBLA_HOME: paseoHome,
     });
     assert.strictEqual(result.exitCode, 0, `daemon status should stay local: ${result.stderr}`);
     const parsed = JSON.parse(result.stdout);
@@ -242,11 +242,11 @@ try {
       cwd: join(import.meta.dirname, ".."),
       env: {
         ...process.env,
-        PASEO_HOME: paseoHome,
-        PASEO_LISTEN: listen,
-        PASEO_LOCAL_SPEECH_AUTO_DOWNLOAD: "0",
-        PASEO_DICTATION_ENABLED: "0",
-        PASEO_VOICE_MODE_ENABLED: "0",
+        RAMBLA_HOME: paseoHome,
+        RAMBLA_LISTEN: listen,
+        RAMBLA_LOCAL_SPEECH_AUTO_DOWNLOAD: "0",
+        RAMBLA_DICTATION_ENABLED: "0",
+        RAMBLA_VOICE_MODE_ENABLED: "0",
         CI: "true",
       },
       stdio: "ignore",
@@ -311,7 +311,7 @@ try {
       reloadConfig.daemon.browserTools.enabled = false;
       await writeFile(configPath, `${JSON.stringify(reloadConfig, null, 2)}\n`, "utf-8");
       const aliasReload = await runLocalPaseo(["reload", "--host", listen, "--json"], {
-        PASEO_HOME: paseoHome,
+        RAMBLA_HOME: paseoHome,
       });
       assert.strictEqual(aliasReload.exitCode, 0, aliasReload.stderr);
       assert.deepStrictEqual(JSON.parse(aliasReload.stdout), {
@@ -342,7 +342,7 @@ try {
           worker,
           () =>
             runLocalPaseo(["daemon", "pair", "--home", foreignHome, "--json"], {
-              PASEO_HOME: foreignHome,
+              RAMBLA_HOME: foreignHome,
             }),
           (result) => result.stderr.includes("different Rambla home"),
           (result) => `Pairing did not report the daemon identity mismatch: ${result.stderr}`,

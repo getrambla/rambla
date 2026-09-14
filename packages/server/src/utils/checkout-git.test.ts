@@ -3777,7 +3777,7 @@ const x = 1;
       expect(isPaseoWorktreePath("C:\\Users\\dev\\.rambla\\worktrees\\feature")).toBe(true);
     });
 
-    it("matches worktrees under a custom PASEO_HOME", () => {
+    it("matches worktrees under a custom RAMBLA_HOME", () => {
       const customPaseoHome = process.platform === "win32" ? "C:\\paseo" : "/var/lib/paseo";
       const worktreePath =
         process.platform === "win32"

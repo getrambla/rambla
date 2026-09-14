@@ -146,11 +146,11 @@ describe("worktree shell selection", () => {
         branchName: "main",
         cleanupOnFailure: false,
         runtimeEnv: {
-          PASEO_SOURCE_CHECKOUT_PATH: worktreePath,
-          PASEO_ROOT_PATH: worktreePath,
-          PASEO_WORKTREE_PATH: worktreePath,
-          PASEO_BRANCH_NAME: "main",
-          PASEO_WORKTREE_PORT: "12345",
+          RAMBLA_SOURCE_CHECKOUT_PATH: worktreePath,
+          RAMBLA_ROOT_PATH: worktreePath,
+          RAMBLA_WORKTREE_PATH: worktreePath,
+          RAMBLA_BRANCH_NAME: "main",
+          RAMBLA_WORKTREE_PORT: "12345",
         },
         onEvent: () => {},
       });

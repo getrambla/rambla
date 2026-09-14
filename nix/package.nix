@@ -132,7 +132,7 @@ buildNpmPackage rec {
     # Keep Rambla's runtime mode separate from NODE_ENV, which belongs to spawned agents.
     makeWrapper ${nodejs}/bin/node $out/bin/rambla-server \
       --add-flags "$out/lib/paseo/packages/server/dist/scripts/supervisor-entrypoint.js" \
-      --set PASEO_NODE_ENV production
+      --set RAMBLA_NODE_ENV production
 
     # Create wrapper for the CLI
     makeWrapper ${nodejs}/bin/node $out/bin/rambla \

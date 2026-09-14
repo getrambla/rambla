@@ -62,12 +62,12 @@ export async function startPackagedWebDaemon(input: {
     ...process.env,
     CI: "true",
     NODE_ENV: "development",
-    PASEO_NODE_ENV: "development",
-    PASEO_SERVER_ID: serverId,
-    PASEO_RELAY_ENDPOINT: input.relayEndpoint,
-    PASEO_RELAY_PUBLIC_ENDPOINT: input.relayEndpoint,
-    PASEO_RELAY_USE_TLS: "false",
-    PASEO_RELAY_PUBLIC_USE_TLS: "false",
+    RAMBLA_NODE_ENV: "development",
+    RAMBLA_SERVER_ID: serverId,
+    RAMBLA_RELAY_ENDPOINT: input.relayEndpoint,
+    RAMBLA_RELAY_PUBLIC_ENDPOINT: input.relayEndpoint,
+    RAMBLA_RELAY_USE_TLS: "false",
+    RAMBLA_RELAY_PUBLIC_USE_TLS: "false",
   };
 
   try {

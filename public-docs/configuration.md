@@ -18,7 +18,7 @@ By default, Paseo uses `~/.rambla` as its home directory. The configuration file
 ~/.rambla/config.json
 ```
 
-You can change the home directory by setting `PASEO_HOME` or passing `--home` to `paseo daemon start`.
+You can change the home directory by setting `RAMBLA_HOME` or passing `--home` to `paseo daemon start`.
 
 ## Precedence
 
@@ -79,7 +79,7 @@ See [Providers](/docs/providers) for the mental model and [Supported providers](
 
 ## Worktrees
 
-New worktrees are created under `$PASEO_HOME/worktrees` by default. To place new worktrees somewhere else, set `worktrees.root`:
+New worktrees are created under `$RAMBLA_HOME/worktrees` by default. To place new worktrees somewhere else, set `worktrees.root`:
 
 ```json
 {
@@ -89,7 +89,7 @@ New worktrees are created under `$PASEO_HOME/worktrees` by default. To place new
 }
 ```
 
-Relative paths are resolved against `PASEO_HOME`. Existing worktrees remain where they are; changing this setting only changes where Paseo creates and discovers Paseo-managed worktrees going forward.
+Relative paths are resolved against `RAMBLA_HOME`. Existing worktrees remain where they are; changing this setting only changes where Paseo creates and discovers Paseo-managed worktrees going forward.
 
 ## Voice
 
@@ -110,7 +110,7 @@ paseo daemon start --web-ui
 Or set the environment variable:
 
 ```bash
-PASEO_WEB_UI_ENABLED=true paseo daemon start
+RAMBLA_WEB_UI_ENABLED=true paseo daemon start
 ```
 
 Or persist it in `config.json`:
@@ -132,7 +132,7 @@ When enabled, open the daemon HTTP origin, for example `http://localhost:6767/`,
 Daemon logging uses separate console and file sinks by default:
 
 - Console: `info` and above
-- File (`$PASEO_HOME/daemon.log`): `trace` and above
+- File (`$RAMBLA_HOME/daemon.log`): `trace` and above
 - File rotation: `10m` max file size, `2` retained files total (active + 1 rotated)
 
 ```json
@@ -168,10 +168,10 @@ paseo daemon set-password
 
 This prompts for a password, writes the bcrypt hash to `config.json`, and tells you to restart the daemon. Authentication is a startup setting, so `paseo reload` will also report it as restart-required.
 
-Alternatively, set the `PASEO_PASSWORD` environment variable (plaintext, hashed automatically at startup):
+Alternatively, set the `RAMBLA_PASSWORD` environment variable (plaintext, hashed automatically at startup):
 
 ```bash
-PASEO_PASSWORD=my-secret paseo daemon start
+RAMBLA_PASSWORD=my-secret paseo daemon start
 ```
 
 Or write the hash directly in `config.json`:
@@ -198,14 +198,14 @@ The CLI picks up a password from, in order:
    paseo --host "tcp://192.168.1.10:6767?password=my-secret" ls
    ```
 
-2. The `PASEO_PASSWORD` environment variable, used as a fallback when the host carries no embedded password (works for `localhost:6767`, bare `host:port`, or `tcp://` hosts without a `password=` query):
+2. The `RAMBLA_PASSWORD` environment variable, used as a fallback when the host carries no embedded password (works for `localhost:6767`, bare `host:port`, or `tcp://` hosts without a `password=` query):
 
    ```bash
-   PASEO_PASSWORD=my-secret paseo ls
-   PASEO_PASSWORD=my-secret paseo --host 192.168.1.10:6767 ls
+   RAMBLA_PASSWORD=my-secret paseo ls
+   RAMBLA_PASSWORD=my-secret paseo --host 192.168.1.10:6767 ls
    ```
 
-A `password=` in the URI always wins over the env var, so you can keep `PASEO_PASSWORD` set globally and still target a different daemon by spelling its password into the URI.
+A `password=` in the URI always wins over the env var, so you can keep `RAMBLA_PASSWORD` set globally and still target a different daemon by spelling its password into the URI.
 
 In the mobile app, enter the password in the direct connection setup screen.
 
@@ -225,36 +225,36 @@ Set the persisted value in `config.json`:
 }
 ```
 
-`PASEO_RELAY_ENABLED=true|false` overrides the persisted value for that daemon launch. The matching `paseo daemon start --relay` and `--no-relay` flags have the same authority. Remove the launch override before changing relay from Paseo Desktop or `paseo daemon pair --relay`.
+`RAMBLA_RELAY_ENABLED=true|false` overrides the persisted value for that daemon launch. The matching `paseo daemon start --relay` and `--no-relay` flags have the same authority. Remove the launch override before changing relay from Paseo Desktop or `paseo daemon pair --relay`.
 
 ## Common env vars
 
-- `PASEO_HOME`, set Paseo home directory
-- `PASEO_HOST`, set the daemon target for CLI commands
-- `PASEO_PASSWORD`, on the daemon, the password to require (plaintext, hashed at startup); on the CLI, the password used to connect when the host URI doesn't include one
-- `PASEO_LISTEN`, override `daemon.listen`
-- `PASEO_RELAY_ENABLED`, enable or disable the outbound relay for this daemon launch
-- `PASEO_HOSTNAMES`, override/extend `daemon.hostnames`
-- `PASEO_ALLOWED_HOSTS`, deprecated alias for `PASEO_HOSTNAMES`
-- `PASEO_WEB_UI_ENABLED`, enable or disable the daemon-served web UI
-- `PASEO_WEB_UI_DIST_DIR`, override the daemon web UI build directory
-- `PASEO_TRUSTED_PROXIES`, configure trusted reverse proxy ranges for `X-Forwarded-*` headers
-- `PASEO_LOG_CONSOLE_LEVEL`, override `log.console.level`
-- `PASEO_LOG_FILE_LEVEL`, override `log.file.level`
-- `PASEO_LOG_FILE_PATH`, override `log.file.path`
-- `PASEO_LOG_FILE_ROTATE_SIZE`, override `log.file.rotate.maxSize`
-- `PASEO_LOG_FILE_ROTATE_COUNT`, override `log.file.rotate.maxFiles`
-- `PASEO_LOG`, `PASEO_LOG_FORMAT`, legacy log overrides (still supported)
+- `RAMBLA_HOME`, set Paseo home directory
+- `RAMBLA_HOST`, set the daemon target for CLI commands
+- `RAMBLA_PASSWORD`, on the daemon, the password to require (plaintext, hashed at startup); on the CLI, the password used to connect when the host URI doesn't include one
+- `RAMBLA_LISTEN`, override `daemon.listen`
+- `RAMBLA_RELAY_ENABLED`, enable or disable the outbound relay for this daemon launch
+- `RAMBLA_HOSTNAMES`, override/extend `daemon.hostnames`
+- `RAMBLA_ALLOWED_HOSTS`, deprecated alias for `RAMBLA_HOSTNAMES`
+- `RAMBLA_WEB_UI_ENABLED`, enable or disable the daemon-served web UI
+- `RAMBLA_WEB_UI_DIST_DIR`, override the daemon web UI build directory
+- `RAMBLA_TRUSTED_PROXIES`, configure trusted reverse proxy ranges for `X-Forwarded-*` headers
+- `RAMBLA_LOG_CONSOLE_LEVEL`, override `log.console.level`
+- `RAMBLA_LOG_FILE_LEVEL`, override `log.file.level`
+- `RAMBLA_LOG_FILE_PATH`, override `log.file.path`
+- `RAMBLA_LOG_FILE_ROTATE_SIZE`, override `log.file.rotate.maxSize`
+- `RAMBLA_LOG_FILE_ROTATE_COUNT`, override `log.file.rotate.maxFiles`
+- `RAMBLA_LOG`, `RAMBLA_LOG_FORMAT`, legacy log overrides (still supported)
 - `OPENAI_API_KEY`, override OpenAI provider key
 - `OPENAI_STT_API_KEY`, `OPENAI_STT_BASE_URL`, OpenAI speech-to-text endpoint (dictation + voice mode STT)
 - `OPENAI_TTS_API_KEY`, `OPENAI_TTS_BASE_URL`, OpenAI text-to-speech endpoint (voice mode TTS)
-- `PASEO_VOICE_LLM_PROVIDER`, override voice LLM provider (`claude`, `codex`, `opencode`)
-- `PASEO_DICTATION_STT_PROVIDER`, `PASEO_VOICE_STT_PROVIDER`, `PASEO_VOICE_TTS_PROVIDER`, override voice provider selection (`local` or `openai`)
-- `PASEO_LOCAL_MODELS_DIR`, control local model directory
-- `PASEO_DICTATION_LOCAL_STT_MODEL`, override local dictation STT model
-- `PASEO_VOICE_LOCAL_STT_MODEL`, `PASEO_VOICE_LOCAL_TTS_MODEL`, override local voice STT/TTS models
-- `PASEO_DICTATION_LANGUAGE`, `PASEO_VOICE_LANGUAGE`, override dictation and voice STT language
-- `PASEO_VOICE_LOCAL_TTS_SPEAKER_ID`, `PASEO_VOICE_LOCAL_TTS_SPEED`, optional local voice TTS tuning
+- `RAMBLA_VOICE_LLM_PROVIDER`, override voice LLM provider (`claude`, `codex`, `opencode`)
+- `RAMBLA_DICTATION_STT_PROVIDER`, `RAMBLA_VOICE_STT_PROVIDER`, `RAMBLA_VOICE_TTS_PROVIDER`, override voice provider selection (`local` or `openai`)
+- `RAMBLA_LOCAL_MODELS_DIR`, control local model directory
+- `RAMBLA_DICTATION_LOCAL_STT_MODEL`, override local dictation STT model
+- `RAMBLA_VOICE_LOCAL_STT_MODEL`, `RAMBLA_VOICE_LOCAL_TTS_MODEL`, override local voice STT/TTS models
+- `RAMBLA_DICTATION_LANGUAGE`, `RAMBLA_VOICE_LANGUAGE`, override dictation and voice STT language
+- `RAMBLA_VOICE_LOCAL_TTS_SPEAKER_ID`, `RAMBLA_VOICE_LOCAL_TTS_SPEED`, optional local voice TTS tuning
 
 ## Schema
 

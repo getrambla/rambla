@@ -1,6 +1,6 @@
 # Custom Provider Configuration
 
-Paseo supports configuring custom agent providers through `config.json` (located at `$PASEO_HOME/config.json`, typically `~/.rambla/config.json`). You can extend built-in providers with different API backends, add ACP-compatible agents, set custom binaries, disable providers, and create multiple profiles for the same underlying provider.
+Paseo supports configuring custom agent providers through `config.json` (located at `$RAMBLA_HOME/config.json`, typically `~/.rambla/config.json`). You can extend built-in providers with different API backends, add ACP-compatible agents, set custom binaries, disable providers, and create multiple profiles for the same underlying provider.
 
 Provider definitions live under `agents.providers` in config.json:
 
@@ -29,7 +29,7 @@ agent catalog during startup, raise the limit in milliseconds:
 ```
 
 The limit applies independently to every provider refresh and covers availability plus the entire
-catalog probe. `PASEO_PROVIDER_REFRESH_TIMEOUT_MS` sets it when the config field is absent.
+catalog probe. `RAMBLA_PROVIDER_REFRESH_TIMEOUT_MS` sets it when the config field is absent.
 
 ---
 

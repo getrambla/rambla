@@ -2698,7 +2698,7 @@ export const fr: TranslationResources = {
         newScript: "Nouveau scénario",
         editScript: "Modifier{{name}}",
         runAsService: "Exécuter en tant que service",
-        serviceHint: "Rambla supervise le processus et attribue un port via $PASEO_PORT",
+        serviceHint: "Rambla supervise le processus et attribue un port via $RAMBLA_PORT",
         actions: {
           add: "Ajouter un script",
           edit: "Modifier",

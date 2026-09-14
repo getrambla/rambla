@@ -72,7 +72,7 @@ not retain non-Git directories.
 | `server/directory-sync/`        | Daemon-global latest-state sequences for projects, workspaces, and agents      |
 | `server/workspace-labels/`      | Host-local label catalog, assignment mutations, and explicit subscriptions     |
 | `server/agent/agent-manager.ts` | Agent lifecycle state machine, timeline tracking, subscriber management        |
-| `server/agent/agent-storage.ts` | File-backed JSON persistence at `$PASEO_HOME/agents/`                          |
+| `server/agent/agent-storage.ts` | File-backed JSON persistence at `$RAMBLA_HOME/agents/`                          |
 | `server/agent/tools/`           | Transport-neutral catalog for workspaces, agents, permissions, and automation  |
 | `server/agent/mcp-server.ts`    | Thin MCP adapter that registers the Paseo tool catalog with the MCP SDK        |
 | `server/agent/providers/`       | Provider adapters (see "Agent providers" below)                                |
@@ -169,7 +169,7 @@ Enables remote access when the daemon is behind a firewall.
 - Pairing via QR code transfers the daemon's public key to the client
 - New homes keep relay disabled until pairing consent. `DaemonConfigStore` persists the desired state, while the relay runtime starts or stops the outbound transport live; pairing reads that current state instead of a startup snapshot.
 - Optional E2EE capability negotiation preserves application frame kind: text plaintext uses base64 ciphertext text frames, while binary plaintext uses raw ciphertext binary frames; mixed-version peers remain base64-only
-- Self-hosted relays opt into TLS with `daemon.relay.useTls` or `PASEO_RELAY_USE_TLS=true`; the public (client-facing) TLS setting can be overridden independently via `daemon.relay.publicUseTls` or `PASEO_RELAY_PUBLIC_USE_TLS`
+- Self-hosted relays opt into TLS with `daemon.relay.useTls` or `RAMBLA_RELAY_USE_TLS=true`; the public (client-facing) TLS setting can be overridden independently via `daemon.relay.publicUseTls` or `RAMBLA_RELAY_PUBLIC_USE_TLS`
 
 The production relay server lives in [getpaseo/paseo-relay](https://github.com/getpaseo/paseo-relay). It is a distributed Elixir service. The Cloudflare relay implementation in this monorepo is retained as legacy code and is not deployed.
 
@@ -335,7 +335,7 @@ initializing → idle ⇄ running
   client-side dedup; the default fetch page is 200 items.
 - Timeline row `timestamp` values are canonical daemon-owned timestamps. Providers may supply original replay timestamps, but clients must not guess timestamp trust or hide time UI based on local clock heuristics.
 - Events stream to connected clients in real time; correctness is backed by authoritative timeline fetches and paged-to-completion catch-up.
-- Agent state persists to `$PASEO_HOME/agents/{cwd-with-dashes}/{agent-id}.json`. Timeline rows are runtime memory; provider history is the durable transcript authority and resumed agents rebuild from it. That storage path is derived from `cwd`, not from workspace id.
+- Agent state persists to `$RAMBLA_HOME/agents/{cwd-with-dashes}/{agent-id}.json`. Timeline rows are runtime memory; provider history is the durable transcript authority and resumed agents rebuild from it. That storage path is derived from `cwd`, not from workspace id.
 
 ## Right-sidebar boundary: directory-backed vs workspace-owned
 
@@ -406,10 +406,10 @@ Providers that can accept native tool definitions should set `supportsNativePase
 
 ## Storage
 
-`$PASEO_HOME` defaults to `~/.rambla`. The most important files:
+`$RAMBLA_HOME` defaults to `~/.rambla`. The most important files:
 
 ```
-$PASEO_HOME/
+$RAMBLA_HOME/
 ├── agents/{cwd-with-dashes}/{agent-id}.json   # Agent record
 ├── projects/projects.json                      # Project registry
 ├── projects/workspaces.json                    # Workspace registry

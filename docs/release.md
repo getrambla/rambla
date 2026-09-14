@@ -149,13 +149,13 @@ version for every published package. This changes dist-tags only; do not
 republish the packages:
 
 ```bash
-PASEO_VERSION=$(node -p "require('./package.json').version")
+RAMBLA_VERSION=$(node -p "require('./package.json').version")
 for package in highlight relay protocol client plugin server cli; do
-  npm dist-tag add "@getpaseo/$package@$PASEO_VERSION" beta
+  npm dist-tag add "@getpaseo/$package@$RAMBLA_VERSION" beta
 done
 ```
 
-Verify both npm tags now resolve to `PASEO_VERSION` before considering the
+Verify both npm tags now resolve to `RAMBLA_VERSION` before considering the
 stable release complete.
 
 The Docker workflow builds images from the checked-out source tree on pull requests and on `main` as non-publishing checks. Stable `vX.Y.Z` tag pushes publish `ghcr.io/getrambla/rambla:X.Y.Z` and `ghcr.io/getrambla/rambla:latest`; beta `vX.Y.Z-beta.N` tag pushes publish only `ghcr.io/getrambla/rambla:X.Y.Z-beta.N` and never move `latest`.
