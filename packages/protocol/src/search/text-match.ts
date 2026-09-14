@@ -18,7 +18,7 @@ export interface MatchOptions {
   /** Omit or pass null to match exactly. `fuzzyPolicyForToken` picks a policy. */
   fuzzy?: FuzzyPolicy | null;
   /**
-   * Match characters that appear in order but not adjacently, so `pasbab` finds
+   * Match characters that appear in order but not adjacently, so `rambab` finds
    * `rambla-babysit`. Defaults to on. Turn it off where a near miss has to read as
    * no match at all: it widens far enough that most typos hit something, and a
    * list that preselects its first row would then act on that row when the user

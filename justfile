@@ -37,14 +37,14 @@ clean: stop
     rm -rf packages/app/.expo/types
     echo "cleaned: all dist outputs and build state removed"
 
-# CI status for the current commit, per job. Answers now; does not wait for slow jobs.
+# CI status for a branch's tip commit, per job. Answers now; does not wait for slow jobs.
 [script]
-ci:
+ci branch="main":
     set -euo pipefail
     RED=$(tput -T xterm-256color setaf 1) YEL=$(tput -T xterm-256color setaf 3) GRN=$(tput -T xterm-256color setaf 2) OFF=$(tput -T xterm-256color sgr0)
 
-    sha="$(git rev-parse HEAD)"
-    echo "Commit ${sha:0:9} — $(git log -1 --pretty=%s)"
+    sha="$(git rev-parse "{{branch}}")"
+    echo "Branch {{branch}} — commit ${sha:0:9} — $(git log -1 --pretty=%s "$sha")"
 
     runs="$(gh run list -R getrambla/rambla --commit "$sha" --limit 20 --json databaseId --jq '.[].databaseId')"
     if [ -z "$runs" ]; then

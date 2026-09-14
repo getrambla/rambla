@@ -622,7 +622,7 @@ describe("absolute directory-path configuration", () => {
   it("supports home-relative path query syntax", async () => {
     const result = await searchAbsoluteDirectoryPaths({
       homeDir,
-      query: "~/projects/pa",
+      query: "~/projects/r",
       limit: 10,
     });
 

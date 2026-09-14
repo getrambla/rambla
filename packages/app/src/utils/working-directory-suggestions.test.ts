@@ -42,7 +42,7 @@ describe("buildWorkingDirectorySuggestions", () => {
         "/Users/me/projects/rambla-desktop",
       ],
       serverPaths: [],
-      query: "projects/pso",
+      query: "projects/rba",
     });
 
     expect(results).toEqual([
