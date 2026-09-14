@@ -37,12 +37,12 @@ import type {
 import type { ScheduleService } from "../schedule/service.js";
 import type { WorkspaceGitService } from "../workspace-git-service.js";
 import {
-  createPaseoWorktree as createPaseoWorktreeService,
-  type CreatePaseoWorktreeInput,
+  createRamblaWorktree as createRamblaWorktreeService,
+  type CreateRamblaWorktreeInput,
 } from "../paseo-worktree-service.js";
 import {
-  createPaseoWorktreeWorkflow,
-  type CreatePaseoWorktreeWorkflowFn,
+  createRamblaWorktreeWorkflow,
+  type CreateRamblaWorktreeWorkflowFn,
 } from "../worktree-session.js";
 import { WorkspaceGitServiceImpl } from "../workspace-git-service.js";
 import { WorkspaceAutoName } from "../workspace-auto-name.js";
@@ -56,7 +56,7 @@ import { MutableDaemonConfigSchema, type AgentProfile } from "@getpaseo/protocol
 import type { DaemonConfigStore } from "../daemon-config-store.js";
 import type { BrowserToolsBroker, BrowserToolsExecuteInput } from "../browser-tools/broker.js";
 import type { BrowserToolsResponsePayload } from "../browser-tools/errors.js";
-import { readPaseoWorktreeMetadata } from "../../utils/worktree-metadata.js";
+import { readRamblaWorktreeMetadata } from "../../utils/worktree-metadata.js";
 import { createWorkspaceProvisioningService } from "../session/workspace-provisioning/workspace-provisioning-service.js";
 
 const REPO_CWD = resolvePath("/tmp/repo");
@@ -660,7 +660,7 @@ function createArchiveWorkspaceRecordMutator(
   };
 }
 
-function createPaseoWorktreeForMcpTest(options: {
+function createRamblaWorktreeForMcpTest(options: {
   paseoHome: string;
   broadcasts: string[];
   createdWorkspaceIds?: string[];
@@ -668,7 +668,7 @@ function createPaseoWorktreeForMcpTest(options: {
   generateWorkspaceName?: () => Promise<GeneratedWorkspaceName | null>;
   setupContinuations?: Array<"workspace" | "agent" | undefined>;
   startedAgentSetupIds?: string[];
-}): CreatePaseoWorktreeWorkflowFn {
+}): CreateRamblaWorktreeWorkflowFn {
   const projects = new Map<string, PersistedProjectRecord>();
   const workspaces = options.workspaceRecords ?? new Map<string, PersistedWorkspaceRecord>();
   const github = createGitHubServiceStub();
@@ -763,11 +763,11 @@ function createPaseoWorktreeForMcpTest(options: {
 
   return async (input, serviceOptions) => {
     options.setupContinuations?.push(serviceOptions?.setupContinuation?.kind);
-    const result = await createPaseoWorktreeWorkflow(
+    const result = await createRamblaWorktreeWorkflow(
       {
         paseoHome: options.paseoHome,
-        createPaseoWorktree: (workflowInput, workflowOptions) =>
-          createPaseoWorktreeService(workflowInput, {
+        createRamblaWorktree: (workflowInput, workflowOptions) =>
+          createRamblaWorktreeService(workflowInput, {
             github,
             ...(workflowOptions?.resolveDefaultBranch
               ? { resolveDefaultBranch: workflowOptions.resolveDefaultBranch }
@@ -1820,7 +1820,7 @@ describe("create_agent MCP tool", () => {
         agentStorage,
         providerSnapshotManager: createOpenCodeManager().manager,
         paseoHome,
-        createPaseoWorktree: createPaseoWorktreeForMcpTest({
+        createRamblaWorktree: createRamblaWorktreeForMcpTest({
           paseoHome,
           broadcasts,
           createdWorkspaceIds,
@@ -1912,7 +1912,7 @@ describe("create_agent MCP tool", () => {
         agentStorage,
         providerSnapshotManager: createOpenCodeManager().manager,
         paseoHome,
-        createPaseoWorktree: createPaseoWorktreeForMcpTest({ paseoHome, broadcasts }),
+        createRamblaWorktree: createRamblaWorktreeForMcpTest({ paseoHome, broadcasts }),
         workspaceGitService: workspaceGitService as unknown as Pick<
           WorkspaceGitService,
           "getSnapshot" | "listWorktrees"
@@ -1987,7 +1987,7 @@ describe("create_agent MCP tool", () => {
         agentStorage,
         providerSnapshotManager: createOpenCodeManager().manager,
         paseoHome,
-        createPaseoWorktree: createPaseoWorktreeForMcpTest({
+        createRamblaWorktree: createRamblaWorktreeForMcpTest({
           paseoHome,
           broadcasts,
           createdWorkspaceIds,
@@ -2022,7 +2022,7 @@ describe("create_agent MCP tool", () => {
       })
         .toString()
         .trim();
-      const metadata = readPaseoWorktreeMetadata(agentCwd);
+      const metadata = readRamblaWorktreeMetadata(agentCwd);
 
       expect(metadata).toMatchObject({
         version: 2,
@@ -2080,7 +2080,7 @@ describe("create_agent MCP tool", () => {
         agentStorage,
         providerSnapshotManager: createOpenCodeManager().manager,
         paseoHome,
-        createPaseoWorktree: createPaseoWorktreeForMcpTest({
+        createRamblaWorktree: createRamblaWorktreeForMcpTest({
           paseoHome,
           broadcasts,
           createdWorkspaceIds,
@@ -2179,7 +2179,7 @@ describe("create_agent MCP tool", () => {
         agentStorage,
         providerSnapshotManager: createOpenCodeManager().manager,
         paseoHome,
-        createPaseoWorktree: createPaseoWorktreeForMcpTest({
+        createRamblaWorktree: createRamblaWorktreeForMcpTest({
           paseoHome,
           broadcasts,
           createdWorkspaceIds,
@@ -2387,7 +2387,7 @@ describe("create_agent MCP tool", () => {
         agentStorage,
         providerSnapshotManager: createOpenCodeManager().manager,
         paseoHome,
-        createPaseoWorktree: createPaseoWorktreeForMcpTest({
+        createRamblaWorktree: createRamblaWorktreeForMcpTest({
           paseoHome,
           broadcasts,
           createdWorkspaceIds,
@@ -2434,7 +2434,7 @@ describe("create_agent MCP tool", () => {
         title: "Generated Checkout Workspace Title",
         branch: "existing-feature",
       });
-      expect(readPaseoWorktreeMetadata(agentCwd)).toMatchObject({
+      expect(readRamblaWorktreeMetadata(agentCwd)).toMatchObject({
         version: 1,
         baseRefName: "existing-feature",
       });
@@ -2449,10 +2449,10 @@ describe("create_agent MCP tool", () => {
   it("passes create_agent GitHub PR worktrees through workspace creation without metadata branch rename", async () => {
     const { agentManager, agentStorage, spies } = createTestDeps();
     const startedAgentSetupIds: string[] = [];
-    const createPaseoWorktree = vi.fn(
+    const createRamblaWorktree = vi.fn(
       async (
-        input: CreatePaseoWorktreeInput,
-        options?: Parameters<CreatePaseoWorktreeWorkflowFn>[1],
+        input: CreateRamblaWorktreeInput,
+        options?: Parameters<CreateRamblaWorktreeWorkflowFn>[1],
       ) => ({
         worktree: {
           branchName: "pr-123",
@@ -2506,7 +2506,7 @@ describe("create_agent MCP tool", () => {
       agentManager,
       agentStorage,
       providerSnapshotManager: createOpenCodeManager().manager,
-      createPaseoWorktree,
+      createRamblaWorktree,
       workspaceGitService: workspaceGitService as unknown as Pick<
         WorkspaceGitService,
         "getSnapshot" | "listWorktrees"
@@ -2525,7 +2525,7 @@ describe("create_agent MCP tool", () => {
       background: true,
     });
 
-    expect(createPaseoWorktree).toHaveBeenCalledWith(
+    expect(createRamblaWorktree).toHaveBeenCalledWith(
       expect.objectContaining({
         githubPrNumber: 123,
         firstAgentContext: { prompt: "Rename this PR branch from prompt" },
@@ -2578,7 +2578,7 @@ describe("create_agent MCP tool", () => {
         agentStorage,
         providerSnapshotManager: createOpenCodeManager().manager,
         paseoHome,
-        createPaseoWorktree: createPaseoWorktreeForMcpTest({
+        createRamblaWorktree: createRamblaWorktreeForMcpTest({
           paseoHome,
           broadcasts,
           setupContinuations,
@@ -2620,8 +2620,8 @@ describe("create_agent MCP tool", () => {
       createdAt: "2026-07-18T00:00:00.000Z",
       updatedAt: "2026-07-18T00:00:00.000Z",
     });
-    const receivedInputs: CreatePaseoWorktreeInput[] = [];
-    const createPaseoWorktree: CreatePaseoWorktreeWorkflowFn = async (input) => {
+    const receivedInputs: CreateRamblaWorktreeInput[] = [];
+    const createRamblaWorktree: CreateRamblaWorktreeWorkflowFn = async (input) => {
       receivedInputs.push(input);
       return {
         worktree: { branchName: "project-worktree", worktreePath: TARGET_CWD },
@@ -2648,7 +2648,7 @@ describe("create_agent MCP tool", () => {
         get: async (projectId) => (projectId === project.projectId ? project : null),
         list: async () => [project],
       },
-      createPaseoWorktree,
+      createRamblaWorktree,
       logger,
     });
 
@@ -2671,7 +2671,7 @@ describe("create_agent MCP tool", () => {
 
   it("preserves branch checkout and pull request checkout workspace modes", async () => {
     const { agentManager, agentStorage } = createTestDeps();
-    const createPaseoWorktree = vi.fn(async (input: CreatePaseoWorktreeInput) => ({
+    const createRamblaWorktree = vi.fn(async (input: CreateRamblaWorktreeInput) => ({
       worktree: {
         branchName: input.refName ?? "pr-42",
         worktreePath: "/tmp/worktrees/selected",
@@ -2696,7 +2696,7 @@ describe("create_agent MCP tool", () => {
       agentManager,
       agentStorage,
       providerSnapshotManager: createOpenCodeManager().manager,
-      createPaseoWorktree,
+      createRamblaWorktree,
       logger,
     });
     const tool = registeredTool(server, "create_workspace");
@@ -2722,7 +2722,7 @@ describe("create_agent MCP tool", () => {
       prNumber: 43,
     });
 
-    expect(createPaseoWorktree).toHaveBeenNthCalledWith(
+    expect(createRamblaWorktree).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
         action: "checkout",
@@ -2730,7 +2730,7 @@ describe("create_agent MCP tool", () => {
         worktreeSlug: "existing-work-copy",
       }),
     );
-    expect(createPaseoWorktree).toHaveBeenNthCalledWith(
+    expect(createRamblaWorktree).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         action: "checkout",
@@ -2741,7 +2741,7 @@ describe("create_agent MCP tool", () => {
         },
       }),
     );
-    expect(createPaseoWorktree).toHaveBeenNthCalledWith(
+    expect(createRamblaWorktree).toHaveBeenNthCalledWith(
       3,
       expect.objectContaining({
         action: "checkout",
@@ -2792,7 +2792,7 @@ describe("create_agent MCP tool", () => {
         agentStorage,
         providerSnapshotManager: createOpenCodeManager().manager,
         paseoHome,
-        createPaseoWorktree: createPaseoWorktreeForMcpTest({ paseoHome, broadcasts: [] }),
+        createRamblaWorktree: createRamblaWorktreeForMcpTest({ paseoHome, broadcasts: [] }),
         workspaceGitService: workspaceGitService as unknown as Pick<
           WorkspaceGitService,
           "getSnapshot" | "listWorktrees" | "resolveRepoRoot"
@@ -2905,7 +2905,7 @@ describe("create_agent MCP tool", () => {
         agentStorage,
         providerSnapshotManager: createOpenCodeManager().manager,
         paseoHome,
-        createPaseoWorktree: createPaseoWorktreeForMcpTest({ paseoHome, broadcasts: [] }),
+        createRamblaWorktree: createRamblaWorktreeForMcpTest({ paseoHome, broadcasts: [] }),
         workspaceGitService: workspaceGitService as unknown as Pick<
           WorkspaceGitService,
           "getSnapshot" | "listWorktrees" | "resolveRepoRoot"
@@ -2982,7 +2982,7 @@ describe("create_agent MCP tool", () => {
         agentStorage,
         providerSnapshotManager: createOpenCodeManager().manager,
         paseoHome,
-        createPaseoWorktree: createPaseoWorktreeForMcpTest({ paseoHome, broadcasts: [] }),
+        createRamblaWorktree: createRamblaWorktreeForMcpTest({ paseoHome, broadcasts: [] }),
         workspaceGitService: workspaceGitService as unknown as Pick<
           WorkspaceGitService,
           "getSnapshot" | "listWorktrees" | "resolveRepoRoot"

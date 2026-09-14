@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { createTestLogger } from "../../test-utils/test-logger.js";
 import { createAgentProviderRuntime } from "./provider-runtime.js";
 import { OpenCodeBridge } from "./providers/opencode/bridge.js";
-import type { PaseoToolCatalog } from "./tools/types.js";
+import type { RamblaToolCatalog } from "./tools/types.js";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -25,9 +25,9 @@ describe("agent provider runtime", () => {
 
     expect(
       runtime.snapshotManager.getAgentManagerProviderState().clients.opencode?.capabilities
-        .supportsNativePaseoTools,
+        .supportsNativeRamblaTools,
     ).toBe(true);
-    runtime.setPaseoToolCatalog(catalog);
+    runtime.setRamblaToolCatalog(catalog);
     await Promise.all([runtime.shutdown(), runtime.shutdown()]);
 
     expect(setManifestCatalog).toHaveBeenCalledOnce();
@@ -50,7 +50,7 @@ describe("agent provider runtime", () => {
   });
 });
 
-function emptyCatalog(): PaseoToolCatalog {
+function emptyCatalog(): RamblaToolCatalog {
   return {
     tools: new Map(),
     getTool: () => undefined,

@@ -12,9 +12,9 @@ export interface ArchiveFinishedState {
 }
 
 export interface ArchiveFinishedOutcome {
-  archivedPaseoIds: string[];
+  archivedRamblaIds: string[];
   dismissedProviderIds: string[];
-  skippedPaseoIds: string[];
+  skippedRamblaIds: string[];
   failures: Array<{ id: string; error: unknown }>;
 }
 
@@ -73,9 +73,9 @@ function identitySignature(ids: ReadonlySet<string>): string {
 
 function emptyOutcome(): ArchiveFinishedOutcome {
   return {
-    archivedPaseoIds: [],
+    archivedRamblaIds: [],
     dismissedProviderIds: [],
-    skippedPaseoIds: [],
+    skippedRamblaIds: [],
     failures: [],
   };
 }
@@ -185,7 +185,7 @@ async function runArchiveFinished(
     if (canArchiveManagedSubagent(deps.getManagedSubagent(id), deps.parentAgentId)) {
       try {
         await deps.archiveManagedSubagent(id);
-        outcome.archivedPaseoIds.push(id);
+        outcome.archivedRamblaIds.push(id);
       } catch (error) {
         outcome.failures.push({ id, error });
         if (canArchiveManagedSubagent(deps.getManagedSubagent(id), deps.parentAgentId)) {
@@ -193,7 +193,7 @@ async function runArchiveFinished(
         }
       }
     } else {
-      outcome.skippedPaseoIds.push(id);
+      outcome.skippedRamblaIds.push(id);
     }
     completedCount += 1;
     reportProgress(completedCount);

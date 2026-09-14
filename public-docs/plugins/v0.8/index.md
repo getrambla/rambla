@@ -1,21 +1,21 @@
 ---
 title: Plugin quickstart
-description: Build, install, share, and update a trusted Paseo plugin.
-nav: Paseo v0.8 — Beta
+description: Build, install, share, and update a trusted Rambla plugin.
+nav: Rambla v0.8 — Beta
 order: 46
 category: Plugins
 ---
 
 # Plugin quickstart
 
-> **For Paseo v0.8 beta.** Use the [v0.7 docs](/docs/plugins/v0.7)
+> **For Rambla v0.8 beta.** Use the [v0.7 docs](/docs/plugins/v0.7)
 > if you run the stable release.
 
 > **Experimental:** The plugin API is still evolving, so expect breaking changes and updates to
-> your plugins as Paseo evolves. See the [plugin roadmap](https://github.com/getrambla/rambla/labels/plugins)
+> your plugins as Rambla evolves. See the [plugin roadmap](https://github.com/getrambla/rambla/labels/plugins)
 > for planned contribution surfaces.
 
-A plugin is a TypeScript project installed into one Paseo daemon. It can add
+A plugin is a TypeScript project installed into one Rambla daemon. It can add
 [surfaces and sidebar items](/docs/plugins/v0.8/reference#surfaces-and-sidebar-items),
 [workspace panels](/docs/plugins/v0.8/reference#workspace-panels),
 [Command Center items](/docs/plugins/v0.8/reference#command-center-items),
@@ -26,7 +26,7 @@ A plugin is a TypeScript project installed into one Paseo daemon. It can add
 [attachment sources](/docs/plugins/v0.8/reference#add-a-composer-attachment-source), and
 [daemon-side RPCs](/docs/plugins/v0.8/reference#add-plugin-specific-backend-behavior). It can also
 [connect a coding agent as a provider](/docs/plugins/v0.8/providers). Client
-contributions run on every Paseo client connected to that daemon, including mobile.
+contributions run on every Rambla client connected to that daemon, including mobile.
 
 This guide scaffolds a plugin, runs it, and adds a workspace panel to it.
 
@@ -41,7 +41,7 @@ npm install
 ```
 
 `init` writes a strict TypeScript project and does not run the package manager. `npm install` adds
-development dependencies for typechecking and tests only; Paseo supplies the plugin SDK, React,
+development dependencies for typechecking and tests only; Rambla supplies the plugin SDK, React,
 React Native, TanStack Query, and Zod at runtime.
 
 The scaffold is a working plugin: a sidebar surface with a button that asks the daemon for a
@@ -49,8 +49,8 @@ greeting through an RPC.
 
 ```text
 workspace-plugin/
-  paseo-plugin.json      # plugin ID and supported Paseo versions
-  index.client.tsx       # runs in the Paseo app
+  paseo-plugin.json      # plugin ID and supported Rambla versions
+  index.client.tsx       # runs in the Rambla app
   index.server.ts        # runs in a daemon subprocess
   client/greeting.tsx    # the surface component
   client/web.ts          # the only file allowed to touch browser APIs
@@ -106,7 +106,7 @@ API behind `Platform.OS` with a native fallback. See
 ## Install and try it
 
 Plugins are trusted, unsandboxed code: server code and Git preparation commands run with the daemon
-user's access on the daemon machine, and client code runs inside the Paseo app. Installing a plugin
+user's access on the daemon machine, and client code runs inside the Rambla app. Installing a plugin
 means you trust that codebase, its dependencies, and its future updates.
 
 Turn on **Enable plugins** under **Settings → Plugins** on the daemon you are installing into. It is
@@ -122,7 +122,7 @@ paseo plugin install /absolute/path/to/workspace-plugin
 paseo plugin ls
 ```
 
-`paseo plugin ls` should report the plugin as `running`. Open Paseo, choose **Greeting** in the
+`paseo plugin ls` should report the plugin as `running`. Open Rambla, choose **Greeting** in the
 sidebar, and press **Create greeting**. The message comes back from the daemon subprocess through
 the RPC.
 
@@ -171,7 +171,7 @@ export function WorkspaceOverview({ theme, layout, workspaceId }: PluginWorkspac
 
 `useWorkspace` reads the fields the panel renders from the app's cached state, without an RPC and
 without re-rendering when unrelated fields change. Every `Text` takes its color from
-`theme.colors`, and `layout.compact` drives spacing, so the panel works in every Paseo theme and on
+`theme.colors`, and `layout.compact` drives spacing, so the panel works in every Rambla theme and on
 phones. See [Theme and layout](/docs/plugins/v0.8/reference#theme-and-layout) for the token list.
 
 Register the panel and a Command Center item that opens it by adding to `index.client.tsx`:
@@ -239,8 +239,8 @@ paseo plugin update --all
 
 `ls` reports runtime state, source details, and the installed commit without contacting the remote.
 
-Paseo compiles TypeScript itself, so most plugins need no build step. A repository that must
-install a dependency Paseo does not provide, or generate files, declares
+Rambla compiles TypeScript itself, so most plugins need no build step. A repository that must
+install a dependency Rambla does not provide, or generate files, declares
 [`build` commands](/docs/plugins/v0.8/reference#cli-reference) in its manifest.
 
 ## Read backend logs

@@ -1413,7 +1413,7 @@ export class OpenCodeAgentClient implements AgentClient {
     this.bridge = deps.bridge;
     this.capabilities = {
       ...OPENCODE_CAPABILITIES,
-      ...(this.bridge ? { supportsNativePaseoTools: true } : {}),
+      ...(this.bridge ? { supportsNativeRamblaTools: true } : {}),
     };
     this.runtimeSettings = runtimeSettings;
     this.createOpenCodeClient = deps.createClient ?? createSdkOpenCodeClient;

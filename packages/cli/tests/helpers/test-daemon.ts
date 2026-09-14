@@ -1,7 +1,7 @@
 /**
  * Test Daemon Helper
  *
- * Provides utilities for launching real Paseo daemons in E2E tests.
+ * Provides utilities for launching real Rambla daemons in E2E tests.
  * Each test gets an isolated daemon on an available local port with its own RAMBLA_HOME.
  *
  * CRITICAL RULES (from design doc):
@@ -171,7 +171,7 @@ export async function createTempDirs(): Promise<{ paseoHome: string; workDir: st
  */
 async function probeDaemonReady(port: number, env?: NodeJS.ProcessEnv): Promise<boolean> {
   try {
-    const { exitCode } = await runPaseoCli(
+    const { exitCode } = await runRamblaCli(
       {
         port,
         wsUrl: `ws://${TEST_DAEMON_HOST}:${port}`,
@@ -340,7 +340,7 @@ export async function startTestDaemon(options?: {
  * This is a helper that sets the correct environment variables
  * to point at the test daemon.
  */
-export async function runPaseoCli(
+export async function runRamblaCli(
   ctx: TestDaemonContext,
   args: string[],
   options?: {
@@ -430,7 +430,7 @@ export async function createE2ETestContext(options?: {
   const paseo = (
     args: string[],
     opts?: { timeout?: number; cwd?: string; env?: NodeJS.ProcessEnv },
-  ) => runPaseoCli(ctx, args, opts);
+  ) => runRamblaCli(ctx, args, opts);
 
   return {
     ...ctx,

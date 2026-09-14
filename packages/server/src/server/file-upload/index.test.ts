@@ -22,7 +22,7 @@ describe("file uploads", () => {
   });
 
   it("stores chunked upload bytes and returns an uploaded-file attachment", async () => {
-    const paseoHome = makePaseoHome();
+    const paseoHome = makeRamblaHome();
     const uploads = new FileUploadStore({ paseoHome });
 
     uploads.beginUpload({
@@ -57,7 +57,7 @@ describe("file uploads", () => {
   });
 
   it("rejects chunks beyond the declared size and removes the partial file", async () => {
-    const paseoHome = makePaseoHome();
+    const paseoHome = makeRamblaHome();
     const uploads = new FileUploadStore({ paseoHome });
 
     uploads.beginUpload({
@@ -85,7 +85,7 @@ describe("file uploads", () => {
   });
 
   it("preserves chunk order when frames arrive before earlier disk writes finish", async () => {
-    const paseoHome = makePaseoHome();
+    const paseoHome = makeRamblaHome();
     const uploads = new FileUploadStore({ paseoHome });
 
     uploads.beginUpload({
@@ -114,7 +114,7 @@ describe("file uploads", () => {
   it("replaces duplicate upload starts without letting the old stale timeout evict the replacement", async () => {
     vi.useFakeTimers();
 
-    const paseoHome = makePaseoHome();
+    const paseoHome = makeRamblaHome();
     const uploads = new FileUploadStore({ paseoHome, staleUploadTimeoutMs: 50 });
 
     uploads.beginUpload({
@@ -163,7 +163,7 @@ describe("file uploads", () => {
   it("keeps an active upload alive beyond the initial stale timeout", async () => {
     vi.useFakeTimers();
 
-    const paseoHome = makePaseoHome();
+    const paseoHome = makeRamblaHome();
     const uploads = new FileUploadStore({ paseoHome, staleUploadTimeoutMs: 50 });
 
     uploads.beginUpload({
@@ -204,7 +204,7 @@ describe("file uploads", () => {
   });
 });
 
-function makePaseoHome(): string {
+function makeRamblaHome(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "file-upload-test-")));
   tempDirs.push(root);
   return root;

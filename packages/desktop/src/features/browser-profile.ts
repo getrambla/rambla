@@ -47,11 +47,11 @@ interface ElectronSessions {
   fromPartition(partition: string): BrowserProfileSession;
 }
 
-export function getPaseoBrowserProfileSession(sessions: ElectronSessions): BrowserProfileSession {
+export function getRamblaBrowserProfileSession(sessions: ElectronSessions): BrowserProfileSession {
   return sessions.fromPartition(RAMBLA_BROWSER_PROFILE_PARTITION);
 }
 
-export function readLegacyPaseoBrowserIds(input: unknown): string[] {
+export function readLegacyRamblaBrowserIds(input: unknown): string[] {
   if (!Array.isArray(input)) {
     return [];
   }
@@ -67,12 +67,12 @@ export function readLegacyPaseoBrowserIds(input: unknown): string[] {
   return [...browserIds];
 }
 
-export function getPaseoBrowserProfileSessions(
+export function getRamblaBrowserProfileSessions(
   sessions: ElectronSessions,
   legacyBrowserIds: string[],
 ): [BrowserProfileSession, ...BrowserProfileSession[]] {
   return [
-    getPaseoBrowserProfileSession(sessions),
+    getRamblaBrowserProfileSession(sessions),
     // COMPAT(browserProfile): added in v0.1.108; remove after 2027-01-15.
     ...legacyBrowserIds.map((browserId) =>
       sessions.fromPartition(`${RAMBLA_BROWSER_PROFILE_PARTITION}-${browserId}`),
@@ -80,17 +80,17 @@ export function getPaseoBrowserProfileSessions(
   ];
 }
 
-export function getLegacyPaseoBrowserProfileSession(
+export function getLegacyRamblaBrowserProfileSession(
   sessions: ElectronSessions,
   browserId: string,
 ): BrowserProfileSession | null {
-  const [legacyBrowserId] = readLegacyPaseoBrowserIds([browserId]);
+  const [legacyBrowserId] = readLegacyRamblaBrowserIds([browserId]);
   return legacyBrowserId
     ? sessions.fromPartition(`${RAMBLA_BROWSER_PROFILE_PARTITION}-${legacyBrowserId}`)
     : null;
 }
 
-export function listPaseoBrowserProfileGuests(
+export function listRamblaBrowserProfileGuests(
   input: ListBrowserProfileGuestsInput,
 ): BrowserProfileGuest[] {
   return input.webContents.filter(
@@ -101,7 +101,7 @@ export function listPaseoBrowserProfileGuests(
   );
 }
 
-export async function clearPaseoBrowserProfile(input: ClearBrowserProfileInput): Promise<void> {
+export async function clearRamblaBrowserProfile(input: ClearBrowserProfileInput): Promise<void> {
   await Promise.all(
     input.profileSessions.flatMap((profileSession) => [
       profileSession.clearStorageData({ storages: [...RAMBLA_BROWSER_STORAGE_TYPES] }),

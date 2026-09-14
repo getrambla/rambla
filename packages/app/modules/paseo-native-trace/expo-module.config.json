@@ -1,6 +1,6 @@
 {
   "platforms": ["android"],
   "android": {
-    "modules": ["sh.rambla.trace.PaseoNativeTraceModule"]
+    "modules": ["sh.rambla.trace.RamblaNativeTraceModule"]
   }
 }

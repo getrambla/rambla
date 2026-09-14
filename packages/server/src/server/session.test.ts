@@ -85,7 +85,7 @@ interface SessionHandlerInternals {
   handleStashListRequest(params: unknown): Promise<unknown>;
   handleStashSaveRequest(params: unknown): Promise<unknown>;
   handleStashPopRequest(params: unknown): Promise<unknown>;
-  createPaseoWorktree(params: unknown): Promise<unknown>;
+  createRamblaWorktree(params: unknown): Promise<unknown>;
   handleStartWorkspaceScriptRequest(params: unknown): Promise<unknown>;
 }
 
@@ -212,7 +212,7 @@ const gitCommandMocks = vi.hoisted(() => ({
 }));
 
 const paseoWorktreeServiceMocks = vi.hoisted(() => ({
-  createPaseoWorktree: vi.fn(),
+  createRamblaWorktree: vi.fn(),
 }));
 
 interface Deferred<T> {
@@ -255,7 +255,7 @@ vi.mock("./paseo-worktree-service.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./paseo-worktree-service.js")>();
   return {
     ...actual,
-    createPaseoWorktree: paseoWorktreeServiceMocks.createPaseoWorktree,
+    createRamblaWorktree: paseoWorktreeServiceMocks.createRamblaWorktree,
   };
 });
 
@@ -963,7 +963,7 @@ describe("project command-center RPCs", () => {
           currentBranch: null,
           remoteUrl: null,
           worktreeRoot: null,
-          isPaseoOwnedWorktree: false as const,
+          isRamblaOwnedWorktree: false as const,
           mainRepoRoot: null,
         })),
       },
@@ -1031,7 +1031,7 @@ describe("project command-center RPCs", () => {
           currentBranch: null,
           remoteUrl: null,
           worktreeRoot: null,
-          isPaseoOwnedWorktree: false as const,
+          isRamblaOwnedWorktree: false as const,
           mainRepoRoot: null,
         })),
       },
@@ -2053,7 +2053,7 @@ function createWorkspaceGitSnapshot(
       mainRepoRoot: null,
       currentBranch: "feature/service",
       remoteUrl: "https://github.com/getpaseo/paseo.git",
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       isDirty: true,
       baseRef: "main",
       aheadBehind: { ahead: 2, behind: 1 },
@@ -3891,7 +3891,7 @@ describe("session checkout status handling", () => {
         upstreamRef: null,
         hasRemote: true,
         remoteUrl: "https://github.com/getpaseo/paseo.git",
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         error: null,
         requestId: "request-status",
       },
@@ -3975,7 +3975,7 @@ describe("session workspace descriptors", () => {
             git: {
               remoteUrl: "https://github.com/acme/app.git",
               currentBranch: "main",
-              isPaseoOwnedWorktree: false,
+              isRamblaOwnedWorktree: false,
               mainRepoRoot: null,
             },
           }),
@@ -4007,7 +4007,7 @@ describe("session workspace descriptors", () => {
                 currentBranch: "app",
                 remoteUrl: null,
                 worktreeRoot: "/repo/app",
-                isPaseoOwnedWorktree: false,
+                isRamblaOwnedWorktree: false,
                 mainRepoRoot: null,
               }),
             }),
@@ -4048,7 +4048,7 @@ describe("session workspace descriptors", () => {
             git: {
               remoteUrl: null,
               currentBranch: "main",
-              isPaseoOwnedWorktree: false,
+              isRamblaOwnedWorktree: false,
               mainRepoRoot: null,
             },
           }),
@@ -4079,7 +4079,7 @@ describe("session workspace descriptors", () => {
                 currentBranch: "local",
                 remoteUrl: null,
                 worktreeRoot: "/repo/local",
-                isPaseoOwnedWorktree: false,
+                isRamblaOwnedWorktree: false,
                 mainRepoRoot: null,
               }),
             }),
@@ -4531,7 +4531,7 @@ describe("session stash list handling", () => {
         index: 0,
         message: "paseo-auto-stash: feature",
         branch: "feature",
-        isPaseo: true,
+        isRambla: true,
       },
     ];
     const workspaceGitService = {
@@ -4641,7 +4641,7 @@ describe("session paseo worktree creation handling", () => {
   test("forces workspace git refreshes for the source repo and created worktree", async () => {
     const workspaceGitService = { getSnapshot: vi.fn().mockResolvedValue({}) };
     const session = createSessionForTest({ workspaceGitService });
-    paseoWorktreeServiceMocks.createPaseoWorktree.mockResolvedValue({
+    paseoWorktreeServiceMocks.createRamblaWorktree.mockResolvedValue({
       repoRoot: "/tmp/repo",
       worktree: {
         branchName: "feature/new-worktree",
@@ -4657,7 +4657,7 @@ describe("session paseo worktree creation handling", () => {
       created: true,
     });
 
-    await asSessionInternals(session).createPaseoWorktree({
+    await asSessionInternals(session).createRamblaWorktree({
       cwd: "/tmp/repo",
       worktreeSlug: "new-worktree",
       runSetup: false,

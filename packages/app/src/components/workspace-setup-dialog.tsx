@@ -92,7 +92,7 @@ async function callWorkspaceCreation({
   input: { cwd: string };
 }) {
   if (creationMethod === "create_worktree") {
-    return connectedClient.createPaseoWorktree({
+    return connectedClient.createRamblaWorktree({
       cwd: input.cwd,
       worktreeSlug: createNameId(),
     });

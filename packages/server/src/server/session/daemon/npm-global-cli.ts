@@ -42,15 +42,15 @@ export interface CommandResult {
   stderr: string;
 }
 
-export interface NpmGlobalPaseoInstall {
+export interface NpmGlobalRamblaInstall {
   version: string;
   packagePath: string;
   globalRootPath: string | null;
   isLinked: boolean;
 }
 
-export interface NpmGlobalPaseoCli {
-  inspect(): Promise<NpmGlobalPaseoInstall>;
+export interface NpmGlobalRamblaCli {
+  inspect(): Promise<NpmGlobalRamblaInstall>;
   installLatest(): Promise<CommandResult>;
 }
 
@@ -85,7 +85,7 @@ async function runExternalCommand(
   }
 }
 
-function parseNpmGlobalPaseoInstall(stdout: string): NpmGlobalPaseoInstall | null {
+function parseNpmGlobalRamblaInstall(stdout: string): NpmGlobalRamblaInstall | null {
   let parsedJson: unknown;
   try {
     parsedJson = JSON.parse(stdout);
@@ -112,10 +112,10 @@ function parseNpmGlobalPaseoInstall(stdout: string): NpmGlobalPaseoInstall | nul
   };
 }
 
-export class DefaultNpmGlobalPaseoCli implements NpmGlobalPaseoCli {
+export class DefaultNpmGlobalRamblaCli implements NpmGlobalRamblaCli {
   constructor(private readonly runCommand: CommandRunner = runExternalCommand) {}
 
-  async inspect(): Promise<NpmGlobalPaseoInstall> {
+  async inspect(): Promise<NpmGlobalRamblaInstall> {
     const result = await this.runCommand(
       "npm",
       ["-g", "ls", RAMBLA_CLI_PACKAGE, "--json", "--depth=0", "--long"],
@@ -129,7 +129,7 @@ export class DefaultNpmGlobalPaseoCli implements NpmGlobalPaseoCli {
       throw new Error(result.stderr.trim() || "npm is not available on this host");
     }
 
-    const install = parseNpmGlobalPaseoInstall(result.stdout);
+    const install = parseNpmGlobalRamblaInstall(result.stdout);
     if (!install) {
       throw new Error(`${RAMBLA_CLI_PACKAGE} is not installed with npm -g on this host`);
     }
@@ -144,4 +144,4 @@ export class DefaultNpmGlobalPaseoCli implements NpmGlobalPaseoCli {
   }
 }
 
-export const npmGlobalPaseoCli = new DefaultNpmGlobalPaseoCli();
+export const npmGlobalRamblaCli = new DefaultNpmGlobalRamblaCli();

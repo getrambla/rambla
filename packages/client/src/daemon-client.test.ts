@@ -237,7 +237,7 @@ test("traces WebSocket frames, message types, and JSON parse duration", async ()
 test("does not infer browser automation capabilities from Electron runtime", async () => {
   vi.stubGlobal("navigator", {
     userAgent:
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Paseo/0.1.89 Chrome/146 Electron/41.2.0 Safari/537.36",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Rambla/0.1.89 Chrome/146 Electron/41.2.0 Safari/537.36",
   });
   const mock = createMockTransport();
   const client = new DaemonClient({
@@ -649,7 +649,7 @@ test("dedupes in-flight checkout status requests per agentId", async () => {
         error: null,
         requestId: request.requestId,
         isGit: false,
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         repoRoot: null,
         currentBranch: null,
         isDirty: null,
@@ -2898,7 +2898,7 @@ test("sends structured first-agent context attachments with create_paseo_worktre
   mock.triggerOpen();
   await connectPromise;
 
-  const createPromise = client.createPaseoWorktree({
+  const createPromise = client.createRamblaWorktree({
     cwd: "/tmp/project",
     worktreeSlug: "review-pr-123",
     firstAgentContext: {
@@ -3299,7 +3299,7 @@ test("sends worktree base-ref fields in create_paseo_worktree_request", async ()
   mock.triggerOpen();
   await connectPromise;
 
-  const createPromise = client.createPaseoWorktree(
+  const createPromise = client.createRamblaWorktree(
     {
       cwd: "/tmp/project",
       projectId: "remote:github.com/acme/project",
@@ -3361,7 +3361,7 @@ test("omitting create_paseo_worktree_request worktree base-ref fields preserves 
   mock.triggerOpen();
   await connectPromise;
 
-  const createPromise = client.createPaseoWorktree(
+  const createPromise = client.createRamblaWorktree(
     {
       cwd: "/tmp/project",
       worktreeSlug: "feature-a",

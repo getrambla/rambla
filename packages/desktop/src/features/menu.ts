@@ -1,5 +1,5 @@
 import { app, Menu, BrowserWindow, ipcMain } from "electron";
-import { getActivePaseoBrowserWebContentsForHostWindow } from "./browser-webviews/index.js";
+import { getActiveRamblaBrowserWebContentsForHostWindow } from "./browser-webviews/index.js";
 
 interface ShowContextMenuInput {
   kind?: "terminal";
@@ -148,7 +148,7 @@ function buildApplicationMenuTemplate(
           click: withBrowserWindow((win) => {
             reloadActiveBrowserOrWindow({
               win,
-              getActiveBrowserContentsForHostWindow: getActivePaseoBrowserWebContentsForHostWindow,
+              getActiveBrowserContentsForHostWindow: getActiveRamblaBrowserWebContentsForHostWindow,
             });
           }),
         },
@@ -158,7 +158,7 @@ function buildApplicationMenuTemplate(
           click: withBrowserWindow((win) => {
             reloadActiveBrowserOrWindow({
               win,
-              getActiveBrowserContentsForHostWindow: getActivePaseoBrowserWebContentsForHostWindow,
+              getActiveBrowserContentsForHostWindow: getActiveRamblaBrowserWebContentsForHostWindow,
               ignoreCache: true,
             });
           }),

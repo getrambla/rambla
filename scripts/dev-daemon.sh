@@ -15,7 +15,7 @@ if [ -z "${RAMBLA_LOCAL_MODELS_DIR}" ]; then
 fi
 
 echo "══════════════════════════════════════════════════════"
-echo "  Paseo Dev Daemon"
+echo "  Rambla Dev Daemon"
 echo "══════════════════════════════════════════════════════"
 echo "  Home:    ${RAMBLA_HOME}"
 echo "  Models:  ${RAMBLA_LOCAL_MODELS_DIR}"

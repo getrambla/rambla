@@ -32,7 +32,7 @@ describe("opencode custom command Big Pickle E2E (real)", () => {
     }
   });
 
-  test("executes a global custom command through Paseo using Big Pickle", async () => {
+  test("executes a global custom command through Rambla using Big Pickle", async () => {
     const commandDir = path.join(homedir(), ".config", "opencode", "command");
     const commandFile = path.join(commandDir, COMMAND_FILE_NAME);
     const commandDirExisted = existsSync(commandDir);
@@ -50,7 +50,7 @@ describe("opencode custom command Big Pickle E2E (real)", () => {
         commandFile,
         [
           "---",
-          "description: Paseo issue 903 Big Pickle custom command",
+          "description: Rambla issue 903 Big Pickle custom command",
           "agent: build",
           "---",
           "",
@@ -83,7 +83,7 @@ describe("opencode custom command Big Pickle E2E (real)", () => {
         expect.arrayContaining([
           expect.objectContaining({
             name: COMMAND_NAME,
-            description: "Paseo issue 903 Big Pickle custom command",
+            description: "Rambla issue 903 Big Pickle custom command",
           }),
         ]),
       );

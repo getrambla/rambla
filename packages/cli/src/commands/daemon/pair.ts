@@ -5,7 +5,7 @@ import {
   generateLocalPairingOffer,
   getOrCreateServerId,
   loadConfig,
-  resolvePaseoHome,
+  resolveRamblaHome,
 } from "@getpaseo/server";
 import { tryConnectToDaemon } from "../../utils/client.js";
 import { resolveLocalDaemonState } from "./local-daemon.js";
@@ -178,7 +178,7 @@ export async function runPairCommand(
     ...dependencyOverrides,
   };
 
-  const paseoHome = resolvePaseoHome();
+  const paseoHome = resolveRamblaHome();
   let pairing = await dependencies.resolveOffer({
     paseoHome,
     enableRelay: options.relay === true,

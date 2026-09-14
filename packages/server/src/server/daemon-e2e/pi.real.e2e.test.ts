@@ -12,7 +12,7 @@ import type {
   AgentTimelineItem,
 } from "../agent/agent-sdk-types.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 import {
   canRunRealProvider,
   createRealProviderClient,
@@ -54,7 +54,7 @@ function createPiClient(): AgentClient {
 
 function createPiToolDaemon() {
   const logger = pino({ level: "silent" });
-  return createTestPaseoDaemon({
+  return createTestRamblaDaemon({
     agentClients: createRealProviderClients(["pi"], logger),
     logger,
   });
@@ -107,7 +107,7 @@ async function waitForTimelineItem(
 }
 
 async function withConnectedPiDaemon(
-  run: (context: { client: DaemonClient; daemon: TestPaseoDaemon }) => Promise<void>,
+  run: (context: { client: DaemonClient; daemon: TestRamblaDaemon }) => Promise<void>,
 ): Promise<void> {
   const daemon = await createPiToolDaemon();
   const client = new DaemonClient({
@@ -140,7 +140,7 @@ beforeEach((context) => {
 });
 
 test(
-  "real Pi daemon composes project and Paseo system prompts",
+  "real Pi daemon composes project and Rambla system prompts",
   async () => {
     const cwd = tmpCwd("pi-system-prompts-");
 
@@ -185,7 +185,7 @@ test(
 );
 
 test(
-  "real Pi daemon lists Paseo-handled compact slash commands",
+  "real Pi daemon lists Rambla-handled compact slash commands",
   async () => {
     const cwd = tmpCwd("pi-compact-commands-");
 

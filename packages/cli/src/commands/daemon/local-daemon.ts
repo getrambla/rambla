@@ -2,7 +2,7 @@ import { spawnSync, type ChildProcess } from "node:child_process";
 import { existsSync, readFileSync, unlinkSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
-import { loadConfig, resolvePaseoHome, spawnProcess } from "@getpaseo/server";
+import { loadConfig, resolveRamblaHome, spawnProcess } from "@getpaseo/server";
 import treeKill from "tree-kill";
 import { tryConnectToDaemon } from "../../utils/client.js";
 
@@ -106,7 +106,7 @@ const require = createRequire(import.meta.url);
 
 const defaultDaemonLaunchRuntime: DaemonLaunchRuntime = {
   resolveRunnerEntry: resolveDaemonRunnerEntry,
-  resolveHome: resolvePaseoHome,
+  resolveHome: resolveRamblaHome,
   spawnDetached: spawnProcess,
   spawnForeground: spawnSync,
 };
@@ -503,8 +503,8 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export function resolveLocalPaseoHome(home?: string): string {
-  return resolvePaseoHome(envWithHome(home));
+export function resolveLocalRamblaHome(home?: string): string {
+  return resolveRamblaHome(envWithHome(home));
 }
 
 export function resolveTcpHostFromListen(listen: string): string | null {
@@ -548,7 +548,7 @@ export function resolveLocalDaemonState(options: { home?: string } = {}): LocalD
     RAMBLA_RELAY_USE_TLS: undefined,
     RAMBLA_RELAY_PUBLIC_USE_TLS: undefined,
   };
-  const home = resolvePaseoHome(env);
+  const home = resolveRamblaHome(env);
   const config = loadConfig(home, { env });
   const pidPath = pidFilePath(home);
   const logPath = path.join(home, DAEMON_LOG_FILENAME);
@@ -572,7 +572,7 @@ export function resolveLocalDaemonState(options: { home?: string } = {}): LocalD
 }
 
 export function tailDaemonLog(home?: string, lines = 30): string | null {
-  const logPath = path.join(resolveLocalPaseoHome(home), DAEMON_LOG_FILENAME);
+  const logPath = path.join(resolveLocalRamblaHome(home), DAEMON_LOG_FILENAME);
   return tailFile(logPath, lines);
 }
 

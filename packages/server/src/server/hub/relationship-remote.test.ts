@@ -22,12 +22,12 @@ import {
 
 const openServers: ReturnType<typeof createServer>[] = [];
 const openUpgradeHubs: UpgradeRejectingHub[] = [];
-const openPaseoHomes: string[] = [];
+const openRamblaHomes: string[] = [];
 
 afterEach(async () => {
   for (const hub of openUpgradeHubs.splice(0)) hub.destroyConnections();
   await Promise.all(openServers.splice(0).map((server) => closeServer(server)));
-  await Promise.all(openPaseoHomes.splice(0).map((home) => rm(home, { recursive: true })));
+  await Promise.all(openRamblaHomes.splice(0).map((home) => rm(home, { recursive: true })));
 });
 
 test.each([401, 403, 404])(
@@ -614,7 +614,7 @@ async function connectController(
   clock: ManualRelationshipClock,
 ): Promise<HubRelationshipController> {
   const paseoHome = await mkdtemp(path.join(tmpdir(), "paseo-hub-socket-"));
-  openPaseoHomes.push(paseoHome);
+  openRamblaHomes.push(paseoHome);
   const controller = new HubRelationshipController({
     paseoHome,
     hostname: "test-daemon.local",

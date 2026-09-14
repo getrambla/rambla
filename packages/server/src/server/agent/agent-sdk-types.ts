@@ -6,7 +6,7 @@ import type {
   ToolPolicy,
 } from "@getpaseo/protocol/agent-types";
 import type { AgentAttachment } from "@getpaseo/protocol/messages";
-import type { PaseoToolCatalog } from "./tools/types.js";
+import type { RamblaToolCatalog } from "./tools/types.js";
 
 export type { AgentProviderNotice, AgentTaskItem };
 
@@ -186,7 +186,7 @@ export interface AgentCapabilityFlags {
   supportsSessionListing?: boolean;
   supportsDynamicModes: boolean;
   supportsMcpServers: boolean;
-  supportsNativePaseoTools?: boolean;
+  supportsNativeRamblaTools?: boolean;
   supportsReasoningStream: boolean;
   supportsToolInvocations: boolean;
   supportsRewindConversation?: boolean;
@@ -636,7 +636,7 @@ export interface AgentLaunchContext {
    * Runtime-only internal Rambla tools. This must never be persisted into
    * AgentSessionConfig; providers may adapt it to their native tool surface.
    */
-  paseoTools?: PaseoToolCatalog;
+  paseoTools?: RamblaToolCatalog;
 }
 
 export interface AgentCreateSessionOptions {

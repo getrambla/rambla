@@ -2,7 +2,7 @@ appId: sh.rambla
 ---
 - runFlow:
     when:
-      visible: "Open in.*Paseo.*\\?"
+      visible: "Open in.*Rambla.*\\?"
     commands:
       - tapOn: "Open"
 

@@ -16,7 +16,7 @@ async function createRepository(): Promise<string> {
   const repository = await mkdtemp(path.join(tmpdir(), "paseo-plugin-git-repository-"));
   roots.push(repository);
   await runGitCommand(["init", "-b", "main"], { cwd: repository });
-  await runGitCommand(["config", "user.name", "Paseo Tests"], { cwd: repository });
+  await runGitCommand(["config", "user.name", "Rambla Tests"], { cwd: repository });
   await runGitCommand(["config", "user.email", "paseo@example.test"], { cwd: repository });
   await writeFile(
     path.join(repository, "paseo-plugin.json"),

@@ -257,7 +257,7 @@ describe("DirectorySync session readiness", () => {
     const cachedWorkspace = normalizeWorkspaceDescriptor({
       id: "workspace-1",
       projectId: "project-1",
-      projectDisplayName: "Paseo",
+      projectDisplayName: "Rambla",
       projectRootPath: "/repo",
       workspaceDirectory: "/repo",
       projectKind: "git",
@@ -336,7 +336,7 @@ describe("DirectorySync session readiness", () => {
     const workspace = normalizeWorkspaceDescriptor({
       id: "workspace-1",
       projectId: "project-1",
-      projectDisplayName: "Paseo",
+      projectDisplayName: "Rambla",
       projectRootPath: "/repo",
       workspaceDirectory: "/repo",
       projectKind: "git",

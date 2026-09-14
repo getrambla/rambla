@@ -7,7 +7,7 @@ Rules for this fork. These override everything below.
 - **Never touch the `paseo` bin alias in `packages/cli/package.json`.** Do not remove it, do not rename it, do not "clean it up". Both `paseo` and `rambla` stay mapped to `bin/rambla`. This is not part of any rename, sweep, or refactor. If a task seems to require changing it, stop and ask.
 - **Reviewing is read-only.** When asked to review, assess, or whether something is ready, make no edits. Report and stop.
 
-Paseo is a mobile app for monitoring and controlling your local AI coding agents from anywhere. Your dev environment, in your pocket. Connects directly to your actual development environment — your code stays on your machine.
+Rambla is a mobile app for monitoring and controlling your local AI coding agents from anywhere. Your dev environment, in your pocket. Connects directly to your actual development environment — your code stays on your machine.
 
 **Supported agents:** Claude Code, Codex, GitHub Copilot, OpenCode, and Pi.
 
@@ -30,7 +30,7 @@ At the start of non-trivial work, list `docs/` and skim anything relevant to the
 
 | Doc                                                                  | What's in it                                                                                                                   |
 | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| [docs/product.md](docs/product.md)                                   | What Paseo is, who it's for, where it's going                                                                                  |
+| [docs/product.md](docs/product.md)                                   | What Rambla is, who it's for, where it's going                                                                                  |
 | [docs/architecture.md](docs/architecture.md)                         | System design, package layering, WebSocket protocol, agent lifecycle, data flow                                                |
 | [docs/agent-lifecycle.md](docs/agent-lifecycle.md)                   | Agent states, parent/child relationships, archive semantics, tabs vs archive, subagents track                                  |
 | [docs/data-model.md](docs/data-model.md)                             | File-based JSON persistence, Zod schemas, atomic writes, no migrations                                                         |
@@ -123,7 +123,7 @@ and updating `next`, integrating it after a release, and releasing a hotfix from
 
 ## Critical rules
 
-- **NEVER restart the main Paseo daemon on port 6767 without permission** — it manages all running agents. If you're an agent, restarting it kills your own process.
+- **NEVER restart the main Rambla daemon on port 6767 without permission** — it manages all running agents. If you're an agent, restarting it kills your own process.
 - **NEVER assume a timeout means the service needs restarting** — timeouts can be transient.
 - **NEVER add auth checks to tests** — agent providers handle their own auth.
 - **Before changing app routes, startup routing, remembered workspace restore, or active workspace selection, read [docs/expo-router.md](docs/expo-router.md).**

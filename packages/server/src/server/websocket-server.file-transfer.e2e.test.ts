@@ -7,13 +7,13 @@ import {
   decodeFileTransferFrame,
   FileTransferOpcode,
 } from "@getpaseo/protocol/binary-frames/index";
-import { createTestPaseoDaemon, type TestPaseoDaemon } from "./test-utils/index.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "./test-utils/index.js";
 import { WSOutboundMessageSchema, type WSOutboundMessage } from "./messages.js";
 
 const TEST_TIMEOUT_MS = 30_000;
 const FILE_SIZE = 8 * 1024 * 1024 + 123;
 
-let daemon: TestPaseoDaemon | undefined;
+let daemon: TestRamblaDaemon | undefined;
 const temporaryDirectories: string[] = [];
 const sockets: WebSocket[] = [];
 
@@ -35,7 +35,7 @@ test(
     for (let index = 0; index < expected.length; index += 1) expected[index] = index % 251;
     writeFileSync(join(cwd, "large.bin"), expected);
 
-    daemon = await createTestPaseoDaemon();
+    daemon = await createTestRamblaDaemon();
     const source = await connectSocket(daemon.port, "shared-file-client");
     const unrelated = await connectSocket(daemon.port, "shared-file-client");
     sockets.push(source, unrelated);

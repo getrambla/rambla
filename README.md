@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="packages/website/public/logo.svg" width="64" height="64" alt="Paseo logo">
+  <img src="packages/website/public/logo.svg" width="64" height="64" alt="Rambla logo">
 </p>
 
-<h1 align="center">Paseo</h1>
+<h1 align="center">Rambla</h1>
 
 <p align="center">
   <a href="README.md">English</a> ·
@@ -24,7 +24,7 @@
   <a href="https://discord.gg/jz8T2uahpH">
     <img src="https://img.shields.io/badge/Discord-555?logo=discord" alt="Discord">
   </a>
-  <a href="https://www.reddit.com/r/PaseoAI/">
+  <a href="https://www.reddit.com/r/RamblaAI/">
     <img src="https://img.shields.io/badge/Reddit-555?logo=reddit" alt="Reddit">
   </a>
 </p>
@@ -32,11 +32,11 @@
 <p align="center">One interface for Claude Code, Codex, Copilot, OpenCode, and Pi agents.</p>
 
 <p align="center">
-  <img src="https://rambla.sh/hero-mockup.png" alt="Paseo app screenshot" width="100%">
+  <img src="https://rambla.sh/hero-mockup.png" alt="Rambla app screenshot" width="100%">
 </p>
 
 <p align="center">
-  <img src="https://rambla.sh/mobile-mockup.png" alt="Paseo mobile app" width="100%">
+  <img src="https://rambla.sh/mobile-mockup.png" alt="Rambla mobile app" width="100%">
 </p>
 
 Run agents in parallel on your own machines. Ship from your phone or your desk.
@@ -45,20 +45,20 @@ Run agents in parallel on your own machines. Ship from your phone or your desk.
 - **Multi-provider:** Claude Code, Codex, Copilot, OpenCode, and Pi through the same interface. Pick the right model for each job.
 - **Voice control:** Dictate tasks or talk through problems in voice mode. Hands-free when you need it.
 - **Cross-device:** iOS, Android, desktop, web, and CLI. Start work at your desk, check in from your phone, script it from the terminal.
-- **Privacy-first:** Paseo doesn't have any telemetry, tracking, or forced log-ins.
+- **Privacy-first:** Rambla doesn't have any telemetry, tracking, or forced log-ins.
 
 ## Plugins
 
 Add themes, workspace panels, commands, settings screens, and coding-agent providers with trusted
 TypeScript plugins. Install from a local directory or Git repository with `paseo plugin add <source>`.
 
-See the [plugin docs](https://rambla.sh/docs/plugins) for your Paseo version, or start with the
+See the [plugin docs](https://rambla.sh/docs/plugins) for your Rambla version, or start with the
 [0.8 beta quickstart](https://rambla.sh/docs/plugins/v0.8). Plugins run with access to your daemon
 machine and inside connected clients; install only code you trust.
 
 ## Getting Started
 
-Paseo runs a local server called the daemon that manages your coding agents. Clients like the desktop app, mobile app, web app, and CLI connect to it.
+Rambla runs a local server called the daemon that manages your coding agents. Clients like the desktop app, mobile app, web app, and CLI connect to it.
 
 ### Prerequisites
 
@@ -78,14 +78,14 @@ To connect from your phone, open **Settings → your host → Pair Device**.
 
 ### CLI / headless
 
-Install the CLI and start Paseo:
+Install the CLI and start Rambla:
 
 ```bash
 npm install -g @getpaseo/cli
 paseo
 ```
 
-Paseo starts locally, then asks whether to enable the end-to-end encrypted relay for device pairing. If you decline, connect directly over TCP, Tailscale, or another VPN. This path is useful for servers and remote machines.
+Rambla starts locally, then asks whether to enable the end-to-end encrypted relay for device pairing. If you decline, connect directly over TCP, Tailscale, or another VPN. This path is useful for servers and remote machines.
 
 For full setup and configuration, see:
 
@@ -95,7 +95,7 @@ For full setup and configuration, see:
 
 ### Docker
 
-Run the Paseo daemon and self-hosted web UI in Docker:
+Run the Rambla daemon and self-hosted web UI in Docker:
 
 ```bash
 docker run -d --name paseo \
@@ -131,9 +131,9 @@ See the [full CLI reference](https://rambla.sh/docs/cli) for more.
 Build issue integrations, dashboards, and orchestration services with `@getpaseo/client`:
 
 ```ts
-import { createPaseoClient } from "@getpaseo/client";
+import { createRamblaClient } from "@getpaseo/client";
 
-const client = createPaseoClient({ url: "ws://127.0.0.1:6767/ws" });
+const client = createRamblaClient({ url: "ws://127.0.0.1:6767/ws" });
 await client.connect();
 
 const agent = await client.agents.create({
@@ -152,7 +152,7 @@ See the [SDK quickstart](https://rambla.sh/docs/sdk/quickstart), [recipes](https
 
 ## Skills
 
-Skills teach your agent to use Paseo to orchestrate other agents.
+Skills teach your agent to use Rambla to orchestrate other agents.
 
 ```bash
 npx skills add getrambla/rambla
@@ -168,7 +168,7 @@ Then use them in any agent conversation:
 
 Quick monorepo package map:
 
-- `packages/server`: Paseo daemon (agent process orchestration, WebSocket API, MCP server)
+- `packages/server`: Rambla daemon (agent process orchestration, WebSocket API, MCP server)
 - `packages/app`: Expo client (iOS, Android, web)
 - `packages/cli`: `paseo` CLI for daemon and agent workflows
 - `packages/desktop`: Electron desktop app

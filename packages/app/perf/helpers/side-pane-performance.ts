@@ -71,7 +71,7 @@ export function resolveProfileTarget(): ProfileTarget {
     process.env.RAMBLA_PROFILE_SERVER_ID ??
     readFileSync(resolve(repoRoot, ".dev/paseo-home/server-id"), "utf8")
   ).trim();
-  const requestedName = process.env.RAMBLA_PROFILE_WORKSPACE_NAME?.trim() || "Paseo";
+  const requestedName = process.env.RAMBLA_PROFILE_WORKSPACE_NAME?.trim() || "Rambla";
   const requestedWorkspaceId = process.env.RAMBLA_PROFILE_WORKSPACE_ID?.trim();
   if (requestedWorkspaceId) return { serverId, workspaceId: requestedWorkspaceId };
 
@@ -86,7 +86,7 @@ export function resolveProfileTarget(): ProfileTarget {
     (candidate) => candidate.name === requestedName && candidate.cwd === repoRoot,
   );
   if (!workspace) {
-    throw new Error(`No Paseo workspace named ${requestedName} points at ${repoRoot}`);
+    throw new Error(`No Rambla workspace named ${requestedName} points at ${repoRoot}`);
   }
   return { serverId, workspaceId: workspace.workspaceId };
 }

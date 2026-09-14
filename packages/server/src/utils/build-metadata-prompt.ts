@@ -1,7 +1,7 @@
-import { readPaseoConfigJson } from "./paseo-config-file.js";
+import { readRamblaConfigJson } from "./paseo-config-file.js";
 import {
-  PaseoConfigSchema,
-  type PaseoMetadataGeneration,
+  RamblaConfigSchema,
+  type RamblaMetadataGeneration,
 } from "@getpaseo/protocol/paseo-config-schema";
 
 export type MetadataConfigKey = "title" | "branchName" | "commitMessage" | "pullRequest";
@@ -46,14 +46,14 @@ function renderStyleSection(section: MetadataStyleSection, override: string | un
 
 async function readProjectMetadataOverrides(
   options: Pick<BuildMetadataPromptOptions, "cwd" | "workspaceGitService">,
-): Promise<PaseoMetadataGeneration | undefined> {
+): Promise<RamblaMetadataGeneration | undefined> {
   if (!options.workspaceGitService) {
     return undefined;
   }
   try {
     const repoRoot = await options.workspaceGitService.resolveRepoRoot(options.cwd);
-    const json = readPaseoConfigJson(repoRoot);
-    return PaseoConfigSchema.parse(json).metadataGeneration;
+    const json = readRamblaConfigJson(repoRoot);
+    return RamblaConfigSchema.parse(json).metadataGeneration;
   } catch {
     return undefined;
   }

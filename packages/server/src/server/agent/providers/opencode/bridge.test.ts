@@ -7,7 +7,7 @@ import { z } from "zod";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { createTestLogger } from "../../../../test-utils/test-logger.js";
-import type { PaseoToolCatalog } from "../../tools/types.js";
+import type { RamblaToolCatalog } from "../../tools/types.js";
 import { OpenCodeBridge, loadOpenCodeBridgePluginArtifact } from "./bridge.js";
 
 const temporaryDirectories: string[] = [];
@@ -20,7 +20,7 @@ afterEach(async () => {
   );
 });
 
-function createCatalog(): PaseoToolCatalog {
+function createCatalog(): RamblaToolCatalog {
   const tool = {
     name: "echo_context",
     title: "Echo context",

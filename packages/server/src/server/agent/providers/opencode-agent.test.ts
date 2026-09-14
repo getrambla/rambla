@@ -499,7 +499,7 @@ describe("OpenCodeAgentClient adapter smoke tests", () => {
       }),
     ]);
     // No modeId configured → no agent field: OpenCode must fall back to its
-    // own default agent instead of Paseo assuming any particular agent exists.
+    // own default agent instead of Rambla assuming any particular agent exists.
     expect(openCodeClient.calls.sessionPromptAsync[0]).not.toHaveProperty("agent");
 
     await session.close();
@@ -833,7 +833,7 @@ describe("OpenCodeAgentClient adapter smoke tests", () => {
       data: [
         {
           name: "paseo-test-custom",
-          description: "Custom agent defined for Paseo integration test",
+          description: "Custom agent defined for Rambla integration test",
           mode: "primary",
         },
         { name: "compaction", mode: "subagent" },
@@ -855,8 +855,8 @@ describe("OpenCodeAgentClient adapter smoke tests", () => {
 
     const custom = modes.find((mode) => mode.id === "paseo-test-custom");
     expect(custom).toBeDefined();
-    expect(custom!.label).toBe("Paseo-test-custom");
-    expect(custom!.description).toBe("Custom agent defined for Paseo integration test");
+    expect(custom!.label).toBe("Rambla-test-custom");
+    expect(custom!.description).toBe("Custom agent defined for Rambla integration test");
 
     // System agents should not appear as selectable modes
     expect(modes.some((mode) => mode.id === "compaction")).toBe(false);
@@ -4749,7 +4749,7 @@ describe("OpenCode provider subagent contract", () => {
         ]);
       });
 
-      await expect(parent.startTurn("Continue from Paseo")).rejects.toThrow(
+      await expect(parent.startTurn("Continue from Rambla")).rejects.toThrow(
         "A foreground turn is already active",
       );
       expect(openCode.calls.sessionAbort).toEqual([]);
@@ -4817,7 +4817,7 @@ describe("OpenCode provider subagent contract", () => {
       await parent.close();
     }
   });
-  test("does not adopt late output from an interrupted Paseo turn", async () => {
+  test("does not adopt late output from an interrupted Rambla turn", async () => {
     const { parent, openCode } = await createParentSession("ses_parent_interrupted");
     openCode.sessionPromptAsyncEvents = [];
     const events: AgentStreamEvent[] = [];
@@ -4830,7 +4830,7 @@ describe("OpenCode provider subagent contract", () => {
     });
 
     try {
-      await parent.startTurn("Start from Paseo");
+      await parent.startTurn("Start from Rambla");
       await parent.interrupt();
 
       for (const event of userMessageEvents({

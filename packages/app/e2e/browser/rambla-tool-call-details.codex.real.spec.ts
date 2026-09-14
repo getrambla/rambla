@@ -12,11 +12,11 @@ import {
 
 const GREETING = "Say hello back.";
 
-test.use({ e2eInjectPaseoTools: true });
+test.use({ e2eInjectRamblaTools: true });
 
 function verificationPrompt(workspacePath: string): string {
   return [
-    "Use Paseo tools to perform this exact UI verification.",
+    "Use Rambla tools to perform this exact UI verification.",
     "Do not edit files or run shell commands. Every prompt below is intentionally non-actionable.",
     `1. Create a local workspace at ${workspacePath} titled "Presentation QA workspace".`,
     `2. In that workspace, create a codex/gpt-5.4-mini agent titled "Greeting child" with the initial prompt "${GREETING}".`,
@@ -25,7 +25,7 @@ function verificationPrompt(workspacePath: string): string {
     `5. After the child agent finishes, send it the follow-up prompt "${GREETING}" synchronously.`,
     "6. Archive the workspace from step 1.",
     "7. Reply with exactly TOOL_CALL_QA_DONE.",
-    "Use each named Paseo tool exactly once except for the matching schedule and heartbeat deletion tools.",
+    "Use each named Rambla tool exactly once except for the matching schedule and heartbeat deletion tools.",
   ].join(" ");
 }
 
@@ -59,7 +59,7 @@ async function runPresentationJourney(handle: AgentHandle, workspacePath: string
   ).toBeVisible({ timeout: 30_000 });
 }
 
-test.describe("real Codex Paseo tool-call presentation", () => {
+test.describe("real Codex Rambla tool-call presentation", () => {
   test.setTimeout(600_000);
 
   test("renders owned tool inputs and results as readable text", async ({ page }, testInfo) => {

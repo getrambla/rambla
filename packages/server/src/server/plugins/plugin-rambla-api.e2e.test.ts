@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 import { createTestAgentClient, createTestAgentClients } from "../test-utils/fake-agent-client.js";
 
 const roots: string[] = [];
@@ -13,7 +13,7 @@ afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
-test("plugin handlers create workspaces and agents through their Paseo API", async () => {
+test("plugin handlers create workspaces and agents through their Rambla API", async () => {
   const pluginDirectory = await mkdtemp(path.join(tmpdir(), "paseo-api-plugin-"));
   const workspaceDirectory = await mkdtemp(path.join(tmpdir(), "paseo-api-workspace-"));
   roots.push(pluginDirectory, workspaceDirectory);
@@ -77,7 +77,7 @@ export default function contribute(server: PluginServerContext) {
 }`,
   );
 
-  const daemon = await createTestPaseoDaemon({
+  const daemon = await createTestRamblaDaemon({
     agentClients: { ...createTestAgentClients(), pi: createTestAgentClient("pi") },
   });
   const client = new DaemonClient({
@@ -167,7 +167,7 @@ test("daemon config reload enables and disables configured plugins without resta
     path.join(paseoHome, "config.json"),
     `${JSON.stringify({ version: 1, pluginsEnabled: false, plugins }, null, 2)}\n`,
   );
-  const daemon = await createTestPaseoDaemon({
+  const daemon = await createTestRamblaDaemon({
     paseoHomeRoot,
     cleanup: false,
     pluginsEnabled: false,

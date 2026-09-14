@@ -15,7 +15,7 @@ interface CommandResult {
   stderr: string;
 }
 
-function runLocalPaseo(args: string[], env: NodeJS.ProcessEnv): Promise<CommandResult> {
+function runLocalRambla(args: string[], env: NodeJS.ProcessEnv): Promise<CommandResult> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [CLI_ENTRY, ...args], {
       env: { ...process.env, ...env },
@@ -55,14 +55,14 @@ const env = {
 };
 
 try {
-  const start = await runLocalPaseo(["daemon", "restart", "--port", String(port)], env);
+  const start = await runLocalRambla(["daemon", "restart", "--port", String(port)], env);
   assert.strictEqual(
     start.exitCode,
     0,
     `daemon restart should succeed:\nstdout:\n${start.stdout}\nstderr:\n${start.stderr}`,
   );
 
-  const statusResult = await runLocalPaseo(
+  const statusResult = await runLocalRambla(
     ["daemon", "status", "--home", paseoHome, "--json"],
     env,
   );
@@ -90,7 +90,7 @@ try {
   );
   console.log("✓ daemon status resolves daemonNode on Windows\n");
 } finally {
-  await runLocalPaseo(["daemon", "stop", "--home", paseoHome, "--force"], env);
+  await runLocalRambla(["daemon", "stop", "--home", paseoHome, "--force"], env);
   await rm(paseoHome, { recursive: true, force: true });
 }
 

@@ -6,7 +6,7 @@ import { useSessionStore, type Agent } from "@/stores/session-store";
 import { refreshProviderSubagents, useProviderSubagentStore } from "./provider-store";
 import type { ProviderSubagentDescriptorPayload } from "@getpaseo/protocol/messages";
 
-export interface PaseoSubagentRow {
+export interface RamblaSubagentRow {
   kind: "paseo";
   id: Agent["id"];
   provider: Agent["provider"];
@@ -37,7 +37,7 @@ export interface ProviderSubagentRow {
   createdAt: Date;
 }
 
-export type SubagentRow = PaseoSubagentRow | ProviderSubagentRow;
+export type SubagentRow = RamblaSubagentRow | ProviderSubagentRow;
 
 type SessionStoreSnapshot = ReturnType<typeof useSessionStore.getState>;
 type ProviderSubagentStoreSnapshot = ReturnType<typeof useProviderSubagentStore.getState>;

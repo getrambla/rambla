@@ -14,7 +14,7 @@ import type {
   OutputSchema,
   SingleResult,
 } from "../../output/index.js";
-import { resolveLocalPaseoHome } from "./local-daemon.js";
+import { resolveLocalRamblaHome } from "./local-daemon.js";
 
 const CONFIG_FILENAME = "config.json";
 
@@ -81,7 +81,7 @@ export async function setDaemonPasswordInConfig(
   newPassword: string,
   options: SetPasswordOptions = {},
 ): Promise<SetPasswordResult> {
-  const paseoHome = resolveLocalPaseoHome(options.home);
+  const paseoHome = resolveLocalRamblaHome(options.home);
   const configPath = path.join(paseoHome, CONFIG_FILENAME);
   const persisted = loadPersistedConfig(paseoHome);
   const nextConfig: PersistedConfig = {

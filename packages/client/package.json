@@ -1,7 +1,7 @@
 {
   "name": "@getpaseo/client",
   "version": "0.8.0",
-  "description": "Paseo client SDK package",
+  "description": "Rambla client SDK package",
   "files": [
     "dist",
     "!dist/**/*.map",

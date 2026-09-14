@@ -1,9 +1,9 @@
 import { expect, test } from "vitest";
-import { createPaseoApi } from "@getpaseo/client";
+import { createRamblaApi } from "@getpaseo/client";
 import { DaemonClient } from "@getpaseo/client/internal/daemon-client";
 import { PluginHookHandlers } from "./index.js";
 
-const paseo = createPaseoApi(
+const paseo = createRamblaApi(
   new DaemonClient({ url: "ws://127.0.0.1:1/ws", clientId: "lifecycle-unit" }),
 );
 

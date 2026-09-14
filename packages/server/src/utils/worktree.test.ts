@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   createWorktree as createWorktreePrimitive,
   deriveWorktreeProjectHash,
-  deletePaseoWorktree,
-  isPaseoOwnedWorktreeCwd,
+  deleteRamblaWorktree,
+  isRamblaOwnedWorktreeCwd,
   mapWorkspaceCwdToWorktree,
   slugify,
   type CreateWorktreeOptions,
@@ -94,10 +94,10 @@ describe("paseo worktree manager", () => {
     });
     expect(existsSync(created.worktreePath)).toBe(true);
 
-    const ownership = await isPaseoOwnedWorktreeCwd(created.worktreePath, { paseoHome });
+    const ownership = await isRamblaOwnedWorktreeCwd(created.worktreePath, { paseoHome });
     expect(ownership.allowed).toBe(true);
     await expect(
-      isPaseoOwnedWorktreeCwd(join(created.worktreePath, "packages", "app"), { paseoHome }),
+      isRamblaOwnedWorktreeCwd(join(created.worktreePath, "packages", "app"), { paseoHome }),
     ).resolves.toMatchObject({
       allowed: true,
       worktreePath: created.worktreePath,
@@ -108,7 +108,7 @@ describe("paseo worktree manager", () => {
     const outsidePath = join(tempDir, "outside-paseo-home");
     mkdirSync(outsidePath, { recursive: true });
 
-    const ownership = await isPaseoOwnedWorktreeCwd(outsidePath, { paseoHome });
+    const ownership = await isRamblaOwnedWorktreeCwd(outsidePath, { paseoHome });
 
     expect(ownership.allowed).toBe(false);
   });
@@ -122,7 +122,7 @@ describe("paseo worktree manager", () => {
       paseoHome,
     });
 
-    const ownership = await isPaseoOwnedWorktreeCwd(created.worktreePath, { paseoHome });
+    const ownership = await isRamblaOwnedWorktreeCwd(created.worktreePath, { paseoHome });
 
     expect(ownership.allowed).toBe(true);
     expect(createRealpathAwarePathMatcher(repoDir)(ownership.repoRoot ?? "")).toBe(true);
@@ -185,10 +185,10 @@ describe("paseo worktree manager", () => {
     const projectHashDir = join(worktreesRoot, projectHash);
     mkdirSync(projectHashDir, { recursive: true });
 
-    await expect(isPaseoOwnedWorktreeCwd(worktreesRoot, { paseoHome })).resolves.toMatchObject({
+    await expect(isRamblaOwnedWorktreeCwd(worktreesRoot, { paseoHome })).resolves.toMatchObject({
       allowed: false,
     });
-    await expect(isPaseoOwnedWorktreeCwd(projectHashDir, { paseoHome })).resolves.toMatchObject({
+    await expect(isRamblaOwnedWorktreeCwd(projectHashDir, { paseoHome })).resolves.toMatchObject({
       allowed: false,
     });
   });
@@ -208,7 +208,7 @@ describe("paseo worktree manager", () => {
     });
     expect(existsSync(created.worktreePath)).toBe(true);
 
-    await deletePaseoWorktree({
+    await deleteRamblaWorktree({
       cwd: repoDir,
       worktreePath: created.worktreePath,
       paseoHome,
@@ -226,7 +226,7 @@ describe("paseo worktree manager", () => {
       paseoHome,
     });
 
-    await deletePaseoWorktree({
+    await deleteRamblaWorktree({
       cwd: repoDir,
       worktreePath: created.worktreePath,
       paseoHome,
@@ -235,7 +235,7 @@ describe("paseo worktree manager", () => {
 
     // Second call — nothing left on disk and no admin entry — must not throw.
     await expect(
-      deletePaseoWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome }),
+      deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome }),
     ).resolves.toBeUndefined();
   });
 
@@ -248,13 +248,13 @@ describe("paseo worktree manager", () => {
       paseoHome,
     });
 
-    const ownership = await isPaseoOwnedWorktreeCwd(created.worktreePath, { paseoHome });
+    const ownership = await isRamblaOwnedWorktreeCwd(created.worktreePath, { paseoHome });
     expect(ownership.allowed).toBe(true);
     expect(ownership.worktreeRoot).toBeTruthy();
 
     // Simulate the handler path when git has forgotten about the worktree:
     // caller forwards the path-derived worktreesRoot from the ownership check.
-    await deletePaseoWorktree({
+    await deleteRamblaWorktree({
       cwd: null,
       worktreePath: created.worktreePath,
       worktreesRoot: ownership.worktreeRoot,

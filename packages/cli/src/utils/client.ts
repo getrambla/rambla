@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { loadConfig, resolvePaseoHome } from "@getpaseo/server";
+import { loadConfig, resolveRamblaHome } from "@getpaseo/server";
 import {
   buildDaemonWebSocketUrl,
   buildRelayWebSocketUrl,
@@ -174,7 +174,7 @@ function resolveConfiguredTcpDaemonHost(env: NodeJS.ProcessEnv, paseoHome: strin
 }
 
 export function resolveDefaultDaemonHosts(env: NodeJS.ProcessEnv = process.env): string[] {
-  const paseoHome = resolvePaseoHome(env);
+  const paseoHome = resolveRamblaHome(env);
   const candidates: string[] = [];
   const configuredIpcHost = resolveConfiguredIpcDaemonHost(env, paseoHome);
   if (configuredIpcHost) {

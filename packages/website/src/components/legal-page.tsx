@@ -21,7 +21,7 @@ export function LegalPage({ title, lastUpdated, children }: LegalPageProps) {
   );
 }
 
-export function PaseoLegalIdentity() {
+export function RamblaLegalIdentity() {
   return (
     <address className="not-italic">
       <strong className="font-medium text-white">Dr. Accessibility, LLC</strong>, operating as

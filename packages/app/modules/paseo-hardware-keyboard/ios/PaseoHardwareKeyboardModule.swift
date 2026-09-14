@@ -3,19 +3,19 @@ import UIKit
 
 private let hardwareSubmitEventName = "onHardwareKeyboardSubmit"
 
-private weak var activeModule: PaseoHardwareKeyboardModule?
+private weak var activeModule: RamblaHardwareKeyboardModule?
 private var isHardwareSubmitEnabled = false
 
 @objc
-public class PaseoHardwareKeyboardReactDelegateHandler: ExpoReactDelegateHandler {
+public class RamblaHardwareKeyboardReactDelegateHandler: ExpoReactDelegateHandler {
   public override func createRootViewController() -> UIViewController? {
-    return PaseoHardwareKeyboardRootViewController()
+    return RamblaHardwareKeyboardRootViewController()
   }
 }
 
-public class PaseoHardwareKeyboardModule: Module {
+public class RamblaHardwareKeyboardModule: Module {
   public func definition() -> ModuleDefinition {
-    Name("PaseoHardwareKeyboard")
+    Name("RamblaHardwareKeyboard")
 
     Events(hardwareSubmitEventName)
 
@@ -42,7 +42,7 @@ public class PaseoHardwareKeyboardModule: Module {
   }
 }
 
-private final class PaseoHardwareKeyboardRootViewController: UIViewController {
+private final class RamblaHardwareKeyboardRootViewController: UIViewController {
   override var keyCommands: [UIKeyCommand]? {
     guard isHardwareSubmitEnabled && UIDevice.current.userInterfaceIdiom == .pad else {
       return super.keyCommands

@@ -16,11 +16,11 @@ import { createWorkspaceProvisioningService } from "./session/workspace-provisio
 import { createTestLogger } from "../test-utils/test-logger.js";
 import {
   attemptFirstAgentBranchAutoName,
-  createPaseoWorktree,
-  type CreatePaseoWorktreeDeps,
+  createRamblaWorktree,
+  type CreateRamblaWorktreeDeps,
 } from "./paseo-worktree-service.js";
-import { readPaseoWorktreeMetadata } from "../utils/worktree-metadata.js";
-import { createWorktree, getPaseoWorktreesRoot } from "../utils/worktree.js";
+import { readRamblaWorktreeMetadata } from "../utils/worktree-metadata.js";
+import { createWorktree, getRamblaWorktreesRoot } from "../utils/worktree.js";
 import { isPlatform } from "../test-utils/platform.js";
 import { areEquivalentPaths, createRealpathAwarePathMatcher } from "../utils/path.js";
 import { deriveProjectKey } from "./project-key.js";
@@ -54,7 +54,7 @@ test("creates a worktree and registers it in the source workspace project withou
   deps.workspaces.set(sourceWorkspace.workspaceId, sourceWorkspace);
   deps.workspaceGitService.getSnapshot = vi.fn(deps.workspaceGitService.getSnapshot);
 
-  const result = await createPaseoWorktree(
+  const result = await createRamblaWorktree(
     {
       cwd: repoDir,
       worktreeSlug: "feature-one",
@@ -110,7 +110,7 @@ test("refreshes a source project that became Git while creating a worktree", asy
   deps.projects.set(sourceProject.projectId, sourceProject);
   deps.workspaces.set(sourceWorkspace.workspaceId, sourceWorkspace);
 
-  const result = await createPaseoWorktree(
+  const result = await createRamblaWorktree(
     {
       cwd: repoDir,
       worktreeSlug: "project-became-git",
@@ -144,7 +144,7 @@ test("repairs a legacy source workspace whose project record is missing", async 
   });
   deps.workspaces.set(sourceWorkspace.workspaceId, sourceWorkspace);
 
-  const result = await createPaseoWorktree(
+  const result = await createRamblaWorktree(
     {
       cwd: repoDir,
       worktreeSlug: "repaired-source",
@@ -188,7 +188,7 @@ test("uses an equivalent source workspace path when creating a worktree", async 
   deps.projects.set(sourceProject.projectId, sourceProject);
   deps.workspaces.set(sourceWorkspace.workspaceId, sourceWorkspace);
 
-  const result = await createPaseoWorktree(
+  const result = await createRamblaWorktree(
     {
       cwd: sourceDir,
       worktreeSlug: "equivalent-source",
@@ -216,7 +216,7 @@ test("creates a worktree workspace at the selected project subdirectory", async 
   });
   deps.projects.set(project.projectId, project);
 
-  const result = await createPaseoWorktree(
+  const result = await createRamblaWorktree(
     {
       cwd: sourceDir,
       projectId: project.projectId,
@@ -245,7 +245,7 @@ test("seeds an uncommitted exact-project config into the mapped worktree directo
   const config = JSON.stringify({ worktree: { setup: ["npm install"] } });
   writeFileSync(path.join(sourceDir, "paseo.json"), config);
 
-  const result = await createPaseoWorktree(
+  const result = await createRamblaWorktree(
     {
       cwd: sourceDir,
       worktreeSlug: "seed-nested-config",
@@ -273,7 +273,7 @@ test("does not overwrite a committed exact-project config with source checkout e
     JSON.stringify({ worktree: { setup: ["npm install"] } }),
   );
 
-  const result = await createPaseoWorktree(
+  const result = await createRamblaWorktree(
     {
       cwd: sourceDir,
       worktreeSlug: "preserve-nested-config",
@@ -303,12 +303,12 @@ test("removes a new worktree when its ref does not contain the selected project 
   const deps = createDeps();
   const paseoHome = path.join(tempDir, ".rambla");
   const worktreePath = path.join(
-    await getPaseoWorktreesRoot(repoDir, paseoHome),
+    await getRamblaWorktreesRoot(repoDir, paseoHome),
     "missing-subproject",
   );
 
   await expect(
-    createPaseoWorktree(
+    createRamblaWorktree(
       {
         cwd: sourceDir,
         action: "checkout",
@@ -335,12 +335,12 @@ test("removes a new worktree when workspace persistence fails", async () => {
   cleanupPaths.push(tempDir);
   const paseoHome = path.join(tempDir, ".rambla");
   const worktreePath = path.join(
-    await getPaseoWorktreesRoot(repoDir, paseoHome),
+    await getRamblaWorktreesRoot(repoDir, paseoHome),
     "persistence-failure",
   );
 
   await expect(
-    createPaseoWorktree(
+    createRamblaWorktree(
       {
         cwd: repoDir,
         projectId: "missing-project",
@@ -360,7 +360,7 @@ test("removes a new worktree when workspace persistence fails", async () => {
   ).toBe(false);
 });
 
-test("maps a nested cwd from an existing Paseo worktree into the next worktree", async () => {
+test("maps a nested cwd from an existing Rambla worktree into the next worktree", async () => {
   const { repoDir, tempDir } = createGitRepo();
   cleanupPaths.push(tempDir);
   const paseoHome = path.join(tempDir, ".rambla");
@@ -369,7 +369,7 @@ test("maps a nested cwd from an existing Paseo worktree into the next worktree",
   writeFileSync(path.join(projectDir, "package.json"), "{}\n");
   commitAll(repoDir, "add subproject");
   const deps = createDeps();
-  const source = await createPaseoWorktree(
+  const source = await createRamblaWorktree(
     {
       cwd: repoDir,
       worktreeSlug: "source-worktree",
@@ -380,7 +380,7 @@ test("maps a nested cwd from an existing Paseo worktree into the next worktree",
   );
   const sourceCwd = path.join(source.worktree.worktreePath, "packages", "app");
 
-  const created = await createPaseoWorktree(
+  const created = await createRamblaWorktree(
     {
       cwd: sourceCwd,
       worktreeSlug: "nested-worktree",
@@ -404,7 +404,7 @@ test("rejects source checkout planning before creating a worktree", async () => 
   };
 
   await expect(
-    createPaseoWorktree(
+    createRamblaWorktree(
       {
         cwd: repoDir,
         worktreeSlug: "must-not-create",
@@ -438,7 +438,7 @@ test("registers a new worktree in the existing root project after the main check
   deps.projects.set(sourceProject.projectId, sourceProject);
   deps.workspaces.set(existingWorktree.workspaceId, existingWorktree);
 
-  const result = await createPaseoWorktree(
+  const result = await createRamblaWorktree(
     {
       cwd: repoDir,
       projectId: sourceProject.projectId,
@@ -467,7 +467,7 @@ test("an explicit project FK remains unchanged when its worktree comes from anot
   };
   deps.projects.set(project.projectId, project);
 
-  const result = await createPaseoWorktree(
+  const result = await createRamblaWorktree(
     {
       cwd: repoDir,
       projectId: project.projectId,
@@ -498,7 +498,7 @@ test.skipIf(isPlatform("win32"))(
     cleanupPaths.push(tempDir);
     const paseoHome = path.join(tempDir, ".rambla");
     const firstDeps = createDeps();
-    const first = await createPaseoWorktree(
+    const first = await createRamblaWorktree(
       {
         cwd: repoDir,
         worktreeSlug: "reuse-me",
@@ -514,7 +514,7 @@ test.skipIf(isPlatform("win32"))(
       workspaces: firstDeps.workspaces,
     });
 
-    const second = await createPaseoWorktree(
+    const second = await createRamblaWorktree(
       {
         cwd: repoDir,
         worktreeSlug: "reuse-me",
@@ -537,7 +537,7 @@ test("renames an eligible unnamed branch-off worktree once on first agent contex
   cleanupPaths.push(tempDir);
   const deps = createDeps();
 
-  const created = await createPaseoWorktree(
+  const created = await createRamblaWorktree(
     {
       cwd: repoDir,
       worktreeSlug: "dazzling-yak",
@@ -548,7 +548,7 @@ test("renames an eligible unnamed branch-off worktree once on first agent contex
   );
 
   expect(created.worktree.branchName).toBe("dazzling-yak");
-  expect(readPaseoWorktreeMetadata(created.worktree.worktreePath)).toMatchObject({
+  expect(readRamblaWorktreeMetadata(created.worktree.worktreePath)).toMatchObject({
     version: 2,
     firstAgentBranchAutoName: {
       status: "pending",
@@ -575,7 +575,7 @@ test("renames an eligible unnamed branch-off worktree once on first agent contex
     branchName: "renamed-from-agent-context",
   });
   expect(branchAfterFirst).toBe("renamed-from-agent-context");
-  expect(readPaseoWorktreeMetadata(created.worktree.worktreePath)).toMatchObject({
+  expect(readRamblaWorktreeMetadata(created.worktree.worktreePath)).toMatchObject({
     version: 2,
     firstAgentBranchAutoName: {
       status: "attempted",
@@ -606,7 +606,7 @@ test("falls back to a numeric suffix when the desired branch name already exists
   execFileSync("git", ["branch", "renamed-from-agent-context"], { cwd: repoDir, stdio: "pipe" });
   execFileSync("git", ["branch", "renamed-from-agent-context-2"], { cwd: repoDir, stdio: "pipe" });
 
-  const created = await createPaseoWorktree(
+  const created = await createRamblaWorktree(
     {
       cwd: repoDir,
       worktreeSlug: "dazzling-yak",
@@ -642,7 +642,7 @@ test("renames the branch even when the app supplies a random placeholder slug", 
   cleanupPaths.push(tempDir);
   const deps = createDeps();
 
-  const created = await createPaseoWorktree(
+  const created = await createRamblaWorktree(
     {
       cwd: repoDir,
       worktreeSlug: "dazzling-yak",
@@ -680,7 +680,7 @@ test("renames the branch from a github_pr attachment when no prompt is supplied"
   cleanupPaths.push(tempDir);
   const deps = createDeps();
 
-  const created = await createPaseoWorktree(
+  const created = await createRamblaWorktree(
     {
       cwd: repoDir,
       worktreeSlug: "dazzling-yak",
@@ -735,7 +735,7 @@ test("renames the branch from a github_pr attachment when no prompt is supplied"
 test("leaves the branch alone when generated branch text is invalid", async () => {
   const { repoDir, tempDir } = createGitRepo();
   cleanupPaths.push(tempDir);
-  const created = await createPaseoWorktree(
+  const created = await createRamblaWorktree(
     {
       cwd: repoDir,
       worktreeSlug: "dazzling-yak",
@@ -762,7 +762,7 @@ test("leaves the branch alone when generated branch text is invalid", async () =
       .toString()
       .trim(),
   ).toBe("dazzling-yak");
-  expect(readPaseoWorktreeMetadata(created.worktree.worktreePath)).toMatchObject({
+  expect(readRamblaWorktreeMetadata(created.worktree.worktreePath)).toMatchObject({
     version: 2,
     firstAgentBranchAutoName: {
       status: "attempted",
@@ -780,7 +780,7 @@ test("does not mark checkout branch worktrees as eligible for first-agent rename
   execFileSync("git", ["commit", "-m", "dev"], { cwd: repoDir, stdio: "pipe" });
   execFileSync("git", ["checkout", "main"], { cwd: repoDir, stdio: "pipe" });
 
-  const created = await createPaseoWorktree(
+  const created = await createRamblaWorktree(
     {
       cwd: repoDir,
       action: "checkout",
@@ -791,7 +791,7 @@ test("does not mark checkout branch worktrees as eligible for first-agent rename
     createDeps(),
   );
 
-  expect(readPaseoWorktreeMetadata(created.worktree.worktreePath)).toMatchObject({
+  expect(readRamblaWorktreeMetadata(created.worktree.worktreePath)).toMatchObject({
     version: 1,
     baseRefName: "dev",
   });
@@ -819,7 +819,7 @@ test("does not mark GitHub PR checkout worktrees as eligible for first-agent ren
   const { repoDir, tempDir } = createGitHubPrRemoteRepo();
   cleanupPaths.push(tempDir);
 
-  const created = await createPaseoWorktree(
+  const created = await createRamblaWorktree(
     {
       cwd: repoDir,
       action: "checkout",
@@ -830,7 +830,7 @@ test("does not mark GitHub PR checkout worktrees as eligible for first-agent ren
     createDeps(),
   );
 
-  expect(readPaseoWorktreeMetadata(created.worktree.worktreePath)).toMatchObject({
+  expect(readRamblaWorktreeMetadata(created.worktree.worktreePath)).toMatchObject({
     version: 1,
     baseRefName: "main",
   });
@@ -857,7 +857,7 @@ test("does not mutate registries or broadcast when core worktree creation fails"
   const deps = createDeps();
 
   await expect(
-    createPaseoWorktree(
+    createRamblaWorktree(
       {
         cwd: tempDir,
         worktreeSlug: "not-git",
@@ -872,7 +872,7 @@ test("does not mutate registries or broadcast when core worktree creation fails"
   expect(deps.workspaces.size).toBe(0);
 });
 
-// Worktree restore (Unit 3): recreate a deleted Paseo-owned worktree from its
+// Worktree restore (Unit 3): recreate a deleted Rambla-owned worktree from its
 // kept branch via createWorktree's checkout-branch source.
 test.skipIf(isPlatform("win32"))(
   "recreates a deleted worktree on the same kept branch without creating a suffixed branch",
@@ -929,7 +929,7 @@ test.skipIf(isPlatform("win32"))(
 );
 
 // The default archive path (scope "workspace", worktreePath only) resolves
-// repoRoot=null, so deletePaseoWorktree's `git worktree remove`/`prune` is
+// repoRoot=null, so deleteRamblaWorktree's `git worktree remove`/`prune` is
 // skipped: the directory is rm-ed but the admin registration survives, pinning
 // the branch as "already checked out". Restore must self-heal by pruning the
 // stale registration before recreating, regardless of how it was archived.
@@ -1046,7 +1046,7 @@ test.skipIf(isPlatform("win32"))(
   },
 );
 
-interface TestDeps extends CreatePaseoWorktreeDeps {
+interface TestDeps extends CreateRamblaWorktreeDeps {
   projects: Map<string, PersistedProjectRecord>;
   workspaces: Map<string, PersistedWorkspaceRecord>;
 }
@@ -1229,7 +1229,7 @@ function createWorkspaceGitServiceStub(): WorkspaceGitService {
           currentBranch: snapshot.git.currentBranch,
           remoteUrl: snapshot.git.remoteUrl,
           worktreeRoot: snapshot.git.repoRoot,
-          isPaseoOwnedWorktree: snapshot.git.isPaseoOwnedWorktree,
+          isRamblaOwnedWorktree: snapshot.git.isRamblaOwnedWorktree,
           mainRepoRoot: snapshot.git.mainRepoRoot,
         };
       } catch {
@@ -1239,7 +1239,7 @@ function createWorkspaceGitServiceStub(): WorkspaceGitService {
           currentBranch: null,
           remoteUrl: null,
           worktreeRoot: null,
-          isPaseoOwnedWorktree: false,
+          isRamblaOwnedWorktree: false,
           mainRepoRoot: null,
         };
       }
@@ -1296,7 +1296,7 @@ function createWorkspaceGitSnapshot(cwd: string): WorkspaceGitRuntimeSnapshot {
       mainRepoRoot,
       currentBranch,
       remoteUrl: null,
-      isPaseoOwnedWorktree: repoRoot !== mainRepoRoot,
+      isRamblaOwnedWorktree: repoRoot !== mainRepoRoot,
       isDirty: false,
       baseRef: "main",
       aheadBehind: null,

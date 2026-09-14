@@ -55,7 +55,7 @@ function createWorkspace(
     title: "TDD reproduction",
     branch: "diagnose-repro-tdd",
     worktreeRoot: "/worktrees/trigger-1525443412986298439",
-    isPaseoOwnedWorktree: true,
+    isRamblaOwnedWorktree: true,
     mainRepoRoot: "/repo",
     createdAt: NOW,
     updatedAt: NOW,
@@ -277,7 +277,7 @@ function createGitRepository(): { tempDir: string; repoDir: string } {
     cwd: repoDir,
     stdio: "pipe",
   });
-  execFileSync("git", ["config", "user.name", "Paseo Test"], {
+  execFileSync("git", ["config", "user.name", "Rambla Test"], {
     cwd: repoDir,
     stdio: "pipe",
   });

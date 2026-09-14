@@ -6,7 +6,7 @@ import { createOpencodeClient } from "@opencode-ai/sdk/v2/client";
 import { expect, test } from "vitest";
 
 import { createTestLogger } from "../../../test-utils/test-logger.js";
-import type { PaseoToolCatalog } from "../tools/types.js";
+import type { RamblaToolCatalog } from "../tools/types.js";
 import { OpenCodeAgentClient } from "./opencode-agent.js";
 import { OpenCodeBridge } from "./opencode/bridge.js";
 import { OpenCodeServerManager } from "./opencode/server-manager.js";
@@ -100,7 +100,7 @@ test("real OpenCode server shares one process while shell.env stays session-scop
 
     const callerResult = await first.run(
       [
-        "Use the paseo_report_caller_agent_id tool to read your Paseo caller agent ID.",
+        "Use the paseo_report_caller_agent_id tool to read your Rambla caller agent ID.",
         "Then report that ID in your response.",
       ].join("\n"),
     );
@@ -129,11 +129,11 @@ function requireSessionId(session: { id: string | null }): string {
   return session.id;
 }
 
-function createCallerCatalog(callerAgentId: string): PaseoToolCatalog {
+function createCallerCatalog(callerAgentId: string): RamblaToolCatalog {
   const tool = {
     name: "report_caller_agent_id",
-    title: "Report Paseo caller agent ID",
-    description: "Returns the caller agent ID assigned by Paseo.",
+    title: "Report Rambla caller agent ID",
+    description: "Returns the caller agent ID assigned by Rambla.",
     inputSchema: {},
     async handler() {
       return { content: [{ type: "text", text: callerAgentId }] };

@@ -11,8 +11,8 @@ import {
 import { WorkspaceScriptPayloadSchema } from "@getpaseo/protocol/messages";
 import type { ScriptHealthState } from "./script-health-monitor.js";
 import { WorkspaceScriptRuntimeStore } from "./workspace-script-runtime-store.js";
-import { readPaseoConfig } from "../utils/worktree.js";
-import type { PaseoConfig } from "@getpaseo/protocol/paseo-config-schema";
+import { readRamblaConfig } from "../utils/worktree.js";
+import type { RamblaConfig } from "@getpaseo/protocol/paseo-config-schema";
 import { createTestLogger } from "../test-utils/test-logger.js";
 
 function createWorkspaceRepo(options?: {
@@ -53,7 +53,7 @@ function createWorkspaceRepo(options?: {
 function buildPayloads(input: {
   workspaceId: string;
   workspaceDirectory: string;
-  paseoConfig?: PaseoConfig | null;
+  paseoConfig?: RamblaConfig | null;
   routeStore?: ScriptRouteStore;
   serviceProxy?: ScriptRouteStore;
   runtimeStore: WorkspaceScriptRuntimeStore;
@@ -72,8 +72,8 @@ function buildPayloads(input: {
   });
 }
 
-function loadConfig(repoRoot: string): PaseoConfig | null {
-  const result = readPaseoConfig(repoRoot);
+function loadConfig(repoRoot: string): RamblaConfig | null {
+  const result = readRamblaConfig(repoRoot);
   return result.ok ? result.config : null;
 }
 
@@ -449,7 +449,7 @@ describe("script-status-projection", () => {
     }
   });
 
-  it("readPaseoConfig fails with configPath and error when paseo.json is malformed", () => {
+  it("readRamblaConfig fails with configPath and error when paseo.json is malformed", () => {
     const workspace = createWorkspaceRepo();
     const configPath = path.join(workspace.repoDir, "paseo.json");
     writeFileSync(
@@ -458,7 +458,7 @@ describe("script-status-projection", () => {
     );
 
     try {
-      const result = readPaseoConfig(workspace.repoDir);
+      const result = readRamblaConfig(workspace.repoDir);
       expect(result.ok).toBe(false);
       if (result.ok) throw new Error("unreachable");
       expect(result.configPath).toBe(configPath);

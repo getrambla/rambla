@@ -1,6 +1,6 @@
-# Running Paseo in Docker
+# Running Rambla in Docker
 
-Paseo publishes a container image for running the daemon on a server, VM, NAS,
+Rambla publishes a container image for running the daemon on a server, VM, NAS,
 or homelab box. The image also serves the bundled browser web UI, so one
 container gives you both the daemon API and a self-hosted UI.
 
@@ -40,7 +40,7 @@ http://localhost:6767
 ```
 
 If you set `RAMBLA_PASSWORD`, enter the same password when adding the direct
-daemon connection in the web UI or another Paseo client.
+daemon connection in the web UI or another Rambla client.
 
 ## Docker Compose
 
@@ -71,7 +71,7 @@ services:
 ## Installing Agents
 
 The base image does not preinstall Claude Code, Codex, OpenCode, Copilot, Pi, or
-other agent CLIs. That keeps the default image small and avoids coupling Paseo
+other agent CLIs. That keeps the default image small and avoids coupling Rambla
 releases to third-party agent release cycles.
 
 Create a child image for the agents you use:
@@ -109,14 +109,14 @@ docker exec -it --user paseo paseo claude
 Agent credentials and config persist in `/home/paseo`, alongside daemon state.
 Provider environment variables such as `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`,
 `OPENAI_BASE_URL`, or `ANTHROPIC_BASE_URL` can be passed through `docker run -e`
-or `compose.environment`; Paseo passes them to launched agents.
+or `compose.environment`; Rambla passes them to launched agents.
 
 ## Volumes
 
 | Mount         | Purpose                                                                  |
 | ------------- | ------------------------------------------------------------------------ |
-| `/home/paseo` | Paseo state under `.paseo` plus agent config such as `.codex`, `.claude` |
-| `/workspace`  | Code that Paseo and launched agents can read and write                   |
+| `/home/paseo` | Rambla state under `.paseo` plus agent config such as `.codex`, `.claude` |
+| `/workspace`  | Code that Rambla and launched agents can read and write                   |
 
 The image defaults:
 
@@ -133,7 +133,7 @@ container with Docker's `--user` / Compose `user:` option.
 
 ## Reverse Proxies
 
-When serving Paseo behind a reverse proxy, forward normal HTTP requests and
+When serving Rambla behind a reverse proxy, forward normal HTTP requests and
 WebSocket upgrades to the same daemon port.
 
 Caddy example:
@@ -176,7 +176,7 @@ IPs and `localhost` are allowed by default.
 
 - Set `RAMBLA_PASSWORD` for any published port or network-reachable deployment.
 - Prefer HTTPS at the reverse proxy for direct browser access.
-- Use the [official Paseo relay](https://github.com/getpaseo/paseo-relay) for
+- Use the [official Rambla relay](https://github.com/getpaseo/paseo-relay) for
   untrusted networks or mobile access when you do not want to expose the daemon
   port directly.
 - The container is the isolation boundary for agents. Agents can read and write

@@ -9,7 +9,7 @@ import { isBearerTokenValid } from "./auth.js";
 const roots: string[] = [];
 const CONFIG_PASSWORD_HASH = "$2b$12$OLxyuuP9uLK30Uzc4wQX0O6liuU/Q1t5P2b0Ebf36mULvpVK3DRZW";
 
-async function createPaseoHome(config: unknown): Promise<string> {
+async function createRamblaHome(config: unknown): Promise<string> {
   const root = await mkdtemp(path.join(os.tmpdir(), "paseo-config-auth-"));
   roots.push(root);
   const paseoHome = path.join(root, ".rambla");
@@ -24,7 +24,7 @@ describe("daemon auth config", () => {
   });
 
   test("loads optional auth password hash from config.json", async () => {
-    const paseoHome = await createPaseoHome({
+    const paseoHome = await createRamblaHome({
       version: 1,
       daemon: {
         auth: { password: CONFIG_PASSWORD_HASH },
@@ -40,7 +40,7 @@ describe("daemon auth config", () => {
   });
 
   test("lets RAMBLA_PASSWORD override config.json auth password hash", async () => {
-    const paseoHome = await createPaseoHome({
+    const paseoHome = await createRamblaHome({
       version: 1,
       daemon: {
         auth: { password: CONFIG_PASSWORD_HASH },

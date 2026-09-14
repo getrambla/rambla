@@ -12,17 +12,17 @@ import {
 } from "./worktree-core.js";
 import {
   mapWorkspaceRelativeCwdToWorktree,
-  rollbackCreatedPaseoWorktree,
-  seedPaseoConfigFile,
+  rollbackCreatedRamblaWorktree,
+  seedRamblaConfigFile,
   validateBranchSlug,
   type WorktreeConfig,
 } from "../utils/worktree.js";
 import { getCurrentBranch, localBranchExists, renameCurrentBranch } from "../utils/checkout-git.js";
 import {
-  markPaseoWorktreeFirstAgentBranchAutoNameAttempted,
+  markRamblaWorktreeFirstAgentBranchAutoNameAttempted,
   normalizeBaseRefName,
-  readPaseoWorktreeMetadata,
-  writePaseoWorktreeFirstAgentBranchAutoNameMetadata,
+  readRamblaWorktreeMetadata,
+  writeRamblaWorktreeFirstAgentBranchAutoNameMetadata,
 } from "../utils/worktree-metadata.js";
 import type { WorktreeCreationIntent } from "./resolve-worktree-creation-intent.js";
 import { resolveFirstAgentPromptTitle } from "./agent/create-agent-title.js";
@@ -30,12 +30,12 @@ import { buildAgentBranchNameSeed } from "./agent/prompt-attachments.js";
 import type { FirstAgentContext } from "@getpaseo/protocol/messages";
 import { runWithGitCommandPriority } from "../utils/run-git-command.js";
 
-export interface CreatePaseoWorktreeInput extends CreateWorktreeCoreInput {
+export interface CreateRamblaWorktreeInput extends CreateWorktreeCoreInput {
   projectId?: string;
   title?: string;
 }
 
-export interface CreatePaseoWorktreeResult {
+export interface CreateRamblaWorktreeResult {
   worktree: WorktreeConfig;
   intent: WorktreeCreationIntent;
   workspace: PersistedWorkspaceRecord;
@@ -43,12 +43,12 @@ export interface CreatePaseoWorktreeResult {
   created: boolean;
 }
 
-export type CreatePaseoWorktreeFn = (
-  input: CreatePaseoWorktreeInput,
+export type CreateRamblaWorktreeFn = (
+  input: CreateRamblaWorktreeInput,
   options?: {
     resolveDefaultBranch?: (repoRoot: string) => Promise<string>;
   },
-) => Promise<CreatePaseoWorktreeResult>;
+) => Promise<CreateRamblaWorktreeResult>;
 
 export interface AttemptFirstAgentBranchAutoNameResult {
   attempted: boolean;
@@ -56,22 +56,22 @@ export interface AttemptFirstAgentBranchAutoNameResult {
   branchName: string | null;
 }
 
-export interface CreatePaseoWorktreeDeps extends CreateWorktreeCoreDeps {
+export interface CreateRamblaWorktreeDeps extends CreateWorktreeCoreDeps {
   workspaceGitService: WorkspaceGitService;
   workspaceProvisioning: Pick<WorkspaceProvisioningService, "createWorkspaceForWorktree">;
 }
 
-export async function createPaseoWorktree(
-  input: CreatePaseoWorktreeInput,
-  deps: CreatePaseoWorktreeDeps,
-): Promise<CreatePaseoWorktreeResult> {
-  return runWithGitCommandPriority("high", () => createPaseoWorktreeWithPriority(input, deps));
+export async function createRamblaWorktree(
+  input: CreateRamblaWorktreeInput,
+  deps: CreateRamblaWorktreeDeps,
+): Promise<CreateRamblaWorktreeResult> {
+  return runWithGitCommandPriority("high", () => createRamblaWorktreeWithPriority(input, deps));
 }
 
-async function createPaseoWorktreeWithPriority(
-  input: CreatePaseoWorktreeInput,
-  deps: CreatePaseoWorktreeDeps,
-): Promise<CreatePaseoWorktreeResult> {
+async function createRamblaWorktreeWithPriority(
+  input: CreateRamblaWorktreeInput,
+  deps: CreateRamblaWorktreeDeps,
+): Promise<CreateRamblaWorktreeResult> {
   const workspaceCwdPlan = await planWorkspaceCwdForWorktree(input.cwd, deps.workspaceGitService);
   const createdWorktree = await createWorktreeCore(input, deps);
   try {
@@ -85,7 +85,7 @@ async function createPaseoWorktreeWithPriority(
     }
 
     if (createdWorktree.created) {
-      await seedPaseoConfigFile({
+      await seedRamblaConfigFile({
         sourceCwd: workspaceCwdPlan.inputCwd,
         targetCwd: workspaceCwd,
       });
@@ -126,7 +126,7 @@ async function createPaseoWorktreeWithPriority(
     if (!createdWorktree.created) {
       throw error;
     }
-    return rollbackCreatedPaseoWorktree(
+    return rollbackCreatedRamblaWorktree(
       {
         cwd: createdWorktree.repoRoot,
         worktreePath: createdWorktree.worktree.worktreePath,
@@ -177,9 +177,9 @@ export async function attemptFirstAgentBranchAutoName(options: {
     return { attempted: false, renamed: false, branchName: null };
   }
 
-  let metadata: ReturnType<typeof readPaseoWorktreeMetadata>;
+  let metadata: ReturnType<typeof readRamblaWorktreeMetadata>;
   try {
-    metadata = readPaseoWorktreeMetadata(options.cwd);
+    metadata = readRamblaWorktreeMetadata(options.cwd);
   } catch {
     return { attempted: false, renamed: false, branchName: null };
   }
@@ -194,11 +194,11 @@ export async function attemptFirstAgentBranchAutoName(options: {
   const getCurrentBranchImpl = options.getCurrentBranch ?? getCurrentBranch;
   const placeholderBranchName = metadata.firstAgentBranchAutoName.placeholderBranchName;
   if ((await getCurrentBranchImpl(options.cwd)) !== placeholderBranchName) {
-    markPaseoWorktreeFirstAgentBranchAutoNameAttempted(options.cwd);
+    markRamblaWorktreeFirstAgentBranchAutoNameAttempted(options.cwd);
     return { attempted: true, renamed: false, branchName: null };
   }
 
-  markPaseoWorktreeFirstAgentBranchAutoNameAttempted(options.cwd);
+  markRamblaWorktreeFirstAgentBranchAutoNameAttempted(options.cwd);
 
   const branchName = await options.generateBranchNameFromContext({
     cwd: options.cwd,
@@ -267,7 +267,7 @@ function maybeMarkFirstAgentBranchAutoNameEligible(options: {
     return;
   }
 
-  writePaseoWorktreeFirstAgentBranchAutoNameMetadata(createdWorktree.worktree.worktreePath, {
+  writeRamblaWorktreeFirstAgentBranchAutoNameMetadata(createdWorktree.worktree.worktreePath, {
     placeholderBranchName: createdWorktree.worktree.branchName,
   });
 }

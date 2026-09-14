@@ -18,7 +18,7 @@ import { createProviderSnapshotManagerStub } from "./test-utils/session-stubs.js
 import type { AgentTimelineRow } from "./agent/agent-manager.js";
 import { InMemoryAgentTimelineStore } from "./agent/agent-timeline-store.js";
 import type { AgentTimelineFetchOptions } from "./agent/agent-timeline-store-types.js";
-import { handleCreatePaseoWorktreeRequest } from "./worktree-session.js";
+import { handleCreateRamblaWorktreeRequest } from "./worktree-session.js";
 import { createPersistedProjectRecord } from "./workspace-registry.js";
 
 const LegacyTimelineEntryPayloadSchema = z.object({
@@ -471,7 +471,7 @@ describe("wire compatibility", () => {
         }) as never,
       emit() {},
       sessionLogger: pino({ level: "silent" }),
-      createPaseoWorktreeWorkflow: workflow.create.bind(workflow),
+      createRamblaWorktreeWorkflow: workflow.create.bind(workflow),
     };
 
     const legacyRequest = SessionInboundMessageSchema.parse({
@@ -517,8 +517,8 @@ describe("wire compatibility", () => {
       throw new Error("Expected new worktree request");
     }
 
-    await handleCreatePaseoWorktreeRequest(dependencies, legacyRequest);
-    await handleCreatePaseoWorktreeRequest(dependencies, newRequest);
+    await handleCreateRamblaWorktreeRequest(dependencies, legacyRequest);
+    await handleCreateRamblaWorktreeRequest(dependencies, newRequest);
 
     expect(workflow.capturedInputs).toHaveLength(2);
     expect(workflow.capturedInputs[0]).toEqual(workflow.capturedInputs[1]);

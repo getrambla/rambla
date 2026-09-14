@@ -614,7 +614,7 @@ function createPiMcpConfigFile(
   };
 }
 
-function createPiPaseoExtensionFile(systemPrompt?: string): PiTempFile {
+function createPiRamblaExtensionFile(systemPrompt?: string): PiTempFile {
   const dir = mkdtempSync(join(tmpdir(), "paseo-pi-extension-"));
   const filePath = join(dir, "paseo-integration.mjs");
   writeFileSync(
@@ -2534,7 +2534,7 @@ export class PiRpcAgentClient implements AgentClient {
       ...launchContext?.env,
     };
     const mcpConfig = await this.prepareMcpConfig(config.cwd, config.mcpServers, mcpEnv);
-    const paseoExtension = createPiPaseoExtensionFile(
+    const paseoExtension = createPiRamblaExtensionFile(
       composeSystemPromptParts(config.systemPrompt, config.daemonAppendSystemPrompt),
     );
     let runtimeSession: PiRuntimeSession;
@@ -2595,7 +2595,7 @@ export class PiRpcAgentClient implements AgentClient {
       resumeConfig.config.mcpServers,
       mcpEnv,
     );
-    const paseoExtension = createPiPaseoExtensionFile(
+    const paseoExtension = createPiRamblaExtensionFile(
       composeSystemPromptParts(
         resumeConfig.config.systemPrompt,
         resumeConfig.config.daemonAppendSystemPrompt,

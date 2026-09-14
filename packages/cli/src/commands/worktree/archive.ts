@@ -75,7 +75,7 @@ export async function runArchiveCommandWithDeps(
 
   try {
     // Get the list of worktrees first to resolve the name
-    const listResponse = await client.getPaseoWorktreeList({});
+    const listResponse = await client.getRamblaWorktreeList({});
 
     if (listResponse.error) {
       const error: CommandError = {
@@ -102,7 +102,7 @@ export async function runArchiveCommandWithDeps(
 
     // Archive the worktree. scope:"worktree" archives every active workspace on
     // the directory and then removes the directory (Rambla-owned gated).
-    const response = await client.archivePaseoWorktree({
+    const response = await client.archiveRamblaWorktree({
       worktreePath: worktree.worktreePath,
       scope: "worktree",
     });

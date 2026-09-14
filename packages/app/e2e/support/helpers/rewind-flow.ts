@@ -168,7 +168,7 @@ export async function launchAgent(input: {
     cwd: input.cwd,
     stdio: "ignore",
   });
-  execFileSync("git", ["config", "user.name", "Paseo Test"], {
+  execFileSync("git", ["config", "user.name", "Rambla Test"], {
     cwd: input.cwd,
     stdio: "ignore",
   });
@@ -176,7 +176,7 @@ export async function launchAgent(input: {
     cwd: input.cwd,
     stdio: "ignore",
   });
-  writeFileSync(`${input.cwd}/README.md`, "# Paseo rewind flow\n", "utf8");
+  writeFileSync(`${input.cwd}/README.md`, "# Rambla rewind flow\n", "utf8");
   execFileSync("git", ["add", "README.md"], { cwd: input.cwd, stdio: "ignore" });
   execFileSync("git", ["commit", "-m", "Initial commit"], { cwd: input.cwd, stdio: "ignore" });
   const client = await connectSeedClient();

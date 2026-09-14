@@ -2095,8 +2095,8 @@ async function verifyBrowserKeyboardIsolation({ guest, win, browserId, usesMeta,
 async function runAutomationGroup() {
   const results = [];
   const { BrowserKeyboard } = require(PRODUCTION_BROWSER_KEYBOARD_PATH);
-  const { PaseoBrowserWebviewRegistry } = require(PRODUCTION_BROWSER_WEBVIEW_REGISTRY_PATH);
-  const browserRegistry = new PaseoBrowserWebviewRegistry();
+  const { RamblaBrowserWebviewRegistry } = require(PRODUCTION_BROWSER_WEBVIEW_REGISTRY_PATH);
+  const browserRegistry = new RamblaBrowserWebviewRegistry();
   const browserKeyboard = new BrowserKeyboard(browserRegistry);
   browserKeyboard.registerIpc();
   const browserKeyboardSentinels = installBrowserKeyboardSentinels();

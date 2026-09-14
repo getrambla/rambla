@@ -259,7 +259,7 @@ export class CheckoutSession {
           behindOfOrigin: null,
           hasRemote: false,
           remoteUrl: null,
-          isPaseoOwnedWorktree: false,
+          isRamblaOwnedWorktree: false,
           error: toCheckoutError(error),
           requestId,
         },

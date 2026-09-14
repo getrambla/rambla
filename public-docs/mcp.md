@@ -1,6 +1,6 @@
 ---
 title: MCP reference
-description: Reference for the Paseo tools agents use to manage agents, workspaces, scripts, terminals, and schedules.
+description: Reference for the Rambla tools agents use to manage agents, workspaces, scripts, terminals, and schedules.
 nav: MCP reference
 order: 34
 category: Orchestration
@@ -8,20 +8,20 @@ category: Orchestration
 
 # MCP reference
 
-[Enable Paseo tools](/docs/orchestration#get-started) to give agents this catalog. Ask for an outcome in natural language, or use the tool interfaces below.
+[Enable Rambla tools](/docs/orchestration#get-started) to give agents this catalog. Ask for an outcome in natural language, or use the tool interfaces below.
 
 ## Configuration
 
 | Setting                       | Default | Purpose                                            |
 | ----------------------------- | ------- | -------------------------------------------------- |
 | `daemon.mcp.enabled`          | `true`  | Run the MCP server.                                |
-| `daemon.mcp.injectIntoAgents` | `false` | Give agents launched by Paseo access to its tools. |
+| `daemon.mcp.injectIntoAgents` | `false` | Give agents launched by Rambla access to its tools. |
 
-Depending on the provider, Paseo delivers tools through its native tool interface or MCP. The capabilities are the same. Start a new agent or reload an existing one after changing injection settings.
+Depending on the provider, Rambla delivers tools through its native tool interface or MCP. The capabilities are the same. Start a new agent or reload an existing one after changing injection settings.
 
-## Limit Paseo tools by provider
+## Limit Rambla tools by provider
 
-Use provider policies when different agent profiles should receive different Paseo tools. Enable
+Use provider policies when different agent profiles should receive different Rambla tools. Enable
 tool injection globally, then add `paseoTools` to the exact provider IDs you launch:
 
 ```json
@@ -118,7 +118,7 @@ These tools manage scripts configured in a workspace's `paseo.json`. Each requir
 | Tool                     | Function                                                                                |
 | ------------------------ | --------------------------------------------------------------------------------------- |
 | `list_workspace_scripts` | List configured scripts with lifecycle, terminal, port, proxy URL, and health metadata. |
-| `start_workspace_script` | Start a configured script through Paseo's managed launcher.                             |
+| `start_workspace_script` | Start a configured script through Rambla's managed launcher.                             |
 | `stop_workspace_script`  | Stop a running script through its supervised terminal.                                  |
 
 See [Git worktrees](/docs/worktrees#scripts-and-services) for `paseo.json` configuration.

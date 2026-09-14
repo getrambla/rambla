@@ -4,9 +4,9 @@ import android.os.Trace
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
-class PaseoNativeTraceModule : Module() {
+class RamblaNativeTraceModule : Module() {
   override fun definition() = ModuleDefinition {
-    Name("PaseoNativeTrace")
+    Name("RamblaNativeTrace")
 
     Function("beginSection") { name: String ->
       Trace.beginSection(name.take(127))

@@ -7,12 +7,12 @@ import pino from "pino";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { WebSocket } from "ws";
 
-import { createPaseoDaemon, parseListenString, type PaseoDaemonConfig } from "./bootstrap.js";
+import { createRamblaDaemon, parseListenString, type RamblaDaemonConfig } from "./bootstrap.js";
 import { loadConfig } from "./config.js";
 import { AgentManagerShuttingDownError } from "./agent/agent-manager.js";
 import { hashDaemonPassword } from "./auth.js";
 import { generateLocalPairingOffer } from "./pairing-offer.js";
-import { createTestPaseoDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "./test-utils/paseo-daemon.js";
 import { createTestAgentClients } from "./test-utils/fake-agent-client.js";
 import { DaemonClient } from "./test-utils/daemon-client.js";
 import { isPlatform } from "../test-utils/platform.js";
@@ -55,7 +55,7 @@ describe("paseo daemon bootstrap", () => {
   });
 
   test("starts and serves health endpoint", async () => {
-    const daemonHandle = await createTestPaseoDaemon({
+    const daemonHandle = await createTestRamblaDaemon({
       openai: { stt: { apiKey: "test-openai-api-key" }, tts: { apiKey: "test-openai-api-key" } },
       speech: {
         providers: {
@@ -88,7 +88,7 @@ describe("paseo daemon bootstrap", () => {
     await mkdir(obsoleteTimelineDirectory, { recursive: true });
     await writeFile(path.join(obsoleteTimelineDirectory, "obsolete.json"), "{}\n", "utf-8");
 
-    const daemonHandle = await createTestPaseoDaemon({ paseoHomeRoot, cleanup: false });
+    const daemonHandle = await createTestRamblaDaemon({ paseoHomeRoot, cleanup: false });
     try {
       await expect(access(obsoleteTimelineDirectory)).rejects.toMatchObject({ code: "ENOENT" });
 
@@ -116,7 +116,7 @@ describe("paseo daemon bootstrap", () => {
   test("does not create a timeline directory for live timeline activity", async () => {
     const paseoHomeRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-timeline-memory-"));
     const agentCwd = await mkdtemp(path.join(os.tmpdir(), "paseo-timeline-agent-"));
-    const daemonHandle = await createTestPaseoDaemon({ paseoHomeRoot, cleanup: false });
+    const daemonHandle = await createTestRamblaDaemon({ paseoHomeRoot, cleanup: false });
     const timelineDirectory = path.join(daemonHandle.paseoHome, "agent-timelines");
     try {
       const agent = await daemonHandle.daemon.agentManager.createAgent(
@@ -180,7 +180,7 @@ describe("paseo daemon bootstrap", () => {
         voiceTts: { provider: "local", explicit: true, enabled: false },
       },
     };
-    const daemon = await createPaseoDaemon(config, pino({ level: "silent" }));
+    const daemon = await createRamblaDaemon(config, pino({ level: "silent" }));
     let client: DaemonClient | null = null;
     let proxyUpstream: http.Server | null = null;
 
@@ -370,7 +370,7 @@ describe("paseo daemon bootstrap", () => {
       throw new Error("Expected upstream TCP address");
     }
 
-    const daemonHandle = await createTestPaseoDaemon({
+    const daemonHandle = await createTestRamblaDaemon({
       auth: { password: hashDaemonPassword("secret") },
     });
     try {
@@ -403,7 +403,7 @@ describe("paseo daemon bootstrap", () => {
   });
 
   test("configured public service namespace misses never reach daemon APIs", async () => {
-    const daemonHandle = await createTestPaseoDaemon({
+    const daemonHandle = await createTestRamblaDaemon({
       serviceProxy: {
         publicBaseUrl: "https://services.example.com",
         standaloneListen: null,
@@ -436,7 +436,7 @@ describe("paseo daemon bootstrap", () => {
     const paseoHome = path.join(paseoHomeRoot, ".rambla");
     const staticDir = await mkdtemp(path.join(os.tmpdir(), "paseo-static-"));
     await mkdir(paseoHome, { recursive: true });
-    const config: PaseoDaemonConfig = {
+    const config: RamblaDaemonConfig = {
       listen: "127.0.0.1:0",
       paseoHome,
       corsAllowedOrigins: [],
@@ -454,7 +454,7 @@ describe("paseo daemon bootstrap", () => {
         standaloneListen: `127.0.0.1:${address.port}`,
       },
     };
-    const daemon = await createPaseoDaemon(config, pino({ level: "silent" }));
+    const daemon = await createRamblaDaemon(config, pino({ level: "silent" }));
 
     try {
       await expect(daemon.start()).rejects.toThrow();
@@ -468,7 +468,7 @@ describe("paseo daemon bootstrap", () => {
   });
 
   test("local service namespace misses never reach daemon APIs", async () => {
-    const daemonHandle = await createTestPaseoDaemon({
+    const daemonHandle = await createTestRamblaDaemon({
       auth: { password: hashDaemonPassword("secret") },
     });
     try {
@@ -485,7 +485,7 @@ describe("paseo daemon bootstrap", () => {
   });
 
   test("daemon websocket still upgrades when service proxy upgrade handler is mounted", async () => {
-    const daemonHandle = await createTestPaseoDaemon();
+    const daemonHandle = await createTestRamblaDaemon();
     const ws = new WebSocket(`ws://127.0.0.1:${daemonHandle.port}/ws`);
     try {
       await new Promise<void>((resolve, reject) => {
@@ -549,7 +549,7 @@ describe("paseo daemon bootstrap", () => {
         return { close: () => undefined };
       },
     };
-    const config: PaseoDaemonConfig = {
+    const config: RamblaDaemonConfig = {
       listen: "127.0.0.1:0",
       paseoHome,
       corsAllowedOrigins: [],
@@ -566,7 +566,7 @@ describe("paseo daemon bootstrap", () => {
       openai: undefined,
       speech: undefined,
     };
-    const daemon = await createPaseoDaemon(config, pino({ level: "silent" }), {
+    const daemon = await createRamblaDaemon(config, pino({ level: "silent" }), {
       hubRelationshipRemote: remote,
     });
     const starting = daemon.start();
@@ -621,7 +621,7 @@ describe("paseo daemon bootstrap", () => {
       throw new Error("Expected upstream TCP address");
     }
 
-    const daemonHandle = await createTestPaseoDaemon({
+    const daemonHandle = await createTestRamblaDaemon({
       serviceProxy: { standaloneListen: `127.0.0.1:${standalonePort}` },
     });
     try {
@@ -687,7 +687,7 @@ export default function contribute(plugin: unknown) {
 }`,
       );
     }
-    const config: PaseoDaemonConfig = {
+    const config: RamblaDaemonConfig = {
       listen: `127.0.0.1:${mainPort}`,
       paseoHome,
       corsAllowedOrigins: [],
@@ -707,7 +707,7 @@ export default function contribute(plugin: unknown) {
         ? {}
         : { "startup-rollback": { source: "directory", path: pluginDirectory } },
     };
-    const daemon = await createPaseoDaemon(config, pino({ level: "silent" }));
+    const daemon = await createRamblaDaemon(config, pino({ level: "silent" }));
 
     try {
       await expect(daemon.start()).rejects.toThrow();
@@ -733,7 +733,7 @@ export default function contribute(plugin: unknown) {
         },
       },
     );
-    const daemonHandle = await createTestPaseoDaemon({
+    const daemonHandle = await createTestRamblaDaemon({
       logger,
       mcpDebug: true,
     });
@@ -776,7 +776,7 @@ export default function contribute(plugin: unknown) {
     const staticDir = await mkdtemp(path.join(os.tmpdir(), "paseo-static-"));
     await mkdir(paseoHome, { recursive: true });
 
-    const config: PaseoDaemonConfig = {
+    const config: RamblaDaemonConfig = {
       listen: "127.0.0.1:0",
       paseoHome,
       corsAllowedOrigins: [],
@@ -799,7 +799,7 @@ export default function contribute(plugin: unknown) {
     };
 
     try {
-      const daemon = await createPaseoDaemon(config, pino({ level: "silent" }));
+      const daemon = await createRamblaDaemon(config, pino({ level: "silent" }));
       try {
         await daemon.start();
         expect(daemon.getListenTarget()).toBeDefined();
@@ -824,7 +824,7 @@ export default function contribute(plugin: unknown) {
       vi.fn(() => fetchGate),
     );
 
-    const daemonHandle = await createTestPaseoDaemon({
+    const daemonHandle = await createTestRamblaDaemon({
       speech: {
         providers: {
           dictationStt: { provider: "local", explicit: true, enabled: true },
@@ -912,7 +912,7 @@ export default function contribute(plugin: unknown) {
       await mkdir(paseoHome, { recursive: true });
       const logger = pino({ level: "silent" });
 
-      const config: PaseoDaemonConfig = {
+      const config: RamblaDaemonConfig = {
         listen: socketPath,
         paseoHome,
         corsAllowedOrigins: [],
@@ -930,7 +930,7 @@ export default function contribute(plugin: unknown) {
         speech: undefined,
       };
 
-      const daemon = await createPaseoDaemon(config, logger);
+      const daemon = await createRamblaDaemon(config, logger);
 
       try {
         await daemon.start();
@@ -982,7 +982,7 @@ function holdAgentClose(): HeldAgentClose {
 
 async function beginDaemonShutdownWithAgentClosing(): Promise<BlockedDaemonShutdown> {
   const heldAgentClose = holdAgentClose();
-  const daemonHandle = await createTestPaseoDaemon({
+  const daemonHandle = await createTestRamblaDaemon({
     cleanup: false,
     agentClients: createTestAgentClients({ closeSession: heldAgentClose.closeSession }),
   });

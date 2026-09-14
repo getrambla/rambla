@@ -131,7 +131,7 @@ function historyEntry(input: {
         currentBranch: null,
         remoteUrl: null,
         worktreeRoot: null,
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: null,
       },
     },

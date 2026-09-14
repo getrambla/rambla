@@ -3,8 +3,8 @@ import {
   buildSelfNodeCommand,
   createExternalCommandProcessEnv,
   createExternalProcessEnv,
-  createPaseoInternalEnv,
-  resolvePaseoNodeEnv,
+  createRamblaInternalEnv,
+  resolveRamblaNodeEnv,
 } from "./paseo-env.js";
 
 describe("paseo env contract", () => {
@@ -31,7 +31,7 @@ describe("paseo env contract", () => {
   ] as const;
 
   test("builds internal daemon child env by preserving pass-through and control vars", () => {
-    const env = createPaseoInternalEnv(baseEnv);
+    const env = createRamblaInternalEnv(baseEnv);
 
     expect(env).toMatchObject({
       [ELECTRON_RUN_AS_NODE]: "1",
@@ -112,10 +112,10 @@ describe("paseo env contract", () => {
   });
 
   test("does not use user NODE_ENV as Rambla runtime mode", () => {
-    expect(resolvePaseoNodeEnv({ NODE_ENV: "development" })).toBeUndefined();
-    expect(resolvePaseoNodeEnv({ NODE_ENV: "development", RAMBLA_NODE_ENV: "production" })).toBe(
+    expect(resolveRamblaNodeEnv({ NODE_ENV: "development" })).toBeUndefined();
+    expect(resolveRamblaNodeEnv({ NODE_ENV: "development", RAMBLA_NODE_ENV: "production" })).toBe(
       "production",
     );
-    expect(resolvePaseoNodeEnv({ NODE_ENV: "test", RAMBLA_NODE_ENV: "local" })).toBeUndefined();
+    expect(resolveRamblaNodeEnv({ NODE_ENV: "test", RAMBLA_NODE_ENV: "local" })).toBeUndefined();
   });
 });

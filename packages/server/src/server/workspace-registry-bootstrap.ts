@@ -15,7 +15,7 @@ import {
   type ProjectRegistry,
   type WorkspaceRegistry,
 } from "./workspace-registry.js";
-import { pinPaseoWorktreeBranchIdentityIfMissing } from "../utils/worktree-metadata.js";
+import { pinRamblaWorktreeBranchIdentityIfMissing } from "../utils/worktree-metadata.js";
 
 function minIsoDate(left: string | null, right: string | null): string | null {
   if (!left) {
@@ -67,14 +67,14 @@ export async function bootstrapWorkspaceRegistries(options: {
   for (const workspace of await options.workspaceRegistry.list()) {
     if (
       workspace.archivedAt ||
-      !workspace.isPaseoOwnedWorktree ||
+      !workspace.isRamblaOwnedWorktree ||
       !workspace.worktreeRoot ||
       !workspace.branch
     ) {
       continue;
     }
     try {
-      pinPaseoWorktreeBranchIdentityIfMissing(workspace.worktreeRoot, workspace.branch);
+      pinRamblaWorktreeBranchIdentityIfMissing(workspace.worktreeRoot, workspace.branch);
     } catch (error) {
       options.logger.warn(
         { err: error, workspaceId: workspace.workspaceId },

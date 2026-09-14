@@ -7,7 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
 import type { AgentTimelineItem } from "../agent/agent-sdk-types.js";
 import type { AgentLifecycleStatus } from "@getpaseo/protocol/agent-lifecycle";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 import {
   canRunRealProvider,
   createRealProviderClients,
@@ -24,7 +24,7 @@ import {
 
 interface OpenCodeRewindHarness {
   client: DaemonClient;
-  daemon: TestPaseoDaemon;
+  daemon: TestRamblaDaemon;
 }
 
 interface OpenCodeRewindSession {
@@ -51,7 +51,7 @@ async function launchOpenCodeRewindSession(
     cwd,
     stdio: "ignore",
   });
-  execFileSync("git", ["config", "user.name", "Paseo Test"], { cwd, stdio: "ignore" });
+  execFileSync("git", ["config", "user.name", "Rambla Test"], { cwd, stdio: "ignore" });
   await writeFile(scratchPath, "BASE\n", "utf8");
   execFileSync("git", ["add", "rewind-scratch.txt"], { cwd, stdio: "ignore" });
   execFileSync("git", ["commit", "-m", "base"], { cwd, stdio: "ignore" });
@@ -224,7 +224,7 @@ describe("daemon E2E (real opencode) - rewind", () => {
       return;
     }
     const logger = pino({ level: "silent" });
-    const daemon = await createTestPaseoDaemon({
+    const daemon = await createTestRamblaDaemon({
       agentClients: createRealProviderClients(["opencode"], logger),
       logger,
     });

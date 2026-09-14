@@ -8,7 +8,7 @@ import { createTestAgentClients } from "../../test-utils/fake-agent-client.js";
 import { createProviderSnapshotManagerStub } from "../../test-utils/session-stubs.js";
 import { AgentManager } from "../agent-manager.js";
 import { AgentStorage } from "../agent-storage.js";
-import type { CreatePaseoWorktreeWorkflowResult } from "../../worktree-session.js";
+import type { CreateRamblaWorktreeWorkflowResult } from "../../worktree-session.js";
 import { createAgentCommand } from "./create.js";
 import type { ManagedAgent } from "../agent-manager.js";
 
@@ -45,7 +45,7 @@ function fakeWorktreeCreator(args: { repoRoot: string; createdWorkspaceId: strin
   const worktreePath = join(args.repoRoot, "worktree");
   const workspaceCwd = join(worktreePath, "packages", "app");
   mkdirSync(workspaceCwd, { recursive: true });
-  return async (): Promise<CreatePaseoWorktreeWorkflowResult> =>
+  return async (): Promise<CreateRamblaWorktreeWorkflowResult> =>
     ({
       worktree: { worktreePath },
       intent: {},
@@ -53,7 +53,7 @@ function fakeWorktreeCreator(args: { repoRoot: string; createdWorkspaceId: strin
       repoRoot: args.repoRoot,
       created: true,
       setupContinuation: { kind: "agent" as const, startAfterAgentCreate: () => {} },
-    }) as unknown as CreatePaseoWorktreeWorkflowResult;
+    }) as unknown as CreateRamblaWorktreeWorkflowResult;
 }
 
 test("session create forwards clientMessageId to the initial prompt run options", async () => {
@@ -319,7 +319,7 @@ test("mcp create stamps the new worktree's workspaceId, not the parent's", async
         agentStorage: storage,
         logger,
         providerSnapshotManager,
-        createPaseoWorktree: fakeWorktreeCreator({
+        createRamblaWorktree: fakeWorktreeCreator({
           repoRoot: workdir,
           createdWorkspaceId: "ws-new-worktree",
         }),
@@ -354,7 +354,7 @@ test("mcp create exposes the created worktree before dispatching the initial pro
   })();
   let observed:
     | {
-        createdWorktree: CreatePaseoWorktreeWorkflowResult | null;
+        createdWorktree: CreateRamblaWorktreeWorkflowResult | null;
         lifecycle: ManagedAgent["lifecycle"] | null;
       }
     | undefined;
@@ -370,7 +370,7 @@ test("mcp create exposes the created worktree before dispatching the initial pro
             return {};
           },
         },
-        createPaseoWorktree: async () => createdWorktree,
+        createRamblaWorktree: async () => createdWorktree,
       },
       {
         kind: "mcp",

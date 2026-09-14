@@ -12,8 +12,8 @@ import {
 import { createNoopWorkspaceGitService } from "./test-utils/workspace-git-service-stub.js";
 import { generateBranchNameFromFirstAgentContext } from "./worktree-branch-name-generator.js";
 import {
-  writePaseoWorktreeFirstAgentBranchAutoNameMetadata,
-  writePaseoWorktreeMetadata,
+  writeRamblaWorktreeFirstAgentBranchAutoNameMetadata,
+  writeRamblaWorktreeMetadata,
 } from "../utils/worktree-metadata.js";
 
 const cleanupPaths: string[] = [];
@@ -294,8 +294,8 @@ describe("generateBranchNameFromFirstAgentContext", () => {
     const repoRoot = createTempDir("paseo-branch-config-");
     const worktreeRoot = createTempDir("paseo-branch-worktree-");
     mkdirSync(path.join(worktreeRoot, ".git"));
-    writePaseoWorktreeMetadata(worktreeRoot, { baseRefName: "main" });
-    writePaseoWorktreeFirstAgentBranchAutoNameMetadata(worktreeRoot, {
+    writeRamblaWorktreeMetadata(worktreeRoot, { baseRefName: "main" });
+    writeRamblaWorktreeFirstAgentBranchAutoNameMetadata(worktreeRoot, {
       placeholderBranchName: "dazzling-yak",
     });
     writeConfig(repoRoot, {

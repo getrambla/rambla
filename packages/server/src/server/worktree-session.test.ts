@@ -16,12 +16,12 @@ import pino, { type Logger } from "pino";
 import type { SessionOutboundMessage, WorkspaceDescriptorPayload } from "./messages.js";
 import {
   buildAgentSessionConfig,
-  createPaseoWorktreeWorkflow,
-  handlePaseoWorktreeArchiveRequest,
-  handlePaseoWorktreeListRequest,
+  createRamblaWorktreeWorkflow,
+  handleRamblaWorktreeArchiveRequest,
+  handleRamblaWorktreeListRequest,
   resolveGitCreateBaseBranch,
   runWorktreeSetupInBackground,
-  handleCreatePaseoWorktreeRequest,
+  handleCreateRamblaWorktreeRequest,
   handleWorkspaceSetupStatusRequest,
   handleWorkspaceSetupRunRequest,
 } from "./worktree-session.js";
@@ -43,8 +43,8 @@ import {
 import type { ForgeService } from "../services/forge-service.js";
 import { areEquivalentPaths } from "../utils/path.js";
 import {
-  createPaseoWorktree as createPaseoWorktreeService,
-  type CreatePaseoWorktreeFn,
+  createRamblaWorktree as createRamblaWorktreeService,
+  type CreateRamblaWorktreeFn,
 } from "./paseo-worktree-service.js";
 import { WorkspaceGitServiceImpl } from "./workspace-git-service.js";
 import type { WorkspaceGitService } from "./workspace-git-service.js";
@@ -91,7 +91,7 @@ function createLogger(): Logger {
 
 function createWorkflowForRequestTest(options: {
   paseoHome: string;
-  createPaseoWorktree?: CreatePaseoWorktreeFn;
+  createRamblaWorktree?: CreateRamblaWorktreeFn;
   warmWorkspaceGitData?: (workspace: PersistedWorkspaceRecord) => Promise<void>;
   onSetupStarted?: (input: {
     requestCwd: string;
@@ -101,13 +101,13 @@ function createWorkflowForRequestTest(options: {
     shouldBootstrap: boolean;
   }) => void;
 }) {
-  return async (input: Parameters<CreatePaseoWorktreeFn>[0]) => {
-    const createPaseoWorktree =
-      options.createPaseoWorktree ?? createPaseoWorktreeForTest({ paseoHome: options.paseoHome });
-    return createPaseoWorktreeWorkflow(
+  return async (input: Parameters<CreateRamblaWorktreeFn>[0]) => {
+    const createRamblaWorktree =
+      options.createRamblaWorktree ?? createRamblaWorktreeForTest({ paseoHome: options.paseoHome });
+    return createRamblaWorktreeWorkflow(
       {
         paseoHome: options.paseoHome,
-        createPaseoWorktree,
+        createRamblaWorktree,
         warmWorkspaceGitData: options.warmWorkspaceGitData ?? (async () => {}),
         autoNameWorkspaceBranchForFirstAgent: () => {},
         emitWorkspaceUpdateForWorkspaceId: async () => {},
@@ -291,10 +291,10 @@ function createWorkspaceDescriptor(input: {
   };
 }
 
-function createPaseoWorktreeForTest(options: {
+function createRamblaWorktreeForTest(options: {
   paseoHome: string;
   events?: string[];
-}): CreatePaseoWorktreeFn {
+}): CreateRamblaWorktreeFn {
   const projects = new Map<string, PersistedProjectRecord>();
   const workspaces = new Map<string, PersistedWorkspaceRecord>();
   const workspaceGitService = new WorkspaceGitServiceImpl({
@@ -370,7 +370,7 @@ function createPaseoWorktreeForTest(options: {
   });
 
   return (input, serviceOptions) => {
-    return createPaseoWorktreeService(input, {
+    return createRamblaWorktreeService(input, {
       github: createGitHubServiceStub(),
       ...(serviceOptions?.resolveDefaultBranch
         ? { resolveDefaultBranch: serviceOptions.resolveDefaultBranch }
@@ -381,7 +381,7 @@ function createPaseoWorktreeForTest(options: {
   };
 }
 
-describe("handlePaseoWorktreeListRequest", () => {
+describe("handleRamblaWorktreeListRequest", () => {
   test("lists worktrees through the workspace git service", async () => {
     const emitted: SessionOutboundMessage[] = [];
     const workspaceGitService = {
@@ -395,7 +395,7 @@ describe("handlePaseoWorktreeListRequest", () => {
       ]),
     };
 
-    await handlePaseoWorktreeListRequest(
+    await handleRamblaWorktreeListRequest(
       {
         emit: (message) => emitted.push(message),
         paseoHome: "/tmp/paseo-home",
@@ -469,10 +469,10 @@ describe("create-agent worktree setup boundary", () => {
     );
 
     try {
-      const result = await createPaseoWorktreeWorkflow(
+      const result = await createRamblaWorktreeWorkflow(
         {
           paseoHome,
-          createPaseoWorktree: createPaseoWorktreeForTest({ paseoHome }),
+          createRamblaWorktree: createRamblaWorktreeForTest({ paseoHome }),
           warmWorkspaceGitData: async () => {},
           autoNameWorkspaceBranchForFirstAgent: () => {},
           assertWorkspaceAutomationAllowed: async () => {
@@ -528,10 +528,10 @@ describe("create-agent worktree setup boundary", () => {
     const workspaceSetupEvents: SessionOutboundMessage[] = [];
 
     try {
-      const result = await createPaseoWorktreeWorkflow(
+      const result = await createRamblaWorktreeWorkflow(
         {
           paseoHome,
-          createPaseoWorktree: createPaseoWorktreeForTest({ paseoHome }),
+          createRamblaWorktree: createRamblaWorktreeForTest({ paseoHome }),
           warmWorkspaceGitData: async () => {},
           autoNameWorkspaceBranchForFirstAgent: () => {},
           emitWorkspaceUpdateForWorkspaceId: async () => {},
@@ -1462,7 +1462,7 @@ describe("runWorktreeSetupInBackground", () => {
   });
 });
 
-describe("handleCreatePaseoWorktreeRequest", () => {
+describe("handleCreateRamblaWorktreeRequest", () => {
   const cleanupPaths: string[] = [];
 
   afterEach(() => {
@@ -1479,14 +1479,14 @@ describe("handleCreatePaseoWorktreeRequest", () => {
     const logger = createLogger();
     const paseoHome = path.join(tempDir, ".rambla");
 
-    await handleCreatePaseoWorktreeRequest(
+    await handleCreateRamblaWorktreeRequest(
       {
         paseoHome,
         describeWorkspaceRecord: async (result) =>
           createWorkspaceDescriptor({ workspace: result.workspace, repoDir }),
         emit: (message) => emitted.push(message),
         sessionLogger: logger,
-        createPaseoWorktreeWorkflow: createWorkflowForRequestTest({ paseoHome }),
+        createRamblaWorktreeWorkflow: createWorkflowForRequestTest({ paseoHome }),
       },
       {
         type: "create_paseo_worktree_request",
@@ -1540,7 +1540,7 @@ describe("handleCreatePaseoWorktreeRequest", () => {
           resolveRepoRoot: vi.fn(async () => repoDir),
           resolveDefaultBranch: vi.fn(async () => "main"),
         } as unknown as WorkspaceGitService,
-        createPaseoWorktree: createPaseoWorktreeForTest({
+        createRamblaWorktree: createRamblaWorktreeForTest({
           paseoHome: path.join(tempDir, ".rambla"),
           events,
         }),
@@ -1589,7 +1589,7 @@ describe("handleCreatePaseoWorktreeRequest", () => {
           resolveRepoRoot: vi.fn(async () => repoDir),
           resolveDefaultBranch: vi.fn(async () => "main"),
         } as unknown as WorkspaceGitService,
-        createPaseoWorktree: createPaseoWorktreeForTest({ paseoHome }),
+        createRamblaWorktree: createRamblaWorktreeForTest({ paseoHome }),
         checkoutExistingBranch: async () => {
           throw new Error("should not checkout existing branch");
         },
@@ -1612,7 +1612,7 @@ describe("handleCreatePaseoWorktreeRequest", () => {
   });
 
   test("buildAgentSessionConfig passes prompt and attachment context into worktree creation", async () => {
-    const createPaseoWorktree = vi.fn(async () => ({
+    const createRamblaWorktree = vi.fn(async () => ({
       worktree: {
         branchName: "fix-attached-pr-context",
         worktreePath: "/tmp/worktrees/fix-attached-pr-context",
@@ -1656,7 +1656,7 @@ describe("handleCreatePaseoWorktreeRequest", () => {
         workspaceGitService: {
           resolveDefaultBranch: vi.fn(async () => "main"),
         } as unknown as WorkspaceGitService,
-        createPaseoWorktree,
+        createRamblaWorktree,
         checkoutExistingBranch: async () => {
           throw new Error("should not checkout existing branch");
         },
@@ -1676,7 +1676,7 @@ describe("handleCreatePaseoWorktreeRequest", () => {
       firstAgentContext,
     );
 
-    expect(createPaseoWorktree).toHaveBeenCalledWith(
+    expect(createRamblaWorktree).toHaveBeenCalledWith(
       expect.objectContaining({
         firstAgentContext,
       }),
@@ -1689,14 +1689,14 @@ describe("handleCreatePaseoWorktreeRequest", () => {
     const invalidate = vi.fn();
     const createBranchFromBase = vi.fn(async () => {});
     const checkoutExistingBranch = vi.fn(async () => ({ source: "local" as const }));
-    const createPaseoWorktree = vi.fn(async () => {
+    const createRamblaWorktree = vi.fn(async () => {
       throw new Error("should not create worktree");
     });
 
     await buildAgentSessionConfig(
       {
         sessionLogger: createLogger(),
-        createPaseoWorktree,
+        createRamblaWorktree,
         checkoutExistingBranch,
         createBranchFromBase,
         workspaceGitService: { invalidateForge: invalidate } as unknown as WorkspaceGitService,
@@ -1724,7 +1724,7 @@ describe("handleCreatePaseoWorktreeRequest", () => {
     await buildAgentSessionConfig(
       {
         sessionLogger: createLogger(),
-        createPaseoWorktree,
+        createRamblaWorktree,
         checkoutExistingBranch,
         createBranchFromBase,
         workspaceGitService: { invalidateForge: invalidate } as unknown as WorkspaceGitService,
@@ -1742,13 +1742,13 @@ describe("handleCreatePaseoWorktreeRequest", () => {
     expect(invalidate).toHaveBeenCalledWith("/tmp/repo");
   });
 
-  test("createPaseoWorktreeForTest forwards the default branch resolver for branch-off intents", async () => {
+  test("createRamblaWorktreeForTest forwards the default branch resolver for branch-off intents", async () => {
     const { tempDir, repoDir } = createGitRepo();
     cleanupPaths.push(tempDir);
     const paseoHome = path.join(tempDir, ".rambla");
     const resolveDefaultBranch = vi.fn(async () => "main");
 
-    const result = await createPaseoWorktreeForTest({ paseoHome })(
+    const result = await createRamblaWorktreeForTest({ paseoHome })(
       {
         cwd: repoDir,
         worktreeSlug: "resolver-feature",
@@ -1770,7 +1770,7 @@ describe("handleCreatePaseoWorktreeRequest", () => {
   });
 });
 
-describe("handleCreatePaseoWorktreeRequest", () => {
+describe("handleCreateRamblaWorktreeRequest", () => {
   test("registers a pending workspace and emits a successful create response", async () => {
     const { tempDir, repoDir } = createGitRepo();
     const paseoHome = path.join(tempDir, ".rambla");
@@ -1778,14 +1778,14 @@ describe("handleCreatePaseoWorktreeRequest", () => {
     const events: string[] = [];
 
     try {
-      await handleCreatePaseoWorktreeRequest(
+      await handleCreateRamblaWorktreeRequest(
         {
           paseoHome,
           sessionLogger: createLogger(),
           emit: (message) => emitted.push(message),
-          createPaseoWorktreeWorkflow: createWorkflowForRequestTest({
+          createRamblaWorktreeWorkflow: createWorkflowForRequestTest({
             paseoHome,
-            createPaseoWorktree: createPaseoWorktreeForTest({ paseoHome, events }),
+            createRamblaWorktree: createRamblaWorktreeForTest({ paseoHome, events }),
           }),
           describeWorkspaceRecord: vi.fn(async (result) => ({
             id: result.workspace.workspaceId,
@@ -1802,7 +1802,7 @@ describe("handleCreatePaseoWorktreeRequest", () => {
             gitRuntime: {
               currentBranch: "single-call",
               remoteUrl: null,
-              isPaseoOwnedWorktree: true,
+              isRamblaOwnedWorktree: true,
               isDirty: false,
               aheadBehind: null,
               aheadOfOrigin: null,
@@ -1841,15 +1841,15 @@ describe("handleCreatePaseoWorktreeRequest", () => {
     let registeredWorktreePath: string | null = null;
 
     try {
-      await handleCreatePaseoWorktreeRequest(
+      await handleCreateRamblaWorktreeRequest(
         {
           paseoHome,
           sessionLogger: createLogger(),
           emit: (message) => emitted.push(message),
-          createPaseoWorktreeWorkflow: createWorkflowForRequestTest({
+          createRamblaWorktreeWorkflow: createWorkflowForRequestTest({
             paseoHome,
-            createPaseoWorktree: async (input) => {
-              const result = await createPaseoWorktreeForTest({ paseoHome })(input);
+            createRamblaWorktree: async (input) => {
+              const result = await createRamblaWorktreeForTest({ paseoHome })(input);
               expect(existsSync(result.worktree.worktreePath)).toBe(true);
               registeredWorktreePath = result.worktree.worktreePath;
               return result;
@@ -1923,12 +1923,12 @@ describe("handleCreatePaseoWorktreeRequest", () => {
     const emitted: SessionOutboundMessage[] = [];
 
     try {
-      await handleCreatePaseoWorktreeRequest(
+      await handleCreateRamblaWorktreeRequest(
         {
           paseoHome,
           sessionLogger: createLogger(),
           emit: (message) => emitted.push(message),
-          createPaseoWorktreeWorkflow: createWorkflowForRequestTest({ paseoHome }),
+          createRamblaWorktreeWorkflow: createWorkflowForRequestTest({ paseoHome }),
           describeWorkspaceRecord: vi.fn(async (result) =>
             createWorkspaceDescriptor({ workspace: result.workspace, repoDir }),
           ),
@@ -1961,12 +1961,12 @@ describe("handleCreatePaseoWorktreeRequest", () => {
     const emitted: SessionOutboundMessage[] = [];
 
     try {
-      await handleCreatePaseoWorktreeRequest(
+      await handleCreateRamblaWorktreeRequest(
         {
           paseoHome,
           sessionLogger: createLogger(),
           emit: (message) => emitted.push(message),
-          createPaseoWorktreeWorkflow: createWorkflowForRequestTest({ paseoHome }),
+          createRamblaWorktreeWorkflow: createWorkflowForRequestTest({ paseoHome }),
           describeWorkspaceRecord: vi.fn(async (result) =>
             createWorkspaceDescriptor({ workspace: result.workspace, repoDir }),
           ),
@@ -1995,7 +1995,7 @@ describe("handleCreatePaseoWorktreeRequest", () => {
   });
 });
 
-describe("handlePaseoWorktreeArchiveRequest worktree scope", () => {
+describe("handleRamblaWorktreeArchiveRequest worktree scope", () => {
   const cleanupPaths: string[] = [];
 
   afterEach(() => {
@@ -2028,7 +2028,7 @@ describe("handlePaseoWorktreeArchiveRequest worktree scope", () => {
     const listActiveWorkspaces = vi.fn(async () => activeWorkspaces);
     const emitted: SessionOutboundMessage[] = [];
 
-    await handlePaseoWorktreeArchiveRequest(
+    await handleRamblaWorktreeArchiveRequest(
       {
         paseoHome,
         github: createGitHubServiceStub(),
@@ -2099,7 +2099,7 @@ describe("handlePaseoWorktreeArchiveRequest worktree scope", () => {
     const archivedWorkspaceRecords: string[] = [];
     const emitted: SessionOutboundMessage[] = [];
 
-    await handlePaseoWorktreeArchiveRequest(
+    await handleRamblaWorktreeArchiveRequest(
       {
         paseoHome,
         github: createGitHubServiceStub(),
@@ -2175,7 +2175,7 @@ describe("handlePaseoWorktreeArchiveRequest worktree scope", () => {
     const archivedWorkspaceRecords: string[] = [];
     const emitted: SessionOutboundMessage[] = [];
 
-    await handlePaseoWorktreeArchiveRequest(
+    await handleRamblaWorktreeArchiveRequest(
       {
         paseoHome,
         github: createGitHubServiceStub(),
@@ -2283,7 +2283,7 @@ describe("handlePaseoWorktreeArchiveRequest worktree scope", () => {
 
     // First archive: a sibling workspace still references the directory, so the
     // retained deleteWorktreeFromDisk:true flag must NOT force removal.
-    await handlePaseoWorktreeArchiveRequest(deps, {
+    await handleRamblaWorktreeArchiveRequest(deps, {
       type: "paseo_worktree_archive_request",
       requestId: "req-delete-flag-first",
       worktreePath: sharedCwd,
@@ -2302,7 +2302,7 @@ describe("handlePaseoWorktreeArchiveRequest worktree scope", () => {
 
     // Second archive: last reference, so removal is derived even though the flag
     // is still ignored.
-    await handlePaseoWorktreeArchiveRequest(deps, {
+    await handleRamblaWorktreeArchiveRequest(deps, {
       type: "paseo_worktree_archive_request",
       requestId: "req-delete-flag-second",
       worktreePath: sharedCwd,

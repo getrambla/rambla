@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { i18n } from "@/i18n/i18next";
-import type { PaseoSubagentRow, ProviderSubagentRow, SubagentRow } from "./select";
+import type { RamblaSubagentRow, ProviderSubagentRow, SubagentRow } from "./select";
 import {
   buildSubagentPillPresentation,
   buildSubagentRowPresentationData,
@@ -9,8 +9,8 @@ import {
 } from "./track-presentation";
 
 function row(
-  overrides: Partial<PaseoSubagentRow> & Pick<PaseoSubagentRow, "id">,
-): PaseoSubagentRow {
+  overrides: Partial<RamblaSubagentRow> & Pick<RamblaSubagentRow, "id">,
+): RamblaSubagentRow {
   return {
     kind: "paseo",
     id: overrides.id,

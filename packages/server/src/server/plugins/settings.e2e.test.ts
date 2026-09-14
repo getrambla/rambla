@@ -6,11 +6,11 @@ import { expect, test } from "vitest";
 import { z } from "zod";
 import { settingsRpc } from "@getpaseo/plugin";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 
 test("two clients share settings, observe changes, and preserve values through plugin lifecycle", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "settings-plugin-"));
-  const daemon = await createTestPaseoDaemon();
+  const daemon = await createTestRamblaDaemon();
   const first = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws`, appVersion: "0.7.2" });
   const second = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws`, appVersion: "0.7.2" });
   const rpc = settingsRpc("display");

@@ -11,8 +11,8 @@ import type {
   TerminalWorkspaceContributionChangedEvent,
 } from "./terminal-manager.js";
 import {
-  resolvePaseoCliBinDir,
-  resolvePaseoCliExecutablePath,
+  resolveRamblaCliBinDir,
+  resolveRamblaCliExecutablePath,
   type TerminalSession,
 } from "./terminal.js";
 import type { TerminalState } from "@getpaseo/protocol/messages";
@@ -482,8 +482,8 @@ it("injects parent-minted terminal activity env through the worker", async () =>
     hookCli?: string;
     path?: string;
   };
-  const paseoCliBinDir = resolvePaseoCliBinDir();
-  const paseoCliPath = resolvePaseoCliExecutablePath();
+  const paseoCliBinDir = resolveRamblaCliBinDir();
+  const paseoCliPath = resolveRamblaCliExecutablePath();
   expect(paseoCliBinDir).not.toBeNull();
   expect(paseoCliPath).not.toBeNull();
   expect(env.terminalId).toBe(session.id);

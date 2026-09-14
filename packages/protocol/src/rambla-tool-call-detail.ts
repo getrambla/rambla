@@ -1,11 +1,11 @@
-import { getPaseoToolLeafName } from "./tool-name-normalization.js";
+import { getRamblaToolLeafName } from "./tool-name-normalization.js";
 
-export interface PaseoToolDetailField {
+export interface RamblaToolDetailField {
   label: string;
   value: string;
 }
 
-export type PaseoToolDetailSection =
+export type RamblaToolDetailSection =
   | {
       kind: "prose";
       title: string;
@@ -14,7 +14,7 @@ export type PaseoToolDetailSection =
   | {
       kind: "fields";
       title: string;
-      fields: PaseoToolDetailField[];
+      fields: RamblaToolDetailField[];
     };
 
 interface ToolDetailSpec {
@@ -282,7 +282,7 @@ function fieldsFromValue(
   order?: readonly string[],
   omittedKey?: string,
   includedKeys?: readonly string[],
-): PaseoToolDetailField[] {
+): RamblaToolDetailField[] {
   if (value === null || value === undefined) return [];
   if (!isRecord(value)) {
     const formatted = formatValue(value);
@@ -320,16 +320,16 @@ function unwrapMcpResult(output: unknown): unknown {
   return output;
 }
 
-export function buildPaseoToolDetailSections(
+export function buildRamblaToolDetailSections(
   toolName: string,
   input: unknown,
   output: unknown,
-): PaseoToolDetailSection[] | null {
-  const leafName = getPaseoToolLeafName(toolName);
+): RamblaToolDetailSection[] | null {
+  const leafName = getRamblaToolLeafName(toolName);
   if (!leafName) return null;
 
   const spec = TOOL_SPECS[leafName] ?? {};
-  const sections: PaseoToolDetailSection[] = [];
+  const sections: RamblaToolDetailSection[] = [];
   if (spec.promptField && isRecord(input)) {
     const prompt = input[spec.promptField];
     if (typeof prompt === "string" && prompt.length > 0) {

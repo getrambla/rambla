@@ -490,7 +490,7 @@ describe("runAsyncWorktreeBootstrap", () => {
     });
   }
 
-  function commitPaseoScripts(
+  function commitRamblaScripts(
     scripts: Record<string, { command: string; type?: "script" | "service" }>,
     message = "add script config",
   ): void {
@@ -503,7 +503,7 @@ describe("runAsyncWorktreeBootstrap", () => {
   }
 
   it("spawns plain scripts in persistent shell terminals without env injection or routes", async () => {
-    commitPaseoScripts({
+    commitRamblaScripts({
       web: {
         command: "npm run dev",
       },
@@ -543,7 +543,7 @@ describe("runAsyncWorktreeBootstrap", () => {
   });
 
   it("records plain script exit codes from shell command completion without terminal exit", async () => {
-    commitPaseoScripts(
+    commitRamblaScripts(
       {
         typecheck: {
           command: 'node -e "process.exit(7)"',
@@ -582,7 +582,7 @@ describe("runAsyncWorktreeBootstrap", () => {
   });
 
   it("reuses a live terminal when rerunning after plain script completion", async () => {
-    commitPaseoScripts(
+    commitRamblaScripts(
       {
         typecheck: {
           command: "npm run typecheck",
@@ -648,7 +648,7 @@ describe("runAsyncWorktreeBootstrap", () => {
   });
 
   it("tracks command completion when reusing a live terminal from a stopped plain script entry", async () => {
-    commitPaseoScripts(
+    commitRamblaScripts(
       {
         typecheck: {
           command: "npm run typecheck",
@@ -703,7 +703,7 @@ describe("runAsyncWorktreeBootstrap", () => {
   });
 
   it("uses terminal exit as a fallback before shell command completion", async () => {
-    commitPaseoScripts(
+    commitRamblaScripts(
       {
         typecheck: {
           command: "npm run typecheck",
@@ -741,7 +741,7 @@ describe("runAsyncWorktreeBootstrap", () => {
   });
 
   it("rejects duplicate plain script starts while running", async () => {
-    commitPaseoScripts(
+    commitRamblaScripts(
       {
         typecheck: {
           command: 'node -e "setTimeout(() => {}, 30000)"',
@@ -784,7 +784,7 @@ describe("runAsyncWorktreeBootstrap", () => {
   });
 
   it("spawns services with route registration and injected peer service env vars", async () => {
-    commitPaseoScripts(
+    commitRamblaScripts(
       {
         api: {
           type: "service",
@@ -838,7 +838,7 @@ describe("runAsyncWorktreeBootstrap", () => {
   });
 
   it("spawns services with public aliases and public service URLs", async () => {
-    commitPaseoScripts(
+    commitRamblaScripts(
       {
         api: {
           type: "service",

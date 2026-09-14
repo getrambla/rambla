@@ -1,7 +1,7 @@
 {
   "name": "@getpaseo/plugin",
   "version": "0.8.0",
-  "description": "Paseo plugin SDK package",
+  "description": "Rambla plugin SDK package",
   "files": [
     "dist",
     "!dist/**/*.map"

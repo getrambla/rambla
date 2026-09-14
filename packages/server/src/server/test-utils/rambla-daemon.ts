@@ -4,23 +4,23 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 
 import pino from "pino";
 import {
-  createPaseoDaemon,
-  type PaseoDaemonConfig,
-  type PaseoOpenAIConfig,
-  type PaseoSpeechConfig,
+  createRamblaDaemon,
+  type RamblaDaemonConfig,
+  type RamblaOpenAIConfig,
+  type RamblaSpeechConfig,
 } from "../bootstrap.js";
 import type { AgentClient, AgentProvider } from "../agent/agent-sdk-types.js";
 import { createTestAgentClients } from "./fake-agent-client.js";
 import type { PushNotificationSender } from "../push/index.js";
 import type { AgentProfile } from "@getpaseo/protocol/messages";
 
-interface TestPaseoDaemonOptions {
+interface TestRamblaDaemonOptions {
   daemonVersion?: string;
   desktopManaged?: boolean;
   downloadTokenTtlMs?: number;
   corsAllowedOrigins?: string[];
   listen?: string;
-  logger?: Parameters<typeof createPaseoDaemon>[1];
+  logger?: Parameters<typeof createRamblaDaemon>[1];
   mcpEnabled?: boolean;
   mcpDebug?: boolean;
   isDev?: boolean;
@@ -31,30 +31,30 @@ interface TestPaseoDaemonOptions {
   daemonStatusRpcCapability?: boolean;
   relayConfigCapability?: boolean;
   agentClients?: Partial<Record<AgentProvider, AgentClient>>;
-  providerOverrides?: PaseoDaemonConfig["providerOverrides"];
+  providerOverrides?: RamblaDaemonConfig["providerOverrides"];
   paseoHomeRoot?: string;
   staticDir?: string;
   cleanup?: boolean;
-  openai?: PaseoOpenAIConfig;
-  speech?: PaseoSpeechConfig;
-  voiceLlmProvider?: PaseoDaemonConfig["voiceLlmProvider"];
+  openai?: RamblaOpenAIConfig;
+  speech?: RamblaSpeechConfig;
+  voiceLlmProvider?: RamblaDaemonConfig["voiceLlmProvider"];
   voiceLlmProviderExplicit?: boolean;
   voiceLlmModel?: string | null;
   dictationFinalTimeoutMs?: number;
-  auth?: PaseoDaemonConfig["auth"];
+  auth?: RamblaDaemonConfig["auth"];
   pushNotificationSender?: PushNotificationSender;
-  serviceProxy?: PaseoDaemonConfig["serviceProxy"];
-  webUi?: PaseoDaemonConfig["webUi"];
-  trustedProxies?: PaseoDaemonConfig["trustedProxies"];
+  serviceProxy?: RamblaDaemonConfig["serviceProxy"];
+  webUi?: RamblaDaemonConfig["webUi"];
+  trustedProxies?: RamblaDaemonConfig["trustedProxies"];
   agentProfiles?: AgentProfile[];
   autoArchiveAfterMerge?: boolean;
-  pluginsEnabled?: PaseoDaemonConfig["pluginsEnabled"];
-  plugins?: PaseoDaemonConfig["plugins"];
+  pluginsEnabled?: RamblaDaemonConfig["pluginsEnabled"];
+  plugins?: RamblaDaemonConfig["plugins"];
 }
 
-export interface TestPaseoDaemon {
-  config: PaseoDaemonConfig;
-  daemon: Awaited<ReturnType<typeof createPaseoDaemon>>;
+export interface TestRamblaDaemon {
+  config: RamblaDaemonConfig;
+  daemon: Awaited<ReturnType<typeof createRamblaDaemon>>;
   port: number;
   paseoHome: string;
   staticDir: string;
@@ -64,7 +64,7 @@ export interface TestPaseoDaemon {
 const TEST_DAEMON_START_TIMEOUT_MS = 20_000;
 
 async function startDaemonWithTimeout(
-  daemon: Awaited<ReturnType<typeof createPaseoDaemon>>,
+  daemon: Awaited<ReturnType<typeof createRamblaDaemon>>,
   timeoutMs: number,
 ): Promise<void> {
   await new Promise<void>((resolve, reject) => {
@@ -90,16 +90,16 @@ async function startDaemonWithTimeout(
   });
 }
 
-export async function createTestPaseoDaemon(
-  options: TestPaseoDaemonOptions = {},
-): Promise<TestPaseoDaemon> {
+export async function createTestRamblaDaemon(
+  options: TestRamblaDaemonOptions = {},
+): Promise<TestRamblaDaemon> {
   const maxAttempts = 8;
   let lastError: unknown;
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const { config, paseoHomeRoot, paseoHome, staticDir } = await prepareTestDaemonConfig(options);
     const logger = options.logger ?? pino({ level: "silent" });
-    const daemon = await createPaseoDaemon(config, logger, {
+    const daemon = await createRamblaDaemon(config, logger, {
       serverFeatureOverrides: {
         daemonStatusRpc: options.daemonStatusRpcCapability,
         relayConfig: options.relayConfigCapability,
@@ -153,14 +153,14 @@ export async function createTestPaseoDaemon(
 }
 
 interface PreparedTestDaemonConfig {
-  config: PaseoDaemonConfig;
+  config: RamblaDaemonConfig;
   paseoHomeRoot: string;
   paseoHome: string;
   staticDir: string;
 }
 
 async function prepareTestDaemonConfig(
-  options: TestPaseoDaemonOptions,
+  options: TestRamblaDaemonOptions,
 ): Promise<PreparedTestDaemonConfig> {
   const paseoHomeRoot =
     options.paseoHomeRoot ?? (await mkdtemp(path.join(os.tmpdir(), "paseo-home-")));
@@ -168,7 +168,7 @@ async function prepareTestDaemonConfig(
   await mkdir(paseoHome, { recursive: true });
   const staticDir = options.staticDir ?? (await mkdtemp(path.join(os.tmpdir(), "paseo-static-")));
   const listenHost = options.listen ?? "127.0.0.1";
-  const config: PaseoDaemonConfig = {
+  const config: RamblaDaemonConfig = {
     listen: `${listenHost}:0`,
     paseoHome,
     daemonVersion: options.daemonVersion,

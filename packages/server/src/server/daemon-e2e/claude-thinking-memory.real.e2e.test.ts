@@ -6,7 +6,7 @@ import pino from "pino";
 
 import type { AgentTimelineItem } from "../agent/agent-sdk-types.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 import {
   canRunRealProvider,
   createRealProviderClients,
@@ -63,7 +63,7 @@ describe("daemon E2E (real claude) - thinking effort memory", () => {
   test("changing thinking effort preserves the previous conversation", async () => {
     const logger = pino({ level: "silent" });
     const cwd = tmpCwd();
-    const daemon = await createTestPaseoDaemon({
+    const daemon = await createTestRamblaDaemon({
       agentClients: createRealProviderClients(["claude"], logger),
       logger,
     });

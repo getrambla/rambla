@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import * as pty from "node-pty";
 import { afterEach, describe, expect, it } from "vitest";
-import { createTerminal, resolvePaseoCliBinDir, type TerminalSession } from "../../terminal.js";
+import { createTerminal, resolveRamblaCliBinDir, type TerminalSession } from "../../terminal.js";
 import { installRegisteredAgentHooks } from "../provider-registry.js";
 
 interface ActivityPost {
@@ -146,7 +146,7 @@ describe.skipIf(!claudeAvailability.available)(
       const token = "real-claude-token";
       const configDir = createTempDir("paseo-real-claude-config-");
       const cwd = createTempDir("paseo-real-claude-cwd-");
-      const paseoCliBinDir = resolvePaseoCliBinDir();
+      const paseoCliBinDir = resolveRamblaCliBinDir();
       if (!paseoCliBinDir) {
         throw new Error("Could not resolve paseo CLI bin directory");
       }
@@ -197,7 +197,7 @@ describe.skipIf(!claudeAvailability.available)(
         if (post.state === "needs-input") session?.setActivity("attention");
       });
       const configDir = createTempDir("paseo-real-claude-interrupt-config-");
-      const paseoCliBinDir = resolvePaseoCliBinDir();
+      const paseoCliBinDir = resolveRamblaCliBinDir();
       if (!paseoCliBinDir) {
         throw new Error("Could not resolve paseo CLI bin directory");
       }

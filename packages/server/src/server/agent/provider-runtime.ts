@@ -5,11 +5,11 @@ import {
   type ProviderSnapshotManagerOptions,
 } from "./provider-snapshot-manager.js";
 import { OpenCodeBridge } from "./providers/opencode/bridge.js";
-import type { PaseoToolCatalog } from "./tools/types.js";
+import type { RamblaToolCatalog } from "./tools/types.js";
 
 export interface AgentProviderRuntime {
   snapshotManager: ProviderSnapshotManager;
-  setPaseoToolCatalog(catalog: PaseoToolCatalog | null): void;
+  setRamblaToolCatalog(catalog: RamblaToolCatalog | null): void;
   shutdown(): Promise<void>;
 }
 
@@ -33,7 +33,7 @@ export async function createAgentProviderRuntime(
     let shutdownPromise: Promise<void> | null = null;
     return {
       snapshotManager,
-      setPaseoToolCatalog: (catalog) => bridge.setManifestCatalog(catalog),
+      setRamblaToolCatalog: (catalog) => bridge.setManifestCatalog(catalog),
       shutdown: () => {
         shutdownPromise ??= shutdownProviderRuntime(snapshotManager, bridge);
         return shutdownPromise;

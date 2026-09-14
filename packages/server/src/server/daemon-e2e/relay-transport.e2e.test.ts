@@ -8,7 +8,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { Buffer } from "node:buffer";
 
 import { generateLocalPairingOffer } from "../pairing-offer.js";
-import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 import { createClientChannel, type Transport } from "@getpaseo/relay/e2ee";
 import {
   deriveSharedKey,
@@ -247,7 +247,7 @@ async function waitForCapturedLog(
     const { logger, lines } = createCapturingLogger();
     await startRelay();
 
-    const daemon = await createTestPaseoDaemon({
+    const daemon = await createTestRamblaDaemon({
       listen: "127.0.0.1",
       logger,
       relayEnabled: true,
@@ -388,7 +388,7 @@ async function waitForCapturedLog(
     const { logger, lines } = createCapturingLogger();
     await startRelay({ useLocalRelay: true });
 
-    const daemon = await createTestPaseoDaemon({
+    const daemon = await createTestRamblaDaemon({
       listen: "127.0.0.1",
       logger,
       relayEnabled: true,
@@ -504,7 +504,7 @@ async function waitForCapturedLog(
     const { logger, lines } = createCapturingLogger();
     await startRelay();
 
-    const daemon = await createTestPaseoDaemon({
+    const daemon = await createTestRamblaDaemon({
       listen: "127.0.0.1",
       logger,
       relayEnabled: true,
@@ -650,7 +650,7 @@ async function waitForCapturedLog(
     const { logger, lines } = createCapturingLogger();
     await startRelay();
 
-    const daemon = await createTestPaseoDaemon({
+    const daemon = await createTestRamblaDaemon({
       listen: "127.0.0.1",
       logger,
       relayEnabled: true,

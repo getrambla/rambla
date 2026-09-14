@@ -4,7 +4,7 @@ Spin up an isolated in-process daemon test harness without touching the main dae
 
 This is for test code only. Executable daemon processes must start through
 `scripts/supervisor-entrypoint.ts` or `dist/scripts/supervisor-entrypoint.js`;
-do not use `createPaseoDaemon` as a product launch path.
+do not use `createRamblaDaemon` as a product launch path.
 
 ## Quick start
 
@@ -13,7 +13,7 @@ import os from "node:os";
 import path from "node:path";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import pino from "pino";
-import { createPaseoDaemon } from "./bootstrap.js";
+import { createRamblaDaemon } from "./bootstrap.js";
 import { DaemonClient } from "./test-utils/daemon-client.js";
 
 const logger = pino({ level: "warn" });
@@ -22,7 +22,7 @@ const paseoHome = path.join(paseoHomeRoot, ".rambla");
 await mkdir(paseoHome, { recursive: true });
 const staticDir = await mkdtemp(path.join(os.tmpdir(), "paseo-static-"));
 
-const daemon = await createPaseoDaemon(
+const daemon = await createRamblaDaemon(
   {
     listen: "127.0.0.1:0", // OS picks a free port
     paseoHome,
@@ -69,13 +69,13 @@ npx tsx packages/server/src/server/your-script.ts
 
 ## Using the test helper
 
-For simpler cases, `createTestPaseoDaemon` + `DaemonClient` handles temp dirs and port selection:
+For simpler cases, `createTestRamblaDaemon` + `DaemonClient` handles temp dirs and port selection:
 
 ```typescript
-import { createTestPaseoDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "./test-utils/paseo-daemon.js";
 import { DaemonClient } from "./test-utils/daemon-client.js";
 
-const daemon = await createTestPaseoDaemon();
+const daemon = await createTestRamblaDaemon();
 const client = new DaemonClient({
   url: `ws://127.0.0.1:${daemon.port}/ws`,
   appVersion: "0.1.70",
@@ -89,7 +89,7 @@ await client.close();
 await daemon.close(); // stops daemon + cleans up temp dirs
 ```
 
-The test helper does **not** expose `providerOverrides`. In test harnesses, use `createPaseoDaemon` directly when you need it (see quick start above).
+The test helper does **not** expose `providerOverrides`. In test harnesses, use `createRamblaDaemon` directly when you need it (see quick start above).
 
 ## Common client methods
 

@@ -379,7 +379,7 @@ test("listImportableProviderSessions requests a bounded deep scan for search res
   ]);
 });
 
-test("listImportableProviderSessions includes a provider session after its Paseo agent is archived", async () => {
+test("listImportableProviderSessions includes a provider session after its Rambla agent is archived", async () => {
   const cwd = "/tmp/project";
   const archivedSession = makeImportableSession({
     provider: "claude",

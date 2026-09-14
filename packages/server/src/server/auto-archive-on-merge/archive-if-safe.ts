@@ -14,7 +14,7 @@ import type {
 } from "../workspace-git-service.js";
 import type { ForgeService } from "../../services/forge-service.js";
 import type { TerminalManager } from "../../terminal/terminal-manager.js";
-import { isPaseoOwnedWorktreeCwd } from "../../utils/worktree.js";
+import { isRamblaOwnedWorktreeCwd } from "../../utils/worktree.js";
 import type { WorkspaceArchiveContext } from "../workspace-registry.js";
 
 export interface AutoArchiveArchiveOptions {
@@ -37,13 +37,13 @@ export interface AutoArchiveArchiveOptions {
 
 export interface ArchiveIfSafeDependencies {
   archiveByScope: typeof archiveByScope;
-  isPaseoOwnedWorktreeCwd: typeof isPaseoOwnedWorktreeCwd;
+  isRamblaOwnedWorktreeCwd: typeof isRamblaOwnedWorktreeCwd;
   killTerminalsForWorkspace: typeof killTerminalsForWorkspace;
 }
 
 const defaultDependencies: ArchiveIfSafeDependencies = {
   archiveByScope,
-  isPaseoOwnedWorktreeCwd,
+  isRamblaOwnedWorktreeCwd,
   killTerminalsForWorkspace,
 };
 
@@ -69,7 +69,7 @@ export async function archiveIfSafe(input: {
     return;
   }
 
-  const ownership = await deps.isPaseoOwnedWorktreeCwd(cwd, {
+  const ownership = await deps.isRamblaOwnedWorktreeCwd(cwd, {
     paseoHome: options.paseoHome,
     worktreesRoot: options.paseoWorktreesBaseRoot,
   });

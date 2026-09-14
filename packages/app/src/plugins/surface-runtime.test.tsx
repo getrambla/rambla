@@ -1,7 +1,7 @@
 import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
-import type { PaseoApi } from "@getpaseo/client";
-import { PaseoApiProvider } from "@getpaseo/plugin/client/host";
-import { usePaseo } from "@getpaseo/plugin/client";
+import type { RamblaApi } from "@getpaseo/client";
+import { RamblaApiProvider } from "@getpaseo/plugin/client/host";
+import { useRambla } from "@getpaseo/plugin/client";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -34,23 +34,23 @@ function clientWithWorkspace(id: string) {
   };
 }
 
-function borrowFromAppProvider(paseo: PaseoApi): PaseoApi {
-  let borrowed: PaseoApi | null = null;
+function borrowFromAppProvider(paseo: RamblaApi): RamblaApi {
+  let borrowed: RamblaApi | null = null;
   function PluginSurface() {
-    borrowed = usePaseo();
+    borrowed = useRambla();
     return null;
   }
   renderToStaticMarkup(
-    <PaseoApiProvider paseo={paseo}>
+    <RamblaApiProvider paseo={paseo}>
       <PluginSurface />
-    </PaseoApiProvider>,
+    </RamblaApiProvider>,
   );
-  if (!borrowed) throw new Error("Plugin surface did not receive Paseo API");
+  if (!borrowed) throw new Error("Plugin surface did not receive Rambla API");
   return borrowed;
 }
 
 describe("plugin surface host runtime", () => {
-  it("creates a PR worktree and agent through usePaseo on the selected app host", async () => {
+  it("creates a PR worktree and agent through useRambla on the selected app host", async () => {
     const selected = clientWithWorkspace("workspace-a");
     const runtime = createPluginSurfaceRuntime(selected.client, "workspace-plugin");
     if (!runtime) throw new Error("Expected selected host runtime");

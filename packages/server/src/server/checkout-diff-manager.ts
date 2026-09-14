@@ -187,7 +187,7 @@ export class CheckoutDiffManager {
       mainRepoRoot: snapshot.git.mainRepoRoot,
       currentBranch: snapshot.git.currentBranch,
       remoteUrl: snapshot.git.remoteUrl,
-      isPaseoOwnedWorktree: snapshot.git.isPaseoOwnedWorktree,
+      isRamblaOwnedWorktree: snapshot.git.isRamblaOwnedWorktree,
       baseRef: snapshot.git.baseRef,
       aheadBehind: snapshot.git.aheadBehind,
       aheadOfOrigin: snapshot.git.aheadOfOrigin,

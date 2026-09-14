@@ -1,24 +1,24 @@
 ---
 title: Plugin quickstart
-description: Build, install, share, and update a trusted Paseo plugin.
-nav: Paseo v0.7 — Current
+description: Build, install, share, and update a trusted Rambla plugin.
+nav: Rambla v0.7 — Current
 order: 45
 category: Plugins
 ---
 
 # Plugin quickstart
 
-> **For Paseo v0.7.x.** This is the current stable plugin API.
+> **For Rambla v0.7.x.** This is the current stable plugin API.
 
 > **Experimental:** The plugin API is still evolving, so expect breaking changes and updates to
-> your plugins as Paseo evolves.
+> your plugins as Rambla evolves.
 
 See the [plugin roadmap](https://github.com/getrambla/rambla/labels/plugins) for planned contribution
 surfaces and their current status.
 
-Paseo plugins add native workspace panels, composer pills, Command Center items, global surfaces, app themes, daemon behavior, and composer attachment sources. They run on every Paseo client connected to the host, including mobile.
+Rambla plugins add native workspace panels, composer pills, Command Center items, global surfaces, app themes, daemon behavior, and composer attachment sources. They run on every Rambla client connected to the host, including mobile.
 
-> **Trust every plugin you add.** `paseo plugin add` and `paseo plugin install` mean “I trust this codebase.” Server code and Git preparation commands run unsandboxed with the daemon user's access on the daemon host; client contributions run inside Paseo. Dependencies and future updates are part of that decision. With `--host`, commands run on the remote daemon host.
+> **Trust every plugin you add.** `paseo plugin add` and `paseo plugin install` mean “I trust this codebase.” Server code and Git preparation commands run unsandboxed with the daemon user's access on the daemon host; client contributions run inside Rambla. Dependencies and future updates are part of that decision. With `--host`, commands run on the remote daemon host.
 
 On the target host, open **Settings → Plugins** and turn on **Enable plugins**. This is the global switch for every configured plugin on that daemon.
 
@@ -41,11 +41,11 @@ npm install
 ```
 
 `init` creates a strict TypeScript project. It does not run the package manager. `npm install`
-installs development dependencies for local typechecking and tests. Paseo supplies the plugin SDK,
+installs development dependencies for local typechecking and tests. Rambla supplies the plugin SDK,
 React, React Native, TanStack Query, and Zod at runtime; plugins do not need a `build` hook for these
 modules. `index.ts` registers contributions; client UI lives in `*.client.tsx` files.
 
-Plugins run on desktop, browser, iOS, and Android. Paseo ships several themes. Color every `Text` from `theme.colors.foreground` or `theme.colors.foregroundMuted`, and size layout from `layout.compact`. Hardcoded black text fails in dark themes.
+Plugins run on desktop, browser, iOS, and Android. Rambla ships several themes. Color every `Text` from `theme.colors.foreground` or `theme.colors.foregroundMuted`, and size layout from `layout.compact`. Hardcoded black text fails in dark themes.
 
 Replace `main.client.tsx` with:
 
@@ -112,7 +112,7 @@ export default function contribute(plugin: PluginContext) {
 }
 ```
 
-The icon is a [Lucide](https://lucide.dev/icons/) icon name. `*.client.tsx` files can use React Native runtime APIs; Paseo excludes them from the daemon bundle. Panel props contain stable IDs; `useWorkspace` selects the cached fields the component needs without fetching through RPC or re-rendering for unrelated workspace changes. See [Theme and layout](/docs/plugins/v0.7/reference#theme-and-layout) for the required tokens.
+The icon is a [Lucide](https://lucide.dev/icons/) icon name. `*.client.tsx` files can use React Native runtime APIs; Rambla excludes them from the daemon bundle. Panel props contain stable IDs; `useWorkspace` selects the cached fields the component needs without fetching through RPC or re-rendering for unrelated workspace changes. See [Theme and layout](/docs/plugins/v0.7/reference#theme-and-layout) for the required tokens.
 
 ## Check and install it
 
@@ -144,7 +144,7 @@ paseo plugin update workspace-plugin
 paseo plugin update --all
 ```
 
-Most plugins should omit `build`. Paseo compiles TypeScript and TSX and supplies its runtime modules.
+Most plugins should omit `build`. Rambla compiles TypeScript and TSX and supplies its runtime modules.
 Declare preparation only when the staged checkout must install another dependency, generate source,
 or perform another required build step:
 
@@ -159,7 +159,7 @@ or perform another required build step:
 ```
 
 Each `build` entry is a non-empty argv array, executed directly without a shell from the staged
-plugin directory. Paseo never chooses a package manager or infers commands from lockfiles. On
+plugin directory. Rambla never chooses a package manager or infers commands from lockfiles. On
 install and update it resolves the exact commit, runs these commands, then validates, compiles, and
 activates the candidate. A failed command discards the candidate and keeps the installed/running
 version. The daemon log records the exact argv and output; `--host` runs them on the remote daemon
@@ -199,5 +199,5 @@ security behavior.
 
 ## Next
 
-- [Plugin reference](/docs/plugins/v0.7/reference), add daemon behavior, use the Paseo SDK, contribute themes and attachments, and manage lifecycle.
+- [Plugin reference](/docs/plugins/v0.7/reference), add daemon behavior, use the Rambla SDK, contribute themes and attachments, and manage lifecycle.
 - [TypeScript SDK](/docs/sdk), the workspace, agent, provider, and config API exposed inside plugins.

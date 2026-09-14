@@ -8,7 +8,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { z } from "zod";
 
 import { AGENT_WAIT_TIMEOUT_MS } from "./mcp-shared.js";
-import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 import { createTestAgentClients } from "../test-utils/fake-agent-client.js";
 import type { AgentClient, AgentProvider, AgentSessionConfig } from "./agent-sdk-types.js";
 import { PARENT_AGENT_ID_LABEL } from "@getpaseo/protocol/agent-labels";
@@ -138,7 +138,7 @@ async function waitFor<T>(options: {
 }
 
 let tempRoot: string;
-let daemonHandle: TestPaseoDaemon;
+let daemonHandle: TestRamblaDaemon;
 let topLevelClient: McpClient;
 let agentScopedClient: McpClient;
 let parentAgentId: string;
@@ -294,7 +294,7 @@ beforeAll(async () => {
   parentAgentCwd = await makeCwd("parent-agent-cwd");
   worktreeRepoCwd = await makeCwd("worktree-repo");
 
-  daemonHandle = await createTestPaseoDaemon({
+  daemonHandle = await createTestRamblaDaemon({
     agentClients: createRecordingAgentClients(),
     agentProfiles: [seededAgentProfile],
   });

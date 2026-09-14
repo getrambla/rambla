@@ -2,11 +2,11 @@ import { randomUUID } from "node:crypto";
 import type pino from "pino";
 
 import type { ForgeService } from "../../services/forge-service.js";
-import { isPaseoOwnedWorktreeCwd } from "../../utils/worktree.js";
+import { isRamblaOwnedWorktreeCwd } from "../../utils/worktree.js";
 import { archiveByScope, type ActiveWorkspaceRef } from "../workspace-archive-service.js";
 import type {
-  CreatePaseoWorktreeWorkflowFn,
-  CreatePaseoWorktreeWorkflowResult,
+  CreateRamblaWorktreeWorkflowFn,
+  CreateRamblaWorktreeWorkflowResult,
 } from "../worktree-session.js";
 import type { WorkspaceGitService } from "../workspace-git-service.js";
 import type {
@@ -24,7 +24,7 @@ interface CreateAgentLifecycleDispatchDependencies {
   agentStorage: AgentStorage;
   github: ForgeService;
   workspaceGitService: WorkspaceGitService;
-  createPaseoWorktreeWorkflow: CreatePaseoWorktreeWorkflowFn;
+  createRamblaWorktreeWorkflow: CreateRamblaWorktreeWorkflowFn;
   archiveAgentForClose: (agentId: string) => Promise<unknown>;
   findWorkspaceIdForCwd: (cwd: string) => Promise<string | null>;
   listActiveWorkspaces: () => Promise<ActiveWorkspaceRef[]>;
@@ -50,7 +50,7 @@ const inactiveRegistration: LifecycleRegistration = { cancel: async () => undefi
 
 type AutoArchiveTarget =
   | { kind: "agent-only" }
-  | { kind: "created-worktree"; result: CreatePaseoWorktreeWorkflowResult };
+  | { kind: "created-worktree"; result: CreateRamblaWorktreeWorkflowResult };
 
 export class CreateAgentLifecycleDispatch {
   private readonly autoArchiveAgentIds = new Set<string>();
@@ -62,7 +62,7 @@ export class CreateAgentLifecycleDispatch {
     target: CreateAgentWorktreeTarget | undefined;
     firstAgentContext: FirstAgentContext;
     hasLegacyGitOptions: boolean;
-  }): Promise<CreatePaseoWorktreeWorkflowResult | null> {
+  }): Promise<CreateRamblaWorktreeWorkflowResult | null> {
     if (input.target && input.hasLegacyGitOptions) {
       throw new Error("create_agent_request worktree cannot be combined with git options");
     }
@@ -76,7 +76,7 @@ export class CreateAgentLifecycleDispatch {
   registerAutoArchiveIfRequested(input: {
     autoArchive: boolean | undefined;
     agentId: string;
-    createdWorktree: CreatePaseoWorktreeWorkflowResult | null;
+    createdWorktree: CreateRamblaWorktreeWorkflowResult | null;
   }): LifecycleRegistration {
     if (input.autoArchive !== true) {
       return inactiveRegistration;
@@ -89,7 +89,7 @@ export class CreateAgentLifecycleDispatch {
   }
 
   async cleanupCreatedWorktreeAfterFailedAgentCreate(input: {
-    createdWorktree: CreatePaseoWorktreeWorkflowResult | null;
+    createdWorktree: CreateRamblaWorktreeWorkflowResult | null;
     createdAgentId: string | null;
   }): Promise<void> {
     const { createdWorktree, createdAgentId } = input;
@@ -115,7 +115,7 @@ export class CreateAgentLifecycleDispatch {
     cwd: string,
     target: CreateAgentWorktreeTarget,
     firstAgentContext: FirstAgentContext,
-  ): Promise<CreatePaseoWorktreeWorkflowResult> {
+  ): Promise<CreateRamblaWorktreeWorkflowResult> {
     const baseInput = {
       cwd,
       firstAgentContext,
@@ -126,7 +126,7 @@ export class CreateAgentLifecycleDispatch {
 
     switch (target.mode) {
       case "branch-off":
-        return this.dependencies.createPaseoWorktreeWorkflow(
+        return this.dependencies.createRamblaWorktreeWorkflow(
           {
             ...baseInput,
             worktreeSlug: target.newBranch,
@@ -136,13 +136,13 @@ export class CreateAgentLifecycleDispatch {
           target.base ? { resolveDefaultBranch: async () => target.base! } : undefined,
         );
       case "checkout-branch":
-        return this.dependencies.createPaseoWorktreeWorkflow({
+        return this.dependencies.createRamblaWorktreeWorkflow({
           ...baseInput,
           action: "checkout",
           refName: target.branch,
         });
       case "checkout-pr":
-        return this.dependencies.createPaseoWorktreeWorkflow({
+        return this.dependencies.createRamblaWorktreeWorkflow({
           ...baseInput,
           action: "checkout",
           githubPrNumber: target.prNumber,
@@ -186,11 +186,11 @@ export class CreateAgentLifecycleDispatch {
 
   private async archiveAutoCreatedWorktree(options: {
     agentId: string | null;
-    createdWorktree: CreatePaseoWorktreeWorkflowResult;
+    createdWorktree: CreateRamblaWorktreeWorkflowResult;
   }): Promise<void> {
     const { createdWorktree } = options;
     const worktreePath = createdWorktree.worktree.worktreePath;
-    const ownership = await isPaseoOwnedWorktreeCwd(worktreePath, {
+    const ownership = await isRamblaOwnedWorktreeCwd(worktreePath, {
       paseoHome: this.dependencies.paseoHome,
       worktreesRoot: this.dependencies.worktreesRoot,
     });
@@ -265,7 +265,7 @@ export function registerAgentAutoArchive(input: {
 }
 
 function toAutoArchiveTarget(
-  createdWorktree: CreatePaseoWorktreeWorkflowResult | null,
+  createdWorktree: CreateRamblaWorktreeWorkflowResult | null,
 ): AutoArchiveTarget {
   return createdWorktree
     ? { kind: "created-worktree", result: createdWorktree }

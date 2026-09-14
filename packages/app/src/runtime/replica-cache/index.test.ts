@@ -148,7 +148,7 @@ function workspacePayload(): WorkspaceDescriptorPayload {
   return {
     id: "workspace-1",
     projectId: "project-1",
-    projectDisplayName: "Paseo",
+    projectDisplayName: "Rambla",
     projectRootPath: "/repo/paseo",
     workspaceDirectory: "/repo/paseo",
     projectKind: "git",
@@ -180,7 +180,7 @@ function directory(
   const workspace = normalizeWorkspaceDescriptor(workspacePayload());
   const project = normalizeProjectDescriptor({
     projectId: "project-1",
-    projectDisplayName: "Paseo",
+    projectDisplayName: "Rambla",
     projectRootPath: "/repo/paseo",
     projectKind: "git",
   });
@@ -264,7 +264,7 @@ describe("ReplicaCache", () => {
 
     expect(restoredDirectory.agents.get("agent-1")?.title).toBe("Cached agent");
     expect(restoredDirectory.workspaces.get("workspace-1")?.name).toBe("main");
-    expect(restoredDirectory.projects.get("project-1")?.projectDisplayName).toBe("Paseo");
+    expect(restoredDirectory.projects.get("project-1")?.projectDisplayName).toBe("Rambla");
     expect(restoredDirectory.checkpoint).toEqual({ agents: { generation: "g", afterSeq: 12 } });
     expect(restoredTimeline).toEqual(timeline());
   });
@@ -560,7 +560,7 @@ describe("ReplicaCache", () => {
       id: "project-1",
       payload: JSON.stringify({
         projectId: "project-1",
-        projectDisplayName: "Paseo",
+        projectDisplayName: "Rambla",
         projectCustomName: null,
         projectCustomIconRevision: null,
         projectRootPath: "/repo/paseo",
@@ -572,7 +572,7 @@ describe("ReplicaCache", () => {
     const restored = await cache.readDirectory(SERVER_ID);
 
     expect(restored.agents.size).toBe(0);
-    expect(restored.projects.get("project-1")?.projectDisplayName).toBe("Paseo");
+    expect(restored.projects.get("project-1")?.projectDisplayName).toBe("Rambla");
     expect(storage.rows.has(`${SERVER_ID}:agent:agent-1`)).toBe(false);
     expect(storage.rows.has(`${SERVER_ID}:project:project-1`)).toBe(true);
   });

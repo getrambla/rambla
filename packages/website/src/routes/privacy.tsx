@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { LegalPage, PaseoLegalIdentity } from "~/components/legal-page";
+import { LegalPage, RamblaLegalIdentity } from "~/components/legal-page";
 import { pageMeta } from "~/meta";
 
 export const Route = createFileRoute("/privacy")({
@@ -24,7 +24,7 @@ function Privacy() {
 
       <section>
         <h2>Who is responsible</h2>
-        <PaseoLegalIdentity />
+        <RamblaLegalIdentity />
         <p>
           Dr. Accessibility, LLC is the data controller for personal data processed through the
           official Rambla website, relay, and hosted Hub. Independently self-hosted daemons, Hubs,

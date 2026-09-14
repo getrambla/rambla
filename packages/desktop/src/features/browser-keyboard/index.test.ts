@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { PaseoBrowserWebviewRegistry } from "../browser-webviews/registry.js";
+import { RamblaBrowserWebviewRegistry } from "../browser-webviews/registry.js";
 import { BrowserKeyboard } from "./index.js";
 
 interface SentMessage {
@@ -143,7 +143,7 @@ function electronInput(input: Partial<Electron.Input>): Electron.Input {
 }
 
 function createBrowserKeyboard() {
-  const registry = new PaseoBrowserWebviewRegistry();
+  const registry = new RamblaBrowserWebviewRegistry();
   const keyboard = new BrowserKeyboard(registry);
 
   function attach(input: {

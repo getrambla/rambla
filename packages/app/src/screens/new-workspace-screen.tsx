@@ -91,7 +91,7 @@ import type { MessagePayload } from "@/composer/types";
 import type { UserComposerAttachment } from "@/attachments/types";
 import type { AgentAttachment, ForgeSearchItem } from "@getpaseo/protocol/messages";
 import type {
-  CreatePaseoWorktreeInput,
+  CreateRamblaWorktreeInput,
   DaemonClient,
 } from "@getpaseo/client/internal/daemon-client";
 import type { AgentProvider } from "@getpaseo/protocol/agent-types";
@@ -799,7 +799,7 @@ interface WorkspaceDraftSubmissionConfig {
 async function createAndMergeWorkspace(input: {
   client: NonNullable<ReturnType<typeof useHostRuntimeClient>>;
   createInput: Parameters<
-    NonNullable<ReturnType<typeof useHostRuntimeClient>>["createPaseoWorktree"]
+    NonNullable<ReturnType<typeof useHostRuntimeClient>>["createRamblaWorktree"]
   >[0];
   mergeWorkspaces: (
     serverId: string,
@@ -808,7 +808,7 @@ async function createAndMergeWorkspace(input: {
   serverId: string;
   createFailedMessage: string;
 }): Promise<ReturnType<typeof normalizeWorkspaceDescriptor>> {
-  const payload = await input.client.createPaseoWorktree(input.createInput);
+  const payload = await input.client.createRamblaWorktree(input.createInput);
   if (payload.error || !payload.workspace) {
     throw new Error(payload.error ?? input.createFailedMessage);
   }
@@ -2001,7 +2001,7 @@ export function NewWorkspaceScreen({
       prompt: string;
       attachments: AgentAttachment[];
       checkoutRequest: PickerCheckoutRequest | undefined;
-    }): CreatePaseoWorktreeInput => {
+    }): CreateRamblaWorktreeInput => {
       if (!selectedProject) {
         throw new Error("Choose a project");
       }

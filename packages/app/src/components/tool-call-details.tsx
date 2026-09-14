@@ -12,8 +12,8 @@ import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import type { ToolCallDetail } from "@getpaseo/protocol/agent-types";
 import {
-  buildPaseoToolDetailSections,
-  type PaseoToolDetailSection,
+  buildRamblaToolDetailSections,
+  type RamblaToolDetailSection,
 } from "@getpaseo/protocol/paseo-tool-call-detail";
 import { buildLineDiff, parseUnifiedDiff, type DiffLine } from "@/utils/tool-call-parsers";
 import { highlightDiffLines } from "@/utils/diff-highlight";
@@ -631,7 +631,7 @@ function buildUnknownSections(detail: UnknownDetail, ds: DetailStyles, t: TFunct
   return out;
 }
 
-function PaseoDetailSection({ section }: { section: PaseoToolDetailSection }) {
+function RamblaDetailSection({ section }: { section: RamblaToolDetailSection }) {
   return (
     <View style={styles.paseoSection}>
       <Text style={styles.paseoSectionTitle}>{section.title}</Text>
@@ -655,14 +655,14 @@ function PaseoDetailSection({ section }: { section: PaseoToolDetailSection }) {
   );
 }
 
-function buildPaseoUnknownSections(
+function buildRamblaUnknownSections(
   toolName: string | undefined,
   detail: UnknownDetail,
 ): ReactNode[] | null {
   if (!toolName) return null;
-  const sections = buildPaseoToolDetailSections(toolName, detail.input, detail.output);
+  const sections = buildRamblaToolDetailSections(toolName, detail.input, detail.output);
   if (!sections) return null;
-  return sections.map((section) => <PaseoDetailSection key={section.title} section={section} />);
+  return sections.map((section) => <RamblaDetailSection key={section.title} section={section} />);
 }
 
 function buildWriteDetailSections(
@@ -760,7 +760,7 @@ function buildDetailSections(
     return [<ScrollablePlainTextSection key="plain-text" text={detail.text} ds={ds} />];
   }
   if (detail.type === "unknown") {
-    return buildPaseoUnknownSections(toolName, detail) ?? buildUnknownSections(detail, ds, t);
+    return buildRamblaUnknownSections(toolName, detail) ?? buildUnknownSections(detail, ds, t);
   }
   return [];
 }

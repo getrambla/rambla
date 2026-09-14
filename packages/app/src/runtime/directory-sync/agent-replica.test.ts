@@ -45,7 +45,7 @@ function entry(agent: AgentSnapshotPayload): FetchAgentsEntry {
         currentBranch: null,
         remoteUrl: null,
         worktreeRoot: null,
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: null,
       },
     },

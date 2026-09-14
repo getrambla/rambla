@@ -15,7 +15,7 @@ import {
   type ProviderConnection,
   type ProviderRegistration,
 } from "@getpaseo/plugin/server/provider";
-import { createPaseoApi, type PaseoApi } from "@getpaseo/client";
+import { createRamblaApi, type RamblaApi } from "@getpaseo/client";
 import { DaemonClient } from "@getpaseo/client/internal/daemon-client";
 import { createPluginDaemonTransportFactory } from "./daemon-transport.js";
 import { isPluginClientOnlySdkSpecifier } from "./plugin-sdk-specifiers.js";
@@ -54,7 +54,7 @@ const providerConnections = new Map<
 const pendingProviderConnections = new Map<string, { tombstoned: boolean }>();
 let cleanup: (() => void | Promise<void>) | null = null;
 let daemonClient: DaemonClient | null = null;
-let paseo: PaseoApi | null = null;
+let paseo: RamblaApi | null = null;
 let stopping = false;
 const nodeRequire = createRequire(import.meta.url);
 
@@ -261,7 +261,7 @@ async function initialize(message: Extract<PluginProcessRequest, { type: "initia
     reconnect: { enabled: false },
     transportFactory,
   });
-  paseo = createPaseoApi(daemonClient);
+  paseo = createRamblaApi(daemonClient);
   await daemonClient.connect();
   settingsStore = message.settingsDirectory
     ? new PluginSettingsStore(message.settingsDirectory, (settingsId) =>

@@ -31,7 +31,7 @@ import type {
   ProjectPlacementPayload,
   AgentPermissionResolvedMessage,
   CreateAgentRequestMessage,
-  CreatePaseoWorktreeRequest,
+  CreateRamblaWorktreeRequest,
   FileDownloadTokenResponse,
   FileUploadResponse,
   FileExplorerResponse,
@@ -69,8 +69,8 @@ import type {
   GitHubSearchResponse,
   GitHubSearchRequest,
   DirectorySuggestionsResponse,
-  PaseoWorktreeListResponse,
-  PaseoWorktreeArchiveResponse,
+  RamblaWorktreeListResponse,
+  RamblaWorktreeArchiveResponse,
   ProjectIconSource,
   ProjectIconResponse,
   ProjectIconGetResponse,
@@ -107,8 +107,8 @@ import type {
   SessionInboundMessage,
   SessionOutboundMessage,
   SendAgentMessageRequest,
-  PaseoConfigRaw,
-  PaseoConfigRevision,
+  RamblaConfigRaw,
+  RamblaConfigRevision,
   WorkspaceCreateRequest,
   WorkspaceRecoveryState,
   PluginListItem,
@@ -391,8 +391,8 @@ export interface CreateAgentRequestOptions extends AgentConfigOverrides {
   labels?: Record<string, string>;
 }
 
-export interface CreatePaseoWorktreeInput extends Pick<
-  CreatePaseoWorktreeRequest,
+export interface CreateRamblaWorktreeInput extends Pick<
+  CreateRamblaWorktreeRequest,
   | "cwd"
   | "projectId"
   | "worktreeSlug"
@@ -433,9 +433,9 @@ type BranchSuggestionsPayload = BranchSuggestionsResponse["payload"];
 type ForgeSearchPayload = ForgeSearchResponse["payload"];
 type GitHubSearchPayload = GitHubSearchResponse["payload"];
 type DirectorySuggestionsPayload = DirectorySuggestionsResponse["payload"];
-type PaseoWorktreeListPayload = PaseoWorktreeListResponse["payload"];
-type PaseoWorktreeArchivePayload = PaseoWorktreeArchiveResponse["payload"];
-type CreatePaseoWorktreePayload = Extract<
+type RamblaWorktreeListPayload = RamblaWorktreeListResponse["payload"];
+type RamblaWorktreeArchivePayload = RamblaWorktreeArchiveResponse["payload"];
+type CreateRamblaWorktreePayload = Extract<
   SessionOutboundMessage,
   { type: "create_paseo_worktree_response" }
 >["payload"];
@@ -492,8 +492,8 @@ type ListCommandsDraftConfig = Pick<
 >;
 export interface WriteProjectConfigInput {
   repoRoot: string;
-  config: PaseoConfigRaw;
-  expectedRevision: PaseoConfigRevision | null;
+  config: RamblaConfigRaw;
+  expectedRevision: RamblaConfigRevision | null;
   requestId?: string;
 }
 interface ListCommandsOptions {
@@ -4272,10 +4272,10 @@ export class DaemonClient {
     });
   }
 
-  async getPaseoWorktreeList(
+  async getRamblaWorktreeList(
     input: { cwd?: string; repoRoot?: string },
     requestId?: string,
-  ): Promise<PaseoWorktreeListPayload> {
+  ): Promise<RamblaWorktreeListPayload> {
     return this.sendCorrelatedSessionRequest({
       requestId,
       message: {
@@ -4287,7 +4287,7 @@ export class DaemonClient {
     });
   }
 
-  async archivePaseoWorktree(
+  async archiveRamblaWorktree(
     input: {
       worktreePath?: string;
       repoRoot?: string;
@@ -4296,7 +4296,7 @@ export class DaemonClient {
       scope?: "workspace" | "worktree";
     },
     requestId?: string,
-  ): Promise<PaseoWorktreeArchivePayload> {
+  ): Promise<RamblaWorktreeArchivePayload> {
     return this.sendCorrelatedSessionRequest({
       requestId,
       message: {
@@ -4311,10 +4311,10 @@ export class DaemonClient {
     });
   }
 
-  async createPaseoWorktree(
-    input: CreatePaseoWorktreeInput,
+  async createRamblaWorktree(
+    input: CreateRamblaWorktreeInput,
     requestId?: string,
-  ): Promise<CreatePaseoWorktreePayload> {
+  ): Promise<CreateRamblaWorktreePayload> {
     return this.sendCorrelatedSessionRequest({
       requestId,
       message: {

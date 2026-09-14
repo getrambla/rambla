@@ -1,11 +1,11 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { resolvePaseoNodeEnv } from "./paseo-env.js";
+import { resolveRamblaNodeEnv } from "./paseo-env.js";
 import { z } from "zod";
 import { expandTilde } from "../utils/path.js";
 
-import type { PaseoDaemonConfig } from "./bootstrap.js";
+import type { RamblaDaemonConfig } from "./bootstrap.js";
 import {
   loadPersistedConfig,
   LogFormatSchema,
@@ -92,7 +92,7 @@ function normalizeLogEnv(value: string | undefined): string | undefined {
 function resolveGitProcessConfig(
   env: NodeJS.ProcessEnv,
   persisted: ReturnType<typeof loadPersistedConfig>,
-): NonNullable<PaseoDaemonConfig["git"]> {
+): NonNullable<RamblaDaemonConfig["git"]> {
   return resolveGitProcessPolicy({
     env,
     persisted: persisted.daemon?.git,
@@ -474,7 +474,7 @@ function resolveListenAddress(
 function resolveAuthConfig(
   env: NodeJS.ProcessEnv,
   persisted: ReturnType<typeof loadPersistedConfig>,
-): PaseoDaemonConfig["auth"] {
+): RamblaDaemonConfig["auth"] {
   const envPassword = env.RAMBLA_PASSWORD?.trim();
   if (envPassword) {
     return { password: hashDaemonPassword(envPassword) };
@@ -552,7 +552,7 @@ export function resolveConfigFromPersisted(
   paseoHome: string,
   persisted: PersistedConfig,
   options?: ResolveConfigFromPersistedOptions,
-): PaseoDaemonConfig {
+): RamblaDaemonConfig {
   const resolvedOptions = options ?? {};
   const env = resolvedOptions.env ?? process.env;
   const cli = resolvedOptions.cli;
@@ -617,7 +617,7 @@ export function resolveConfigFromPersisted(
     pluginsEnabled: persisted.pluginsEnabled ?? false,
     plugins: persisted.plugins,
     mcpDebug: env.MCP_DEBUG === "1",
-    isDev: resolvePaseoNodeEnv(env) === "development",
+    isDev: resolveRamblaNodeEnv(env) === "development",
     agentStoragePath: path.join(paseoHome, "agents"),
     staticDir: "public",
     agentClients: {},
@@ -654,7 +654,7 @@ export function resolveConfigFromPersisted(
 export function loadConfig(
   paseoHome: string,
   options?: Omit<ResolveConfigFromPersistedOptions, "relayEnabledFallback">,
-): PaseoDaemonConfig {
+): RamblaDaemonConfig {
   const persisted = loadPersistedConfig(paseoHome);
   return resolveConfigFromPersisted(paseoHome, persisted, options);
 }

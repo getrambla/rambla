@@ -18,7 +18,7 @@ const FDROID_ABI_VERSION_CODE_ENTRIES = Object.entries(FDROID_ABI_VERSION_CODE_S
   .map(([abi, suffix]) => `    "${abi}": ${suffix},`)
   .join("\n");
 
-const FDROID_ABI_VERSION_CODE_BLOCK = `// Paseo F-Droid single-ABI version codes
+const FDROID_ABI_VERSION_CODE_BLOCK = `// Rambla F-Droid single-ABI version codes
 def paseoAbiVersionCodes = [
 ${FDROID_ABI_VERSION_CODE_ENTRIES}
 ]
@@ -32,7 +32,7 @@ if (paseoArchitectures.size() == 1) {
     def paseoAbi = paseoArchitectures[0]
     def paseoAbiVersionCode = paseoAbiVersionCodes[paseoAbi]
     if (paseoAbiVersionCode == null) {
-        throw new GradleException("Unsupported Paseo Android ABI: " + paseoAbi)
+        throw new GradleException("Unsupported Rambla Android ABI: " + paseoAbi)
     }
     android.defaultConfig.versionCode = android.defaultConfig.versionCode * 10 + paseoAbiVersionCode
 }
@@ -53,7 +53,7 @@ function configureFdroidAppBuildGradle(contents) {
     );
   }
 
-  if (!configuredContents.includes("// Paseo F-Droid single-ABI version codes")) {
+  if (!configuredContents.includes("// Rambla F-Droid single-ABI version codes")) {
     configuredContents = `${configuredContents.trimEnd()}\n\n${FDROID_ABI_VERSION_CODE_BLOCK}`;
   }
 

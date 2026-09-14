@@ -8,11 +8,11 @@ import { afterEach, expect, test } from "vitest";
 
 import { withTimeout } from "../../utils/promise-timeout.js";
 import { DaemonClient, type DaemonEvent } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 import { type PersistedProjectRecord } from "../workspace-registry.js";
 
 const cleanupPaths = new Set<string>();
-const cleanupDaemons = new Set<TestPaseoDaemon>();
+const cleanupDaemons = new Set<TestRamblaDaemon>();
 const cleanupClients = new Set<DaemonClient>();
 const cleanupListeners = new Set<() => void>();
 const execFile = promisify(execFileCallback);
@@ -57,7 +57,7 @@ test("an empty project becomes Git without changing its identity or creating a w
   cleanupPaths.add(projectRoot);
   cleanupPaths.add(paseoHomeRoot);
 
-  const daemon = await createTestPaseoDaemon({ paseoHomeRoot, cleanup: false });
+  const daemon = await createTestRamblaDaemon({ paseoHomeRoot, cleanup: false });
   cleanupDaemons.add(daemon);
   const client = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
   cleanupClients.add(client);

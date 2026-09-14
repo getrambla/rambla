@@ -20,7 +20,7 @@ import type {
   CreateAgentWorktreeTarget,
   SessionOutboundMessage,
 } from "../../messages.js";
-import { createPaseoDaemon, type PaseoDaemon, type PaseoDaemonConfig } from "../../bootstrap.js";
+import { createRamblaDaemon, type RamblaDaemon, type RamblaDaemonConfig } from "../../bootstrap.js";
 import type { WebSocketLike } from "../../websocket-server.js";
 import type {
   AgentClient,
@@ -447,8 +447,8 @@ const providerCatalog = {
 export class HubRelationshipHarness {
   private readonly clock = new TestRelationshipClock();
   private readonly remote = new InMemoryHubRelationships(() => this.captureRelationship());
-  private daemon: PaseoDaemon | null = null;
-  private config!: PaseoDaemonConfig;
+  private daemon: RamblaDaemon | null = null;
+  private config!: RamblaDaemonConfig;
   private root = "";
   private paseoHome = "";
   private host = "";
@@ -1416,7 +1416,7 @@ export class HubRelationshipHarness {
         done();
       },
     });
-    this.daemon = await createPaseoDaemon(this.config, pino({ level: "trace" }, destination), {
+    this.daemon = await createRamblaDaemon(this.config, pino({ level: "trace" }, destination), {
       hubRelationshipRemote: this.remote,
       hubRelationshipClock: this.clock,
       hubRelationshipRetryPolicy: this.clock,

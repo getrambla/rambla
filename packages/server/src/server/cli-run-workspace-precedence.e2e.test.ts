@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { DaemonClient } from "./test-utils/index.js";
-import { createTestPaseoDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "./test-utils/paseo-daemon.js";
 import { getFullAccessConfig } from "./daemon-e2e/agent-configs.js";
 import { PARENT_AGENT_ID_LABEL } from "@getpaseo/protocol/agent-labels";
 
@@ -30,7 +30,7 @@ async function mintLocalWorkspace(client: DaemonClient, cwd: string): Promise<st
 }
 
 test("daemon resolves human and managed CLI workspace ownership", async () => {
-  const daemon = await createTestPaseoDaemon();
+  const daemon = await createTestRamblaDaemon();
   const cwd = mkdtempSync(path.join(tmpdir(), "paseo-cli-run-cwd-"));
   const otherCwd = mkdtempSync(path.join(tmpdir(), "paseo-cli-run-other-cwd-"));
   const client = new DaemonClient({

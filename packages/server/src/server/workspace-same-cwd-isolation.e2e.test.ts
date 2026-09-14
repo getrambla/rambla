@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { DaemonClient } from "./test-utils/index.js";
-import { createTestPaseoDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "./test-utils/paseo-daemon.js";
 import { createTestLogger } from "../test-utils/test-logger.js";
 import { AgentStorage } from "./agent/agent-storage.js";
 import { getAskModeConfig } from "./daemon-e2e/agent-configs.js";
@@ -104,7 +104,7 @@ function createSnapshotStormClients(): SnapshotStormProviderClient[] {
 }
 
 async function createSnapshotStormDaemon(clients: SnapshotStormProviderClient[]) {
-  return createTestPaseoDaemon({
+  return createTestRamblaDaemon({
     mcpEnabled: false,
     isDev: true,
     agentClients: {
@@ -281,7 +281,7 @@ async function waitForPermission(client: DaemonClient, agentId: string) {
 
 test("daemon bootstrap migrates cwd-only legacy agents before same-cwd workspaces are added", async () => {
   const { paseoHomeRoot, cwd } = await seedWorkspaceWithLegacyAgent();
-  const daemon = await createTestPaseoDaemon({ paseoHomeRoot });
+  const daemon = await createTestRamblaDaemon({ paseoHomeRoot });
   const client = new DaemonClient({
     url: `ws://127.0.0.1:${daemon.port}/ws`,
     appVersion: "0.1.82",
@@ -326,7 +326,7 @@ test("daemon bootstrap migrates cwd-only legacy agents before same-cwd workspace
 
 test("workspace.create directory source with firstAgentContext generates a daemon-visible workspace title", async () => {
   const cwd = mkdtempSync(path.join(tmpdir(), "paseo-named-local-dir-"));
-  const daemon = await createTestPaseoDaemon({
+  const daemon = await createTestRamblaDaemon({
     agentClients: { mock: new MockLoadTestAgentClient() },
   });
   const client = new DaemonClient({
@@ -412,7 +412,7 @@ test("local workspace auto-title does not broadcast provider snapshot warm-up to
 
 test("create_agent_request with workspaceId does not retitle an existing workspace", async () => {
   const cwd = mkdtempSync(path.join(tmpdir(), "paseo-agent-submit-title-"));
-  const daemon = await createTestPaseoDaemon({
+  const daemon = await createTestRamblaDaemon({
     agentClients: { mock: new MockLoadTestAgentClient() },
   });
   const client = new DaemonClient({
@@ -455,7 +455,7 @@ test("create_agent_request with workspaceId does not retitle an existing workspa
 
 test("creating another same-cwd local workspace keeps running status on the owning workspace only", async () => {
   const cwd = mkdtempSync(path.join(tmpdir(), "paseo-running-same-cwd-create-"));
-  const daemon = await createTestPaseoDaemon({
+  const daemon = await createTestRamblaDaemon({
     agentClients: { mock: new MockLoadTestAgentClient() },
   });
   const client = new DaemonClient({
@@ -530,7 +530,7 @@ test("creating another same-cwd local workspace keeps running status on the owni
 
 test("two workspaces sharing one cwd compute agent status per workspaceId", async () => {
   const { paseoHomeRoot, cwd } = seedSameCwdWorkspaces();
-  const daemon = await createTestPaseoDaemon({ paseoHomeRoot });
+  const daemon = await createTestRamblaDaemon({ paseoHomeRoot });
   const client = new DaemonClient({
     url: `ws://127.0.0.1:${daemon.port}/ws`,
     appVersion: "0.1.82",

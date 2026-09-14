@@ -1,8 +1,8 @@
 import { appendFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
-import { createPaseoDaemon } from "./bootstrap.js";
+import { createRamblaDaemon } from "./bootstrap.js";
 import { loadConfig } from "./config.js";
-import { resolvePaseoHome } from "./paseo-home.js";
+import { resolveRamblaHome } from "./paseo-home.js";
 import { createRootLogger } from "./logger.js";
 import type { DaemonLifecycleIntent } from "./bootstrap.js";
 import { getProcessDiagnostics } from "./process-diagnostics.js";
@@ -68,7 +68,7 @@ function writeWorkerLifecycleLog(
 
 function bootstrapFromEnvironment(): BootstrapResult {
   try {
-    const paseoHome = resolvePaseoHome();
+    const paseoHome = resolveRamblaHome();
     const config = loadConfig(paseoHome);
     const logger = createRootLogger({ log: config.log }, { paseoHome, file: false });
     return { paseoHome, logger, config };
@@ -129,7 +129,7 @@ function applyCliFlagOverrides(config: ReturnType<typeof loadConfig>): void {
 
 async function main() {
   const { paseoHome, logger, config } = bootstrapFromEnvironment();
-  let daemon: Awaited<ReturnType<typeof createPaseoDaemon>> | null = null;
+  let daemon: Awaited<ReturnType<typeof createRamblaDaemon>> | null = null;
   let shutdownPromise: Promise<number> | null = null;
   let exitHookInstalled = false;
 
@@ -308,7 +308,7 @@ async function main() {
   installSupervisorLivenessGuard();
 
   try {
-    daemon = await createPaseoDaemon(
+    daemon = await createRamblaDaemon(
       {
         ...config,
         onLifecycleIntent: handleLifecycleIntent,

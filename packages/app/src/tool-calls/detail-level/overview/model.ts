@@ -1,4 +1,4 @@
-import { isPaseoToolName } from "@getpaseo/protocol/tool-name-normalization";
+import { isRamblaToolName } from "@getpaseo/protocol/tool-name-normalization";
 import { describeToolCall, type ToolCallRun } from "../grouping";
 
 const DIRECT_RAMBLA_TOOL_PREFIX = "paseo_";
@@ -20,8 +20,8 @@ export interface OverviewToolCallGroup {
   isLoading: boolean;
 }
 
-function isPaseoCall(name: string, normalizedName: string): boolean {
-  return isPaseoToolName(name) || normalizedName.startsWith(DIRECT_RAMBLA_TOOL_PREFIX);
+function isRamblaCall(name: string, normalizedName: string): boolean {
+  return isRamblaToolName(name) || normalizedName.startsWith(DIRECT_RAMBLA_TOOL_PREFIX);
 }
 
 function isSearchCall(name: string): boolean {
@@ -41,7 +41,7 @@ export function buildOverviewGroup(run: ToolCallRun): OverviewToolCallGroup {
     const descriptor = describeToolCall(call);
     const normalizedName = descriptor.name.trim().toLowerCase();
     isLoading ||= descriptor.status === "running" || descriptor.status === "executing";
-    if (isPaseoCall(descriptor.name, normalizedName)) {
+    if (isRamblaCall(descriptor.name, normalizedName)) {
       paseoCallCount += 1;
     } else if (descriptor.detail.type === "edit" || descriptor.detail.type === "write") {
       editedFiles.add(descriptor.detail.filePath);

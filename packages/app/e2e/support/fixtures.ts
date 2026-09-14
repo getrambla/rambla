@@ -38,18 +38,18 @@ const daemonTest = metroTest.extend<
     e2eDaemonConfig: Record<string, unknown> | undefined;
     e2eDaemonEnvironment: Record<string, string>;
     e2eForkProviders: string[];
-    e2eInjectPaseoTools: boolean;
+    e2eInjectRamblaTools: boolean;
     e2eWorker: void;
     e2eWorkerClient: SeedDaemonClient;
   }
 >({
   e2eForkProviders: [[], { scope: "worker", option: true }],
-  e2eInjectPaseoTools: [false, { scope: "worker", option: true }],
+  e2eInjectRamblaTools: [false, { scope: "worker", option: true }],
   e2eDaemonConfig: [undefined, { scope: "worker", option: true }],
   e2eDaemonEnvironment: [{}, { scope: "worker", option: true }],
   e2eWorker: [
     async (
-      { e2eDaemonConfig, e2eDaemonEnvironment, e2eForkProviders, e2eInjectPaseoTools },
+      { e2eDaemonConfig, e2eDaemonEnvironment, e2eForkProviders, e2eInjectRamblaTools },
       provide,
       workerInfo,
     ) => {
@@ -57,7 +57,7 @@ const daemonTest = metroTest.extend<
         daemonConfig: e2eDaemonConfig,
         environment: e2eDaemonEnvironment,
         forkProviders: e2eForkProviders,
-        injectPaseoTools: e2eInjectPaseoTools,
+        injectRamblaTools: e2eInjectRamblaTools,
       });
       try {
         await provide();

@@ -29,13 +29,13 @@ import {
 } from "../services/forge-cli-command.js";
 import { parseGitRevParsePath, resolveGitRevParsePath } from "./git-rev-parse-path.js";
 import { runGitCommand, type RunGitCommand } from "./run-git-command.js";
-import { isPaseoOwnedWorktreeCwd, resolvePaseoWorktreesBaseRoot } from "./worktree.js";
+import { isRamblaOwnedWorktreeCwd, resolveRamblaWorktreesBaseRoot } from "./worktree.js";
 import {
   branchNameFromRef,
-  getPaseoWorktreeChangeRequestHintForBranch,
-  type PaseoWorktreeMetadata,
-  readPaseoWorktreeMetadata,
-  rebindPaseoWorktreeChangeRequestHint,
+  getRamblaWorktreeChangeRequestHintForBranch,
+  type RamblaWorktreeMetadata,
+  readRamblaWorktreeMetadata,
+  rebindRamblaWorktreeChangeRequestHint,
 } from "./worktree-metadata.js";
 const READ_ONLY_GIT_ENV = {
   GIT_OPTIONAL_LOCKS: "0",
@@ -782,7 +782,7 @@ export interface CheckoutStatus {
   isGit: false;
 }
 
-export interface CheckoutStatusGitNonPaseo {
+export interface CheckoutStatusGitNonRambla {
   isGit: true;
   repoRoot: string;
   mainRepoRoot: string | null;
@@ -798,10 +798,10 @@ export interface CheckoutStatusGitNonPaseo {
   behindOfOrigin: number | null;
   hasRemote: boolean;
   remoteUrl: string | null;
-  isPaseoOwnedWorktree: false;
+  isRamblaOwnedWorktree: false;
 }
 
-export interface CheckoutStatusGitPaseo {
+export interface CheckoutStatusGitRambla {
   isGit: true;
   repoRoot: string;
   mainRepoRoot: string;
@@ -814,10 +814,10 @@ export interface CheckoutStatusGitPaseo {
   behindOfOrigin: number | null;
   hasRemote: boolean;
   remoteUrl: string | null;
-  isPaseoOwnedWorktree: true;
+  isRamblaOwnedWorktree: true;
 }
 
-export type CheckoutStatusGit = CheckoutStatusGitNonPaseo | CheckoutStatusGitPaseo;
+export type CheckoutStatusGit = CheckoutStatusGitNonRambla | CheckoutStatusGitRambla;
 
 export type CheckoutStatusResult = CheckoutStatus | CheckoutStatusGit;
 
@@ -862,7 +862,7 @@ export type CheckoutSnapshotFacts =
       remoteUrl: string | null;
       absoluteGitDir: string | null;
       gitCommonDir: string | null;
-      paseoWorktree: PaseoWorktreeForCwd;
+      paseoWorktree: RamblaWorktreeForCwd;
       storedBaseRef: string | null;
       resolvedBaseRef: string | null;
       mainRepoRoot: string | null;
@@ -1033,17 +1033,17 @@ async function getMainRepoRootFromCommonDir(
     },
   );
   const worktrees = parseWorktreeList(worktreeOut);
-  const nonBareNonPaseo = worktrees.filter(
+  const nonBareNonRambla = worktrees.filter(
     (wt) =>
       !wt.isBare &&
-      !isPaseoWorktreePath(wt.path, {
+      !isRamblaWorktreePath(wt.path, {
         paseoHome: context?.paseoHome,
         worktreesRoot: context?.worktreesRoot,
       }),
   );
-  const childrenOfBareRepo = nonBareNonPaseo.filter((wt) => isDescendantPath(wt.path, normalized));
+  const childrenOfBareRepo = nonBareNonRambla.filter((wt) => isDescendantPath(wt.path, normalized));
   const mainChild = childrenOfBareRepo.find((wt) => basename(wt.path) === "main");
-  return mainChild?.path ?? childrenOfBareRepo[0]?.path ?? nonBareNonPaseo[0]?.path ?? normalized;
+  return mainChild?.path ?? childrenOfBareRepo[0]?.path ?? nonBareNonRambla[0]?.path ?? normalized;
 }
 
 export interface GitWorktreeEntry {
@@ -1053,12 +1053,12 @@ export interface GitWorktreeEntry {
 }
 
 /** Check whether a path is under Rambla's worktree root. */
-export function isPaseoWorktreePath(
+export function isRamblaWorktreePath(
   p: string,
   options?: { paseoHome?: string; worktreesRoot?: string },
 ): boolean {
   if (options?.worktreesRoot || options?.paseoHome) {
-    return isDescendantPath(p, resolvePaseoWorktreesBaseRoot(options));
+    return isDescendantPath(p, resolveRamblaWorktreesBaseRoot(options));
   }
   return /[/\\]\.rambla[/\\]worktrees[/\\]/.test(p);
 }
@@ -1141,53 +1141,53 @@ export async function renameCurrentBranch(
 
   const currentBranch = await getCurrentBranch(cwd);
   if (currentBranch) {
-    rebindPaseoWorktreeChangeRequestHint(worktreeRoot, previousBranch, currentBranch);
+    rebindRamblaWorktreeChangeRequestHint(worktreeRoot, previousBranch, currentBranch);
   }
   return { previousBranch, currentBranch };
 }
 
-type PaseoWorktreeForCwd =
-  | { isPaseoOwnedWorktree: false }
-  | { isPaseoOwnedWorktree: true; worktreeRoot: string };
+type RamblaWorktreeForCwd =
+  | { isRamblaOwnedWorktree: false }
+  | { isRamblaOwnedWorktree: true; worktreeRoot: string };
 
-interface PaseoWorktreeLookupOptions {
+interface RamblaWorktreeLookupOptions {
   context?: CheckoutContext;
   knownWorktreeRoot?: string | null;
   knownGitCommonDir?: string | null;
 }
 
-async function getPaseoWorktreeForCwd(
+async function getRamblaWorktreeForCwd(
   cwd: string,
-  options: PaseoWorktreeLookupOptions = {},
-): Promise<PaseoWorktreeForCwd> {
+  options: RamblaWorktreeLookupOptions = {},
+): Promise<RamblaWorktreeForCwd> {
   // Fast-path reject: non-worktree paths do not need expensive ownership checks.
   if (!/[\\/]worktrees[\\/]/.test(cwd)) {
-    return { isPaseoOwnedWorktree: false };
+    return { isRamblaOwnedWorktree: false };
   }
 
-  const ownership = await isPaseoOwnedWorktreeCwd(cwd, {
+  const ownership = await isRamblaOwnedWorktreeCwd(cwd, {
     paseoHome: options.context?.paseoHome,
     worktreesRoot: options.context?.worktreesRoot,
     knownGitCommonDir: options.knownGitCommonDir,
   });
   if (!ownership.allowed) {
-    return { isPaseoOwnedWorktree: false };
+    return { isRamblaOwnedWorktree: false };
   }
 
   return {
-    isPaseoOwnedWorktree: true,
+    isRamblaOwnedWorktree: true,
     worktreeRoot: options.knownWorktreeRoot ?? (await getWorktreeRoot(cwd, options.context)) ?? cwd,
   };
 }
 
 // Worktrees created before baseRef existed only stored the stripped name; it resolves
 // local-first, which is the base they were actually cut from.
-function storedBaseRefFromMetadata(metadata: PaseoWorktreeMetadata | null): string | null {
+function storedBaseRefFromMetadata(metadata: RamblaWorktreeMetadata | null): string | null {
   return metadata?.baseRef ?? metadata?.baseRefName ?? null;
 }
 
-function readPaseoWorktreeBaseRef(worktreeRoot: string): string | null {
-  return storedBaseRefFromMetadata(readPaseoWorktreeMetadata(worktreeRoot));
+function readRamblaWorktreeBaseRef(worktreeRoot: string): string | null {
+  return storedBaseRefFromMetadata(readRamblaWorktreeMetadata(worktreeRoot));
 }
 
 async function getStoredBaseRefForCwd(
@@ -1197,12 +1197,12 @@ async function getStoredBaseRefForCwd(
   if (context?.facts?.isGit) {
     return context.facts.storedBaseRef;
   }
-  const paseoWorktree = await getPaseoWorktreeForCwd(cwd, { context });
-  if (!paseoWorktree.isPaseoOwnedWorktree) {
+  const paseoWorktree = await getRamblaWorktreeForCwd(cwd, { context });
+  if (!paseoWorktree.isRamblaOwnedWorktree) {
     return null;
   }
 
-  return readPaseoWorktreeBaseRef(paseoWorktree.worktreeRoot);
+  return readRamblaWorktreeBaseRef(paseoWorktree.worktreeRoot);
 }
 
 async function getResolvedBaseRefForCwd(
@@ -1709,7 +1709,7 @@ interface CheckoutInspectionContext {
   remoteUrl: string | null;
   absoluteGitDir: string | null;
   gitCommonDir: string | null;
-  paseoWorktree: PaseoWorktreeForCwd;
+  paseoWorktree: RamblaWorktreeForCwd;
 }
 
 async function inspectCheckoutContext(
@@ -1727,7 +1727,7 @@ async function inspectCheckoutContext(
     resolveAbsoluteGitDir(cwd, context),
     resolveGitCommonDir(cwd, context),
   ]);
-  const paseoWorktree = await getPaseoWorktreeForCwd(cwd, {
+  const paseoWorktree = await getRamblaWorktreeForCwd(cwd, {
     context,
     knownWorktreeRoot: root,
     knownGitCommonDir: gitCommonDir,
@@ -1831,10 +1831,10 @@ function buildPullRequestLookupTargetFromPushConfig(
 }
 
 function buildPullRequestLookupTargetFromMetadata(
-  metadata: PaseoWorktreeMetadata | null,
+  metadata: RamblaWorktreeMetadata | null,
   currentBranch: string,
 ): PullRequestStatusLookupTarget | null {
-  const target = getPaseoWorktreeChangeRequestHintForBranch(metadata, currentBranch);
+  const target = getRamblaWorktreeChangeRequestHintForBranch(metadata, currentBranch);
   if (!target) {
     return null;
   }
@@ -1915,7 +1915,7 @@ async function resolvePullRequestLookupTargetFromPushConfig(
 async function resolveFactsPullRequestLookupTarget(input: {
   cwd: string;
   inspected: CheckoutInspectionContext;
-  metadata: PaseoWorktreeMetadata | null;
+  metadata: RamblaWorktreeMetadata | null;
   branchRemoteName: string | null;
   branchMergeRef: string | null;
   branchRemoteUrl: string | null;
@@ -1968,8 +1968,8 @@ export async function getCheckoutSnapshotFacts(
     return { isGit: false };
   }
 
-  const paseoWorktreeMetadata = inspected.paseoWorktree.isPaseoOwnedWorktree
-    ? readPaseoWorktreeMetadata(inspected.paseoWorktree.worktreeRoot)
+  const paseoWorktreeMetadata = inspected.paseoWorktree.isRamblaOwnedWorktree
+    ? readRamblaWorktreeMetadata(inspected.paseoWorktree.worktreeRoot)
     : null;
   const storedBaseRef = storedBaseRefFromMetadata(paseoWorktreeMetadata);
   const resolvedBaseRef = storedBaseRef ?? (await resolveBaseRef(cwd, context));
@@ -2219,7 +2219,7 @@ export async function getCheckoutStatus(
   const aheadOfOrigin = upstreamStatus?.aheadBehind.ahead ?? null;
   const behindOfOrigin = upstreamStatus?.aheadBehind.behind ?? null;
 
-  if (paseoWorktree.isPaseoOwnedWorktree && baseRef) {
+  if (paseoWorktree.isRamblaOwnedWorktree && baseRef) {
     return {
       isGit: true,
       repoRoot: worktreeRoot,
@@ -2233,7 +2233,7 @@ export async function getCheckoutStatus(
       behindOfOrigin,
       hasRemote,
       remoteUrl,
-      isPaseoOwnedWorktree: true,
+      isRamblaOwnedWorktree: true,
     };
   }
 
@@ -2251,7 +2251,7 @@ export async function getCheckoutStatus(
     behindOfOrigin,
     hasRemote,
     remoteUrl,
-    isPaseoOwnedWorktree: false,
+    isRamblaOwnedWorktree: false,
   };
 }
 
@@ -4070,7 +4070,7 @@ function getUnavailablePullRequestStatus(
   }
   if (
     facts?.isGit === true &&
-    facts.paseoWorktree.isPaseoOwnedWorktree &&
+    facts.paseoWorktree.isRamblaOwnedWorktree &&
     facts.pullRequestLookupTarget === null
   ) {
     return buildPullRequestStatusResult(null, "authenticated");

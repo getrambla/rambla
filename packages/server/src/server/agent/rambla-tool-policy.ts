@@ -1,29 +1,29 @@
-import type { ProviderPaseoToolsPolicy } from "@getpaseo/protocol/provider-config";
+import type { ProviderRamblaToolsPolicy } from "@getpaseo/protocol/provider-config";
 
-interface ProviderPaseoToolSettings {
-  paseoTools?: ProviderPaseoToolsPolicy;
+interface ProviderRamblaToolSettings {
+  paseoTools?: ProviderRamblaToolsPolicy;
 }
 
-export function resolvePaseoToolPolicy(
+export function resolveRamblaToolPolicy(
   providerId: string,
-  providerSettings: Readonly<Record<string, ProviderPaseoToolSettings>> | undefined,
-): ProviderPaseoToolsPolicy | undefined {
+  providerSettings: Readonly<Record<string, ProviderRamblaToolSettings>> | undefined,
+): ProviderRamblaToolsPolicy | undefined {
   return providerSettings?.[providerId]?.paseoTools;
 }
 
-export function isPaseoToolEnabled(
-  policy: ProviderPaseoToolsPolicy | undefined,
+export function isRamblaToolEnabled(
+  policy: ProviderRamblaToolsPolicy | undefined,
   toolName: string,
 ): boolean {
   if (toolName === "speak") {
     return true;
   }
-  if (!isPaseoToolPolicyEnabled(policy)) {
+  if (!isRamblaToolPolicyEnabled(policy)) {
     return false;
   }
   return !policy?.disabledTools?.includes(toolName);
 }
 
-export function isPaseoToolPolicyEnabled(policy: ProviderPaseoToolsPolicy | undefined): boolean {
+export function isRamblaToolPolicyEnabled(policy: ProviderRamblaToolsPolicy | undefined): boolean {
   return policy?.enabled !== false;
 }

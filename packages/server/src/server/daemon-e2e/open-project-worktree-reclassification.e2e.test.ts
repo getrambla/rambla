@@ -6,7 +6,7 @@ import path from "node:path";
 import { afterEach, expect, test } from "vitest";
 
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 import {
   createPersistedProjectRecord,
   createPersistedWorkspaceRecord,
@@ -15,7 +15,7 @@ import {
 } from "../workspace-registry.js";
 
 const cleanupPaths = new Set<string>();
-const cleanupDaemons = new Set<TestPaseoDaemon>();
+const cleanupDaemons = new Set<TestRamblaDaemon>();
 const cleanupClients = new Set<DaemonClient>();
 
 afterEach(async () => {
@@ -46,7 +46,7 @@ test("openProject preserves a worktree's exact-root project without rehoming it"
 
     execSync("git init -b main", { cwd: repoRoot, stdio: "pipe" });
     execSync("git config user.email 'test@getpaseo.dev'", { cwd: repoRoot, stdio: "pipe" });
-    execSync("git config user.name 'Paseo Test'", { cwd: repoRoot, stdio: "pipe" });
+    execSync("git config user.name 'Rambla Test'", { cwd: repoRoot, stdio: "pipe" });
     writeFileSync(path.join(repoRoot, "README.md"), "# repo\n", "utf8");
     execSync("git add README.md", { cwd: repoRoot, stdio: "pipe" });
     execSync("git -c commit.gpgSign=false commit -m 'initial'", { cwd: repoRoot, stdio: "pipe" });
@@ -101,7 +101,7 @@ test("openProject preserves a worktree's exact-root project without rehoming it"
       }),
     ]);
 
-    const daemon = await createTestPaseoDaemon({ paseoHomeRoot, cleanup: false });
+    const daemon = await createTestRamblaDaemon({ paseoHomeRoot, cleanup: false });
     cleanupDaemons.add(daemon);
     const client = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
     cleanupClients.add(client);

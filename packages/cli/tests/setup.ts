@@ -1,5 +1,5 @@
 /**
- * Test setup utilities for Paseo CLI E2E tests
+ * Test setup utilities for Rambla CLI E2E tests
  *
  * Critical rules from design doc:
  * 1. Port: Random port via 10000 + Math.floor(Math.random() * 50000) - NEVER 6767

@@ -14,7 +14,7 @@ import { performance } from "node:perf_hooks";
 
 import { startGitCommandMetrics, stopGitCommandMetrics } from "../src/utils/run-git-command.js";
 import { DaemonClient } from "../src/server/test-utils/daemon-client.js";
-import { createTestPaseoDaemon } from "../src/server/test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../src/server/test-utils/paseo-daemon.js";
 
 type Scenario = "snapshotOnly" | "legacyPrFanout";
 
@@ -128,7 +128,7 @@ async function main(): Promise<void> {
   const cpuBefore = process.cpuUsage();
   const memoryBefore = process.memoryUsage();
   const startedAt = performance.now();
-  const daemon = await createTestPaseoDaemon({ paseoHomeRoot: frozenHomeRoot, cleanup: false });
+  const daemon = await createTestRamblaDaemon({ paseoHomeRoot: frozenHomeRoot, cleanup: false });
   const client = new DaemonClient({
     url: `ws://127.0.0.1:${daemon.port}/ws`,
     appVersion: "0.1.90",

@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="packages/website/public/logo.svg" width="64" height="64" alt="Paseo logo">
+  <img src="packages/website/public/logo.svg" width="64" height="64" alt="Rambla logo">
 </p>
 
-<h1 align="center">Paseo</h1>
+<h1 align="center">Rambla</h1>
 
 <p align="center">
   <a href="README.md">English</a> ·
@@ -24,7 +24,7 @@
   <a href="https://discord.gg/jz8T2uahpH">
     <img src="https://img.shields.io/badge/Discord-555?logo=discord" alt="Discord">
   </a>
-  <a href="https://www.reddit.com/r/PaseoAI/">
+  <a href="https://www.reddit.com/r/RamblaAI/">
     <img src="https://img.shields.io/badge/Reddit-555?logo=reddit" alt="Reddit">
   </a>
 </p>
@@ -32,11 +32,11 @@
 <p align="center">Claude Code、Codex、Copilot、OpenCode、Pi のエージェントを、ひとつのインターフェースで。</p>
 
 <p align="center">
-  <img src="https://rambla.sh/hero-mockup.png" alt="Paseo アプリのスクリーンショット" width="100%">
+  <img src="https://rambla.sh/hero-mockup.png" alt="Rambla アプリのスクリーンショット" width="100%">
 </p>
 
 <p align="center">
-  <img src="https://rambla.sh/mobile-mockup.png" alt="Paseo モバイルアプリ" width="100%">
+  <img src="https://rambla.sh/mobile-mockup.png" alt="Rambla モバイルアプリ" width="100%">
 </p>
 
 > [!NOTE]
@@ -51,11 +51,11 @@
 - **マルチプロバイダー:** Claude Code、Codex、Copilot、OpenCode、Pi を同一のインターフェースで利用。タスクに合ったモデルを選べます。
 - **音声コントロール:** 音声モードでタスクを口述したり問題を話し合ったりできます。ハンズフリーが必要なときに便利です。
 - **クロスデバイス:** iOS、Android、デスクトップ、Web、CLI に対応。机で作業を始め、スマートフォンで確認し、ターミナルから自動化できます。
-- **プライバシー優先:** Paseo にはテレメトリー・トラッキング・強制ログインは一切ありません。
+- **プライバシー優先:** Rambla にはテレメトリー・トラッキング・強制ログインは一切ありません。
 
 ## はじめかた
 
-Paseo はコーディングエージェントを管理するローカルサーバー（デーモン）を起動します。デスクトップアプリ・モバイルアプリ・Web アプリ・CLI などのクライアントがこのデーモンに接続します。
+Rambla はコーディングエージェントを管理するローカルサーバー（デーモン）を起動します。デスクトップアプリ・モバイルアプリ・Web アプリ・CLI などのクライアントがこのデーモンに接続します。
 
 ### 前提条件
 
@@ -75,7 +75,7 @@ Paseo はコーディングエージェントを管理するローカルサー�
 
 ### CLI / ヘッドレス
 
-CLI をインストールして Paseo を起動します。
+CLI をインストールして Rambla を起動します。
 
 ```bash
 npm install -g @getpaseo/cli
@@ -109,7 +109,7 @@ paseo --host workstation.local:6767 run "run the full test suite"
 
 ## スキル
 
-スキルはエージェントに Paseo を使って他のエージェントをオーケストレーションする方法を教えます。
+スキルはエージェントに Rambla を使って他のエージェントをオーケストレーションする方法を教えます。
 
 ```bash
 npx skills add getrambla/rambla
@@ -125,7 +125,7 @@ npx skills add getrambla/rambla
 
 モノレポのパッケージ構成：
 
-- `packages/server`: Paseo デーモン（エージェントプロセスのオーケストレーション、WebSocket API、MCP サーバー）
+- `packages/server`: Rambla デーモン（エージェントプロセスのオーケストレーション、WebSocket API、MCP サーバー）
 - `packages/app`: Expo クライアント（iOS、Android、Web）
 - `packages/cli`: デーモンおよびエージェントワークフロー向け `paseo` CLI
 - `packages/desktop`: Electron デスクトップアプリ

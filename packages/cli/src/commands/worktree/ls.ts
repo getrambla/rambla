@@ -27,16 +27,16 @@ function extractWorktreeName(path: string): string {
   return basename(path);
 }
 
-export function resolvePaseoHomePath(): string {
+export function resolveRamblaHomePath(): string {
   return process.env.RAMBLA_HOME ?? join(homedir(), ".rambla");
 }
 
-export function resolvePaseoWorktreesDir(): string {
-  return join(resolvePaseoHomePath(), "worktrees");
+export function resolveRamblaWorktreesDir(): string {
+  return join(resolveRamblaHomePath(), "worktrees");
 }
 
 function isAgentInManagedWorktree(agentCwd: string): boolean {
-  const worktreesDir = resolvePaseoWorktreesDir();
+  const worktreesDir = resolveRamblaWorktreesDir();
   return agentCwd === worktreesDir || agentCwd.startsWith(worktreesDir + sep);
 }
 
@@ -81,7 +81,7 @@ export async function runLsCommand(
     const agents = agentsPayload.entries.map((entry) => entry.agent);
 
     // Get worktree list from daemon
-    const response = await client.getPaseoWorktreeList({});
+    const response = await client.getRamblaWorktreeList({});
 
     await client.close();
 

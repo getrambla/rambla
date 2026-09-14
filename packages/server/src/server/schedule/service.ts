@@ -15,7 +15,7 @@ import {
 import { resolveCreateAgentTitles } from "../agent/create-agent-title.js";
 import { type BoundCreateAgentCommand, formatProviderModel } from "../agent/create-agent/create.js";
 import type { PersistedWorkspaceRecord } from "../workspace-registry.js";
-import type { CreatePaseoWorktreeWorkflowResult } from "../worktree-session.js";
+import type { CreateRamblaWorktreeWorkflowResult } from "../worktree-session.js";
 import { ScheduleStore } from "./store.js";
 import { computeNextRunAt, validateScheduleCadence } from "./cron.js";
 import type {
@@ -234,9 +234,9 @@ export interface ScheduleServiceOptions {
   createDirectoryWorkspace: (
     input: ScheduleWorkspaceCreateInput,
   ) => Promise<PersistedWorkspaceRecord>;
-  createPaseoWorktreeWorkspace: (
+  createRamblaWorktreeWorkspace: (
     input: ScheduleWorkspaceCreateInput,
-  ) => Promise<CreatePaseoWorktreeWorkflowResult>;
+  ) => Promise<CreateRamblaWorktreeWorkflowResult>;
   archiveWorkspace: (workspaceId: string) => Promise<void>;
   now?: () => Date;
   runner?: (schedule: StoredSchedule, runId: string) => Promise<ScheduleExecutionResult>;
@@ -251,9 +251,9 @@ export class ScheduleService {
   private readonly createDirectoryWorkspace: (
     input: ScheduleWorkspaceCreateInput,
   ) => Promise<PersistedWorkspaceRecord>;
-  private readonly createPaseoWorktreeWorkspace: (
+  private readonly createRamblaWorktreeWorkspace: (
     input: ScheduleWorkspaceCreateInput,
-  ) => Promise<CreatePaseoWorktreeWorkflowResult>;
+  ) => Promise<CreateRamblaWorktreeWorkflowResult>;
   private readonly archiveWorkspace: (workspaceId: string) => Promise<void>;
   private readonly now: () => Date;
   private readonly runner: (
@@ -270,7 +270,7 @@ export class ScheduleService {
     this.agentStorage = options.agentStorage;
     this.createAgent = options.createAgent;
     this.createDirectoryWorkspace = options.createDirectoryWorkspace;
-    this.createPaseoWorktreeWorkspace = options.createPaseoWorktreeWorkspace;
+    this.createRamblaWorktreeWorkspace = options.createRamblaWorktreeWorkspace;
     this.archiveWorkspace = options.archiveWorkspace;
     this.now = options.now ?? (() => new Date());
     this.runner = options.runner ?? ((schedule, runId) => this.executeSchedule(schedule, runId));
@@ -978,7 +978,7 @@ export class ScheduleService {
       case "local":
         return this.createDirectoryWorkspace({ cwd: config.cwd, firstAgentContext });
       case "worktree":
-        return (await this.createPaseoWorktreeWorkspace({ cwd: config.cwd, firstAgentContext }))
+        return (await this.createRamblaWorktreeWorkspace({ cwd: config.cwd, firstAgentContext }))
           .workspace;
     }
   }

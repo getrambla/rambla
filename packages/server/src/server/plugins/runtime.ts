@@ -99,7 +99,7 @@ interface PluginRuntimeDependencies {
   settingsDirectory?: string;
   onSettingsChanged?: (pluginId: string, settingsId: string) => void;
   spawnChild?: () => PluginChild;
-  sessionHost?: PluginPaseoSessionHost;
+  sessionHost?: PluginRamblaSessionHost;
 }
 
 interface PluginLogTail {
@@ -175,7 +175,7 @@ class PluginOutputCapture {
   }
 }
 
-export interface PluginPaseoSessionHost {
+export interface PluginRamblaSessionHost {
   attachPluginSocket(
     pluginId: string,
     socket: PluginSessionSocket,
@@ -273,7 +273,7 @@ export class PluginRuntime {
   private readonly logTails = new Map<string, PluginLogTail>();
   private readonly logger: pino.Logger;
   private readonly spawnChild: () => PluginChild;
-  private sessionHost: PluginPaseoSessionHost | null;
+  private sessionHost: PluginRamblaSessionHost | null;
   private readonly listeners = new Set<(pluginId: string, error?: string) => void>();
 
   constructor(
@@ -286,7 +286,7 @@ export class PluginRuntime {
     this.sessionHost = dependencies.sessionHost ?? null;
   }
 
-  bindPaseoSessionHost(sessionHost: PluginPaseoSessionHost): void {
+  bindRamblaSessionHost(sessionHost: PluginRamblaSessionHost): void {
     if (this.plugins.size > 0)
       throw new Error("Cannot replace the plugin session host while running");
     this.sessionHost = sessionHost;

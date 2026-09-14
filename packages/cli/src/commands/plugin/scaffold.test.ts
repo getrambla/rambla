@@ -142,11 +142,11 @@ export async function inspectConfig(
         `import React from "react";
 import { Text } from "react-native";
 import { Icon, Modal, useToast } from "@getpaseo/plugin/client/react-native";
-import { type PluginAgentPanelProps, type PluginClientContext, type PluginSurfaceProps, useAgent, usePaseo, useWorkspace } from "@getpaseo/plugin/client";
+import { type PluginAgentPanelProps, type PluginClientContext, type PluginSurfaceProps, useAgent, useRambla, useWorkspace } from "@getpaseo/plugin/client";
 import { inspect } from "../shared/inspect";
 
 export function Surface({ navigation }: PluginSurfaceProps) {
-  const paseo = usePaseo();
+  const paseo = useRambla();
   const toast = useToast();
   const createWorkspace = () => paseo.workspaces.create({
     source: { kind: "directory", path: "/repo" },

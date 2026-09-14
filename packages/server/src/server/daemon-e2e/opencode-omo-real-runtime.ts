@@ -9,7 +9,7 @@ import pino from "pino";
 import { OpenCodeAgentClient } from "../agent/providers/opencode-agent.js";
 import { OpenCodeServerManager } from "../agent/providers/opencode/server-manager.js";
 import { terminateWithTreeKill } from "../../utils/tree-kill.js";
-import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
 
 const PINNED_OPENCODE_VERSION = "1.18.9";
@@ -45,7 +45,7 @@ interface CommandInput {
 
 export interface OpenCodeOmoRealRuntime {
   client: DaemonClient;
-  daemon: TestPaseoDaemon;
+  daemon: TestRamblaDaemon;
   model: string;
   workspace: string;
   artifacts: string;
@@ -147,11 +147,11 @@ export async function createOpenCodeOmoRealRuntime(): Promise<OpenCodeOmoRealRun
     });
   }
 
-  const previousPaseoHome = process.env.RAMBLA_HOME;
+  const previousRamblaHome = process.env.RAMBLA_HOME;
   let traceDestination: ReturnType<typeof pino.destination> | null = null;
   let closeTrace: (() => void) | null = null;
   let serverManager: OpenCodeServerManager | null = null;
-  let daemon: TestPaseoDaemon | null = null;
+  let daemon: TestRamblaDaemon | null = null;
   let client: DaemonClient | null = null;
   try {
     process.env.RAMBLA_HOME = path.join(paths.paseoHomeRoot, ".rambla");
@@ -178,7 +178,7 @@ export async function createOpenCodeOmoRealRuntime(): Promise<OpenCodeOmoRealRun
       resolveHomeDir: () => paths.home,
     });
     const openCodeClient = new OpenCodeAgentClient(logger, runtimeSettings, { serverManager });
-    daemon = await createTestPaseoDaemon({
+    daemon = await createTestRamblaDaemon({
       agentClients: { opencode: openCodeClient },
       logger,
       paseoHomeRoot: paths.paseoHomeRoot,
@@ -205,7 +205,7 @@ export async function createOpenCodeOmoRealRuntime(): Promise<OpenCodeOmoRealRun
             rmSync(paths.root, { recursive: true, force: true });
           }
         } finally {
-          restoreEnvironment("RAMBLA_HOME", previousPaseoHome);
+          restoreEnvironment("RAMBLA_HOME", previousRamblaHome);
         }
       },
     };
@@ -220,7 +220,7 @@ export async function createOpenCodeOmoRealRuntime(): Promise<OpenCodeOmoRealRun
         traceDestination?.end();
       }
     } finally {
-      restoreEnvironment("RAMBLA_HOME", previousPaseoHome);
+      restoreEnvironment("RAMBLA_HOME", previousRamblaHome);
     }
     throw withArtifactLocation(error, paths.artifacts);
   }

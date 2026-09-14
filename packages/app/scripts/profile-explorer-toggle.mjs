@@ -9,7 +9,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const appUrl = process.env.RAMBLA_PROFILE_APP_URL ?? "http://127.0.0.1:8081";
 const daemonPort = Number(process.env.RAMBLA_PROFILE_DAEMON_PORT ?? 6768);
 const workspaceCwd = process.env.RAMBLA_PROFILE_WORKSPACE_CWD ?? repoRoot;
-const workspaceId = process.env.RAMBLA_PROFILE_WORKSPACE_ID ?? resolvePaseoWorkspaceId();
+const workspaceId = process.env.RAMBLA_PROFILE_WORKSPACE_ID ?? resolveRamblaWorkspaceId();
 const serverId =
   process.env.RAMBLA_PROFILE_SERVER_ID ??
   (await readFile(resolve(repoRoot, ".dev/paseo-home/server-id"), "utf8")).trim();
@@ -30,7 +30,7 @@ function numberFromEnv(name, fallback) {
   return value;
 }
 
-function resolvePaseoWorkspaceId() {
+function resolveRamblaWorkspaceId() {
   const output = execFileSync("npm", ["run", "cli", "--", "workspace", "ls", "--json"], {
     cwd: repoRoot,
     encoding: "utf8",
@@ -40,7 +40,7 @@ function resolvePaseoWorkspaceId() {
   if (jsonStart < 0) throw new Error("Could not parse `paseo workspace ls --json`");
   const workspaces = JSON.parse(output.slice(jsonStart));
   const candidates = workspaces.filter((workspace) => workspace.cwd === workspaceCwd);
-  const workspace = candidates.find((candidate) => candidate.name === "Paseo") ?? candidates[0];
+  const workspace = candidates.find((candidate) => candidate.name === "Rambla") ?? candidates[0];
   if (!workspace?.workspaceId) {
     throw new Error(`No active workspace found for ${workspaceCwd}`);
   }

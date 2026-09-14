@@ -48,7 +48,7 @@ function createService(
 }
 
 function bindTestSessionHost(service: PluginService): PluginService {
-  service.bindPaseoSessionHost({
+  service.bindRamblaSessionHost({
     async attachPluginSocket(_pluginId, socket) {
       const closed = new Promise<void>((resolve) => socket.once("close", resolve));
       socket.on("message", (data) => {
@@ -114,7 +114,7 @@ function createPausedRuntime() {
       running.clear();
     },
     subscribe: () => () => undefined,
-    bindPaseoSessionHost: () => undefined,
+    bindRamblaSessionHost: () => undefined,
   };
   return { runtime, started, releaseStart };
 }
@@ -149,7 +149,7 @@ function createPluginSelectivePausedRuntime(pausedPluginId: string) {
       running.clear();
     },
     subscribe: () => () => undefined,
-    bindPaseoSessionHost: () => undefined,
+    bindRamblaSessionHost: () => undefined,
   };
   return { runtime, started, releaseStart, starts };
 }
@@ -241,7 +241,7 @@ describe("PluginService", () => {
       stopPluginById: async () => false,
       stopAll: async () => undefined,
       subscribe: () => () => undefined,
-      bindPaseoSessionHost: () => undefined,
+      bindRamblaSessionHost: () => undefined,
     };
     const service = createService(
       home,
@@ -452,7 +452,7 @@ describe("PluginService", () => {
       stopPluginById: async (pluginId) => running.delete(pluginId),
       stopAll: async () => running.clear(),
       subscribe: () => () => undefined,
-      bindPaseoSessionHost: () => undefined,
+      bindRamblaSessionHost: () => undefined,
     };
     const service = createService(
       home,
@@ -535,7 +535,7 @@ describe("PluginService", () => {
       stopPluginById: async (pluginId) => running.delete(pluginId),
       stopAll: async () => running.clear(),
       subscribe: () => () => undefined,
-      bindPaseoSessionHost: () => undefined,
+      bindRamblaSessionHost: () => undefined,
     };
     const store = createStore(home, {
       "failed-update": { source: "directory", path: initial.directory, enabled: true },

@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { forkPaseoHomeMetadata, resolvePaseoHomePath } from "./paseo-home-fork";
+import { forkRamblaHomeMetadata, resolveRamblaHomePath } from "./paseo-home-fork";
 import { startIsolatedHostDaemon } from "./isolated-host-daemon";
 
 export interface E2EWorker {
@@ -12,7 +12,7 @@ export interface E2EWorker {
 
 export interface E2EWorkerOptions {
   forkProviders?: string[];
-  injectPaseoTools?: boolean;
+  injectRamblaTools?: boolean;
   daemonConfig?: Record<string, unknown>;
   environment?: Record<string, string>;
 }
@@ -20,7 +20,7 @@ export interface E2EWorkerOptions {
 function resolveOptionalHome(value: string | undefined): string | null {
   const trimmed = value?.trim();
   if (!trimmed) return null;
-  return resolvePaseoHomePath(trimmed === "current" ? "~/.rambla" : trimmed);
+  return resolveRamblaHomePath(trimmed === "current" ? "~/.rambla" : trimmed);
 }
 
 async function createFakeEditorBin(): Promise<string> {
@@ -136,7 +136,7 @@ process.exit(result.status ?? 1);
 async function applyMetadataFork(targetHome: string, providerIds: string[]): Promise<void> {
   const sourceHome = resolveOptionalHome(process.env.E2E_FORK_RAMBLA_HOME_FROM);
   if (!sourceHome) return;
-  const result = await forkPaseoHomeMetadata({ sourceHome, targetHome });
+  const result = await forkRamblaHomeMetadata({ sourceHome, targetHome });
   process.env.E2E_FORK_SOURCE_RAMBLA_HOME = result.sourceHome;
   process.env.E2E_FORK_TARGET_RAMBLA_HOME = result.targetHome;
   process.env.E2E_FORK_COPIED_FILES = String(result.copiedFiles);
@@ -186,8 +186,8 @@ export async function startE2EWorker(
         `${JSON.stringify(options.daemonConfig, null, 2)}\n`,
       );
     }
-    if (options.injectPaseoTools) {
-      await enablePaseoTools(paseoHome);
+    if (options.injectRamblaTools) {
+      await enableRamblaTools(paseoHome);
     }
     const daemon = await startIsolatedHostDaemon(serverId, {
       paseoHome,
@@ -224,7 +224,7 @@ export async function startE2EWorker(
   }
 }
 
-async function enablePaseoTools(paseoHome: string): Promise<void> {
+async function enableRamblaTools(paseoHome: string): Promise<void> {
   const configPath = path.join(paseoHome, "config.json");
   const existing = existsSync(configPath)
     ? JSON.parse(await readFile(configPath, "utf8"))

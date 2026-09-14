@@ -7,7 +7,7 @@ import pino from "pino";
 import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 
 import { OpenCodeAgentClient } from "../agent/providers/opencode-agent.js";
-import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
 import { canRunRealProvider } from "./real-provider-test-config.js";
 
@@ -60,7 +60,7 @@ describe("daemon E2E (real opencode) - slow plugin readiness", () => {
         OPENCODE_DISABLE_AUTO_UPDATE: "1",
       },
     });
-    const daemon = await createTestPaseoDaemon({
+    const daemon = await createTestRamblaDaemon({
       agentClients: { opencode: openCode },
       logger,
     });

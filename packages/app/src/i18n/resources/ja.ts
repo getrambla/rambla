@@ -1759,7 +1759,7 @@ export const ja: TranslationResources = {
   serviceUrl: {
     title: "サービスURLを開く",
     message: "{{url}}を開きますか？",
-    inPaseo: "Ramblaで",
+    inRambla: "Ramblaで",
     externalBrowser: "外部ブラウザ",
     dontAskAgain: "次回から確認しない",
   },

@@ -24,7 +24,7 @@ describe("resolveNewAgentWorkingDir", () => {
 
   it("returns the main repo root for paseo-owned worktrees", () => {
     const checkout = {
-      isPaseoOwnedWorktree: true,
+      isRamblaOwnedWorktree: true,
       worktreeRoot: "/repo/.rambla/worktrees/feature",
       mainRepoRoot: "/repo/main",
     } as unknown as CheckoutStatusPayload;

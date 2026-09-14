@@ -19,7 +19,7 @@ import { createTempGitRepo } from "../support/helpers/workspace";
 
 const PRIMARY_HOST_LABEL = "Primary host";
 const SECONDARY_HOST_LABEL = "Secondary host";
-const SHARED_PROJECT_NAME = "Paseo";
+const SHARED_PROJECT_NAME = "Rambla";
 const SHARED_REMOTE_URL = "https://github.com/getpaseo/paseo.git";
 
 interface CreatedProject {
@@ -119,13 +119,13 @@ const test = base.extend<{ crossHostProject: CrossHostProjectScenario }>({
       const primarySharedProject = await createProject(primaryClient, {
         projectPath: primarySharedRepo.path,
         projectName: SHARED_PROJECT_NAME,
-        workspaceName: "Primary Paseo workspace",
+        workspaceName: "Primary Rambla workspace",
       });
       primaryProjects.push(primarySharedProject);
       const primaryDuplicateProject = await createProject(primaryClient, {
         projectPath: primaryDuplicateRepo.path,
-        projectName: "Paseo duplicate",
-        workspaceName: "Duplicate Paseo workspace",
+        projectName: "Rambla duplicate",
+        workspaceName: "Duplicate Rambla workspace",
       });
       primaryProjects.push(primaryDuplicateProject);
       secondaryProjects.push(
@@ -138,7 +138,7 @@ const test = base.extend<{ crossHostProject: CrossHostProjectScenario }>({
       const secondarySharedProject = await createProject(secondaryClient, {
         projectPath: secondarySharedRepo.path,
         projectName: SHARED_PROJECT_NAME,
-        workspaceName: "Secondary Paseo workspace",
+        workspaceName: "Secondary Rambla workspace",
       });
       secondaryProjects.push(secondarySharedProject);
 
@@ -146,7 +146,7 @@ const test = base.extend<{ crossHostProject: CrossHostProjectScenario }>({
         primarySharedProject.projectKey !== primaryDuplicateProject.projectKey ||
         primarySharedProject.projectKey !== secondarySharedProject.projectKey
       ) {
-        throw new Error("Expected the Paseo clones to have the same equivalence key");
+        throw new Error("Expected the Rambla clones to have the same equivalence key");
       }
 
       await provide({

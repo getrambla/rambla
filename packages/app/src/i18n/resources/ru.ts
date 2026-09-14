@@ -1772,7 +1772,7 @@ export const ru: TranslationResources = {
   serviceUrl: {
     title: "Открыть URL сервиса",
     message: "Открыть {{url}}?",
-    inPaseo: "В Rambla",
+    inRambla: "В Rambla",
     externalBrowser: "Внешний браузер",
     dontAskAgain: "Больше не спрашивать",
   },

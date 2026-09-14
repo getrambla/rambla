@@ -1505,7 +1505,7 @@ function agentCapabilities(capabilities: readonly string[]): AgentCapabilityFlag
     supportsSessionListing: supports("session.list"),
     supportsDynamicModes: supports("session.configure"),
     supportsMcpServers: true,
-    supportsNativePaseoTools: false,
+    supportsNativeRamblaTools: false,
     supportsReasoningStream: true,
     supportsToolInvocations: true,
     supportsRewindConversation: supports("session.revert.conversation"),

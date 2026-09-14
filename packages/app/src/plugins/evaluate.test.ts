@@ -494,7 +494,7 @@ describe("evaluatePluginClientBundle", () => {
     expect(element).toMatchObject({ props: { size: 18, color: "#123456" } });
   });
 
-  it("provides Paseo UI through @getpaseo/plugin/client/react-native", () => {
+  it("provides Rambla UI through @getpaseo/plugin/client/react-native", () => {
     const plugin = evaluatePluginClientBundle(
       "example",
       `(function(require) {
@@ -521,7 +521,7 @@ describe("evaluatePluginClientBundle", () => {
         `(function(require) {
       const shared = require("@getpaseo/plugin");
       const client = require("@getpaseo/plugin/client");
-      for (const name of ["usePaseo", "useRpc", "useSettings", "useAgent", "useWorkspace"]) {
+      for (const name of ["useRambla", "useRpc", "useSettings", "useAgent", "useWorkspace"]) {
         if (name in shared || typeof client[name] !== "function") throw new Error(name);
       }
       if ("Icon" in shared || typeof shared.PluginAttachmentItemSchema.parse !== "function") throw new Error("shared exports");

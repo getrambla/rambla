@@ -36,7 +36,7 @@ import {
   type ProviderRefreshContext,
   type ToolCallDetail,
 } from "../../agent-sdk-types.js";
-import type { PaseoToolCatalog } from "../../tools/types.js";
+import type { RamblaToolCatalog } from "../../tools/types.js";
 import { importSessionFromPersistence } from "../../provider-session-import.js";
 import { runProviderRefreshActivity } from "../../provider-refresh-deadline.js";
 import { runProviderTurn } from "../provider-runner.js";
@@ -185,7 +185,7 @@ interface OmpAgentSessionOptions {
   providerIdleScheduler?: OmpProviderIdleScheduler;
   noTurnScheduler?: OmpNoTurnScheduler;
   usagePollScheduler?: OmpUsagePollScheduler;
-  paseoTools?: PaseoToolCatalog;
+  paseoTools?: RamblaToolCatalog;
   /**
    * When false (resumed sessions), replayed session events are dropped until
    * the first prompt or agent_start so history is not re-emitted as live
@@ -463,7 +463,7 @@ function withOmpCapabilities(): AgentCapabilityFlags {
   return {
     ...OMP_CORE_CAPABILITIES,
     supportsMcpServers: false,
-    supportsNativePaseoTools: true,
+    supportsNativeRamblaTools: true,
   };
 }
 
@@ -932,7 +932,7 @@ export class OmpAgentSession implements AgentSession {
   private readonly runtimeSession: OmpRuntimeSession;
   private readonly config: AgentSessionConfig;
   private readonly logger: Logger;
-  private readonly paseoTools?: PaseoToolCatalog;
+  private readonly paseoTools?: RamblaToolCatalog;
 
   get id(): string | null {
     return this.state.sessionId;
@@ -2220,9 +2220,9 @@ export class OmpAgentClient implements AgentClient {
       options.runtime ?? createRuntime(options.logger, runtimeSettings, this.providerParams);
   }
 
-  private async configureNativePaseoTools(
+  private async configureNativeRamblaTools(
     runtimeSession: OmpRuntimeSession,
-    catalog: PaseoToolCatalog | undefined,
+    catalog: RamblaToolCatalog | undefined,
   ): Promise<void> {
     if (!catalog) {
       return;
@@ -2247,7 +2247,7 @@ export class OmpAgentClient implements AgentClient {
       env: launchContext?.env,
     });
     try {
-      await this.configureNativePaseoTools(runtimeSession, launchContext?.paseoTools);
+      await this.configureNativeRamblaTools(runtimeSession, launchContext?.paseoTools);
       return new OmpAgentSession({
         runtimeSession,
         config,
@@ -2289,7 +2289,7 @@ export class OmpAgentClient implements AgentClient {
       }),
     );
     try {
-      await this.configureNativePaseoTools(runtimeSession, launchContext?.paseoTools);
+      await this.configureNativeRamblaTools(runtimeSession, launchContext?.paseoTools);
       return new OmpAgentSession({
         runtimeSession,
         config: resumeConfig.config,

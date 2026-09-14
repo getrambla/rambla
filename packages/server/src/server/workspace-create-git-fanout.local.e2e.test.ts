@@ -7,7 +7,7 @@ import { afterEach, expect, test } from "vitest";
 import type { WorkspaceDescriptorPayload } from "@getpaseo/protocol/messages";
 
 import { DaemonClient } from "./test-utils/daemon-client.js";
-import { createTestPaseoDaemon, type TestPaseoDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "./test-utils/paseo-daemon.js";
 import { getWorkspaceGitSelfHealPhaseMs } from "./workspace-git-service.js";
 import {
   configureGitProcessPolicy,
@@ -23,7 +23,7 @@ const SIBLING_COUNT = 100;
 const CREATED_AT = "2026-08-07T00:00:00.000Z";
 const originalMaxProcessesPerSecond = process.env.RAMBLA_GIT_MAX_PROCESSES_PER_SECOND;
 
-let daemon: TestPaseoDaemon | null = null;
+let daemon: TestRamblaDaemon | null = null;
 let client: DaemonClient | null = null;
 const cleanupPaths: string[] = [];
 
@@ -102,7 +102,7 @@ function seedFixture(siblingCount = SIBLING_COUNT): {
       branch,
       worktreeRoot: cwd,
       baseBranch: "main",
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       mainRepoRoot: repoRoot,
       createdAt: CREATED_AT,
       updatedAt: CREATED_AT,
@@ -135,7 +135,7 @@ function seedFixture(siblingCount = SIBLING_COUNT): {
 
 async function startObservedFixture(siblingCount: number): Promise<ReturnType<typeof seedFixture>> {
   const fixture = seedFixture(siblingCount);
-  daemon = await createTestPaseoDaemon({
+  daemon = await createTestRamblaDaemon({
     paseoHomeRoot: fixture.paseoHomeRoot,
     cleanup: false,
     mcpEnabled: false,
@@ -617,7 +617,7 @@ test("records the Git command ledger for repository metadata business rules", as
 test("workspace archive is admitted while 52 sibling observations hydrate", async () => {
   configureGitProcessPolicy({ maxProcessConcurrency: 8, maxProcessesPerSecond: 64 });
   const fixture = seedFixture(52);
-  daemon = await createTestPaseoDaemon({
+  daemon = await createTestRamblaDaemon({
     paseoHomeRoot: fixture.paseoHomeRoot,
     cleanup: false,
     mcpEnabled: false,
@@ -659,7 +659,7 @@ test("workspace create is admitted while 100 sibling observations hydrate", asyn
   process.env.RAMBLA_GIT_MAX_PROCESSES_PER_SECOND = "64";
   configureGitProcessPolicy({ maxProcessConcurrency: 8, maxProcessesPerSecond: 64 });
   const fixture = seedFixture();
-  daemon = await createTestPaseoDaemon({
+  daemon = await createTestRamblaDaemon({
     paseoHomeRoot: fixture.paseoHomeRoot,
     cleanup: false,
     mcpEnabled: false,

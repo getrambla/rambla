@@ -10,7 +10,7 @@ import type {
   ManagedProcessRegistry,
   ManagedProcessReapResult,
 } from "./managed-processes/managed-processes.js";
-import { createPaseoDaemon, type PaseoDaemonConfig } from "./bootstrap.js";
+import { createRamblaDaemon, type RamblaDaemonConfig } from "./bootstrap.js";
 import { createTestAgentClients } from "./test-utils/fake-agent-client.js";
 
 let tempRoot: string | null = null;
@@ -31,7 +31,7 @@ describe("daemon managed process bootstrap", () => {
     staticDir = await mkdtemp(path.join(os.tmpdir(), "paseo-static-"));
     const paseoHome = path.join(tempRoot, ".rambla");
     const managedProcesses = new FakeManagedProcesses();
-    const daemon = await createPaseoDaemon(
+    const daemon = await createRamblaDaemon(
       {
         listen: "127.0.0.1:0",
         paseoHome,
@@ -45,7 +45,7 @@ describe("daemon managed process bootstrap", () => {
         relayEnabled: false,
         appBaseUrl: "https://app.rambla.sh",
         managedProcesses,
-      } as PaseoDaemonConfig,
+      } as RamblaDaemonConfig,
       pino({ level: "silent" }),
     );
 

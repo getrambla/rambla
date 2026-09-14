@@ -3,21 +3,21 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, expect, test } from "vitest";
-import { createPaseoClient, type PaseoClient } from "@getpaseo/client";
+import { createRamblaClient, type RamblaClient } from "@getpaseo/client";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 
-let daemon: TestPaseoDaemon;
+let daemon: TestRamblaDaemon;
 let client: DaemonClient;
 let cwd: string;
-let sdk: PaseoClient;
+let sdk: RamblaClient;
 
 beforeEach(async () => {
   cwd = await mkdtemp(path.join(tmpdir(), "terminal-workspace-sdk-"));
-  daemon = await createTestPaseoDaemon();
+  daemon = await createTestRamblaDaemon();
   client = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
   await client.connect();
-  sdk = createPaseoClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
+  sdk = createRamblaClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
   await sdk.connect();
 });
 
@@ -109,7 +109,7 @@ test("terminal creation rejects unknown and archived owners, including explicit 
   expect((await client.fetchWorkspaces()).entries).toEqual([]);
 });
 
-test("plugin handlers operate terminals through their host-owned Paseo API", async () => {
+test("plugin handlers operate terminals through their host-owned Rambla API", async () => {
   const workspaceId = await createWorkspace("Plugin workspace");
   const pluginDirectory = path.join(cwd, "plugin");
   await mkdir(pluginDirectory);

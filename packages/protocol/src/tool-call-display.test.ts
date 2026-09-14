@@ -135,7 +135,7 @@ describe("shared tool-call display mapping", () => {
     });
   });
 
-  it("humanizes Paseo MCP tool names (Claude Code format)", () => {
+  it("humanizes Rambla MCP tool names (Claude Code format)", () => {
     const display = buildToolCallDisplayModel({
       name: "mcp__paseo__create_agent",
       status: "running",
@@ -145,7 +145,7 @@ describe("shared tool-call display mapping", () => {
     expect(display.displayName).toBe("Create agent");
   });
 
-  it("humanizes Paseo MCP tool names (Codex format)", () => {
+  it("humanizes Rambla MCP tool names (Codex format)", () => {
     const display = buildToolCallDisplayModel({
       name: "paseo.create_agent",
       status: "running",
@@ -155,7 +155,7 @@ describe("shared tool-call display mapping", () => {
     expect(display.displayName).toBe("Create agent");
   });
 
-  it("humanizes list_agents Paseo tool", () => {
+  it("humanizes list_agents Rambla tool", () => {
     const display = buildToolCallDisplayModel({
       name: "mcp__paseo__list_agents",
       status: "running",

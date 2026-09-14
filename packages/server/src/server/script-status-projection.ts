@@ -4,8 +4,8 @@ import type {
   SessionOutboundMessage,
   WorkspaceScriptPayload,
 } from "@getpaseo/protocol/messages";
-import type { PaseoConfig } from "@getpaseo/protocol/paseo-config-schema";
-import { getScriptConfigs, isServiceScript, readPaseoConfig } from "../utils/worktree.js";
+import type { RamblaConfig } from "@getpaseo/protocol/paseo-config-schema";
+import { getScriptConfigs, isServiceScript, readRamblaConfig } from "../utils/worktree.js";
 import { deriveProjectSlug } from "./workspace-git-metadata.js";
 import type { ScriptHealthEntry, ScriptHealthState } from "./script-health-monitor.js";
 import type {
@@ -21,7 +21,7 @@ interface SessionEmitter {
 interface BuildWorkspaceScriptPayloadsOptions {
   workspaceId: string;
   workspaceDirectory: string;
-  paseoConfig: PaseoConfig | null;
+  paseoConfig: RamblaConfig | null;
   serviceProxy: ServiceProxySubsystem;
   runtimeStore: WorkspaceScriptRuntimeStore;
   daemonPort: number | null;
@@ -33,11 +33,11 @@ interface BuildWorkspaceScriptPayloadsOptions {
   resolveHealth?: (hostname: string) => ScriptHealthState | null;
 }
 
-export function readPaseoConfigForProjection(
+export function readRamblaConfigForProjection(
   workspaceDirectory: string,
   logger: Logger,
-): PaseoConfig | null {
-  const result = readPaseoConfig(workspaceDirectory);
+): RamblaConfig | null {
+  const result = readRamblaConfig(workspaceDirectory);
   if (result.ok) {
     return result.config;
   }
@@ -304,7 +304,7 @@ export function createScriptStatusEmitter({
       const projected = buildWorkspaceScriptPayloads({
         workspaceId,
         workspaceDirectory,
-        paseoConfig: readPaseoConfigForProjection(workspaceDirectory, logger),
+        paseoConfig: readRamblaConfigForProjection(workspaceDirectory, logger),
         serviceProxy,
         runtimeStore,
         daemonPort: resolvedDaemonPort,

@@ -29,7 +29,7 @@ function writeWorkflowOutput(): string {
   writeFileSync(
     outputPath,
     JSON.stringify({
-      result: { report: "What Paseo is\nA local-first coding-agent environment." },
+      result: { report: "What Rambla is\nA local-first coding-agent environment." },
       script: "SECRET WORKFLOW SOURCE",
       workflowProgress: [{ promptPreview: "SECRET CHILD PROMPT" }],
     }),
@@ -251,7 +251,7 @@ describe("background Claude subagents", () => {
           id: "toolu_workflow",
           item: {
             type: "assistant_message",
-            text: "What Paseo is\nA local-first coding-agent environment.",
+            text: "What Rambla is\nA local-first coding-agent environment.",
           },
         },
       }),

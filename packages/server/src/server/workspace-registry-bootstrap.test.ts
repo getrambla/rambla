@@ -319,7 +319,7 @@ describe("bootstrapWorkspaceRegistries", () => {
         currentBranch: cwd === GIT_PROJECT ? "main" : "feature/plain",
         remoteUrl: "git@github.com:acme/legacy-project.git",
         worktreeRoot: cwd,
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: cwd === GIT_PROJECT ? null : GIT_PROJECT,
       }),
     });

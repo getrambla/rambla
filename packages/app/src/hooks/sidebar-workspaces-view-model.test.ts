@@ -69,7 +69,7 @@ describe("createSidebarWorkspaceEntry forge threading", () => {
 });
 
 describe("createSidebarWorkspaceEntry workspace directory label", () => {
-  it("uses the daemon-provided slug for a Paseo-owned worktree", () => {
+  it("uses the daemon-provided slug for a Rambla-owned worktree", () => {
     const descriptor = workspaceWithForge(undefined, "https://github.com/acme/repo/pull/42");
     descriptor.workspaceDirectory = "/worktrees/feature/packages/app";
     descriptor.worktreeSlug = "feature";

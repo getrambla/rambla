@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="packages/website/public/logo.svg" width="64" height="64" alt="Paseo logo">
+  <img src="packages/website/public/logo.svg" width="64" height="64" alt="Rambla logo">
 </p>
 
-<h1 align="center">Paseo</h1>
+<h1 align="center">Rambla</h1>
 
 <p align="center">
   <a href="README.md">English</a> ·
@@ -24,7 +24,7 @@
   <a href="https://discord.gg/jz8T2uahpH">
     <img src="https://img.shields.io/badge/Discord-555?logo=discord" alt="Discord">
   </a>
-  <a href="https://www.reddit.com/r/PaseoAI/">
+  <a href="https://www.reddit.com/r/RamblaAI/">
     <img src="https://img.shields.io/badge/Reddit-555?logo=reddit" alt="Reddit">
   </a>
 </p>
@@ -32,11 +32,11 @@
 <p align="center">Claude Code、Codex、Copilot、OpenCode 和 Pi agents 的统一界面。</p>
 
 <p align="center">
-  <img src="https://rambla.sh/hero-mockup.png" alt="Paseo app screenshot" width="100%">
+  <img src="https://rambla.sh/hero-mockup.png" alt="Rambla app screenshot" width="100%">
 </p>
 
 <p align="center">
-  <img src="https://rambla.sh/mobile-mockup.png" alt="Paseo mobile app" width="100%">
+  <img src="https://rambla.sh/mobile-mockup.png" alt="Rambla mobile app" width="100%">
 </p>
 
 > [!NOTE]
@@ -51,11 +51,11 @@
 - **多提供商：** 通过同一个界面使用 Claude Code、Codex、Copilot、OpenCode 和 Pi。为每个任务选择合适的模型。
 - **语音控制：** 在语音模式下口述任务或讨论问题。需要免手操作时很方便。
 - **跨设备：** 支持 iOS、Android、桌面端、Web 和 CLI。在桌前开始工作，用手机查看进度，也可以从终端脚本化操作。
-- **隐私优先：** Paseo 没有遥测、追踪，也不会强制登录。
+- **隐私优先：** Rambla 没有遥测、追踪，也不会强制登录。
 
 ## 快速开始
 
-Paseo 会运行一个名为 daemon 的本地服务，用来管理你的 coding agents。桌面 app、移动 app、Web app 和 CLI 等客户端都会连接到它。
+Rambla 会运行一个名为 daemon 的本地服务，用来管理你的 coding agents。桌面 app、移动 app、Web app 和 CLI 等客户端都会连接到它。
 
 ### 前置条件
 
@@ -75,7 +75,7 @@ Paseo 会运行一个名为 daemon 的本地服务，用来管理你的 coding a
 
 ### CLI / 无头模式
 
-安装 CLI 并启动 Paseo：
+安装 CLI 并启动 Rambla：
 
 ```bash
 npm install -g @getpaseo/cli
@@ -109,7 +109,7 @@ paseo --host workstation.local:6767 run "run the full test suite"
 
 ## Skills
 
-Skills 会教你的 agent 使用 Paseo 来编排其他 agents。
+Skills 会教你的 agent 使用 Rambla 来编排其他 agents。
 
 ```bash
 npx skills add getrambla/rambla
@@ -125,7 +125,7 @@ npx skills add getrambla/rambla
 
 Monorepo 包结构速览：
 
-- `packages/server`：Paseo daemon（agent 进程编排、WebSocket API、MCP server）
+- `packages/server`：Rambla daemon（agent 进程编排、WebSocket API、MCP server）
 - `packages/app`：Expo 客户端（iOS、Android、Web）
 - `packages/cli`：用于 daemon 和 agent 工作流的 `paseo` CLI
 - `packages/desktop`：Electron 桌面 app

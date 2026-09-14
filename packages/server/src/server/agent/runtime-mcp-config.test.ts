@@ -1,16 +1,16 @@
 import { describe, expect, test } from "vitest";
 
 import type { AgentSessionConfig } from "./agent-sdk-types.js";
-import { withRuntimePaseoMcpServer } from "./runtime-mcp-config.js";
+import { withRuntimeRamblaMcpServer } from "./runtime-mcp-config.js";
 
 const BASE_CONFIG: AgentSessionConfig = {
   provider: "claude",
   cwd: "/tmp/agent",
 };
 
-describe("withRuntimePaseoMcpServer", () => {
+describe("withRuntimeRamblaMcpServer", () => {
   test("injects the paseo MCP server with a bearer header when a token is provided", () => {
-    const result = withRuntimePaseoMcpServer({
+    const result = withRuntimeRamblaMcpServer({
       config: BASE_CONFIG,
       agentId: "agent-1",
       mcpBaseUrl: "http://127.0.0.1:6767/mcp/agents",
@@ -25,7 +25,7 @@ describe("withRuntimePaseoMcpServer", () => {
   });
 
   test("omits the header when no token is available", () => {
-    const result = withRuntimePaseoMcpServer({
+    const result = withRuntimeRamblaMcpServer({
       config: BASE_CONFIG,
       agentId: "agent-1",
       mcpBaseUrl: "http://127.0.0.1:6767/mcp/agents",
@@ -39,7 +39,7 @@ describe("withRuntimePaseoMcpServer", () => {
   });
 
   test("does not inject when no MCP base URL is configured", () => {
-    const result = withRuntimePaseoMcpServer({
+    const result = withRuntimeRamblaMcpServer({
       config: BASE_CONFIG,
       agentId: "agent-1",
       mcpBaseUrl: null,

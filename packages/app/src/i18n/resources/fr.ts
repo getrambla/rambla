@@ -1792,7 +1792,7 @@ export const fr: TranslationResources = {
   serviceUrl: {
     title: "Service ouvertURL",
     message: "Ouvrir{{url}}?",
-    inPaseo: "Dans Rambla",
+    inRambla: "Dans Rambla",
     externalBrowser: "Navigateur externe",
     dontAskAgain: "Ne demande plus",
   },

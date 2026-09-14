@@ -8,7 +8,7 @@ import {
   isServiceScript,
   paseoConfigParseError,
   processCarriageReturns,
-  readPaseoConfig,
+  readRamblaConfig,
   resolveWorktreeRuntimeEnv,
   runWorktreeSetupCommands,
   WorktreeSetupError,
@@ -30,7 +30,7 @@ import {
   requirePlannedWorkspaceServicePort,
   refreshWorkspaceServicePort,
 } from "./workspace-service-port-registry.js";
-import type { PaseoServicePortAllocation } from "@getpaseo/protocol/paseo-config-schema";
+import type { RamblaServicePortAllocation } from "@getpaseo/protocol/paseo-config-schema";
 
 export interface WorktreeBootstrapTerminalResult {
   name: string | null;
@@ -736,7 +736,7 @@ export interface SpawnWorkspaceScriptOptions {
   serviceProxy: ServiceProxySubsystem;
   runtimeStore: WorkspaceScriptRuntimeStore;
   terminalManager: TerminalManager;
-  globalServicePorts?: PaseoServicePortAllocation;
+  globalServicePorts?: RamblaServicePortAllocation;
   logger?: Logger;
   onLifecycleChanged?: () => void;
 }
@@ -760,7 +760,7 @@ async function setupServiceScriptRoute(params: {
   serviceProxyPublicBaseUrl: string | null | undefined;
   existingRuntimeEntry: ReturnType<WorkspaceScriptRuntimeStore["get"]>;
   serviceProxy: ServiceProxySubsystem;
-  servicePortAllocation: PaseoServicePortAllocation | undefined;
+  servicePortAllocation: RamblaServicePortAllocation | undefined;
 }): Promise<ServiceScriptSetupResult> {
   const {
     scriptConfigs,
@@ -903,7 +903,7 @@ export async function spawnWorkspaceScript(
     logger,
     onLifecycleChanged,
   } = options;
-  const configResult = readPaseoConfig(repoRoot);
+  const configResult = readRamblaConfig(repoRoot);
   if (!configResult.ok) {
     throw paseoConfigParseError(configResult);
   }

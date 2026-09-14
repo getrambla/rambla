@@ -4,7 +4,7 @@ import pino from "pino";
 import pretty from "pino-pretty";
 import { resolveDaemonVersion } from "./daemon-version.js";
 import type { PersistedConfig } from "./persisted-config.js";
-import { resolvePaseoHome } from "./paseo-home.js";
+import { resolveRamblaHome } from "./paseo-home.js";
 
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error" | "fatal";
 export type LogFormat = "pretty" | "json";
@@ -86,11 +86,11 @@ function minLogLevel(levels: LogLevel[]): LogLevel {
   return minLevel;
 }
 
-function resolveConfiguredPaseoHome(options: ResolveLogConfigOptions | undefined): string {
+function resolveConfiguredRamblaHome(options: ResolveLogConfigOptions | undefined): string {
   if (options?.paseoHome) {
     return options.paseoHome;
   }
-  return resolvePaseoHome();
+  return resolveRamblaHome();
 }
 
 function normalizeLoggerConfigInput(config: LoggerConfigInput): PersistedConfig | undefined {
@@ -140,7 +140,7 @@ export function resolveLogConfig(
   options?: ResolveLogConfigOptions,
 ): ResolvedLogConfig {
   const persistedConfig = normalizeLoggerConfigInput(configInput);
-  const paseoHome = resolveConfiguredPaseoHome(options);
+  const paseoHome = resolveConfiguredRamblaHome(options);
   const persistedLog = persistedConfig?.log;
 
   const { consoleLevel, fileLevel, consoleFormat } = resolveLogLevelsAndFormat(persistedLog);

@@ -4,7 +4,7 @@ import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { loadPersistedConfig, type PersistedConfig } from "@getpaseo/server";
 import {
-  resolveLocalPaseoHome,
+  resolveLocalRamblaHome,
   resolveLocalDaemonState,
   resolveTcpHostFromListen,
   startLocalDaemonDetached,
@@ -440,7 +440,7 @@ export async function runOnboard(options: OnboardOptions): Promise<void> {
     process.exit(1);
   }
 
-  const paseoHome = resolveLocalPaseoHome(options.home);
+  const paseoHome = resolveLocalRamblaHome(options.home);
   if (richUi) {
     renderNote(paseoHome, "Rambla home");
   }

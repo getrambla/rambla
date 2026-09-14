@@ -146,7 +146,7 @@ describe("OpenCode terminal agent hooks", () => {
     expect(commands).toEqual([]);
   });
 
-  it("keeps both generations inert outside Paseo terminals", async () => {
+  it("keeps both generations inert outside Rambla terminals", async () => {
     const { plugin, commands } = loadInstalledPlugin("");
     await plugin.server().event({
       event: { type: "session.status", properties: { status: { type: "busy" } } },

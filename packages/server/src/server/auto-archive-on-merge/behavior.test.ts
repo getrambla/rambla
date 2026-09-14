@@ -38,7 +38,7 @@ async function createWorkspaceJourney() {
   const repoDir = path.join(tempDir, "repo");
   run(tempDir, ["init", "-b", "main", repoDir]);
   run(repoDir, ["config", "user.email", "test@getpaseo.local"]);
-  run(repoDir, ["config", "user.name", "Paseo Test"]);
+  run(repoDir, ["config", "user.name", "Rambla Test"]);
   writeFileSync(path.join(repoDir, "README.md"), "workspace journey\n");
   run(repoDir, ["add", "README.md"]);
   run(repoDir, ["-c", "commit.gpgsign=false", "commit", "-m", "initial"]);
@@ -70,7 +70,7 @@ async function createWorkspaceJourney() {
         mainRepoRoot: repoDir,
         currentBranch: branch,
         remoteUrl: "https://github.com/acme/repo.git",
-        isPaseoOwnedWorktree: true,
+        isRamblaOwnedWorktree: true,
         isDirty: false,
         baseRef: "main",
         aheadBehind: { ahead: 0, behind: 0 },

@@ -38,7 +38,7 @@ export function resolveSelectedAgentForNewAgent(input: {
   return parseHostAgentRouteFromPathname(input.pathname) ?? parseAgentKey(input.selectedAgentId);
 }
 
-function inferMainRepoRootFromPaseoWorktreePath(cwd: string): string | null {
+function inferMainRepoRootFromRamblaWorktreePath(cwd: string): string | null {
   const normalizedPath = cwd.replace(/\\/g, "/");
   const marker = "/.rambla/worktrees";
   const markerIndex = normalizedPath.indexOf(marker);
@@ -58,12 +58,12 @@ export function resolveNewAgentWorkingDir(
   cwd: string,
   checkout: CheckoutStatusPayload | null,
 ): string {
-  const explicitMainRepoRoot = checkout?.isPaseoOwnedWorktree
+  const explicitMainRepoRoot = checkout?.isRamblaOwnedWorktree
     ? checkout.mainRepoRoot?.trim() || null
     : null;
   if (explicitMainRepoRoot) {
     return explicitMainRepoRoot;
   }
 
-  return inferMainRepoRootFromPaseoWorktreePath(cwd) ?? cwd;
+  return inferMainRepoRootFromRamblaWorktreePath(cwd) ?? cwd;
 }

@@ -9,9 +9,9 @@ import type { Logger } from "pino";
 import { writeFileAtomic } from "../../../atomic-file.js";
 import {
   addModelVisibleStructuredContent,
-  serializePaseoToolInputParameters,
+  serializeRamblaToolInputParameters,
 } from "../../tools/paseo-tool-serialization.js";
-import type { PaseoToolCatalog } from "../../tools/types.js";
+import type { RamblaToolCatalog } from "../../tools/types.js";
 
 const INTERNAL_PREFIX = "/_internal/opencode";
 const MAX_REQUEST_BYTES = 1024 * 1024;
@@ -23,7 +23,7 @@ interface OpenCodeBridgeOptions {
 
 interface OpenCodeSessionBinding {
   env: Record<string, string>;
-  tools?: PaseoToolCatalog;
+  tools?: RamblaToolCatalog;
 }
 
 interface BindOpenCodeSessionInput extends OpenCodeSessionBinding {
@@ -48,7 +48,7 @@ export class OpenCodeBridge {
   private server: Server | null = null;
   private baseUrl: string | null = null;
   private pluginUrl: string | null = null;
-  private manifestCatalog: PaseoToolCatalog | null = null;
+  private manifestCatalog: RamblaToolCatalog | null = null;
 
   constructor(options: OpenCodeBridgeOptions) {
     this.paseoHome = options.paseoHome;
@@ -77,7 +77,7 @@ export class OpenCodeBridge {
     this.baseUrl = `http://127.0.0.1:${address.port}`;
   }
 
-  setManifestCatalog(catalog: PaseoToolCatalog | null): void {
+  setManifestCatalog(catalog: RamblaToolCatalog | null): void {
     this.manifestCatalog = catalog;
   }
 
@@ -187,7 +187,7 @@ export class OpenCodeBridge {
       const definition: Record<string, unknown> = {
         name: tool.name,
         description: tool.description,
-        inputSchema: serializePaseoToolInputParameters(tool),
+        inputSchema: serializeRamblaToolInputParameters(tool),
       };
       if (tool.title) definition.title = tool.title;
       return definition;

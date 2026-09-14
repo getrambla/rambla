@@ -1382,7 +1382,7 @@ describe("Codex app-server provider", () => {
     await session.close();
   });
 
-  test("initializes Codex app-server without making Paseo the request originator", async () => {
+  test("initializes Codex app-server without making Rambla the request originator", async () => {
     let initializeParams: unknown;
     const appServer = createFakeCodexAppServer({
       initialize: (params) => {
@@ -1440,7 +1440,7 @@ describe("Codex app-server provider", () => {
     appServer.assertNoErrors();
   });
 
-  test("unarchives Codex when an active Paseo agent resumes an archived thread", async () => {
+  test("unarchives Codex when an active Rambla agent resumes an archived thread", async () => {
     const threadRequests: string[] = [];
     let resumeAttempts = 0;
     const appServer = createFakeCodexAppServer({
@@ -2094,7 +2094,7 @@ describe("Codex app-server provider", () => {
               skills: [
                 {
                   name: "paseo-implement",
-                  description: "Execute an existing Paseo plan.",
+                  description: "Execute an existing Rambla plan.",
                   path: "/tmp/skills/paseo-implement/SKILL.md",
                 },
               ],

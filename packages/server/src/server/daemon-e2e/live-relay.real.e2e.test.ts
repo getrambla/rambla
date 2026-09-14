@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import pino from "pino";
 
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 import { generateLocalPairingOffer } from "../pairing-offer.js";
 import { CodexAppServerAgentClient } from "../agent/providers/codex-app-server-agent.js";
 import { buildRelayWebSocketUrl } from "@getpaseo/protocol/daemon-endpoints";
@@ -22,7 +22,7 @@ function requireOffer(url: string): ConnectionOffer {
   return offer;
 }
 
-async function pairingOfferFor(daemon: TestPaseoDaemon): Promise<ConnectionOffer> {
+async function pairingOfferFor(daemon: TestRamblaDaemon): Promise<ConnectionOffer> {
   const pairing = await generateLocalPairingOffer({
     paseoHome: daemon.paseoHome,
     relayEnabled: true,
@@ -55,7 +55,7 @@ function clientFor(offer: ConnectionOffer): DaemonClient {
 }
 
 describe("live hosted relay", () => {
-  let daemon: TestPaseoDaemon | null = null;
+  let daemon: TestRamblaDaemon | null = null;
   let client: DaemonClient | null = null;
 
   afterEach(async () => {
@@ -67,7 +67,7 @@ describe("live hosted relay", () => {
     "carries a complete DaemonClient agent workflow through the hosted relay",
     async () => {
       const logger = pino({ level: "silent" });
-      daemon = await createTestPaseoDaemon({
+      daemon = await createTestRamblaDaemon({
         listen: "127.0.0.1",
         relayEnabled: true,
         relayEndpoint,

@@ -662,7 +662,7 @@ describe("workspace message schemas", () => {
     expect(parsed.payload.workspace.worktreeSlug).toBeUndefined();
   });
 
-  test("preserves a Paseo-owned worktree slug", () => {
+  test("preserves a Rambla-owned worktree slug", () => {
     const parsed = WorkspaceDescriptorPayloadSchema.parse({
       id: "owned-worktree",
       projectId: "project",
@@ -1007,7 +1007,7 @@ describe("workspace message schemas", () => {
             gitRuntime: {
               currentBranch: "main",
               remoteUrl: "https://github.com/acme/repo.git",
-              isPaseoOwnedWorktree: false,
+              isRamblaOwnedWorktree: false,
               isDirty: true,
               aheadBehind: {
                 ahead: 2,
@@ -1070,7 +1070,7 @@ describe("workspace message schemas", () => {
             gitRuntime: {
               currentBranch: "main",
               remoteUrl: "https://github.com/acme/repo.git",
-              isPaseoOwnedWorktree: false,
+              isRamblaOwnedWorktree: false,
               isDirty: false,
               aheadBehind: {
                 ahead: 0,
@@ -1186,7 +1186,7 @@ describe("workspace message schemas", () => {
                 isGit: true,
                 currentBranch: "main",
                 remoteUrl: "https://github.com/acme/repo.git",
-                isPaseoOwnedWorktree: false,
+                isRamblaOwnedWorktree: false,
                 mainRepoRoot: null,
               },
             },

@@ -17,29 +17,29 @@ import {
   buildStringCommandShellInvocation,
   createStringCommandShellEnv,
 } from "./string-command-shell.js";
-import { readPaseoConfigJson, resolvePaseoConfigPath } from "./paseo-config-file.js";
+import { readRamblaConfigJson, resolveRamblaConfigPath } from "./paseo-config-file.js";
 export {
-  PaseoConfigRawSchema,
-  PaseoLifecycleCommandRawSchema,
-  PaseoScriptEntryRawSchema,
-  PaseoWorktreeConfigRawSchema,
-  PaseoConfigSchema,
-  type PaseoConfig,
-  type PaseoConfigRaw,
+  RamblaConfigRawSchema,
+  RamblaLifecycleCommandRawSchema,
+  RamblaScriptEntryRawSchema,
+  RamblaWorktreeConfigRawSchema,
+  RamblaConfigSchema,
+  type RamblaConfig,
+  type RamblaConfigRaw,
 } from "@getpaseo/protocol/paseo-config-schema";
-import { PaseoConfigSchema, type PaseoConfig } from "@getpaseo/protocol/paseo-config-schema";
+import { RamblaConfigSchema, type RamblaConfig } from "@getpaseo/protocol/paseo-config-schema";
 import {
-  createPaseoWorktreeChangeRequestHint,
+  createRamblaWorktreeChangeRequestHint,
   normalizeBaseRefName,
-  type PaseoWorktreeChangeRequestHint,
-  readPaseoWorktreeMetadata,
-  readPaseoWorktreeRuntimePort,
-  writePaseoWorktreeMetadata,
-  writePaseoWorktreeRuntimeMetadata,
+  type RamblaWorktreeChangeRequestHint,
+  readRamblaWorktreeMetadata,
+  readRamblaWorktreeRuntimePort,
+  writeRamblaWorktreeMetadata,
+  writeRamblaWorktreeRuntimeMetadata,
 } from "./worktree-metadata.js";
 import { runGitCommand } from "./run-git-command.js";
 import { spawnProcess } from "./spawn.js";
-import { resolvePaseoHome } from "../server/paseo-home.js";
+import { resolveRamblaHome } from "../server/paseo-home.js";
 import { createExternalProcessEnv } from "../server/paseo-env.js";
 import { parseGitRevParsePath, resolveGitRevParsePath } from "./git-rev-parse-path.js";
 import { expandTilde, getRealpathAwareRelativePath, isPathInsideRoot } from "./path.js";
@@ -149,21 +149,21 @@ export class WorktreeTeardownError extends Error {
   }
 }
 
-export interface PaseoWorktreeInfo {
+export interface RamblaWorktreeInfo {
   path: string;
   createdAt: string;
   branchName?: string;
   head?: string;
 }
 
-export interface PaseoWorktreeOwnership {
+export interface RamblaWorktreeOwnership {
   allowed: boolean;
   repoRoot?: string;
   worktreeRoot?: string;
   worktreePath?: string;
 }
 
-export interface PaseoWorktreeOwnershipOptions extends WorktreeRootOptions {
+export interface RamblaWorktreeOwnershipOptions extends WorktreeRootOptions {
   knownGitCommonDir?: string | null;
 }
 
@@ -246,19 +246,19 @@ export class InvalidGitBranchNameError extends Error {
   }
 }
 
-export type ReadPaseoConfigResult =
-  | { ok: true; config: PaseoConfig | null }
+export type ReadRamblaConfigResult =
+  | { ok: true; config: RamblaConfig | null }
   | { ok: false; configPath: string; error: unknown };
 
-export function readPaseoConfig(repoRoot: string): ReadPaseoConfigResult {
+export function readRamblaConfig(repoRoot: string): ReadRamblaConfigResult {
   try {
-    const json = readPaseoConfigJson(repoRoot);
+    const json = readRamblaConfigJson(repoRoot);
     if (json === null) {
       return { ok: true, config: null };
     }
-    return { ok: true, config: PaseoConfigSchema.parse(json) };
+    return { ok: true, config: RamblaConfigSchema.parse(json) };
   } catch (error) {
-    return { ok: false, configPath: resolvePaseoConfigPath(repoRoot), error };
+    return { ok: false, configPath: resolveRamblaConfigPath(repoRoot), error };
   }
 }
 
@@ -269,8 +269,8 @@ export function paseoConfigParseError(failure: { configPath: string; error: unkn
   });
 }
 
-function readPaseoConfigOrThrow(repoRoot: string): PaseoConfig | null {
-  const result = readPaseoConfig(repoRoot);
+function readRamblaConfigOrThrow(repoRoot: string): RamblaConfig | null {
+  const result = readRamblaConfig(repoRoot);
   if (!result.ok) {
     throw paseoConfigParseError(result);
   }
@@ -278,15 +278,15 @@ function readPaseoConfigOrThrow(repoRoot: string): PaseoConfig | null {
 }
 
 export function getWorktreeSetupCommands(repoRoot: string): string[] {
-  return readPaseoConfigOrThrow(repoRoot)?.worktree?.setup ?? [];
+  return readRamblaConfigOrThrow(repoRoot)?.worktree?.setup ?? [];
 }
 
 export function getWorktreeTeardownCommands(repoRoot: string): string[] {
-  return readPaseoConfigOrThrow(repoRoot)?.worktree?.teardown ?? [];
+  return readRamblaConfigOrThrow(repoRoot)?.worktree?.teardown ?? [];
 }
 
 export function getWorktreeTerminalSpecs(repoRoot: string): WorktreeTerminalConfig[] {
-  const terminals = readPaseoConfigOrThrow(repoRoot)?.worktree?.terminals;
+  const terminals = readRamblaConfigOrThrow(repoRoot)?.worktree?.terminals;
   if (!Array.isArray(terminals) || terminals.length === 0) {
     return [];
   }
@@ -319,7 +319,7 @@ export function getWorktreeTerminalSpecs(repoRoot: string): WorktreeTerminalConf
   return specs;
 }
 
-export function getScriptConfigs(config: PaseoConfig | null): Map<string, ScriptConfig> {
+export function getScriptConfigs(config: RamblaConfig | null): Map<string, ScriptConfig> {
   const scripts = config?.scripts;
   if (!scripts || typeof scripts !== "object") {
     return new Map();
@@ -722,12 +722,12 @@ export async function resolveWorktreeRuntimeEnv(options: {
   const branchName =
     options.branchName ?? (await resolveBranchNameForWorktreePath(options.worktreePath));
 
-  let worktreePort = readPaseoWorktreeRuntimePort(options.worktreePath);
+  let worktreePort = readRamblaWorktreeRuntimePort(options.worktreePath);
   if (worktreePort === null) {
     worktreePort = await getAvailablePort();
-    const metadata = readPaseoWorktreeMetadata(options.worktreePath);
+    const metadata = readRamblaWorktreeMetadata(options.worktreePath);
     if (metadata) {
-      writePaseoWorktreeRuntimeMetadata(options.worktreePath, { worktreePort });
+      writeRamblaWorktreeRuntimeMetadata(options.worktreePath, { worktreePort });
     }
   } else {
     await assertPortAvailable(worktreePort);
@@ -765,7 +765,7 @@ export async function runWorktreeTeardownCommands(options: {
     options.repoRootPath ?? (await inferRepoRootPathFromWorktreePath(options.worktreePath));
   const branchName =
     options.branchName ?? (await resolveBranchNameForWorktreePath(options.worktreePath));
-  const worktreePort = readPaseoWorktreeRuntimePort(options.worktreePath);
+  const worktreePort = readRamblaWorktreeRuntimePort(options.worktreePath);
 
   const teardownEnv: NodeJS.ProcessEnv = createStringCommandShellEnv(
     createExternalProcessEnv(process.env, {
@@ -800,7 +800,7 @@ export async function runWorktreeTeardownCommands(options: {
   return results;
 }
 
-export async function seedPaseoConfigFile(options: {
+export async function seedRamblaConfigFile(options: {
   sourceCwd: string;
   targetCwd: string;
 }): Promise<void> {
@@ -851,26 +851,26 @@ export async function deriveWorktreeProjectHash(cwd: string): Promise<string> {
   }
 }
 
-export function resolvePaseoWorktreesBaseRoot(options?: WorktreeRootOptions): string {
+export function resolveRamblaWorktreesBaseRoot(options?: WorktreeRootOptions): string {
   if (options?.worktreesRoot) {
     const expandedRoot = expandTilde(options.worktreesRoot);
     if (isAbsolute(expandedRoot)) {
       return resolve(expandedRoot);
     }
-    const home = options.paseoHome ? resolve(options.paseoHome) : resolvePaseoHome();
+    const home = options.paseoHome ? resolve(options.paseoHome) : resolveRamblaHome();
     return resolve(home, expandedRoot);
   }
 
-  const home = options?.paseoHome ? resolve(options.paseoHome) : resolvePaseoHome();
+  const home = options?.paseoHome ? resolve(options.paseoHome) : resolveRamblaHome();
   return join(home, "worktrees");
 }
 
-export async function getPaseoWorktreesRoot(
+export async function getRamblaWorktreesRoot(
   cwd: string,
   paseoHome?: string,
   worktreesRoot?: string,
 ): Promise<string> {
-  const baseRoot = resolvePaseoWorktreesBaseRoot({ paseoHome, worktreesRoot });
+  const baseRoot = resolveRamblaWorktreesBaseRoot({ paseoHome, worktreesRoot });
   const projectHash = await deriveWorktreeProjectHash(cwd);
   return join(baseRoot, projectHash);
 }
@@ -881,7 +881,7 @@ export async function computeWorktreePath(
   paseoHome?: string,
   worktreesRoot?: string,
 ): Promise<string> {
-  const projectWorktreesRoot = await getPaseoWorktreesRoot(cwd, paseoHome, worktreesRoot);
+  const projectWorktreesRoot = await getRamblaWorktreesRoot(cwd, paseoHome, worktreesRoot);
   return join(projectWorktreesRoot, slug);
 }
 
@@ -930,10 +930,10 @@ function resolveRepoRootFromGitCommonDir(commonDir: string): string {
     : normalizedCommonDir;
 }
 
-export async function isPaseoOwnedWorktreeCwd(
+export async function isRamblaOwnedWorktreeCwd(
   cwd: string,
-  options?: PaseoWorktreeOwnershipOptions,
-): Promise<PaseoWorktreeOwnership> {
+  options?: RamblaWorktreeOwnershipOptions,
+): Promise<RamblaWorktreeOwnership> {
   const resolvedCwd = normalizePathForOwnership(cwd);
 
   // repoRoot is best-effort: git may be unreachable from the worktree (e.g. a
@@ -951,7 +951,7 @@ export async function isPaseoOwnedWorktreeCwd(
     }
   }
 
-  const worktreesBaseRoot = resolvePaseoWorktreesBaseRoot(options);
+  const worktreesBaseRoot = resolveRamblaWorktreesBaseRoot(options);
   const relativePath = getRealpathAwareRelativePath(worktreesBaseRoot, resolvedCwd);
 
   // Ownership is defined by the path living under <worktrees-root>/<hash>/<slug>[/...].
@@ -984,11 +984,11 @@ export async function isPaseoOwnedWorktreeCwd(
   };
 }
 
-type ParsedPaseoWorktreeInfo = Omit<PaseoWorktreeInfo, "createdAt">;
+type ParsedRamblaWorktreeInfo = Omit<RamblaWorktreeInfo, "createdAt">;
 
-function parseWorktreeList(output: string): ParsedPaseoWorktreeInfo[] {
-  const entries: ParsedPaseoWorktreeInfo[] = [];
-  let current: ParsedPaseoWorktreeInfo | null = null;
+function parseWorktreeList(output: string): ParsedRamblaWorktreeInfo[] {
+  const entries: ParsedRamblaWorktreeInfo[] = [];
+  let current: ParsedRamblaWorktreeInfo | null = null;
 
   for (const line of output.split("\n")) {
     if (line.startsWith("worktree ")) {
@@ -1035,7 +1035,7 @@ function resolveWorktreeCreatedAtIso(worktreePath: string): string {
   }
 }
 
-export async function listPaseoWorktrees({
+export async function listRamblaWorktrees({
   cwd,
   paseoHome,
   worktreesRoot,
@@ -1043,8 +1043,8 @@ export async function listPaseoWorktrees({
   cwd: string;
   paseoHome?: string;
   worktreesRoot?: string;
-}): Promise<PaseoWorktreeInfo[]> {
-  const projectWorktreesRoot = await getPaseoWorktreesRoot(cwd, paseoHome, worktreesRoot);
+}): Promise<RamblaWorktreeInfo[]> {
+  const projectWorktreesRoot = await getRamblaWorktreesRoot(cwd, paseoHome, worktreesRoot);
   const { stdout } = await runGitCommand(["worktree", "list", "--porcelain"], {
     cwd,
     envOverlay: READ_ONLY_GIT_ENV,
@@ -1058,7 +1058,7 @@ export async function listPaseoWorktrees({
     );
 }
 
-export interface DeletePaseoWorktreeOptions {
+export interface DeleteRamblaWorktreeOptions {
   cwd: string | null;
   worktreePath?: string;
   teardownCwds?: string[];
@@ -1068,7 +1068,7 @@ export interface DeletePaseoWorktreeOptions {
   worktreesBaseRoot?: string;
 }
 
-export async function deletePaseoWorktree({
+export async function deleteRamblaWorktree({
   cwd,
   worktreePath,
   teardownCwds,
@@ -1076,7 +1076,7 @@ export async function deletePaseoWorktree({
   worktreesRoot,
   paseoHome,
   worktreesBaseRoot,
-}: DeletePaseoWorktreeOptions): Promise<void> {
+}: DeleteRamblaWorktreeOptions): Promise<void> {
   if (!worktreePath && !worktreeSlug) {
     throw new Error("worktreePath or worktreeSlug is required");
   }
@@ -1088,14 +1088,14 @@ export async function deletePaseoWorktree({
   if (worktreesRoot) {
     resolvedWorktreesRoot = worktreesRoot;
   } else if (cwd) {
-    resolvedWorktreesRoot = await getPaseoWorktreesRoot(cwd, paseoHome, worktreesBaseRoot);
+    resolvedWorktreesRoot = await getRamblaWorktreesRoot(cwd, paseoHome, worktreesBaseRoot);
   } else {
     throw new Error("cwd or worktreesRoot is required to delete a Rambla worktree");
   }
 
   const requestedPath = worktreePath ?? join(resolvedWorktreesRoot, worktreeSlug!);
   const resolvedRequested = normalizePathForOwnership(requestedPath);
-  const ownership = await isPaseoOwnedWorktreeCwd(requestedPath, {
+  const ownership = await isRamblaOwnedWorktreeCwd(requestedPath, {
     paseoHome,
     worktreesRoot: worktreesBaseRoot,
   });
@@ -1144,13 +1144,13 @@ export async function deletePaseoWorktree({
   }
 }
 
-export async function rollbackCreatedPaseoWorktree(
-  options: DeletePaseoWorktreeOptions,
+export async function rollbackCreatedRamblaWorktree(
+  options: DeleteRamblaWorktreeOptions,
   cause: unknown,
 ): Promise<never> {
   let cleanupError: unknown;
   try {
-    await deletePaseoWorktree(options);
+    await deleteRamblaWorktree(options);
   } catch (error) {
     cleanupError = error;
   }
@@ -1218,7 +1218,7 @@ export const createWorktree = async ({
   worktreesRoot,
 }: CreateWorktreeOptions): Promise<WorktreeConfig> => {
   const sourcePlan = await resolveWorktreeSourcePlan({ cwd, source, desiredSlug: worktreeSlug });
-  let worktreePath = join(await getPaseoWorktreesRoot(cwd, paseoHome, worktreesRoot), worktreeSlug);
+  let worktreePath = join(await getRamblaWorktreesRoot(cwd, paseoHome, worktreesRoot), worktreeSlug);
   mkdirSync(dirname(worktreePath), { recursive: true });
 
   // Also handle worktree path collision
@@ -1251,7 +1251,7 @@ export const createWorktree = async ({
     });
   }
 
-  writePaseoWorktreeMetadata(worktreePath, {
+  writeRamblaWorktreeMetadata(worktreePath, {
     baseRefName: sourcePlan.metadataBaseRefName,
     ...(sourcePlan.metadataBaseRef ? { baseRef: sourcePlan.metadataBaseRef } : {}),
     ...(sourcePlan.changeRequestLookupTarget
@@ -1259,7 +1259,7 @@ export const createWorktree = async ({
       : {}),
   });
 
-  await seedPaseoConfigFile({ sourceCwd: cwd, targetCwd: worktreePath });
+  await seedRamblaConfigFile({ sourceCwd: cwd, targetCwd: worktreePath });
 
   if (runSetup) {
     await runWorktreeSetupCommands({
@@ -1288,7 +1288,7 @@ interface WorktreeSourcePlan {
   // upstream — so comparisons and actions read the ref and the UI reads the name.
   metadataBaseRefName: string;
   metadataBaseRef?: string;
-  changeRequestLookupTarget?: PaseoWorktreeChangeRequestHint;
+  changeRequestLookupTarget?: RamblaWorktreeChangeRequestHint;
   addArguments: string[];
   pushRemote?: {
     name: string;
@@ -1322,7 +1322,7 @@ async function resolveWorktreeSourcePlan({
         branchName: newBranchName,
         metadataBaseRefName: normalizedBaseBranch,
         metadataBaseRef: resolvedBaseBranch,
-        changeRequestLookupTarget: createPaseoWorktreeChangeRequestHint({
+        changeRequestLookupTarget: createRamblaWorktreeChangeRequestHint({
           headRef: newBranchName,
           localBranchName: newBranchName,
         }),
@@ -1346,7 +1346,7 @@ async function resolveWorktreeSourcePlan({
         return {
           branchName,
           metadataBaseRefName: source.branchName,
-          changeRequestLookupTarget: createPaseoWorktreeChangeRequestHint({
+          changeRequestLookupTarget: createRamblaWorktreeChangeRequestHint({
             headRef: branchName,
             localBranchName: branchName,
           }),
@@ -1357,7 +1357,7 @@ async function resolveWorktreeSourcePlan({
       return {
         branchName: source.branchName,
         metadataBaseRefName: source.branchName,
-        changeRequestLookupTarget: createPaseoWorktreeChangeRequestHint({
+        changeRequestLookupTarget: createRamblaWorktreeChangeRequestHint({
           headRef: source.branchName,
           localBranchName: source.branchName,
         }),
@@ -1414,7 +1414,7 @@ async function resolveWorktreeSourcePlan({
       return {
         branchName: localBranchName,
         metadataBaseRefName: normalizedBaseRefName,
-        changeRequestLookupTarget: createPaseoWorktreeChangeRequestHint({
+        changeRequestLookupTarget: createRamblaWorktreeChangeRequestHint({
           headRef: source.headRef,
           ...(source.headRepositoryOwner
             ? { headRepositoryOwner: source.headRepositoryOwner }

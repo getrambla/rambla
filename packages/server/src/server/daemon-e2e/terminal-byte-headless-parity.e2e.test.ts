@@ -10,7 +10,7 @@ import type { TerminalCell, TerminalState } from "@getpaseo/protocol/messages";
 import { renderTerminalSnapshotToAnsi } from "@getpaseo/protocol/terminal-snapshot";
 import type { TerminalStreamEvent } from "@getpaseo/client/internal/terminal-stream-router";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 
 const BYTE_DONE_MARKER = "__RAMBLA_BYTE_PACKAGE_LOCK_DONE__";
 const BYTE_TEST_SIZE = { rows: 24, cols: 100 };
@@ -25,7 +25,7 @@ interface CreatedTerminal {
 }
 
 test("byte-stream headless terminal matches daemon state after high-output attach and restore", async () => {
-  const daemon = await createTestPaseoDaemon();
+  const daemon = await createTestRamblaDaemon();
   const client = new DaemonClient({
     url: `ws://127.0.0.1:${daemon.port}/ws`,
     appVersion: "0.1.96",

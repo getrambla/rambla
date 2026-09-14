@@ -1,6 +1,6 @@
-# Paseo Docker Image
+# Rambla Docker Image
 
-This directory contains the official Paseo daemon image.
+This directory contains the official Rambla daemon image.
 
 The image runs the daemon headless and serves the bundled web UI from the same
 HTTP origin. Start it, then open the daemon URL in a browser.

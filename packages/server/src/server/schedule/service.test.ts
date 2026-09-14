@@ -78,13 +78,13 @@ let workspaceArchiveInProgress = false;
 
 type TestScheduleServiceOptions = Omit<
   ScheduleServiceOptions,
-  "createAgent" | "createDirectoryWorkspace" | "createPaseoWorktreeWorkspace" | "archiveWorkspace"
+  "createAgent" | "createDirectoryWorkspace" | "createRamblaWorktreeWorkspace" | "archiveWorkspace"
 > & {
   agentManager: AgentManager;
   providerSnapshotManager: Pick<ProviderSnapshotManager, "resolveCreateConfig">;
   createAgent?: ScheduleServiceOptions["createAgent"];
   createDirectoryWorkspace?: ScheduleServiceOptions["createDirectoryWorkspace"];
-  createPaseoWorktreeWorkspace?: ScheduleServiceOptions["createPaseoWorktreeWorkspace"];
+  createRamblaWorktreeWorkspace?: ScheduleServiceOptions["createRamblaWorktreeWorkspace"];
   archiveWorkspace?: ScheduleServiceOptions["archiveWorkspace"];
 };
 
@@ -172,8 +172,8 @@ function createScheduleService(options: TestScheduleServiceOptions): ScheduleSer
           input,
         )),
     createDirectoryWorkspace: options.createDirectoryWorkspace ?? createDefaultWorkspace,
-    createPaseoWorktreeWorkspace:
-      options.createPaseoWorktreeWorkspace ??
+    createRamblaWorktreeWorkspace:
+      options.createRamblaWorktreeWorkspace ??
       (async (input) => {
         const workspace = await createDefaultWorkspace(input);
         return {

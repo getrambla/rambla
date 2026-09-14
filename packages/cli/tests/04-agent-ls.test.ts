@@ -23,7 +23,7 @@ import assert from "node:assert";
 import { mkdtemp, rm } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
-import { runLocalPaseo } from "./helpers/local-cli.ts";
+import { runLocalRambla } from "./helpers/local-cli.ts";
 
 console.log("=== LS Command Tests ===\n");
 
@@ -35,7 +35,7 @@ try {
   // Test 1: paseo --help shows ls command
   {
     console.log("Test 1: paseo --help shows ls command");
-    const result = await runLocalPaseo(["--help"]);
+    const result = await runLocalRambla(["--help"]);
     assert.strictEqual(result.exitCode, 0, "paseo --help should exit 0");
     assert(result.stdout.includes("ls"), "help should mention ls command");
     console.log("✓ paseo --help shows ls command\n");
@@ -44,7 +44,7 @@ try {
   // Test 2: paseo ls --help shows options
   {
     console.log("Test 2: paseo ls --help shows options");
-    const result = await runLocalPaseo(["ls", "--help"]);
+    const result = await runLocalRambla(["ls", "--help"]);
     assert.strictEqual(result.exitCode, 0, "paseo ls --help should exit 0");
     assert(result.stdout.includes("-a"), "help should mention -a flag");
     assert(result.stdout.includes("--all"), "help should mention --all flag");
@@ -60,7 +60,7 @@ try {
   // Test 3: paseo ls returns error when no daemon running
   {
     console.log("Test 3: paseo ls handles daemon not running");
-    const result = await runLocalPaseo(["ls"], {
+    const result = await runLocalRambla(["ls"], {
       RAMBLA_HOST: `localhost:${port}`,
       RAMBLA_HOME: paseoHome,
     });
@@ -83,7 +83,7 @@ try {
   // Test 4: paseo ls --json returns valid JSON error
   {
     console.log("Test 4: paseo ls --json handles errors");
-    const result = await runLocalPaseo(["ls", "--json"], {
+    const result = await runLocalRambla(["ls", "--json"], {
       RAMBLA_HOST: `localhost:${port}`,
       RAMBLA_HOME: paseoHome,
     });
@@ -107,7 +107,7 @@ try {
   // Test 5: paseo ls -a flag is accepted
   {
     console.log("Test 5: paseo ls -a flag is accepted");
-    const result = await runLocalPaseo(["ls", "-a"], {
+    const result = await runLocalRambla(["ls", "-a"], {
       RAMBLA_HOST: `localhost:${port}`,
       RAMBLA_HOME: paseoHome,
     });
@@ -122,7 +122,7 @@ try {
   // Test 6: paseo ls -g flag is accepted
   {
     console.log("Test 6: paseo ls -g flag is accepted");
-    const result = await runLocalPaseo(["ls", "-g"], {
+    const result = await runLocalRambla(["ls", "-g"], {
       RAMBLA_HOST: `localhost:${port}`,
       RAMBLA_HOME: paseoHome,
     });
@@ -135,7 +135,7 @@ try {
   // Test 7: paseo ls -ag combined flags are accepted
   {
     console.log("Test 7: paseo ls -ag combined flags are accepted");
-    const result = await runLocalPaseo(["ls", "-ag"], {
+    const result = await runLocalRambla(["ls", "-ag"], {
       RAMBLA_HOST: `localhost:${port}`,
       RAMBLA_HOME: paseoHome,
     });
@@ -148,7 +148,7 @@ try {
   // Test 8: -q (quiet) flag is accepted globally
   {
     console.log("Test 8: -q (quiet) flag is accepted");
-    const result = await runLocalPaseo(["-q", "ls"], {
+    const result = await runLocalRambla(["-q", "ls"], {
       RAMBLA_HOST: `localhost:${port}`,
       RAMBLA_HOME: paseoHome,
     });
@@ -161,7 +161,7 @@ try {
   // Test 9: paseo ls --ui is rejected (flag removed)
   {
     console.log("Test 9: paseo ls --ui is rejected");
-    const result = await runLocalPaseo(["ls", "--ui"], {
+    const result = await runLocalRambla(["ls", "--ui"], {
       RAMBLA_HOST: `localhost:${port}`,
       RAMBLA_HOME: paseoHome,
     });
@@ -175,7 +175,7 @@ try {
   {
     console.log("Test 10: global --host targets the requested daemon");
     const host = `localhost:${port}`;
-    const result = await runLocalPaseo(["--host", host, "ls"], {
+    const result = await runLocalRambla(["--host", host, "ls"], {
       RAMBLA_HOST: "localhost:1",
       RAMBLA_HOME: paseoHome,
     });
@@ -190,7 +190,7 @@ try {
     console.log("Test 11: the last explicit --host wins");
     const firstHost = `localhost:${port}`;
     const lastHost = `localhost:${port + 1}`;
-    const result = await runLocalPaseo(["--host", firstHost, "ls", "--host", lastHost]);
+    const result = await runLocalRambla(["--host", firstHost, "ls", "--host", lastHost]);
     const output = result.stdout + result.stderr;
     assert.notStrictEqual(result.exitCode, 0, "should fail when the selected daemon is absent");
     assert(output.includes(lastHost), "connection error should name the last explicit host");

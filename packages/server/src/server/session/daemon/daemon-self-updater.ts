@@ -4,7 +4,7 @@ import {
   validateDaemonInstallOrigin,
   type DaemonInstallOriginRuntime,
 } from "./install-origin.js";
-import { npmGlobalPaseoCli, type NpmGlobalPaseoCli } from "./npm-global-cli.js";
+import { npmGlobalRamblaCli, type NpmGlobalRamblaCli } from "./npm-global-cli.js";
 
 export type DaemonSelfUpdatePhase = "starting" | "downloading" | "installing" | "complete";
 
@@ -27,7 +27,7 @@ export interface DaemonSelfUpdateLogger {
 }
 
 export interface DaemonSelfUpdateRuntime {
-  npm: NpmGlobalPaseoCli;
+  npm: NpmGlobalRamblaCli;
   installOrigin: DaemonInstallOriginRuntime;
 }
 
@@ -39,7 +39,7 @@ export class DaemonSelfUpdateInProgressError extends Error {
 }
 
 const defaultRuntime: DaemonSelfUpdateRuntime = {
-  npm: npmGlobalPaseoCli,
+  npm: npmGlobalRamblaCli,
   installOrigin: daemonInstallOriginRuntime,
 };
 

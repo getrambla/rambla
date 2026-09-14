@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { app, ipcMain, powerMonitor } from "electron";
 import log from "electron-log/main";
-import { resolvePaseoHome, spawnProcess } from "@getpaseo/server";
+import { resolveRamblaHome, spawnProcess } from "@getpaseo/server";
 import {
   copyAttachmentFileToManagedStorage,
   deleteManagedAttachmentFile,
@@ -114,17 +114,17 @@ function parseDesktopDaemonStopReason(
 // Utilities
 // ---------------------------------------------------------------------------
 
-function getPaseoHome(): string {
-  return resolvePaseoHome(process.env);
+function getRamblaHome(): string {
+  return resolveRamblaHome(process.env);
 }
 
 function logFilePath(): string {
-  return path.join(getPaseoHome(), DAEMON_LOG_FILENAME);
+  return path.join(getRamblaHome(), DAEMON_LOG_FILENAME);
 }
 
 export function isDesktopManagedDaemonRunningSync(): boolean {
   try {
-    const raw = readFileSync(path.join(getPaseoHome(), "rambla.pid"), "utf-8");
+    const raw = readFileSync(path.join(getRamblaHome(), "rambla.pid"), "utf-8");
     const lock = JSON.parse(raw) as { pid?: unknown; desktopManaged?: unknown };
     if (lock.desktopManaged !== true) return false;
     if (typeof lock.pid !== "number" || !Number.isInteger(lock.pid)) return false;
@@ -270,7 +270,7 @@ function resolveDesktopAppVersion(): string {
 // ---------------------------------------------------------------------------
 
 export async function resolveDesktopDaemonStatus(): Promise<DesktopDaemonStatus> {
-  const home = getPaseoHome();
+  const home = getRamblaHome();
 
   try {
     const payload = (await runExternalCliJsonCommand(["daemon", "status", "--json"])) as Record<

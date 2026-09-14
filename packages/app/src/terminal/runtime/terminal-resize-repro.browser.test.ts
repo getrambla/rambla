@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { TerminalState } from "@getpaseo/protocol/messages";
 import { encodeTerminalOutput, TerminalEmulatorRuntime } from "./terminal-emulator-runtime";
 
-// Regression: "streaming pino log, resized the Paseo terminal, old logs stayed
+// Regression: "streaming pino log, resized the Rambla terminal, old logs stayed
 // narrow and new logs drew on top of the old ones."
 //
 // A heavy stream overflows MAX_TERMINAL_OUTPUT_FRAME_BYTES, so the server sends a
@@ -140,7 +140,7 @@ afterEach(() => {
   }
 });
 
-describe("terminal resize reflow repro (Paseo terminal)", () => {
+describe("terminal resize reflow repro (Rambla terminal)", () => {
   it("snapshot-restored rows stay frozen at the snapshot width after the terminal grows", async () => {
     await page.viewport(1600, 700);
     const m = mount(560, 360); // ~70 cols

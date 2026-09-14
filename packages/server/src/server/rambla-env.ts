@@ -10,7 +10,7 @@ const RUNTIME_CONTROL_ENV_KEYS = [
   "ESBUILD_BINARY_PATH",
 ] as const;
 
-export type PaseoNodeEnv = "development" | "production" | "test";
+export type RamblaNodeEnv = "development" | "production" | "test";
 export type ProcessEnvRecord = Record<string, string | undefined>;
 export type ExternalProcessEnv = NodeJS.ProcessEnv & Record<string, string>;
 
@@ -34,7 +34,7 @@ function buildExternalProcessEnv(
   return sanitized as ExternalProcessEnv;
 }
 
-export function createPaseoInternalEnv(baseEnv: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+export function createRamblaInternalEnv(baseEnv: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return buildInternalProcessEnv(baseEnv);
 }
 
@@ -76,7 +76,7 @@ export function buildSelfNodeCommand(
   };
 }
 
-export function resolvePaseoNodeEnv(env: NodeJS.ProcessEnv): PaseoNodeEnv | undefined {
+export function resolveRamblaNodeEnv(env: NodeJS.ProcessEnv): RamblaNodeEnv | undefined {
   const value = env[RAMBLA_NODE_ENV];
   return value === "development" || value === "production" || value === "test" ? value : undefined;
 }

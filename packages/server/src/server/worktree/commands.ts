@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { getPaseoWorktreesRoot, isPaseoOwnedWorktreeCwd } from "../../utils/worktree.js";
+import { getRamblaWorktreesRoot, isRamblaOwnedWorktreeCwd } from "../../utils/worktree.js";
 import {
   archiveByScope,
   resolveWorkspaceIdAtPath,
@@ -8,24 +8,24 @@ import {
   type ArchiveScope,
 } from "../workspace-archive-service.js";
 import type {
-  CreatePaseoWorktreeInput,
-  CreatePaseoWorktreeResult,
+  CreateRamblaWorktreeInput,
+  CreateRamblaWorktreeResult,
 } from "../paseo-worktree-service.js";
 import { toWorktreeWireError, type WorktreeWireError } from "../worktree-errors.js";
 import type { WorkspaceGitService, WorkspaceGitWorktreeInfo } from "../workspace-git-service.js";
 
-export interface ListPaseoWorktreesCommandDependencies {
+export interface ListRamblaWorktreesCommandDependencies {
   workspaceGitService: Pick<WorkspaceGitService, "listWorktrees">;
 }
 
-export interface ListPaseoWorktreesCommandInput {
+export interface ListRamblaWorktreesCommandInput {
   cwd: string;
   reason?: string;
 }
 
-export async function listPaseoWorktreesCommand(
-  dependencies: ListPaseoWorktreesCommandDependencies,
-  input: ListPaseoWorktreesCommandInput,
+export async function listRamblaWorktreesCommand(
+  dependencies: ListRamblaWorktreesCommandDependencies,
+  input: ListRamblaWorktreesCommandInput,
 ): Promise<WorkspaceGitWorktreeInfo[]> {
   if (input.reason) {
     return dependencies.workspaceGitService.listWorktrees(input.cwd, { reason: input.reason });
@@ -33,27 +33,27 @@ export async function listPaseoWorktreesCommand(
   return dependencies.workspaceGitService.listWorktrees(input.cwd);
 }
 
-type CreatePaseoWorktreeWorkflow<Result extends CreatePaseoWorktreeResult> = (
-  input: CreatePaseoWorktreeInput,
+type CreateRamblaWorktreeWorkflow<Result extends CreateRamblaWorktreeResult> = (
+  input: CreateRamblaWorktreeInput,
 ) => Promise<Result>;
 
-export interface CreatePaseoWorktreeCommandDependencies<
-  Result extends CreatePaseoWorktreeResult = CreatePaseoWorktreeResult,
+export interface CreateRamblaWorktreeCommandDependencies<
+  Result extends CreateRamblaWorktreeResult = CreateRamblaWorktreeResult,
 > {
   paseoHome?: string;
   worktreesRoot?: string;
-  createPaseoWorktreeWorkflow?: CreatePaseoWorktreeWorkflow<Result>;
+  createRamblaWorktreeWorkflow?: CreateRamblaWorktreeWorkflow<Result>;
 }
 
-export type CreatePaseoWorktreeCommandInput = Omit<
-  CreatePaseoWorktreeInput,
+export type CreateRamblaWorktreeCommandInput = Omit<
+  CreateRamblaWorktreeInput,
   "paseoHome" | "runSetup"
 > & {
   paseoHome?: string;
   worktreesRoot?: string;
 };
 
-export type CreatePaseoWorktreeCommandResult<Result extends CreatePaseoWorktreeResult> =
+export type CreateRamblaWorktreeCommandResult<Result extends CreateRamblaWorktreeResult> =
   | {
       ok: true;
       createdWorktree: Result;
@@ -64,16 +64,16 @@ export type CreatePaseoWorktreeCommandResult<Result extends CreatePaseoWorktreeR
       cause: unknown;
     };
 
-export async function createPaseoWorktreeCommand<Result extends CreatePaseoWorktreeResult>(
-  dependencies: CreatePaseoWorktreeCommandDependencies<Result>,
-  input: CreatePaseoWorktreeCommandInput,
-): Promise<CreatePaseoWorktreeCommandResult<Result>> {
+export async function createRamblaWorktreeCommand<Result extends CreateRamblaWorktreeResult>(
+  dependencies: CreateRamblaWorktreeCommandDependencies<Result>,
+  input: CreateRamblaWorktreeCommandInput,
+): Promise<CreateRamblaWorktreeCommandResult<Result>> {
   try {
-    if (!dependencies.createPaseoWorktreeWorkflow) {
+    if (!dependencies.createRamblaWorktreeWorkflow) {
       throw new Error("Rambla worktree service is not configured");
     }
 
-    const createdWorktree = await dependencies.createPaseoWorktreeWorkflow({
+    const createdWorktree = await dependencies.createRamblaWorktreeWorkflow({
       ...input,
       runSetup: false,
       paseoHome: input.paseoHome ?? dependencies.paseoHome,
@@ -124,7 +124,7 @@ export async function archiveCommand(
 ): Promise<ArchiveCommandResult> {
   const targetPath = await resolveArchiveTarget(dependencies, input);
   const scope = input.scope ?? "workspace";
-  const ownership = await isPaseoOwnedWorktreeCwd(targetPath, {
+  const ownership = await isRamblaOwnedWorktreeCwd(targetPath, {
     paseoHome: dependencies.paseoHome,
     worktreesRoot: dependencies.paseoWorktreesBaseRoot,
   });
@@ -208,7 +208,7 @@ async function resolveWorktreeSlugPath(
   repoRoot: string,
   worktreeSlug: string,
 ): Promise<string> {
-  const worktreesRoot = await getPaseoWorktreesRoot(
+  const worktreesRoot = await getRamblaWorktreesRoot(
     repoRoot,
     dependencies.paseoHome,
     dependencies.paseoWorktreesBaseRoot,

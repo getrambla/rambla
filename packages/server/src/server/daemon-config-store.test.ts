@@ -400,7 +400,7 @@ describe("DaemonConfigStore", () => {
     });
   });
 
-  test("patch persists provider Paseo-tool policy without changing availability", () => {
+  test("patch persists provider Rambla-tool policy without changing availability", () => {
     const paseoHome = mkdtempSync(path.join(tmpdir(), "paseo-daemon-config-store-"));
     tempDirs.push(paseoHome);
     writeFileSync(
@@ -895,7 +895,7 @@ describe("DaemonConfigStore", () => {
       providers: {
         "paseo-e2e-acp": {
           extends: "acp",
-          label: "Paseo E2E ACP",
+          label: "Rambla E2E ACP",
           description: "E2E ACP provider fixture",
           command: ["npx", "-y", "--version"],
           env: {},
@@ -906,7 +906,7 @@ describe("DaemonConfigStore", () => {
     const persisted = loadPersistedConfig(paseoHome);
     expect(persisted.agents?.providers?.["paseo-e2e-acp"]).toEqual({
       extends: "acp",
-      label: "Paseo E2E ACP",
+      label: "Rambla E2E ACP",
       description: "E2E ACP provider fixture",
       command: ["npx", "-y", "--version"],
       env: {},

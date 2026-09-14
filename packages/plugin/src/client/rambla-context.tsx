@@ -1,18 +1,18 @@
-import type { PaseoApi } from "@getpaseo/client";
+import type { RamblaApi } from "@getpaseo/client";
 import { createContext, useContext, type ReactNode } from "react";
 
-const PaseoApiContext = createContext<PaseoApi | null>(null);
+const RamblaApiContext = createContext<RamblaApi | null>(null);
 
-export function usePaseoContextValue(): PaseoApi | null {
-  return useContext(PaseoApiContext);
+export function useRamblaContextValue(): RamblaApi | null {
+  return useContext(RamblaApiContext);
 }
 
-export function PaseoApiProvider({ children, paseo }: { children: ReactNode; paseo: PaseoApi }) {
-  return <PaseoApiContext.Provider value={paseo}>{children}</PaseoApiContext.Provider>;
+export function RamblaApiProvider({ children, paseo }: { children: ReactNode; paseo: RamblaApi }) {
+  return <RamblaApiContext.Provider value={paseo}>{children}</RamblaApiContext.Provider>;
 }
 
-export function usePaseo(): PaseoApi {
-  const paseo = usePaseoContextValue();
-  if (!paseo) throw new Error("usePaseo must run inside a contributed plugin surface");
+export function useRambla(): RamblaApi {
+  const paseo = useRamblaContextValue();
+  if (!paseo) throw new Error("useRambla must run inside a contributed plugin surface");
   return paseo;
 }

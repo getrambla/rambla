@@ -690,7 +690,7 @@ describe("ACPAgentSession terminal tools", () => {
 });
 
 describe("mapACPUsage", () => {
-  test("maps ACP usage fields into Paseo usage", () => {
+  test("maps ACP usage fields into Rambla usage", () => {
     expect(
       mapACPUsage({
         inputTokens: 11,
@@ -1194,7 +1194,7 @@ describe("ACPAgentSession Zed parity", () => {
             type: "content",
             content: {
               type: "text",
-              text: "Which path should Paseo take?",
+              text: "Which path should Rambla take?",
             },
           },
         ],
@@ -1215,7 +1215,7 @@ describe("ACPAgentSession Zed parity", () => {
         detail: {
           type: "plain_text",
           label: "AskUserQuestion",
-          text: "Which path should Paseo take?",
+          text: "Which path should Rambla take?",
         },
         actions: [
           { id: "q0_opt_0", label: "Narrow fix", behavior: "allow" },
@@ -3304,7 +3304,7 @@ describe("ACPAgentSession", () => {
     await connection.initialize({
       protocolVersion: PROTOCOL_VERSION,
       clientCapabilities: {},
-      clientInfo: { name: "Paseo test", version: "dev" },
+      clientInfo: { name: "Rambla test", version: "dev" },
     });
     expect(agentConnection.signal.aborted).toBe(false);
     const sessionResponse = await connection.newSession({

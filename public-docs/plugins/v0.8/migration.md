@@ -8,7 +8,7 @@ category: Plugins
 
 # Migrate a plugin to runtime entries
 
-> **For Paseo v0.8 beta.** This migration is not required for Paseo v0.7.
+> **For Rambla v0.8 beta.** This migration is not required for Rambla v0.7.
 
 Give this page to a coding agent with the plugin directory as its working directory. Execute the
 steps in order. Do not keep a compatibility entry.
@@ -56,7 +56,7 @@ Apply these rules exactly:
 5. Preserve nested feature directories under the matching runtime directory.
 6. Update relative imports after every move.
 7. Keep `paseo-plugin.json`, `package.json`, and `tsconfig.json` at the root.
-8. Delete the old root entry. Paseo does not load it.
+8. Delete the old root entry. Rambla does not load it.
 
 The directories are the compiler boundaries. A file beneath `client/` compiles only into the app
 bundle, a file beneath `server/` only into the daemon bundle, and `shared/` into both. Filename
@@ -87,7 +87,7 @@ Use this table as the complete registration checklist.
 | `ZodOutput<typeof contract.input>` handler parameter types                                    | `RpcInput<typeof contract>` from `@getpaseo/plugin`; `RpcOutput` for return types                            |
 
 Import `PluginClientContext` from `@getpaseo/plugin/client` and `PluginServerContext` from
-`@getpaseo/plugin/server`. Remove imports of the old context type. Client registrations return idempotent removal functions, except header buttons and composer pills, which return `{ update, remove }` handles. Preserve any remover the plugin calls before teardown; Paseo removes outstanding
+`@getpaseo/plugin/server`. Remove imports of the old context type. Client registrations return idempotent removal functions, except header buttons and composer pills, which return `{ update, remove }` handles. Preserve any remover the plugin calls before teardown; Rambla removes outstanding
 registrations after the entry cleanup runs.
 
 ### Composer pills
@@ -126,7 +126,7 @@ show chevrons. See [buttons](./reference.md#button-descriptor) for menus, popove
 
 ## 4. Separate imports
 
-Move hooks (`usePaseo`, `useRpc`, `useSettings`, `useAgent`, `useWorkspace`) and client contribution
+Move hooks (`useRambla`, `useRpc`, `useSettings`, `useAgent`, `useWorkspace`) and client contribution
 types from `@getpaseo/plugin` to `@getpaseo/plugin/client`. Move `Icon` to
 `@getpaseo/plugin/client/react-native`. Import server contexts and lifecycle contracts from
 `@getpaseo/plugin/server`. Shared helpers (`defineRpc`, `defineSettings`, `defineAttachmentSource`),
@@ -143,7 +143,7 @@ Move the remaining SDK subpaths under their runtime owner:
 | `@getpaseo/plugin/acp`          | `@getpaseo/plugin/server/acp`          |
 
 The old entries and the pre-0.8 `@paseo/plugin` scope are removed. `/client/host` is private to
-Paseo's app integration and is never a plugin-author import.
+Rambla's app integration and is never a plugin-author import.
 
 The client entry imports only `client/`, `shared/`, and client-safe packages. The server entry imports
 only `server/`, `shared/`, and server-safe packages. A `node:` import in the client entry or anything
@@ -155,7 +155,7 @@ its registration; that registration belongs in the client entry.
 | Compiler or load error                                                                                                     | Meaning and fix                                                                                                           |
 | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `This plugin has no requirements.paseo`                                                                                    | Complete the migration and declare the range in step 7.                                                                   |
-| `This plugin was made for an older version of Paseo`                                                                       | The directory still has only the old root entry. Create a runtime entry, move registrations, then delete the old file.    |
+| `This plugin was made for an older version of Rambla`                                                                       | The directory still has only the old root entry. Create a runtime entry, move registrations, then delete the old file.    |
 | `Plugin entry points are missing: expected index.client.ts or index.client.tsx and/or index.server.ts or index.server.tsx` | No supported entry exists. Add at least one exact filename.                                                               |
 | `server-only module cannot be imported into the plugin client bundle: <file>`                                              | A client import reaches `server/`. Move the call behind an RPC and import its contract from `shared/`.                    |
 | `client-only module cannot be imported into the plugin server bundle: <file>`                                              | A server import reaches `client/`. Move that registration and import to the client entry.                                 |
@@ -274,7 +274,7 @@ Import path changes inside the moved files:
 calls it directly and returns its cleanup. A plugin whose `addClientSide` callback also registered
 pills or subscriptions keeps that code; only the wrapper goes away.
 
-## 7. Declare the Paseo requirement
+## 7. Declare the Rambla requirement
 
 After migrating the entries and imports, add the minimum runtime version to `paseo-plugin.json`:
 
@@ -285,7 +285,7 @@ After migrating the entries and imports, add the minimum runtime version to `pas
 }
 ```
 
-Keep your existing ID and build commands. Missing `requirements.paseo` means `<0.8.0`, so Paseo 0.8
+Keep your existing ID and build commands. Missing `requirements.paseo` means `<0.8.0`, so Rambla 0.8
 rejects the plugin even if its files have been moved. Adding the field alone does not migrate the
 code. Update the local `@getpaseo/plugin` development dependency to the version you target and
 reinstall dependencies before typechecking.

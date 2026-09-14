@@ -143,7 +143,7 @@ async function seedPr(args: {
   // Clean remote URL (no embedded token) so gh can parse owner/repo
   git(["remote", "set-url", "origin", `https://github.com/${fullName}.git`], localPath);
   git(["config", "user.email", "e2e@paseo.test"], localPath);
-  git(["config", "user.name", "Paseo E2E"], localPath);
+  git(["config", "user.name", "Rambla E2E"], localPath);
   git(["config", "commit.gpgsign", "false"], localPath);
 
   return {
@@ -166,7 +166,7 @@ function seedIssue(args: { spec: IssueSpec; basePath: string }): GhIssueFixture 
   return { number: issueNumber, title: spec.title, url: issueUrl };
 }
 
-// Single namespace for temporary GitHub repos created by Paseo tests.
+// Single namespace for temporary GitHub repos created by Rambla tests.
 // Bulk cleanup relies on this prefix being unmistakable — never reuse `paseo-`
 // (collides with real repos like `paseo`, `paseo-website`).
 const TEMP_GITHUB_REPO_PREFIX = "paseotmp-";
@@ -185,7 +185,7 @@ export async function createTempGithubRepo(options: {
   const basePath = await mkdtemp(path.join("/tmp", `${repoName}-base-`));
   git(["init", "-b", defaultBranch], basePath);
   git(["config", "user.email", "e2e@paseo.test"], basePath);
-  git(["config", "user.name", "Paseo E2E"], basePath);
+  git(["config", "user.name", "Rambla E2E"], basePath);
   git(["config", "commit.gpgsign", "false"], basePath);
   await writeFile(path.join(basePath, "README.md"), "# E2E Test Repo\n");
   git(["add", "README.md"], basePath);
@@ -277,7 +277,7 @@ export async function cloneGithubRepoDefaultBranchOnly(
     { stdio: ["ignore", "pipe", "pipe"] },
   );
   git(["config", "user.email", "e2e@paseo.test"], clonePath);
-  git(["config", "user.name", "Paseo E2E"], clonePath);
+  git(["config", "user.name", "Rambla E2E"], clonePath);
   git(["config", "commit.gpgsign", "false"], clonePath);
 
   return {
@@ -298,7 +298,7 @@ export async function createLocalGithubPrFixture(): Promise<LocalGhPrFixture> {
 
   git(["init", "-b", "main"], basePath);
   git(["config", "user.email", "e2e@paseo.test"], basePath);
-  git(["config", "user.name", "Paseo E2E"], basePath);
+  git(["config", "user.name", "Rambla E2E"], basePath);
   git(["config", "commit.gpgsign", "false"], basePath);
   await writeFile(path.join(basePath, "README.md"), "# Local GitHub fixture\n");
   git(["add", "README.md"], basePath);
@@ -321,7 +321,7 @@ export async function createLocalGithubPrFixture(): Promise<LocalGhPrFixture> {
   git(["remote", "set-url", "origin", githubUrl], checkoutPath);
   git(["config", `url.${remotePath}.insteadOf`, githubUrl], checkoutPath);
   git(["config", "user.email", "e2e@paseo.test"], checkoutPath);
-  git(["config", "user.name", "Paseo E2E"], checkoutPath);
+  git(["config", "user.name", "Rambla E2E"], checkoutPath);
   git(["config", "commit.gpgsign", "false"], checkoutPath);
 
   return {

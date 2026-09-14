@@ -6,7 +6,7 @@ import { describe, expect, test, vi } from "vitest";
 
 import { ClaudeAgentClient } from "../agent/providers/claude/agent.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 
 function deferred(): { promise: Promise<void>; resolve: () => void } {
   let resolve!: () => void;
@@ -136,7 +136,7 @@ describe("daemon E2E (claude live usage)", () => {
     const logger = pino({ level: "silent" });
     const cwd = mkdtempSync(path.join(tmpdir(), "paseo-claude-live-usage-"));
     const resultGate = deferred();
-    const daemon = await createTestPaseoDaemon({
+    const daemon = await createTestRamblaDaemon({
       agentClients: {
         claude: new ClaudeAgentClient({
           logger,

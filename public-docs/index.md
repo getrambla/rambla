@@ -1,6 +1,6 @@
 ---
 title: Getting started
-description: Install Paseo and start running coding agents from anywhere.
+description: Install Rambla and start running coding agents from anywhere.
 nav: Getting started
 order: 1
 category: Getting started
@@ -8,7 +8,7 @@ category: Getting started
 
 # Getting started
 
-Paseo runs your coding agents on your machine and gives you a mobile, desktop, web, and CLI client to drive them from anywhere. Three common ways to install.
+Rambla runs your coding agents on your machine and gives you a mobile, desktop, web, and CLI client to drive them from anywhere. Three common ways to install.
 
 ## Desktop app (recommended)
 
@@ -25,7 +25,7 @@ npm install -g @getpaseo/cli
 paseo
 ```
 
-Paseo starts the daemon locally, then asks whether to enable the end-to-end encrypted relay and print a pairing QR code. If you decline, enter the daemon address manually over TCP, Tailscale, or another VPN.
+Rambla starts the daemon locally, then asks whether to enable the end-to-end encrypted relay and print a pairing QR code. If you decline, enter the daemon address manually over TCP, Tailscale, or another VPN.
 
 The daemon can also serve the browser web app itself, so you can use the full UI without the hosted app. See [Self-hosting the web UI](/docs/web-ui).
 
@@ -52,8 +52,8 @@ The image runs the daemon and serves the bundled web UI. It does not bundle agen
 
 - [Connectivity](/docs/connectivity), connect through the relay or Tailscale.
 - [Docker](/docs/docker), run the daemon and bundled web UI in a container.
-- [Workspaces](/docs/workspaces), the project, workspace, and session model Paseo is built around.
-- [Providers](/docs/providers), what a provider is and how Paseo wraps existing CLIs.
+- [Workspaces](/docs/workspaces), the project, workspace, and session model Rambla is built around.
+- [Providers](/docs/providers), what a provider is and how Rambla wraps existing CLIs.
 - [Orchestration](/docs/orchestration), let one agent delegate work to other providers and models.
 - [Plugins](/docs/plugins), add trusted local surfaces, sidebar actions, daemon behavior, and composer attachments.
 - [CLI reference](/docs/cli), every command.
@@ -63,6 +63,6 @@ The image runs the daemon and serves the bundled web UI. It does not bundle agen
 
 ## Prerequisites
 
-Paseo manages other agents, it doesn't ship one. Before it's useful, install at least one provider CLI yourself and make sure it works with your credentials. See [Supported providers](/docs/supported-providers) for the full list.
+Rambla manages other agents, it doesn't ship one. Before it's useful, install at least one provider CLI yourself and make sure it works with your credentials. See [Supported providers](/docs/supported-providers) for the full list.
 
-You'll also want the [GitHub CLI](https://cli.github.com/) (`gh`) installed and authenticated, Paseo uses it for PR-aware worktrees and a few orchestration features.
+You'll also want the [GitHub CLI](https://cli.github.com/) (`gh`) installed and authenticated, Rambla uses it for PR-aware worktrees and a few orchestration features.

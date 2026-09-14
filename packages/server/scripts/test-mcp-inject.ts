@@ -11,7 +11,7 @@ import {
   isProviderAvailable,
 } from "../src/server/daemon-e2e/agent-configs.js";
 import { DaemonClient } from "../src/server/test-utils/daemon-client.js";
-import { createTestPaseoDaemon } from "../src/server/test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../src/server/test-utils/paseo-daemon.js";
 
 function collectAssistantText(entries: Array<{ item: { type: string; text?: string } }>): string {
   return entries
@@ -84,7 +84,7 @@ async function verifyInjectedMcpForProvider(
 
     if (!assistantText.includes("RAMBLA_MCP_FOUND")) {
       throw new Error(
-        `Expected assistant to confirm Paseo MCP availability. Assistant text:\n${assistantText}`,
+        `Expected assistant to confirm Rambla MCP availability. Assistant text:\n${assistantText}`,
       );
     }
 
@@ -135,7 +135,7 @@ async function main(): Promise<void> {
   const rootCwd = await mkdtemp(path.join(os.tmpdir(), "paseo-mcp-inject-real-"));
   const claudeCwd = path.join(rootCwd, "claude");
   const codexCwd = path.join(rootCwd, "codex");
-  const daemon = await createTestPaseoDaemon({
+  const daemon = await createTestRamblaDaemon({
     agentClients: {
       claude: new ClaudeAgentClient({ logger }),
       ...(codexAvailable ? { codex: new CodexAppServerAgentClient(logger) } : {}),

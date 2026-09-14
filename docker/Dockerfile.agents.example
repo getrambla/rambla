@@ -1,4 +1,4 @@
-# Example child image that adds agent CLIs to the official Paseo image.
+# Example child image that adds agent CLIs to the official Rambla image.
 #
 # Build:
 #   docker build -f docker/Dockerfile.agents.example -t paseo-with-agents .

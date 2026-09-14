@@ -45,7 +45,7 @@ function makeFixture(): {
   const root = mkdtempSync(path.join(tmpdir(), "paseo spawn regression "));
   tempDirs.push(root);
 
-  const fakeDaemonNode = path.join(root, "Fake Paseo.exe");
+  const fakeDaemonNode = path.join(root, "Fake Rambla.exe");
   copyFileSync(process.execPath, fakeDaemonNode);
 
   const expectedArgs = ["--config", JSON_ARG];

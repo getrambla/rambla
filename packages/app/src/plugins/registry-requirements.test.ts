@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from "vitest";
-import { createPaseoApi } from "@getpaseo/client";
+import { createRamblaApi } from "@getpaseo/client";
 import { DaemonClient } from "@getpaseo/client/internal/daemon-client";
 import { PluginRegistry } from "./registry";
 
@@ -13,7 +13,7 @@ function registry(version: string) {
     createRuntime() {
       starts++;
       return {
-        paseo: createPaseoApi(client),
+        paseo: createRamblaApi(client),
         rpc: async () => {
           throw new Error("No RPC in this plugin");
         },

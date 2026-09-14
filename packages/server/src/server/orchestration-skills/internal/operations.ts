@@ -126,7 +126,7 @@ function diff(
   return ops;
 }
 
-function hasInstalledPaseoSkill(disks: readonly TargetSkills[]): boolean {
+function hasInstalledRamblaSkill(disks: readonly TargetSkills[]): boolean {
   return disks.some((disk) => disk.size > 0);
 }
 
@@ -167,7 +167,7 @@ export async function getSkillsStatus(
   const ops = diff(bundle, disks, names, resolveDesiredSkills(selection, available));
   const installed = installedSkillNames(disks, names);
 
-  if (!hasInstalledPaseoSkill(disks)) return { state: "not-installed", ops, available, installed };
+  if (!hasInstalledRamblaSkill(disks)) return { state: "not-installed", ops, available, installed };
   if (ops.length === 0) return { state: "up-to-date", ops, available, installed };
   return { state: "drift", ops, available, installed };
 }

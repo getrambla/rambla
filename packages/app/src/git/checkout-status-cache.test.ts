@@ -41,7 +41,7 @@ function checkoutStatus(overrides: Partial<CheckoutStatusPayload> = {}): Checkou
     error: null,
     requestId: "checkout-status-1",
     isGit: true,
-    isPaseoOwnedWorktree: false,
+    isRamblaOwnedWorktree: false,
     repoRoot: cwd,
     currentBranch: "main",
     isDirty: false,

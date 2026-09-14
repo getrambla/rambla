@@ -1752,7 +1752,7 @@ export const en = {
   serviceUrl: {
     title: "Open service URL",
     message: "Open {{url}}?",
-    inPaseo: "In Rambla",
+    inRambla: "In Rambla",
     externalBrowser: "External browser",
     dontAskAgain: "Don't ask again",
   },

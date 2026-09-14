@@ -35,9 +35,9 @@ describe("path equivalence", () => {
 
   test("checks Windows root containment case-insensitively", () => {
     expect(
-      isPathInsideRoot("C:\\Paseo\\node_modules", "c:/paseo/node_modules/@getpaseo/server"),
+      isPathInsideRoot("C:\\Rambla\\node_modules", "c:/paseo/node_modules/@getpaseo/server"),
     ).toBe(true);
-    expect(isPathInsideRoot("C:\\Paseo\\node_modules", "C:\\Paseo\\node_modules-other")).toBe(
+    expect(isPathInsideRoot("C:\\Rambla\\node_modules", "C:\\Rambla\\node_modules-other")).toBe(
       false,
     );
   });

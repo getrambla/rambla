@@ -393,18 +393,18 @@ function resolveExternalProcessPath(filePath: string): string {
   return filePath.replace(/\.asar(?=[/\\]|$)/, ".asar.unpacked");
 }
 
-export function resolvePaseoCliBinDir(): string | null {
-  const cliExecutable = resolvePaseoCliExecutablePath();
+export function resolveRamblaCliBinDir(): string | null {
+  const cliExecutable = resolveRamblaCliExecutablePath();
   return cliExecutable ? dirname(cliExecutable) : null;
 }
 
-export function resolvePaseoCliExecutablePath(): string | null {
+export function resolveRamblaCliExecutablePath(): string | null {
   const configuredCli = process.env.RAMBLA_CLI?.trim();
   if (configuredCli) {
     return resolvePath(configuredCli);
   }
 
-  const cliEntrypoint = resolvePaseoCliBinEntrypoint();
+  const cliEntrypoint = resolveRamblaCliBinEntrypoint();
   if (!cliEntrypoint) {
     return null;
   }
@@ -412,7 +412,7 @@ export function resolvePaseoCliExecutablePath(): string | null {
   const externalCliEntrypoint = resolveExternalProcessPath(cliEntrypoint);
   const npmBinDir = findNpmBinDir(dirname(externalCliEntrypoint));
   if (npmBinDir) {
-    const shim = resolvePaseoCliShim(npmBinDir);
+    const shim = resolveRamblaCliShim(npmBinDir);
     if (shim) {
       return shim;
     }
@@ -421,7 +421,7 @@ export function resolvePaseoCliExecutablePath(): string | null {
   return externalCliEntrypoint;
 }
 
-function resolvePaseoCliBinEntrypoint(): string | null {
+function resolveRamblaCliBinEntrypoint(): string | null {
   try {
     return require.resolve(RAMBLA_CLI_BIN_ENTRY);
   } catch {
@@ -433,7 +433,7 @@ function findNpmBinDir(startPath: string): string | null {
   let current = startPath;
   while (true) {
     const candidate = join(current, "node_modules", ".bin");
-    if (hasPaseoCliShim(candidate)) {
+    if (hasRamblaCliShim(candidate)) {
       return candidate;
     }
 
@@ -445,11 +445,11 @@ function findNpmBinDir(startPath: string): string | null {
   }
 }
 
-function hasPaseoCliShim(binDir: string): boolean {
-  return resolvePaseoCliShim(binDir) !== null;
+function hasRamblaCliShim(binDir: string): boolean {
+  return resolveRamblaCliShim(binDir) !== null;
 }
 
-function resolvePaseoCliShim(binDir: string): string | null {
+function resolveRamblaCliShim(binDir: string): string | null {
   for (const name of paseoCliShimNames()) {
     const candidate = join(binDir, name);
     if (existsSync(candidate)) {
@@ -496,13 +496,13 @@ export function buildTerminalEnvironment(
     TERM: "xterm-256color",
     TERM_PROGRAM: "kitty",
   });
-  const envWithAgentHooks = prependPaseoCliToPath(
+  const envWithAgentHooks = prependRamblaCliToPath(
     baseEnv,
-    input.paseoCliBinDir === undefined ? resolvePaseoCliBinDir() : input.paseoCliBinDir,
+    input.paseoCliBinDir === undefined ? resolveRamblaCliBinDir() : input.paseoCliBinDir,
   );
-  const envWithHookCli = injectPaseoHookCli(
+  const envWithHookCli = injectRamblaHookCli(
     envWithAgentHooks,
-    input.paseoHookCliPath === undefined ? resolvePaseoCliExecutablePath() : input.paseoHookCliPath,
+    input.paseoHookCliPath === undefined ? resolveRamblaCliExecutablePath() : input.paseoHookCliPath,
   );
 
   if (basename(input.shell) !== "zsh") {
@@ -517,7 +517,7 @@ export function buildTerminalEnvironment(
   };
 }
 
-function injectPaseoHookCli(
+function injectRamblaHookCli(
   env: Record<string, string>,
   cliPath: string | null,
 ): Record<string, string> {
@@ -531,7 +531,7 @@ function injectPaseoHookCli(
   };
 }
 
-function prependPaseoCliToPath(
+function prependRamblaCliToPath(
   env: Record<string, string>,
   cliBinDir: string | null,
 ): Record<string, string> {

@@ -12,7 +12,7 @@ function expandHomeDir(input: string): string {
   return input;
 }
 
-export function resolvePaseoHome(env: NodeJS.ProcessEnv = process.env): string {
+export function resolveRamblaHome(env: NodeJS.ProcessEnv = process.env): string {
   const raw = env.RAMBLA_HOME ?? "~/.rambla";
   const resolved = path.resolve(expandHomeDir(raw));
   ensurePrivateDirectory(resolved);

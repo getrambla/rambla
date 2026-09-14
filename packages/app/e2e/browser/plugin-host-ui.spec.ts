@@ -12,14 +12,14 @@ import {
 
 const PLUGIN_ID = "plugin-host-ui-e2e";
 
-const PLUGIN_SOURCE = `import { usePaseo } from "@getpaseo/plugin/client";
+const PLUGIN_SOURCE = `import { useRambla } from "@getpaseo/plugin/client";
 import { Icon, Modal, useToast } from "@getpaseo/plugin/client/react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 function ModalBody({ onSaved }) {
-  usePaseo();
+  useRambla();
   useQueryClient();
   const toast = useToast();
 

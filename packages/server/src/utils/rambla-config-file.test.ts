@@ -5,9 +5,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { isPlatform } from "../test-utils/platform.js";
 import { getWorktreeSetupCommands, getWorktreeTeardownCommands } from "./worktree.js";
 import {
-  readPaseoConfigForEdit,
-  statPaseoConfigPath,
-  writePaseoConfigForEdit,
+  readRamblaConfigForEdit,
+  statRamblaConfigPath,
+  writeRamblaConfigForEdit,
 } from "./paseo-config-file.js";
 
 describe("paseo config file substrate", () => {
@@ -22,7 +22,7 @@ describe("paseo config file substrate", () => {
   });
 
   it("returns null config and revision when paseo.json is missing", () => {
-    const result = readPaseoConfigForEdit(tempDir);
+    const result = readRamblaConfigForEdit(tempDir);
 
     expect(result).toEqual({ ok: true, config: null, revision: null });
   });
@@ -30,7 +30,7 @@ describe("paseo config file substrate", () => {
   it("returns invalid_project_config for invalid JSON", () => {
     writeFileSync(join(tempDir, "paseo.json"), "{ invalid json\n");
 
-    const result = readPaseoConfigForEdit(tempDir);
+    const result = readRamblaConfigForEdit(tempDir);
 
     expect(result).toEqual({
       ok: false,
@@ -49,7 +49,7 @@ describe("paseo config file substrate", () => {
       }),
     );
 
-    const result = readPaseoConfigForEdit(tempDir);
+    const result = readRamblaConfigForEdit(tempDir);
 
     expect(result).toEqual({
       ok: true,
@@ -59,7 +59,7 @@ describe("paseo config file substrate", () => {
           teardown: ["npm run clean", "npm run reset"],
         },
       },
-      revision: statPaseoConfigPath(tempDir),
+      revision: statRamblaConfigPath(tempDir),
     });
   });
 
@@ -80,9 +80,9 @@ describe("paseo config file substrate", () => {
 
   it("writes pretty JSON with a trailing newline when revision matches", () => {
     writeFileSync(join(tempDir, "paseo.json"), JSON.stringify({ worktree: { setup: "old" } }));
-    const expectedRevision = statPaseoConfigPath(tempDir);
+    const expectedRevision = statRamblaConfigPath(tempDir);
 
-    const result = writePaseoConfigForEdit({
+    const result = writeRamblaConfigForEdit({
       repoRoot: tempDir,
       config: { worktree: { setup: "npm install" } },
       expectedRevision,
@@ -91,7 +91,7 @@ describe("paseo config file substrate", () => {
     expect(result).toEqual({
       ok: true,
       config: { worktree: { setup: "npm install" } },
-      revision: statPaseoConfigPath(tempDir),
+      revision: statRamblaConfigPath(tempDir),
     });
     expect(readFileSync(join(tempDir, "paseo.json"), "utf8")).toBe(
       '{\n  "worktree": {\n    "setup": "npm install"\n  }\n}\n',
@@ -103,11 +103,11 @@ describe("paseo config file substrate", () => {
     "rejects stale writes when the current revision changed before rename",
     () => {
       writeFileSync(join(tempDir, "paseo.json"), JSON.stringify({ worktree: { setup: "old" } }));
-      const expectedRevision = statPaseoConfigPath(tempDir);
+      const expectedRevision = statRamblaConfigPath(tempDir);
       writeFileSync(join(tempDir, "paseo.json"), JSON.stringify({ worktree: { setup: "new" } }));
-      const currentRevision = statPaseoConfigPath(tempDir);
+      const currentRevision = statRamblaConfigPath(tempDir);
 
-      const result = writePaseoConfigForEdit({
+      const result = writeRamblaConfigForEdit({
         repoRoot: tempDir,
         config: { worktree: { setup: "from editor" } },
         expectedRevision,
@@ -139,7 +139,7 @@ describe("paseo config file substrate", () => {
       },
     };
 
-    const result = writePaseoConfigForEdit({
+    const result = writeRamblaConfigForEdit({
       repoRoot: tempDir,
       config,
       expectedRevision: null,
@@ -148,12 +148,12 @@ describe("paseo config file substrate", () => {
     expect(result).toEqual({
       ok: true,
       config,
-      revision: statPaseoConfigPath(tempDir),
+      revision: statRamblaConfigPath(tempDir),
     });
-    expect(readPaseoConfigForEdit(tempDir)).toEqual({
+    expect(readRamblaConfigForEdit(tempDir)).toEqual({
       ok: true,
       config,
-      revision: statPaseoConfigPath(tempDir),
+      revision: statRamblaConfigPath(tempDir),
     });
   });
 
@@ -161,7 +161,7 @@ describe("paseo config file substrate", () => {
     const fileRoot = join(tempDir, "not-a-directory");
     writeFileSync(fileRoot, "file");
 
-    const result = writePaseoConfigForEdit({
+    const result = writeRamblaConfigForEdit({
       repoRoot: fileRoot,
       config: { worktree: { setup: "npm install" } },
       expectedRevision: null,
@@ -176,7 +176,7 @@ describe("paseo config file substrate", () => {
   it("creates paseo.json when the file is still missing and expected revision is null", () => {
     mkdirSync(join(tempDir, "nested"));
 
-    const result = writePaseoConfigForEdit({
+    const result = writeRamblaConfigForEdit({
       repoRoot: join(tempDir, "nested"),
       config: { scripts: { dev: { command: "npm run dev" } } },
       expectedRevision: null,
@@ -185,7 +185,7 @@ describe("paseo config file substrate", () => {
     expect(result).toEqual({
       ok: true,
       config: { scripts: { dev: { command: "npm run dev" } } },
-      revision: statPaseoConfigPath(join(tempDir, "nested")),
+      revision: statRamblaConfigPath(join(tempDir, "nested")),
     });
   });
 });

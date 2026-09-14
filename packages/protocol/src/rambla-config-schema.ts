@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const TCP_PORT_RANGE_PATTERN = /^(\d{1,5})-(\d{1,5})$/;
 
-export const PaseoServicePortAllocationSchema = z
+export const RamblaServicePortAllocationSchema = z
   .object({
     range: z.string().trim().regex(TCP_PORT_RANGE_PATTERN).optional(),
     portScript: z.string().trim().min(1).optional(),
@@ -33,9 +33,9 @@ export function normalizeLifecycleCommands(commands: unknown): string[] {
   });
 }
 
-export const PaseoLifecycleCommandRawSchema = z.union([z.string(), z.array(z.string())]);
+export const RamblaLifecycleCommandRawSchema = z.union([z.string(), z.array(z.string())]);
 
-export const PaseoScriptEntryRawSchema = z
+export const RamblaScriptEntryRawSchema = z
   .object({
     type: z.unknown().optional(),
     command: z.unknown().optional(),
@@ -43,60 +43,60 @@ export const PaseoScriptEntryRawSchema = z
   })
   .passthrough();
 
-export const PaseoWorktreeConfigRawSchema = z
+export const RamblaWorktreeConfigRawSchema = z
   .object({
-    setup: PaseoLifecycleCommandRawSchema.optional(),
-    teardown: PaseoLifecycleCommandRawSchema.optional(),
+    setup: RamblaLifecycleCommandRawSchema.optional(),
+    teardown: RamblaLifecycleCommandRawSchema.optional(),
     terminals: z.unknown().optional(),
-    servicePorts: PaseoServicePortAllocationSchema.optional(),
+    servicePorts: RamblaServicePortAllocationSchema.optional(),
   })
   .passthrough();
 
-export const PaseoMetadataGenerationEntrySchema = z
+export const RamblaMetadataGenerationEntrySchema = z
   .object({
     instructions: z.string().optional(),
   })
   .passthrough()
   .catch({});
 
-export const PaseoMetadataGenerationSchema = z
+export const RamblaMetadataGenerationSchema = z
   .object({
-    title: PaseoMetadataGenerationEntrySchema.optional(),
-    branchName: PaseoMetadataGenerationEntrySchema.optional(),
-    commitMessage: PaseoMetadataGenerationEntrySchema.optional(),
-    pullRequest: PaseoMetadataGenerationEntrySchema.optional(),
+    title: RamblaMetadataGenerationEntrySchema.optional(),
+    branchName: RamblaMetadataGenerationEntrySchema.optional(),
+    commitMessage: RamblaMetadataGenerationEntrySchema.optional(),
+    pullRequest: RamblaMetadataGenerationEntrySchema.optional(),
   })
   // COMPAT(projectMetadataAgentTitle): `agentTitle` project metadata prompts were removed
   // in v0.1.96; keep legacy paseo.json parseable until 2026-12-16.
   .passthrough()
   .catch({});
 
-export const PaseoConfigRawSchema = z
+export const RamblaConfigRawSchema = z
   .object({
-    worktree: PaseoWorktreeConfigRawSchema.optional(),
-    scripts: z.record(z.string(), PaseoScriptEntryRawSchema).optional(),
-    metadataGeneration: PaseoMetadataGenerationSchema.optional(),
+    worktree: RamblaWorktreeConfigRawSchema.optional(),
+    scripts: z.record(z.string(), RamblaScriptEntryRawSchema).optional(),
+    metadataGeneration: RamblaMetadataGenerationSchema.optional(),
   })
   .passthrough();
 
-export const WorktreeConfigSchema = PaseoWorktreeConfigRawSchema.extend({
+export const WorktreeConfigSchema = RamblaWorktreeConfigRawSchema.extend({
   setup: z.unknown().optional().transform(normalizeLifecycleCommands),
   teardown: z.unknown().optional().transform(normalizeLifecycleCommands),
 })
   .passthrough()
   .catch({ setup: [], teardown: [] });
 
-export const ScriptEntrySchema = PaseoScriptEntryRawSchema.catch({});
+export const ScriptEntrySchema = RamblaScriptEntryRawSchema.catch({});
 
-export const PaseoConfigSchema = PaseoConfigRawSchema.extend({
+export const RamblaConfigSchema = RamblaConfigRawSchema.extend({
   worktree: WorktreeConfigSchema.optional(),
   scripts: z.record(z.string(), ScriptEntrySchema).optional().catch({}),
-  metadataGeneration: PaseoMetadataGenerationSchema.optional(),
+  metadataGeneration: RamblaMetadataGenerationSchema.optional(),
 })
   .passthrough()
   .catch({});
 
-export const PaseoConfigRevisionSchema = z.object({
+export const RamblaConfigRevisionSchema = z.object({
   mtimeMs: z.number(),
   size: z.number(),
 });
@@ -106,16 +106,16 @@ export const ProjectConfigRpcErrorSchema = z.discriminatedUnion("code", [
   z.object({ code: z.literal("invalid_project_config") }),
   z.object({
     code: z.literal("stale_project_config"),
-    currentRevision: PaseoConfigRevisionSchema.nullable(),
+    currentRevision: RamblaConfigRevisionSchema.nullable(),
   }),
   z.object({ code: z.literal("write_failed") }),
 ]);
 
-export type PaseoScriptEntryRaw = z.infer<typeof PaseoScriptEntryRawSchema>;
-export type PaseoMetadataGenerationEntry = z.infer<typeof PaseoMetadataGenerationEntrySchema>;
-export type PaseoMetadataGeneration = z.infer<typeof PaseoMetadataGenerationSchema>;
-export type PaseoServicePortAllocation = z.infer<typeof PaseoServicePortAllocationSchema>;
-export type PaseoConfigRaw = z.infer<typeof PaseoConfigRawSchema>;
-export type PaseoConfig = z.infer<typeof PaseoConfigSchema>;
-export type PaseoConfigRevision = z.infer<typeof PaseoConfigRevisionSchema>;
+export type RamblaScriptEntryRaw = z.infer<typeof RamblaScriptEntryRawSchema>;
+export type RamblaMetadataGenerationEntry = z.infer<typeof RamblaMetadataGenerationEntrySchema>;
+export type RamblaMetadataGeneration = z.infer<typeof RamblaMetadataGenerationSchema>;
+export type RamblaServicePortAllocation = z.infer<typeof RamblaServicePortAllocationSchema>;
+export type RamblaConfigRaw = z.infer<typeof RamblaConfigRawSchema>;
+export type RamblaConfig = z.infer<typeof RamblaConfigSchema>;
+export type RamblaConfigRevision = z.infer<typeof RamblaConfigRevisionSchema>;
 export type ProjectConfigRpcError = z.infer<typeof ProjectConfigRpcErrorSchema>;

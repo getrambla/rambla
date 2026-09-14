@@ -1,9 +1,9 @@
 ---
 name: paseo
-description: Paseo reference for managing projects, workspaces, workspace scripts, agents, schedules, and heartbeats.
+description: Rambla reference for managing projects, workspaces, workspace scripts, agents, schedules, and heartbeats.
 ---
 
-Paseo is a remote daemon that manages coding agents, terminals. Control it through MCP tools or the CLI.
+Rambla is a remote daemon that manages coding agents, terminals. Control it through MCP tools or the CLI.
 
 ## Projects
 
@@ -17,7 +17,7 @@ paseo project rename <project-id> --reset
 paseo project delete <project-id>
 ```
 
-For a local daemon, `project create` defaults to the current directory and resolves relative paths on the CLI machine. With `--host` or `RAMBLA_HOST`, always provide a path; the target daemon interprets it on its own machine. Deleting a project archives its active workspaces and removes the project from Paseo without deleting the project directory.
+For a local daemon, `project create` defaults to the current directory and resolves relative paths on the CLI machine. With `--host` or `RAMBLA_HOST`, always provide a path; the target daemon interprets it on its own machine. Deleting a project archives its active workspaces and removes the project from Rambla without deleting the project directory.
 
 ## Workspaces
 
@@ -25,7 +25,7 @@ For a local daemon, `project create` defaults to the current directory and resol
 
 **`list_workspaces`** — list active workspaces.
 
-**`archive_workspace`** — `{ workspaceId }`. Archives the workspace, its agents, and its terminals. Local directories remain; Paseo removes an owned worktree only after its final active workspace reference is archived.
+**`archive_workspace`** — `{ workspaceId }`. Archives the workspace, its agents, and its terminals. Local directories remain; Rambla removes an owned worktree only after its final active workspace reference is archived.
 
 **`rename_workspace`** — `{ workspaceId, name }`. Rename workspace.
 
@@ -35,7 +35,7 @@ Configured `paseo.json` scripts use the same supervised lifecycle from tools and
 
 **`list_workspace_scripts`** — `{ workspaceId }`. Lists configured scripts with lifecycle, service port, proxy URLs, health, exit code, and terminal ID.
 
-**`start_workspace_script`** — `{ workspaceId, scriptName }`. Starts one configured script through Paseo's managed workspace-script launcher and returns its status metadata.
+**`start_workspace_script`** — `{ workspaceId, scriptName }`. Starts one configured script through Rambla's managed workspace-script launcher and returns its status metadata.
 
 **`stop_workspace_script`** — `{ workspaceId, scriptName }`. Stops a running script through its supervised terminal and returns the stopped status metadata.
 

@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import type { PaseoApi } from "@getpaseo/client";
+import type { RamblaApi } from "@getpaseo/client";
 import type { AgentTimelineItem } from "@getpaseo/protocol/agent-types";
 import type { ZodType, input as ZodInput, output as ZodOutput } from "zod";
 import type { PluginRpcContract } from "../rpc.js";
@@ -160,7 +160,7 @@ export interface PluginTimelineRendererContribution<Schema extends ZodType = Zod
 }
 
 export interface PluginCommandCapabilities {
-  paseo: PaseoApi;
+  paseo: RamblaApi;
   rpc<InputSchema extends ZodType, OutputSchema extends ZodType>(
     contract: PluginRpcContract<InputSchema, OutputSchema>,
     input: ZodInput<InputSchema>,

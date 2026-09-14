@@ -230,7 +230,7 @@ install-desktop:
     [Desktop Entry]
     Type=Application
     Name=Rambla
-    Exec={{justfile_dir()}}/packages/desktop/release/linux-unpacked/Paseo
+    Exec={{justfile_dir()}}/packages/desktop/release/linux-unpacked/Rambla
     Icon={{justfile_dir()}}/packages/desktop/assets/icon.png
     Categories=Development;
     Terminal=false

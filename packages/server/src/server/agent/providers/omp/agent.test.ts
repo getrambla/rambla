@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { setImmediate as waitForImmediate } from "node:timers/promises";
 
-import type { PaseoToolCatalog } from "../../tools/types.js";
+import type { RamblaToolCatalog } from "../../tools/types.js";
 import type { OmpNoTurnScheduler, OmpProviderIdleScheduler } from "./agent.js";
 import type { OmpUsagePollScheduler } from "./usage-poller.js";
 import { resolveOmpProviderParams } from "./provider-config.js";
@@ -101,14 +101,14 @@ class ManualUsagePollScheduler implements OmpUsagePollScheduler {
   }
 }
 
-function createToolCatalog(): PaseoToolCatalog {
+function createToolCatalog(): RamblaToolCatalog {
   return {
     tools: new Map([
       [
         "create_agent",
         {
           name: "create_agent",
-          description: "Create a Paseo agent.",
+          description: "Create a Rambla agent.",
           handler: async () => ({ content: [] }),
         },
       ],
@@ -134,7 +134,7 @@ describe("OMP agent client and session", () => {
     ]);
     expect(omp.capabilities()).toMatchObject({
       supportsMcpServers: false,
-      supportsNativePaseoTools: true,
+      supportsNativeRamblaTools: true,
     });
   });
 

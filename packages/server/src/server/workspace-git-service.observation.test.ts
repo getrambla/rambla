@@ -62,7 +62,7 @@ function createCheckoutFacts(cwd: string): CheckoutSnapshotFacts {
     remoteUrl: null,
     absoluteGitDir: path.join(cwd, ".git"),
     gitCommonDir: path.join(cwd, ".git"),
-    paseoWorktree: { isPaseoOwnedWorktree: false },
+    paseoWorktree: { isRamblaOwnedWorktree: false },
     storedBaseRef: null,
     resolvedBaseRef: "main",
     mainRepoRoot: null,
@@ -101,7 +101,7 @@ function createCheckoutStatus(
     behindOfOrigin: null,
     hasRemote: false,
     remoteUrl: null,
-    isPaseoOwnedWorktree: false,
+    isRamblaOwnedWorktree: false,
     ...overrides,
   };
 }

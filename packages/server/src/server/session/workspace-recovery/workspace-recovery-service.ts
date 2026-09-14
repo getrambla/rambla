@@ -4,9 +4,9 @@ import { createRealpathAwarePathMatcher } from "../../../utils/path.js";
 import { runGitCommand } from "../../../utils/run-git-command.js";
 import {
   createWorktree,
-  isPaseoOwnedWorktreeCwd,
+  isRamblaOwnedWorktreeCwd,
   mapWorkspaceCwdToWorktree,
-  rollbackCreatedPaseoWorktree,
+  rollbackCreatedRamblaWorktree,
 } from "../../../utils/worktree.js";
 import { WorktreeRequestError, toWorktreeRequestError } from "../../worktree-errors.js";
 import {
@@ -175,7 +175,7 @@ export function createWorkspaceRecoveryService(deps: {
     if (!previousWorktreePath) {
       // COMPAT(worktreeRestoreMissingWorktreeRoot): records created before v0.1.110
       // lack durable backing placement; remove filesystem discovery after 2027-01-17.
-      const ownership = await isPaseoOwnedWorktreeCwd(workspace.cwd, {
+      const ownership = await isRamblaOwnedWorktreeCwd(workspace.cwd, {
         paseoHome: deps.paseoHome,
         worktreesRoot: deps.worktreesRoot,
       });
@@ -218,7 +218,7 @@ export function createWorkspaceRecoveryService(deps: {
         });
       }
     } catch (error) {
-      return rollbackCreatedPaseoWorktree(
+      return rollbackCreatedRamblaWorktree(
         {
           cwd: sourceRepoRoot,
           worktreePath: recreatedWorktreePath,

@@ -1,5 +1,5 @@
 import type { ToolCallDetail, ToolCallIconName } from "@getpaseo/protocol/agent-types";
-import { isPaseoToolName } from "@getpaseo/protocol/tool-name-normalization";
+import { isRamblaToolName } from "@getpaseo/protocol/tool-name-normalization";
 
 export type ToolCallIcon = ToolCallIconName | "paseo";
 
@@ -31,7 +31,7 @@ export function resolveToolCallIconName(toolName: string, detail?: ToolCallDetai
   if (lowerName === "speak") {
     return "mic_vocal";
   }
-  if (isPaseoToolName(lowerName)) {
+  if (isRamblaToolName(lowerName)) {
     return "paseo";
   }
   if (lowerName === "task") {

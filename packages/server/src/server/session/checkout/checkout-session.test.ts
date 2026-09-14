@@ -189,7 +189,7 @@ function createGitSnapshot(
       mainRepoRoot: cwd,
       currentBranch,
       remoteUrl: null,
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       isDirty: overrides?.isDirty ?? false,
       baseRef: null,
       aheadBehind: null,

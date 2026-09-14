@@ -13,15 +13,15 @@ describe("Claude workflow output", () => {
   it("extracts the real single-report result without exposing provider internals", () => {
     const text = parseClaudeWorkflowResult(
       JSON.stringify({
-        summary: "Inspect Paseo",
-        result: { report: "What Paseo is\nA local-first coding-agent environment." },
+        summary: "Inspect Rambla",
+        result: { report: "What Rambla is\nA local-first coding-agent environment." },
         script: "SECRET WORKFLOW SOURCE",
         args: "SECRET ARGS",
         workflowProgress: [{ promptPreview: "SECRET CHILD PROMPT" }],
       }),
     );
 
-    expect(text).toBe("What Paseo is\nA local-first coding-agent environment.");
+    expect(text).toBe("What Rambla is\nA local-first coding-agent environment.");
     expect(text).not.toContain("SECRET");
   });
 

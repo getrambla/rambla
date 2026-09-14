@@ -38,15 +38,15 @@ import {
 } from "../utils/worktree.js";
 import { toCheckoutError } from "./checkout-git-utils.js";
 import type {
-  CreatePaseoWorktreeInput,
-  CreatePaseoWorktreeResult,
+  CreateRamblaWorktreeInput,
+  CreateRamblaWorktreeResult,
 } from "./paseo-worktree-service.js";
 import type { ArchiveDependencies } from "./workspace-archive-service.js";
 import { toWorktreeWireError } from "./worktree-errors.js";
 import {
   archiveCommand,
-  createPaseoWorktreeCommand,
-  listPaseoWorktreesCommand,
+  createRamblaWorktreeCommand,
+  listRamblaWorktreesCommand,
 } from "./worktree/commands.js";
 import type { WorkspaceSetupOperation } from "./workspace-setup-runtime.js";
 import {
@@ -85,13 +85,13 @@ interface BuildAgentSessionConfigDependencies {
   worktreesRoot?: string;
   sessionLogger: Logger;
   workspaceGitService?: WorkspaceGitService;
-  createPaseoWorktree: (
-    input: CreatePaseoWorktreeInput,
+  createRamblaWorktree: (
+    input: CreateRamblaWorktreeInput,
     options?: {
       resolveDefaultBranch?: (repoRoot: string) => Promise<string>;
-      setupContinuation?: CreatePaseoWorktreeSetupContinuationInput;
+      setupContinuation?: CreateRamblaWorktreeSetupContinuationInput;
     },
-  ) => Promise<CreatePaseoWorktreeWorkflowResult>;
+  ) => Promise<CreateRamblaWorktreeWorkflowResult>;
   checkoutExistingBranch: (cwd: string, branch: string) => Promise<CheckoutExistingBranchResult>;
   createBranchFromBase: (params: {
     cwd: string;
@@ -100,7 +100,7 @@ interface BuildAgentSessionConfigDependencies {
   }) => Promise<void>;
 }
 
-interface CreatePaseoWorktreeInBackgroundDependencies {
+interface CreateRamblaWorktreeInBackgroundDependencies {
   paseoHome?: string;
   worktreesRoot?: string;
   emitWorkspaceUpdateForWorkspaceId: (workspaceId: string) => Promise<void>;
@@ -117,13 +117,13 @@ interface CreatePaseoWorktreeInBackgroundDependencies {
   onScriptsChanged: ((workspaceId: string, workspaceDirectory: string) => void) | null;
 }
 
-interface CreatePaseoWorktreeWorkflowDependencies extends CreatePaseoWorktreeInBackgroundDependencies {
-  createPaseoWorktree: (
-    input: CreatePaseoWorktreeInput,
+interface CreateRamblaWorktreeWorkflowDependencies extends CreateRamblaWorktreeInBackgroundDependencies {
+  createRamblaWorktree: (
+    input: CreateRamblaWorktreeInput,
     options?: {
       resolveDefaultBranch?: (repoRoot: string) => Promise<string>;
     },
-  ) => Promise<CreatePaseoWorktreeResult>;
+  ) => Promise<CreateRamblaWorktreeResult>;
   warmWorkspaceGitData: (workspace: PersistedWorkspaceRecord) => Promise<void>;
   autoNameWorkspaceBranchForFirstAgent: (input: {
     workspace: PersistedWorkspaceRecord;
@@ -141,7 +141,7 @@ interface AgentWorktreeSetupContinuationInput {
   logger: Logger;
 }
 
-export type CreatePaseoWorktreeSetupContinuationInput =
+export type CreateRamblaWorktreeSetupContinuationInput =
   | { kind: "workspace" }
   | AgentWorktreeSetupContinuationInput;
 
@@ -150,17 +150,17 @@ export interface AgentWorktreeSetupContinuation {
   startAfterAgentCreate: (input: { agentId: string }) => void;
 }
 
-export type CreatePaseoWorktreeWorkflowResult = CreatePaseoWorktreeResult & {
+export type CreateRamblaWorktreeWorkflowResult = CreateRamblaWorktreeResult & {
   setupContinuation?: AgentWorktreeSetupContinuation;
 };
 
-export type CreatePaseoWorktreeWorkflowFn = (
-  input: CreatePaseoWorktreeInput,
+export type CreateRamblaWorktreeWorkflowFn = (
+  input: CreateRamblaWorktreeInput,
   options?: {
     resolveDefaultBranch?: (repoRoot: string) => Promise<string>;
-    setupContinuation?: CreatePaseoWorktreeSetupContinuationInput;
+    setupContinuation?: CreateRamblaWorktreeSetupContinuationInput;
   },
-) => Promise<CreatePaseoWorktreeWorkflowResult>;
+) => Promise<CreateRamblaWorktreeWorkflowResult>;
 
 interface HandleWorkspaceSetupStatusRequestDependencies {
   emit: EmitSessionMessage;
@@ -168,23 +168,23 @@ interface HandleWorkspaceSetupStatusRequestDependencies {
   getWorkspace: (workspaceId: string) => Promise<PersistedWorkspaceRecord | null>;
 }
 
-interface HandleWorkspaceSetupRunRequestDependencies extends CreatePaseoWorktreeInBackgroundDependencies {
+interface HandleWorkspaceSetupRunRequestDependencies extends CreateRamblaWorktreeInBackgroundDependencies {
   getWorkspace: (workspaceId: string) => Promise<PersistedWorkspaceRecord | null>;
   clearAutomationBlock: (workspaceId: string) => Promise<boolean>;
   startWorkspaceSetup: (workspaceId: string, operation: WorkspaceSetupOperation) => void;
 }
 
-interface HandleCreatePaseoWorktreeRequestDependencies {
+interface HandleCreateRamblaWorktreeRequestDependencies {
   paseoHome?: string;
   worktreesRoot?: string;
   describeWorkspaceRecord: (
-    result: CreatePaseoWorktreeResult,
+    result: CreateRamblaWorktreeResult,
   ) => Promise<WorkspaceDescriptorPayload>;
   emit: EmitSessionMessage;
   sessionLogger: Logger;
-  createPaseoWorktreeWorkflow: (
-    input: CreatePaseoWorktreeInput,
-  ) => Promise<CreatePaseoWorktreeWorkflowResult>;
+  createRamblaWorktreeWorkflow: (
+    input: CreateRamblaWorktreeInput,
+  ) => Promise<CreateRamblaWorktreeWorkflowResult>;
 }
 
 function normalizeFirstAgentContext(
@@ -235,7 +235,7 @@ export async function buildAgentSessionConfig(
       "Creating worktree through createWorktreeCore",
     );
 
-    const createdWorktree = await dependencies.createPaseoWorktree(
+    const createdWorktree = await dependencies.createRamblaWorktree(
       {
         cwd,
         worktreeSlug: normalized.worktreeSlug,
@@ -408,7 +408,7 @@ export async function resolveGitCreateBaseBranch(
   return workspaceGitService.resolveDefaultBranch(cwd);
 }
 
-export async function handlePaseoWorktreeListRequest(
+export async function handleRamblaWorktreeListRequest(
   dependencies: {
     emit: EmitSessionMessage;
     paseoHome?: string;
@@ -431,7 +431,7 @@ export async function handlePaseoWorktreeListRequest(
   }
 
   try {
-    const worktrees = await listPaseoWorktreesCommand(
+    const worktrees = await listRamblaWorktreesCommand(
       { workspaceGitService: dependencies.workspaceGitService },
       { cwd },
     );
@@ -460,7 +460,7 @@ export async function handlePaseoWorktreeListRequest(
   }
 }
 
-export async function handlePaseoWorktreeArchiveRequest(
+export async function handleRamblaWorktreeArchiveRequest(
   dependencies: Omit<
     ArchiveDependencies,
     "emitWorkspaceUpdatesForWorkspaceIds" | "workspaceGitService"
@@ -520,16 +520,16 @@ export async function handlePaseoWorktreeArchiveRequest(
   }
 }
 
-export async function handleCreatePaseoWorktreeRequest(
-  dependencies: HandleCreatePaseoWorktreeRequestDependencies,
+export async function handleCreateRamblaWorktreeRequest(
+  dependencies: HandleCreateRamblaWorktreeRequestDependencies,
   request: Extract<SessionInboundMessage, { type: "create_paseo_worktree_request" }>,
 ): Promise<void> {
   try {
-    const commandResult = await createPaseoWorktreeCommand(
+    const commandResult = await createRamblaWorktreeCommand(
       {
         paseoHome: dependencies.paseoHome,
         worktreesRoot: dependencies.worktreesRoot,
-        createPaseoWorktreeWorkflow: dependencies.createPaseoWorktreeWorkflow,
+        createRamblaWorktreeWorkflow: dependencies.createRamblaWorktreeWorkflow,
       },
       {
         cwd: request.cwd,
@@ -605,15 +605,15 @@ export async function handleCreatePaseoWorktreeRequest(
   }
 }
 
-export async function createPaseoWorktreeWorkflow(
-  dependencies: CreatePaseoWorktreeWorkflowDependencies,
-  input: CreatePaseoWorktreeInput,
+export async function createRamblaWorktreeWorkflow(
+  dependencies: CreateRamblaWorktreeWorkflowDependencies,
+  input: CreateRamblaWorktreeInput,
   options?: {
     resolveDefaultBranch?: (repoRoot: string) => Promise<string>;
-    setupContinuation?: CreatePaseoWorktreeSetupContinuationInput;
+    setupContinuation?: CreateRamblaWorktreeSetupContinuationInput;
   },
-): Promise<CreatePaseoWorktreeWorkflowResult> {
-  const createdWorktree = await dependencies.createPaseoWorktree(
+): Promise<CreateRamblaWorktreeWorkflowResult> {
+  const createdWorktree = await dependencies.createRamblaWorktree(
     {
       ...input,
       runSetup: false,
@@ -809,7 +809,7 @@ export async function handleWorkspaceSetupRunRequest(
 }
 
 export async function runWorktreeSetupInBackground(
-  dependencies: CreatePaseoWorktreeInBackgroundDependencies,
+  dependencies: CreateRamblaWorktreeInBackgroundDependencies,
   options: {
     requestCwd: string;
     repoRoot: string;

@@ -70,7 +70,7 @@ class FakeDaemonRuntime implements DaemonLaunchRuntime {
 
 const tempRoots: string[] = [];
 
-async function createPaseoHome(config: unknown): Promise<string> {
+async function createRamblaHome(config: unknown): Promise<string> {
   const root = await mkdtemp(path.join(os.tmpdir(), "paseo-local-daemon-"));
   tempRoots.push(root);
   const paseoHome = path.join(root, ".rambla");
@@ -193,7 +193,7 @@ describe("local daemon launch supervision", () => {
   });
 
   test("local daemon state keeps public relay TLS separate from daemon relay TLS", async () => {
-    const home = await createPaseoHome({
+    const home = await createRamblaHome({
       version: 1,
       daemon: {
         relay: {

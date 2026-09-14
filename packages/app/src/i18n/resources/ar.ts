@@ -1742,7 +1742,7 @@ export const ar: TranslationResources = {
   serviceUrl: {
     title: "افتح الخدمة URL",
     message: "افتح{{url}}؟",
-    inPaseo: "في Rambla",
+    inRambla: "في Rambla",
     externalBrowser: "متصفح خارجي",
     dontAskAgain: "لا تسأل مرة أخرى",
   },

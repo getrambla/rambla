@@ -3,14 +3,14 @@ import type { AgentSessionConfig, McpServerConfig } from "./agent-sdk-types.js";
 const RAMBLA_MCP_SERVER_NAME = "paseo";
 const RAMBLA_MCP_PATHNAME = "/mcp/agents";
 
-export function stripInternalPaseoMcpServer(config: AgentSessionConfig): AgentSessionConfig {
+export function stripInternalRamblaMcpServer(config: AgentSessionConfig): AgentSessionConfig {
   const mcpServers = config.mcpServers;
   if (!mcpServers) {
     return config;
   }
 
   const paseoServer = mcpServers[RAMBLA_MCP_SERVER_NAME];
-  if (!paseoServer || !isInternalPaseoMcpServer(paseoServer)) {
+  if (!paseoServer || !isInternalRamblaMcpServer(paseoServer)) {
     return config;
   }
 
@@ -26,7 +26,7 @@ export function stripInternalPaseoMcpServer(config: AgentSessionConfig): AgentSe
   return next;
 }
 
-export function withRuntimePaseoMcpServer(params: {
+export function withRuntimeRamblaMcpServer(params: {
   config: AgentSessionConfig;
   agentId: string;
   mcpBaseUrl: string | null;
@@ -37,7 +37,7 @@ export function withRuntimePaseoMcpServer(params: {
    */
   mcpAuthToken: string | null;
 }): AgentSessionConfig {
-  const storedConfig = stripInternalPaseoMcpServer(params.config);
+  const storedConfig = stripInternalRamblaMcpServer(params.config);
   if (!params.mcpBaseUrl || storedConfig.mcpServers?.[RAMBLA_MCP_SERVER_NAME]) {
     return storedConfig;
   }
@@ -57,7 +57,7 @@ export function withRuntimePaseoMcpServer(params: {
   };
 }
 
-function isInternalPaseoMcpServer(config: McpServerConfig): boolean {
+function isInternalRamblaMcpServer(config: McpServerConfig): boolean {
   if (config.type !== "http" && config.type !== "sse") {
     return false;
   }

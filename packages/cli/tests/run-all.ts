@@ -1,7 +1,7 @@
 #!/usr/bin/env npx zx
 
 /**
- * Test runner for Paseo CLI E2E tests
+ * Test runner for Rambla CLI E2E tests
  *
  * Runs all test phases as separate subprocesses with a bounded worker pool
  * so independent tests run concurrently. Each test file already isolates
@@ -122,7 +122,7 @@ async function writeJsonSummary({
   );
 }
 
-console.log("🧪 Paseo CLI E2E Test Runner\n");
+console.log("🧪 Rambla CLI E2E Test Runner\n");
 console.log("=".repeat(50));
 
 // Discover all test files

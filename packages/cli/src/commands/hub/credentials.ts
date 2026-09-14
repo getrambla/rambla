@@ -59,7 +59,7 @@ export class PrivateHubCredentialStore implements HubCredentialStore {
   private readonly filePath: string;
 
   constructor(env: Readonly<Record<string, string | undefined>> = process.env) {
-    this.filePath = path.join(resolvePaseoHome(env), "hub-credentials.json");
+    this.filePath = path.join(resolveRamblaHome(env), "hub-credentials.json");
   }
 
   active(): StoredHubCredential | null {
@@ -136,7 +136,7 @@ export class PrivateHubCredentialStore implements HubCredentialStore {
   }
 }
 
-function resolvePaseoHome(env: Readonly<Record<string, string | undefined>>): string {
+function resolveRamblaHome(env: Readonly<Record<string, string | undefined>>): string {
   const configured = env.RAMBLA_HOME ?? "~/.rambla";
   const expanded = configured === "~" ? homedir() : configured.replace(/^~\//u, `${homedir()}/`);
   return path.resolve(expanded);

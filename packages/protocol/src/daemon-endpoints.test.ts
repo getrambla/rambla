@@ -191,7 +191,7 @@ describe("relay websocket URLs", () => {
 });
 
 describe("shouldUseTlsForDefaultHostedRelay", () => {
-  test("returns true for the hosted Paseo relay on port 443", () => {
+  test("returns true for the hosted Rambla relay on port 443", () => {
     expect(shouldUseTlsForDefaultHostedRelay("relay.rambla.sh:443")).toBe(true);
   });
 

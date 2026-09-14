@@ -275,7 +275,7 @@ export function HostAgentsPage({ serverId }: { serverId: string }) {
     <View>
       {isConnected ? (
         <SettingsSection title={t("settings.hostSections.agents")}>
-          <InjectPaseoToolsCard serverId={serverId} />
+          <InjectRamblaToolsCard serverId={serverId} />
           <BrowserToolsOptInCard serverId={serverId} />
           <AppendSystemPromptCard serverId={serverId} />
         </SettingsSection>
@@ -970,7 +970,7 @@ function UpdateDaemonCard({ host }: { host: HostProfile }) {
   );
 }
 
-function InjectPaseoToolsCard({ serverId }: { serverId: string }) {
+function InjectRamblaToolsCard({ serverId }: { serverId: string }) {
   const { t } = useTranslation();
   const isConnected = useHostRuntimeIsConnected(serverId);
   const { config, patchConfig } = useDaemonConfig(serverId);

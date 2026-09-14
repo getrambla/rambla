@@ -1,12 +1,12 @@
 require 'json'
 
 Pod::Spec.new do |s|
-  s.name           = 'PaseoHardwareKeyboard'
+  s.name           = 'RamblaHardwareKeyboard'
   s.version        = '0.1.0'
-  s.summary        = 'Hardware keyboard shortcuts for Paseo'
-  s.description    = 'Hardware keyboard shortcuts for Paseo'
+  s.summary        = 'Hardware keyboard shortcuts for Rambla'
+  s.description    = 'Hardware keyboard shortcuts for Rambla'
   s.license        = 'Apache-2.0'
-  s.author         = 'Paseo'
+  s.author         = 'Rambla'
   s.homepage       = 'https://rambla.sh'
   s.platforms      = { :ios => '13.4' }
   s.swift_version  = '5.4'

@@ -57,27 +57,27 @@ import { setupApplicationMenu } from "./features/menu.js";
 import {
   BROWSER_NEW_TAB_REQUEST_EVENT,
   decideBrowserWindowOpenRequest,
-  getPaseoBrowserIdForWebContents,
-  getPaseoBrowserWebContentsForHostWindow,
-  getPaseoBrowserWebviewRegistry,
-  listRegisteredPaseoBrowserIds,
-  isPaseoBrowserWebviewAttach,
-  preparePaseoBrowserWebContents,
+  getRamblaBrowserIdForWebContents,
+  getRamblaBrowserWebContentsForHostWindow,
+  getRamblaBrowserWebviewRegistry,
+  listRegisteredRamblaBrowserIds,
+  isRamblaBrowserWebviewAttach,
+  prepareRamblaBrowserWebContents,
   PendingBrowserWindowOpenRequests,
   registerBrowserWebviewNavigationGuards,
-  unregisterPaseoBrowserFromHost,
-  registerAttachedPaseoBrowser,
-  setWorkspaceActivePaseoBrowserId,
-  unregisterPaseoBrowserHost,
+  unregisterRamblaBrowserFromHost,
+  registerAttachedRamblaBrowser,
+  setWorkspaceActiveRamblaBrowserId,
+  unregisterRamblaBrowserHost,
 } from "./features/browser-webviews/index.js";
 import {
-  clearPaseoBrowserProfile,
-  getLegacyPaseoBrowserProfileSession,
+  clearRamblaBrowserProfile,
+  getLegacyRamblaBrowserProfileSession,
   RAMBLA_BROWSER_PROFILE_PARTITION,
-  getPaseoBrowserProfileSession,
-  getPaseoBrowserProfileSessions,
-  listPaseoBrowserProfileGuests,
-  readLegacyPaseoBrowserIds,
+  getRamblaBrowserProfileSession,
+  getRamblaBrowserProfileSessions,
+  listRamblaBrowserProfileGuests,
+  readLegacyRamblaBrowserIds,
 } from "./features/browser-profile.js";
 import { parseOpenProjectPathFromArgv } from "./open-project-routing.js";
 import {
@@ -183,7 +183,7 @@ function readActiveBrowserInput(
   return { workspaceId: record.workspaceId.trim(), browserId: browserId || null };
 }
 
-const browserKeyboard = new BrowserKeyboard(getPaseoBrowserWebviewRegistry());
+const browserKeyboard = new BrowserKeyboard(getRamblaBrowserWebviewRegistry());
 browserKeyboard.registerIpc();
 
 function showBrowserWebviewContextMenu(
@@ -202,7 +202,7 @@ function showBrowserWebviewContextMenu(
             click: () => {
               log.info("[browser-devtools] inspect-element.request", {
                 webContentsId: contents.id,
-                browserId: getPaseoBrowserIdForWebContents(contents),
+                browserId: getRamblaBrowserIdForWebContents(contents),
                 x: params.x,
                 y: params.y,
                 isDevToolsOpened: contents.isDevToolsOpened(),
@@ -267,7 +267,7 @@ function installBrowserWindowOpenHandler(input: {
       };
     }
 
-    const sourceBrowserId = getPaseoBrowserIdForWebContents(sourceContents);
+    const sourceBrowserId = getRamblaBrowserIdForWebContents(sourceContents);
     if (sourceBrowserId) {
       mainWindow.webContents.send(BROWSER_NEW_TAB_REQUEST_EVENT, {
         sourceBrowserId,
@@ -388,10 +388,10 @@ ipcMain.handle("paseo:browser:register-attached", (event, rawInput: unknown) => 
   if (!input) {
     throw new Error("Invalid attached browser registration");
   }
-  const registered = registerAttachedPaseoBrowser({
+  const registered = registerAttachedRamblaBrowser({
     ...input,
     sender: event.sender,
-    profileSession: getPaseoBrowserProfileSession(session),
+    profileSession: getRamblaBrowserProfileSession(session),
     findWebContents: (webContentsId) => webContents.fromId(webContentsId) ?? null,
   });
   if (!registered) {
@@ -405,7 +405,7 @@ ipcMain.handle("paseo:browser:register-attached", (event, rawInput: unknown) => 
   log.info("[browser-webview] registered", {
     browserId: input.browserId,
     webContentsId: input.webContentsId,
-    registeredBrowserIds: listRegisteredPaseoBrowserIds(),
+    registeredBrowserIds: listRegisteredRamblaBrowserIds(),
   });
   for (const url of pendingBrowserWindowOpenRequests.take(input.webContentsId)) {
     event.sender.send(BROWSER_NEW_TAB_REQUEST_EVENT, {
@@ -418,18 +418,18 @@ ipcMain.handle("paseo:browser:register-attached", (event, rawInput: unknown) => 
 ipcMain.handle("paseo:browser:unregister-workspace-browser", async (event, browserId: unknown) => {
   if (typeof browserId === "string" && browserId.trim().length > 0) {
     const normalizedBrowserId = browserId.trim();
-    const hasOtherHost = getPaseoBrowserWebviewRegistry().hasBrowserInOtherHostWindow(
+    const hasOtherHost = getRamblaBrowserWebviewRegistry().hasBrowserInOtherHostWindow(
       event.sender.id,
       normalizedBrowserId,
     );
-    unregisterPaseoBrowserFromHost(event.sender.id, normalizedBrowserId);
+    unregisterRamblaBrowserFromHost(event.sender.id, normalizedBrowserId);
     // COMPAT(browserProfile): added in v0.1.108; remove after 2027-01-15.
     const legacyProfile = hasOtherHost
       ? null
-      : getLegacyPaseoBrowserProfileSession(session, normalizedBrowserId);
+      : getLegacyRamblaBrowserProfileSession(session, normalizedBrowserId);
     if (legacyProfile) {
       try {
-        await clearPaseoBrowserProfile({
+        await clearRamblaBrowserProfile({
           profileSessions: [legacyProfile],
           listGuests: () => [],
           logReloadError: () => {},
@@ -447,7 +447,7 @@ ipcMain.handle("paseo:browser:unregister-workspace-browser", async (event, brows
 ipcMain.handle("paseo:browser:set-workspace-active-browser", (event, rawInput: unknown) => {
   const input = readActiveBrowserInput(rawInput);
   if (input) {
-    setWorkspaceActivePaseoBrowserId({ ...input, hostWebContentsId: event.sender.id });
+    setWorkspaceActiveRamblaBrowserId({ ...input, hostWebContentsId: event.sender.id });
   }
 });
 
@@ -455,7 +455,7 @@ ipcMain.handle("paseo:browser:focus", (event, browserId: unknown): boolean => {
   if (typeof browserId !== "string" || browserId.trim().length === 0) {
     return false;
   }
-  const contents = getPaseoBrowserWebContentsForHostWindow(browserId, event.sender.id);
+  const contents = getRamblaBrowserWebContentsForHostWindow(browserId, event.sender.id);
   if (!contents) {
     return false;
   }
@@ -469,18 +469,18 @@ ipcMain.handle("paseo:browser:open-devtools", (event, browserId: unknown) => {
       ok: false,
       reason: "invalid-browser-id",
       browserId,
-      registeredBrowserIds: listRegisteredPaseoBrowserIds(),
+      registeredBrowserIds: listRegisteredRamblaBrowserIds(),
     };
     log.warn("[browser-devtools] open-devtools.invalid", result);
     return result;
   }
-  const contents = getPaseoBrowserWebContentsForHostWindow(browserId, event.sender.id);
+  const contents = getRamblaBrowserWebContentsForHostWindow(browserId, event.sender.id);
   if (!contents) {
     const result = {
       ok: false,
       reason: "browser-webcontents-not-found",
       browserId,
-      registeredBrowserIds: listRegisteredPaseoBrowserIds(),
+      registeredBrowserIds: listRegisteredRamblaBrowserIds(),
     };
     log.warn("[browser-devtools] open-devtools.not-found", result);
     return result;
@@ -490,7 +490,7 @@ ipcMain.handle("paseo:browser:open-devtools", (event, browserId: unknown) => {
     webContentsId: contents.id,
     isDestroyed: contents.isDestroyed(),
     isDevToolsOpened: contents.isDevToolsOpened(),
-    registeredBrowserIds: listRegisteredPaseoBrowserIds(),
+    registeredBrowserIds: listRegisteredRamblaBrowserIds(),
   });
   contents.openDevTools({ mode: "detach" });
   const result = {
@@ -505,15 +505,15 @@ ipcMain.handle("paseo:browser:open-devtools", (event, browserId: unknown) => {
 });
 
 ipcMain.handle("paseo:browser:clear-profile", async (_event, rawLegacyBrowserIds: unknown) => {
-  const profileSessions = getPaseoBrowserProfileSessions(
+  const profileSessions = getRamblaBrowserProfileSessions(
     session,
-    readLegacyPaseoBrowserIds(rawLegacyBrowserIds),
+    readLegacyRamblaBrowserIds(rawLegacyBrowserIds),
   );
   const profileSession = profileSessions[0];
-  await clearPaseoBrowserProfile({
+  await clearRamblaBrowserProfile({
     profileSessions,
     listGuests: () =>
-      listPaseoBrowserProfileGuests({
+      listRamblaBrowserProfileGuests({
         profileSession,
         webContents: webContents.getAllWebContents(),
       }),
@@ -524,7 +524,7 @@ ipcMain.handle("paseo:browser:clear-profile", async (_event, rawLegacyBrowserIds
 });
 
 const browserCapture = createBrowserCaptureService<Electron.NativeImage>({
-  findGuest: getPaseoBrowserWebContentsForHostWindow,
+  findGuest: getRamblaBrowserWebContentsForHostWindow,
   decodeImage: (dataUrl) => nativeImage.createFromDataURL(dataUrl),
   clipboard: {
     write: async ({ text, image }) => {
@@ -714,7 +714,7 @@ async function createWindow(
   mainWindow.on("closed", () => {
     options.onClosed?.(webContentsId);
     agentNavigationInbox.removeWindow(webContentsId);
-    unregisterPaseoBrowserHost(webContentsId);
+    unregisterRamblaBrowserHost(webContentsId);
     browserKeyboard.detachHost(webContentsId);
   });
 
@@ -734,7 +734,7 @@ async function createWindow(
   setupDefaultContextMenu(mainWindow);
   setupDragDropPrevention(mainWindow);
   mainWindow.webContents.on("will-attach-webview", (event, webPreferences, params) => {
-    if (!isPaseoBrowserWebviewAttach(params)) {
+    if (!isRamblaBrowserWebviewAttach(params)) {
       event.preventDefault();
       return;
     }
@@ -755,7 +755,7 @@ async function createWindow(
     webPreferences.preload = getBrowserKeyboardPreloadPath();
   });
   mainWindow.webContents.on("did-attach-webview", (_event, contents) => {
-    preparePaseoBrowserWebContents(contents);
+    prepareRamblaBrowserWebContents(contents);
     contents.once("destroyed", () => {
       pendingBrowserWindowOpenRequests.delete(contents.id);
     });

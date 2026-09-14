@@ -94,15 +94,15 @@ function readUtf8File(pathname: string): string {
   }
 }
 
-type PaseoExtensionListener = (event: unknown, context?: unknown) => unknown;
+type RamblaExtensionListener = (event: unknown, context?: unknown) => unknown;
 
-async function loadPaseoExtensionListeners(
+async function loadRamblaExtensionListeners(
   extensionPath: string,
-): Promise<Map<string, PaseoExtensionListener>> {
-  const listeners = new Map<string, PaseoExtensionListener>();
+): Promise<Map<string, RamblaExtensionListener>> {
+  const listeners = new Map<string, RamblaExtensionListener>();
   const extension = (await import(pathToFileURL(extensionPath).href)) as {
     default: (piApi: {
-      on: (event: string, listener: PaseoExtensionListener) => void;
+      on: (event: string, listener: RamblaExtensionListener) => void;
       registerCommand: () => void;
     }) => void;
   };
@@ -113,11 +113,11 @@ async function loadPaseoExtensionListeners(
   return listeners;
 }
 
-async function applyPaseoExtensionSystemPrompt(
+async function applyRamblaExtensionSystemPrompt(
   extensionPath: string,
   systemPrompt: string,
 ): Promise<string | undefined> {
-  const listeners = await loadPaseoExtensionListeners(extensionPath);
+  const listeners = await loadRamblaExtensionListeners(extensionPath);
   const result = await listeners.get("before_agent_start")?.({ systemPrompt });
   return (result as { systemPrompt?: string } | undefined)?.systemPrompt;
 }
@@ -1376,7 +1376,7 @@ describe("PiRpcAgentSession", () => {
     const session = await client.createSession(createConfig());
     const extensionPath = pi.recordedLaunches[0]?.extensionPaths[0];
     expect(extensionPath).toBeDefined();
-    const listeners = await loadPaseoExtensionListeners(extensionPath!);
+    const listeners = await loadRamblaExtensionListeners(extensionPath!);
     const submittedMessage = { role: "user", content: "new prompt" };
     const entries: Array<{
       type: string;
@@ -1443,7 +1443,7 @@ describe("PiRpcAgentSession", () => {
     ]);
 
     await expect(
-      applyPaseoExtensionSystemPrompt(actualLaunch.extensionPaths[0]!, "Pi project prompt"),
+      applyRamblaExtensionSystemPrompt(actualLaunch.extensionPaths[0]!, "Pi project prompt"),
     ).resolves.toBe("Pi project prompt\n\nAgent prompt\n\nDaemon prompt");
 
     await session.close();
@@ -1491,7 +1491,7 @@ describe("PiRpcAgentSession", () => {
       actualLaunch.extensionPaths[0],
     ]);
     await expect(
-      applyPaseoExtensionSystemPrompt(actualLaunch.extensionPaths[0]!, "Pi project prompt"),
+      applyRamblaExtensionSystemPrompt(actualLaunch.extensionPaths[0]!, "Pi project prompt"),
     ).resolves.toBe("Pi project prompt\n\nAgent prompt\n\nDaemon prompt");
   });
 
@@ -2335,7 +2335,7 @@ describe("PiRpcAgentClient", () => {
     expect(pi.recordedLaunches).toHaveLength(0);
   });
 
-  test("maps extension, prompt, and skill commands to Paseo slash commands", async () => {
+  test("maps extension, prompt, and skill commands to Rambla slash commands", async () => {
     const { pi, session } = await createSession();
     pi.latestSession().commands = [
       { name: "review", description: "Review changes", source: "extension" },

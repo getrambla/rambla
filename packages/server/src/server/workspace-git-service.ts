@@ -52,7 +52,7 @@ import {
   type RunGitCommand,
 } from "../utils/run-git-command.js";
 import { branchNameFromRef } from "../utils/worktree-metadata.js";
-import { listPaseoWorktrees, type PaseoWorktreeInfo } from "../utils/worktree.js";
+import { listRamblaWorktrees, type RamblaWorktreeInfo } from "../utils/worktree.js";
 import { READ_ONLY_GIT_ENV } from "./checkout-git-utils.js";
 import { classifyGitMetadataPath, getPrunedGitMetadataPaths } from "./git-metadata-event-rules.js";
 import {
@@ -132,7 +132,7 @@ export interface WorkspaceGitRuntimeSnapshot {
     mainRepoRoot: string | null;
     currentBranch: string | null;
     remoteUrl: string | null;
-    isPaseoOwnedWorktree: boolean;
+    isRamblaOwnedWorktree: boolean;
     isDirty: boolean | null;
     baseRef: string | null;
     aheadBehind: { ahead: number; behind: number } | null;
@@ -279,12 +279,12 @@ export interface WorkspaceGitStashEntry {
   index: number;
   message: string;
   branch: string | null;
-  isPaseo: boolean;
+  isRambla: boolean;
 }
 
 export type WorkspaceGitBranchValidationResult = BranchCheckoutResolution;
 export type WorkspaceGitBranchSuggestion = BranchSuggestion;
-export type WorkspaceGitWorktreeInfo = PaseoWorktreeInfo;
+export type WorkspaceGitWorktreeInfo = RamblaWorktreeInfo;
 
 export type WorkspaceGitSnapshotOptions =
   | {
@@ -343,7 +343,7 @@ interface WorkspaceGitServiceDependencies {
   resolveBranchCheckout: typeof resolveBranchCheckout;
   resolveRepositoryDefaultBranch: typeof resolveRepositoryDefaultBranch;
   listBranchSuggestions: typeof listBranchSuggestions;
-  listPaseoWorktrees: typeof listPaseoWorktrees;
+  listRamblaWorktrees: typeof listRamblaWorktrees;
   /**
    * Adapter instances to bind by forge id instead of building from the registry
    * — the injection seam for the daemon's shared GitHub adapter and for test
@@ -499,7 +499,7 @@ function buildDefaultWorkspaceGitServiceDeps(
     resolveBranchCheckout,
     resolveRepositoryDefaultBranch,
     listBranchSuggestions,
-    listPaseoWorktrees,
+    listRamblaWorktrees,
     resolveAbsoluteGitDir,
     hasOriginRemote,
     runGitFetch: fetchWorkspaceGitRemote,
@@ -707,7 +707,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
         currentBranch: null,
         remoteUrl: null,
         repoRoot: null,
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: null,
       });
     }
@@ -716,7 +716,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
       currentBranch: status.currentBranch,
       remoteUrl: status.remoteUrl,
       repoRoot: status.repoRoot,
-      isPaseoOwnedWorktree: status.isPaseoOwnedWorktree,
+      isRamblaOwnedWorktree: status.isRamblaOwnedWorktree,
       mainRepoRoot: status.mainRepoRoot,
     });
   }
@@ -847,7 +847,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
     const repoRoot = await this.resolveRepoRoot(cwdOrRepoRoot, options);
     const key = JSON.stringify(["worktrees", repoRoot]);
     return this.readAuxiliaryCache(this.worktreeListCache, key, options, () =>
-      this.deps.listPaseoWorktrees({
+      this.deps.listRamblaWorktrees({
         cwd: repoRoot,
         paseoHome: this.paseoHome,
         worktreesRoot: this.worktreesRoot,
@@ -861,7 +861,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
       throw new Error("Create worktree requires a git repository");
     }
 
-    return snapshot.git.isPaseoOwnedWorktree
+    return snapshot.git.isRamblaOwnedWorktree
       ? (snapshot.git.mainRepoRoot ?? snapshot.git.repoRoot ?? resolve(cwd))
       : (snapshot.git.repoRoot ?? resolve(cwd));
   }
@@ -2569,7 +2569,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
       target.latestFacts?.isGit && target.latestFacts.currentBranch === git.currentBranch
         ? target.latestFacts.pullRequestLookupTarget
         : null;
-    if (target.latestFacts?.isGit && target.latestFacts.paseoWorktree.isPaseoOwnedWorktree) {
+    if (target.latestFacts?.isGit && target.latestFacts.paseoWorktree.isRamblaOwnedWorktree) {
       return lookupTarget;
     }
     if (lookupTarget) {
@@ -2981,7 +2981,7 @@ export class WorkspaceGitServiceImpl implements WorkspaceGitService {
       mainRepoRoot: checkoutStatus.mainRepoRoot,
       currentBranch: checkoutStatus.currentBranch,
       remoteUrl: checkoutStatus.remoteUrl,
-      isPaseoOwnedWorktree: checkoutStatus.isPaseoOwnedWorktree,
+      isRamblaOwnedWorktree: checkoutStatus.isRamblaOwnedWorktree,
       isDirty: refreshWorktree
         ? checkoutStatus.isDirty
         : (target.latestGit?.isDirty ?? checkoutStatus.isDirty),
@@ -3471,14 +3471,14 @@ function parseWorkspaceGitStashList(
     const index = Number(indexMatch[1]);
     const prefix = "paseo-auto-stash:";
     const prefixIdx = subject.indexOf(prefix);
-    const isPaseo = prefixIdx >= 0;
-    const branch = isPaseo ? subject.slice(prefixIdx + prefix.length).trim() || null : null;
+    const isRambla = prefixIdx >= 0;
+    const branch = isRambla ? subject.slice(prefixIdx + prefix.length).trim() || null : null;
 
-    if (options.paseoOnly && !isPaseo) {
+    if (options.paseoOnly && !isRambla) {
       continue;
     }
 
-    entries.push({ index, message: subject, branch, isPaseo });
+    entries.push({ index, message: subject, branch, isRambla });
   }
 
   return entries;
@@ -3493,7 +3493,7 @@ function buildNotGitSnapshot(cwd: string): WorkspaceGitRuntimeSnapshot {
       mainRepoRoot: null,
       currentBranch: null,
       remoteUrl: null,
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       isDirty: null,
       baseRef: null,
       aheadBehind: null,

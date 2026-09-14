@@ -54,7 +54,7 @@ async function main(): Promise<void> {
     );
     const incompatibleInstall = await context.paseo(["plugin", "install", scaffold, "--json"]);
     assert.equal(incompatibleInstall.exitCode, 1);
-    assert.match(incompatibleInstall.stderr, /requires Paseo >=999.0.0/);
+    assert.match(incompatibleInstall.stderr, /requires Rambla >=999.0.0/);
     const afterRejection = await context.paseo(["plugin", "ls", "--json"]);
     assert.equal(afterRejection.exitCode, 0, afterRejection.stderr);
     assert.deepEqual(
@@ -67,7 +67,7 @@ async function main(): Promise<void> {
     assert.equal(JSON.parse(scaffoldInstall.stdout).status, "running");
 
     await git(gitDirectory, ["init", "-b", "main"]);
-    await git(gitDirectory, ["config", "user.name", "Paseo Tests"]);
+    await git(gitDirectory, ["config", "user.name", "Rambla Tests"]);
     await git(gitDirectory, ["config", "user.email", "paseo@example.test"]);
     await writeFile(
       path.join(gitDirectory, "paseo-plugin.json"),
@@ -119,10 +119,10 @@ async function main(): Promise<void> {
       }),
     );
     await git(gitDirectory, ["add", "-A"]);
-    await git(gitDirectory, ["commit", "-m", "requires a future Paseo"]);
+    await git(gitDirectory, ["commit", "-m", "requires a future Rambla"]);
     const incompatibleUpdate = await context.paseo(["plugin", "update", "git-cli-e2e", "--json"]);
     assert.equal(incompatibleUpdate.exitCode, 1);
-    assert.match(incompatibleUpdate.stderr, /requires Paseo >=999.0.0/);
+    assert.match(incompatibleUpdate.stderr, /requires Rambla >=999.0.0/);
     await assert.rejects(readFile(buildMarker), { code: "ENOENT" });
     const retained = await context.paseo(["plugin", "ls", "git-cli-e2e", "--json"]);
     assert.equal(retained.exitCode, 0, retained.stderr);
@@ -137,7 +137,7 @@ async function main(): Promise<void> {
       "--json",
     ]);
     assert.equal(incompatibleAdd.exitCode, 1);
-    assert.match(incompatibleAdd.stderr, /requires Paseo >=999.0.0/);
+    assert.match(incompatibleAdd.stderr, /requires Rambla >=999.0.0/);
     await assert.rejects(readFile(buildMarker), { code: "ENOENT" });
 
     const reload = await context.paseo(["plugin", "reload", "cli-e2e", "--json"]);

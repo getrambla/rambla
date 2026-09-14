@@ -4,7 +4,7 @@ import { CLIENT_CAPS } from "./client-capabilities.js";
 import { AGENT_LIFECYCLE_STATUSES } from "./agent-lifecycle.js";
 import { MAX_EXPLICIT_AGENT_TITLE_CHARS } from "./agent-title-limits.js";
 import { AgentProviderSchema } from "./provider-manifest.js";
-import { ProviderPaseoToolsPolicySchema } from "./provider-config.js";
+import { ProviderRamblaToolsPolicySchema } from "./provider-config.js";
 import { TOOL_CALL_ICON_NAMES } from "./agent-types.js";
 import { WORKSPACE_LABEL_COLORS } from "./workspace-labels.js";
 import {
@@ -61,33 +61,33 @@ import {
 } from "./browser-automation/rpc-schemas.js";
 import { BrowserAutomationHostCapabilitySchema } from "./browser-automation/capabilities.js";
 import {
-  PaseoConfigRawSchema,
-  PaseoLifecycleCommandRawSchema,
-  PaseoMetadataGenerationEntrySchema,
-  PaseoMetadataGenerationSchema,
-  PaseoScriptEntryRawSchema,
-  PaseoWorktreeConfigRawSchema,
-  PaseoConfigRevisionSchema,
+  RamblaConfigRawSchema,
+  RamblaLifecycleCommandRawSchema,
+  RamblaMetadataGenerationEntrySchema,
+  RamblaMetadataGenerationSchema,
+  RamblaScriptEntryRawSchema,
+  RamblaWorktreeConfigRawSchema,
+  RamblaConfigRevisionSchema,
   ProjectConfigRpcErrorSchema,
-  type PaseoConfigRaw,
-  type PaseoConfigRevision,
-  type PaseoMetadataGeneration,
-  type PaseoMetadataGenerationEntry,
-  type PaseoScriptEntryRaw,
+  type RamblaConfigRaw,
+  type RamblaConfigRevision,
+  type RamblaMetadataGeneration,
+  type RamblaMetadataGenerationEntry,
+  type RamblaScriptEntryRaw,
   type ProjectConfigRpcError,
 } from "./paseo-config-schema.js";
 export {
-  PaseoConfigRawSchema,
-  PaseoLifecycleCommandRawSchema,
-  PaseoMetadataGenerationEntrySchema,
-  PaseoMetadataGenerationSchema,
-  PaseoScriptEntryRawSchema,
-  PaseoWorktreeConfigRawSchema,
-  type PaseoConfigRaw,
-  type PaseoConfigRevision,
-  type PaseoMetadataGeneration,
-  type PaseoMetadataGenerationEntry,
-  type PaseoScriptEntryRaw,
+  RamblaConfigRawSchema,
+  RamblaLifecycleCommandRawSchema,
+  RamblaMetadataGenerationEntrySchema,
+  RamblaMetadataGenerationSchema,
+  RamblaScriptEntryRawSchema,
+  RamblaWorktreeConfigRawSchema,
+  type RamblaConfigRaw,
+  type RamblaConfigRevision,
+  type RamblaMetadataGeneration,
+  type RamblaMetadataGenerationEntry,
+  type RamblaScriptEntryRaw,
   type ProjectConfigRpcError,
 };
 // ---------------------------------------------------------------------------
@@ -119,7 +119,7 @@ const MutableDaemonProviderModelSchema = z
 
 const MutableDaemonProviderConfigSchema = z
   .object({
-    paseoTools: ProviderPaseoToolsPolicySchema.optional(),
+    paseoTools: ProviderRamblaToolsPolicySchema.optional(),
     enabled: z.boolean().optional(),
     additionalModels: z.array(MutableDaemonProviderModelSchema).optional(),
   })
@@ -1610,8 +1610,8 @@ export const WriteProjectConfigRequestMessageSchema = z.object({
   type: z.literal("write_project_config_request"),
   requestId: z.string(),
   repoRoot: z.string(),
-  config: PaseoConfigRawSchema,
-  expectedRevision: PaseoConfigRevisionSchema.nullable(),
+  config: RamblaConfigRawSchema,
+  expectedRevision: RamblaConfigRevisionSchema.nullable(),
 });
 
 // ============================================================================
@@ -2412,14 +2412,14 @@ export const DirectorySuggestionsRequestSchema = z.object({
   requestId: z.string(),
 });
 
-export const PaseoWorktreeListRequestSchema = z.object({
+export const RamblaWorktreeListRequestSchema = z.object({
   type: z.literal("paseo_worktree_list_request"),
   cwd: z.string().optional(),
   repoRoot: z.string().optional(),
   requestId: z.string(),
 });
 
-export const PaseoWorktreeArchiveRequestSchema = z.object({
+export const RamblaWorktreeArchiveRequestSchema = z.object({
   type: z.literal("paseo_worktree_archive_request"),
   worktreePath: z.string().optional(),
   repoRoot: z.string().optional(),
@@ -2448,7 +2448,7 @@ export const FirstAgentContextSchema = z.object({
   attachments: AgentAttachmentsSchema,
 });
 
-export const CreatePaseoWorktreeRequestSchema = z.object({
+export const CreateRamblaWorktreeRequestSchema = z.object({
   type: z.literal("create_paseo_worktree_request"),
   cwd: z.string(),
   projectId: z.string().optional(),
@@ -3194,9 +3194,9 @@ export const SessionInboundMessageSchema = z.discriminatedUnion("type", [
   ForgeSearchRequestSchema,
   GitHubSearchRequestSchema,
   DirectorySuggestionsRequestSchema,
-  PaseoWorktreeListRequestSchema,
-  PaseoWorktreeArchiveRequestSchema,
-  CreatePaseoWorktreeRequestSchema,
+  RamblaWorktreeListRequestSchema,
+  RamblaWorktreeArchiveRequestSchema,
+  CreateRamblaWorktreeRequestSchema,
   WorkspaceSetupStatusRequestSchema,
   WorkspaceSetupRunRequestSchema,
   LegacyListAvailableEditorsRequestSchema,
@@ -3727,7 +3727,7 @@ export const ProjectCheckoutLiteNotGitPayloadSchema = z
     currentBranch: z.null(),
     remoteUrl: z.null(),
     worktreeRoot: z.null().optional(),
-    isPaseoOwnedWorktree: z.literal(false),
+    isRamblaOwnedWorktree: z.literal(false),
     mainRepoRoot: z.null(),
   })
   .transform((value) => ({
@@ -3735,14 +3735,14 @@ export const ProjectCheckoutLiteNotGitPayloadSchema = z
     worktreeRoot: null,
   }));
 
-export const ProjectCheckoutLiteGitNonPaseoPayloadSchema = z
+export const ProjectCheckoutLiteGitNonRamblaPayloadSchema = z
   .object({
     cwd: z.string(),
     isGit: z.literal(true),
     currentBranch: z.string().nullable(),
     remoteUrl: z.string().nullable(),
     worktreeRoot: z.string().optional(),
-    isPaseoOwnedWorktree: z.literal(false),
+    isRamblaOwnedWorktree: z.literal(false),
     mainRepoRoot: z.string().nullable().optional().default(null),
   })
   .transform((value) => ({
@@ -3750,14 +3750,14 @@ export const ProjectCheckoutLiteGitNonPaseoPayloadSchema = z
     worktreeRoot: value.worktreeRoot ?? value.cwd,
   }));
 
-export const ProjectCheckoutLiteGitPaseoPayloadSchema = z
+export const ProjectCheckoutLiteGitRamblaPayloadSchema = z
   .object({
     cwd: z.string(),
     isGit: z.literal(true),
     currentBranch: z.string().nullable(),
     remoteUrl: z.string().nullable(),
     worktreeRoot: z.string().optional(),
-    isPaseoOwnedWorktree: z.literal(true),
+    isRamblaOwnedWorktree: z.literal(true),
     mainRepoRoot: z.string(),
   })
   .transform((value) => ({
@@ -3767,8 +3767,8 @@ export const ProjectCheckoutLiteGitPaseoPayloadSchema = z
 
 export const ProjectCheckoutLitePayloadSchema = z.union([
   ProjectCheckoutLiteNotGitPayloadSchema,
-  ProjectCheckoutLiteGitNonPaseoPayloadSchema,
-  ProjectCheckoutLiteGitPaseoPayloadSchema,
+  ProjectCheckoutLiteGitNonRamblaPayloadSchema,
+  ProjectCheckoutLiteGitRamblaPayloadSchema,
 ]);
 
 export const ProjectPlacementPayloadSchema = z.object({
@@ -3799,7 +3799,7 @@ const WorkspaceGitRuntimePayloadSchema = z
   .object({
     currentBranch: z.string().nullable().optional(),
     remoteUrl: z.string().nullable().optional(),
-    isPaseoOwnedWorktree: z.boolean().optional(),
+    isRamblaOwnedWorktree: z.boolean().optional(),
     isDirty: z.boolean().nullable().optional(),
     aheadBehind: z
       .object({
@@ -4849,8 +4849,8 @@ export const ReadProjectConfigResponseMessageSchema = z.object({
       requestId: z.string(),
       repoRoot: z.string(),
       ok: z.literal(true),
-      config: PaseoConfigRawSchema.nullable(),
-      revision: PaseoConfigRevisionSchema.nullable(),
+      config: RamblaConfigRawSchema.nullable(),
+      revision: RamblaConfigRevisionSchema.nullable(),
       hasUncommittedWorktreeSetupChanges: z.boolean().optional(),
     }),
     z.object({
@@ -4871,8 +4871,8 @@ export const WriteProjectConfigResponseMessageSchema = z.object({
       requestId: z.string(),
       repoRoot: z.string(),
       ok: z.literal(true),
-      config: PaseoConfigRawSchema,
-      revision: PaseoConfigRevisionSchema,
+      config: RamblaConfigRawSchema,
+      revision: RamblaConfigRevisionSchema,
       hasUncommittedWorktreeSetupChanges: z.boolean().optional(),
     }),
     z.object({
@@ -4957,7 +4957,7 @@ const CheckoutStatusCommonSchema = z.object({
 
 const CheckoutStatusNotGitSchema = CheckoutStatusCommonSchema.extend({
   isGit: z.literal(false),
-  isPaseoOwnedWorktree: z.literal(false),
+  isRamblaOwnedWorktree: z.literal(false),
   repoRoot: z.null(),
   currentBranch: z.null(),
   isDirty: z.null(),
@@ -4969,9 +4969,9 @@ const CheckoutStatusNotGitSchema = CheckoutStatusCommonSchema.extend({
   remoteUrl: z.null(),
 });
 
-const CheckoutStatusGitNonPaseoSchema = CheckoutStatusCommonSchema.extend({
+const CheckoutStatusGitNonRamblaSchema = CheckoutStatusCommonSchema.extend({
   isGit: z.literal(true),
-  isPaseoOwnedWorktree: z.literal(false),
+  isRamblaOwnedWorktree: z.literal(false),
   repoRoot: z.string(),
   mainRepoRoot: z.string().nullable().optional().default(null),
   currentBranch: z.string().nullable(),
@@ -4984,9 +4984,9 @@ const CheckoutStatusGitNonPaseoSchema = CheckoutStatusCommonSchema.extend({
   remoteUrl: z.string().nullable(),
 });
 
-const CheckoutStatusGitPaseoSchema = CheckoutStatusCommonSchema.extend({
+const CheckoutStatusGitRamblaSchema = CheckoutStatusCommonSchema.extend({
   isGit: z.literal(true),
-  isPaseoOwnedWorktree: z.literal(true),
+  isRamblaOwnedWorktree: z.literal(true),
   repoRoot: z.string(),
   mainRepoRoot: z.string(),
   currentBranch: z.string().nullable(),
@@ -5003,8 +5003,8 @@ export const CheckoutStatusResponseSchema = z.object({
   type: z.literal("checkout_status_response"),
   payload: z.union([
     CheckoutStatusNotGitSchema,
-    CheckoutStatusGitNonPaseoSchema,
-    CheckoutStatusGitPaseoSchema,
+    CheckoutStatusGitNonRamblaSchema,
+    CheckoutStatusGitRamblaSchema,
   ]),
 });
 
@@ -5143,8 +5143,8 @@ export const CheckoutStatusUpdateSchema = z.object({
   payload: z
     .union([
       CheckoutStatusNotGitSchema,
-      CheckoutStatusGitNonPaseoSchema,
-      CheckoutStatusGitPaseoSchema,
+      CheckoutStatusGitNonRamblaSchema,
+      CheckoutStatusGitRamblaSchema,
     ])
     .and(CheckoutStatusUpdateMetadataSchema),
 });
@@ -5559,7 +5559,7 @@ const StashEntrySchema = z.object({
   index: z.number().int().min(0),
   message: z.string(),
   branch: z.string().nullable(),
-  isPaseo: z.boolean(),
+  isRambla: z.boolean(),
 });
 
 export const StashSaveResponseSchema = z.object({
@@ -5671,23 +5671,23 @@ export const DirectorySuggestionsResponseSchema = z.object({
   }),
 });
 
-const PaseoWorktreeSchema = z.object({
+const RamblaWorktreeSchema = z.object({
   worktreePath: z.string(),
   createdAt: z.string(),
   branchName: z.string().nullable().optional(),
   head: z.string().nullable().optional(),
 });
 
-export const PaseoWorktreeListResponseSchema = z.object({
+export const RamblaWorktreeListResponseSchema = z.object({
   type: z.literal("paseo_worktree_list_response"),
   payload: z.object({
-    worktrees: z.array(PaseoWorktreeSchema),
+    worktrees: z.array(RamblaWorktreeSchema),
     error: CheckoutErrorSchema.nullable(),
     requestId: z.string(),
   }),
 });
 
-export const PaseoWorktreeArchiveResponseSchema = z.object({
+export const RamblaWorktreeArchiveResponseSchema = z.object({
   type: z.literal("paseo_worktree_archive_response"),
   payload: z.object({
     success: z.boolean(),
@@ -5697,7 +5697,7 @@ export const PaseoWorktreeArchiveResponseSchema = z.object({
   }),
 });
 
-export const CreatePaseoWorktreeResponseSchema = z.object({
+export const CreateRamblaWorktreeResponseSchema = z.object({
   type: z.literal("create_paseo_worktree_response"),
   payload: z.object({
     workspace: WorkspaceDescriptorPayloadSchema.nullable(),
@@ -6613,9 +6613,9 @@ export const SessionOutboundMessageSchema = z.discriminatedUnion("type", [
   ForgeSearchResponseSchema,
   GitHubSearchResponseSchema,
   DirectorySuggestionsResponseSchema,
-  PaseoWorktreeListResponseSchema,
-  PaseoWorktreeArchiveResponseSchema,
-  CreatePaseoWorktreeResponseSchema,
+  RamblaWorktreeListResponseSchema,
+  RamblaWorktreeArchiveResponseSchema,
+  CreateRamblaWorktreeResponseSchema,
   FileExplorerResponseSchema,
   FileSubscribeResponseSchema,
   FileUnsubscribeResponseSchema,
@@ -7023,13 +7023,13 @@ export type GitHubSearchKind = z.infer<typeof GitHubSearchKindSchema>;
 export type GitHubSearchRequest = z.infer<typeof GitHubSearchRequestSchema>;
 export type GitHubSearchResponse = z.infer<typeof GitHubSearchResponseSchema>;
 export type ChangeRequestCheckoutSource = z.infer<typeof ChangeRequestCheckoutSourceSchema>;
-export type CreatePaseoWorktreeRequest = z.infer<typeof CreatePaseoWorktreeRequestSchema>;
+export type CreateRamblaWorktreeRequest = z.infer<typeof CreateRamblaWorktreeRequestSchema>;
 export type DirectorySuggestionsRequest = z.infer<typeof DirectorySuggestionsRequestSchema>;
 export type DirectorySuggestionsResponse = z.infer<typeof DirectorySuggestionsResponseSchema>;
-export type PaseoWorktreeListRequest = z.infer<typeof PaseoWorktreeListRequestSchema>;
-export type PaseoWorktreeListResponse = z.infer<typeof PaseoWorktreeListResponseSchema>;
-export type PaseoWorktreeArchiveRequest = z.infer<typeof PaseoWorktreeArchiveRequestSchema>;
-export type PaseoWorktreeArchiveResponse = z.infer<typeof PaseoWorktreeArchiveResponseSchema>;
+export type RamblaWorktreeListRequest = z.infer<typeof RamblaWorktreeListRequestSchema>;
+export type RamblaWorktreeListResponse = z.infer<typeof RamblaWorktreeListResponseSchema>;
+export type RamblaWorktreeArchiveRequest = z.infer<typeof RamblaWorktreeArchiveRequestSchema>;
+export type RamblaWorktreeArchiveResponse = z.infer<typeof RamblaWorktreeArchiveResponseSchema>;
 export type WorkspaceSetupStatusRequest = z.infer<typeof WorkspaceSetupStatusRequestSchema>;
 export type WorkspaceSetupRunRequest = z.infer<typeof WorkspaceSetupRunRequestSchema>;
 export type LegacyListAvailableEditorsRequest = z.infer<

@@ -59,6 +59,6 @@ function newestDirectory(parent) {
 function simulatorSlug() {
   const worktreeName = process.env.RAMBLA_BRANCH_NAME || basename(targetRoot);
   const worktreeHash = createHash("sha1").update(targetRoot).digest("hex").slice(0, 8);
-  const simulatorName = `Paseo ${worktreeName} ${worktreeHash}`;
+  const simulatorName = `Rambla ${worktreeName} ${worktreeHash}`;
   return `${simulatorName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}-${worktreeHash}`;
 }

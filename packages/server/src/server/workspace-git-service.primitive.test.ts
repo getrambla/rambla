@@ -72,7 +72,7 @@ function createCheckoutFacts(
     remoteUrl: "https://github.com/acme/repo.git",
     absoluteGitDir: join(cwd, ".git"),
     gitCommonDir: join(cwd, ".git"),
-    paseoWorktree: { isPaseoOwnedWorktree: false },
+    paseoWorktree: { isRamblaOwnedWorktree: false },
     storedBaseRef: null,
     resolvedBaseRef: "main",
     mainRepoRoot: null,
@@ -100,7 +100,7 @@ function createCheckoutStatus(
     behindOfOrigin: 0,
     hasRemote: true,
     remoteUrl: "https://github.com/acme/repo.git",
-    isPaseoOwnedWorktree: false,
+    isRamblaOwnedWorktree: false,
     ...overrides,
   };
 }
@@ -170,7 +170,7 @@ function createBaseSnapshot(cwd: string): WorkspaceGitRuntimeSnapshot {
       mainRepoRoot: null,
       currentBranch: "main",
       remoteUrl: "https://github.com/acme/repo.git",
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       isDirty: false,
       baseRef: "main",
       aheadBehind: { ahead: 0, behind: 0 },
@@ -325,7 +325,7 @@ interface CreateServiceOptions {
   resolveBranchCheckout?: ReturnType<typeof vi.fn>;
   resolveRepositoryDefaultBranch?: ReturnType<typeof vi.fn>;
   listBranchSuggestions?: ReturnType<typeof vi.fn>;
-  listPaseoWorktrees?: ReturnType<typeof vi.fn>;
+  listRamblaWorktrees?: ReturnType<typeof vi.fn>;
   github?: ForgeService;
   resolveAbsoluteGitDir?: ReturnType<typeof vi.fn>;
   hasOriginRemote?: ReturnType<typeof vi.fn>;
@@ -357,7 +357,7 @@ function buildDefaultServiceDeps() {
     resolveBranchCheckout: vi.fn(async () => ({ kind: "not-found" })),
     resolveRepositoryDefaultBranch: vi.fn(async () => "main"),
     listBranchSuggestions: vi.fn(async () => []),
-    listPaseoWorktrees: vi.fn(async () => []),
+    listRamblaWorktrees: vi.fn(async () => []),
     forgeOverrides: { github: createGitHubServiceStub() },
     resolveAbsoluteGitDir: vi.fn(async () => join(REPO_CWD, ".git")),
     hasOriginRemote: vi.fn(async () => false),
@@ -464,7 +464,7 @@ describe("WorkspaceGitServiceImpl primitive refresh entrypoint", () => {
         "-c",
         "commit.gpgsign=false",
         "-c",
-        "user.name=Paseo Test",
+        "user.name=Rambla Test",
         "-c",
         "user.email=paseo@example.test",
         "commit",
@@ -1775,8 +1775,8 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
       signal: null,
     });
     await expect(Promise.all([first, second])).resolves.toEqual([
-      [{ index: 0, message: "paseo-auto-stash: feature", branch: "feature", isPaseo: true }],
-      [{ index: 0, message: "paseo-auto-stash: feature", branch: "feature", isPaseo: true }],
+      [{ index: 0, message: "paseo-auto-stash: feature", branch: "feature", isRambla: true }],
+      [{ index: 0, message: "paseo-auto-stash: feature", branch: "feature", isRambla: true }],
     ]);
 
     nowMs = 1_000;
@@ -1798,23 +1798,23 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
         branchName: "feature",
       },
     ];
-    const listPaseoWorktrees = vi.fn().mockResolvedValue(worktrees);
+    const listRamblaWorktrees = vi.fn().mockResolvedValue(worktrees);
     const service = createService({
-      listPaseoWorktrees,
+      listRamblaWorktrees,
       now: () => new Date(nowMs),
     });
 
     const first = service.listWorktrees(REPO_CWD);
     const second = service.listWorktrees(join(REPO_CWD, "."));
     await expect(Promise.all([first, second])).resolves.toEqual([worktrees, worktrees]);
-    expect(listPaseoWorktrees).toHaveBeenCalledTimes(1);
+    expect(listRamblaWorktrees).toHaveBeenCalledTimes(1);
 
     nowMs = 1_000;
     await service.listWorktrees(REPO_CWD);
-    expect(listPaseoWorktrees).toHaveBeenCalledTimes(1);
+    expect(listRamblaWorktrees).toHaveBeenCalledTimes(1);
 
     await service.listWorktrees(REPO_CWD, { force: true, reason: "test" });
-    expect(listPaseoWorktrees).toHaveBeenCalledTimes(2);
+    expect(listRamblaWorktrees).toHaveBeenCalledTimes(2);
 
     service.dispose();
   });
@@ -1833,11 +1833,11 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
         branchName: "feature",
       },
     ];
-    const listPaseoWorktrees = vi.fn(async () => worktrees);
+    const listRamblaWorktrees = vi.fn(async () => worktrees);
     const service = createService({
       getCheckoutSnapshotFacts: getCheckoutSnapshotFactsUncached as never,
       getCheckoutStatus: getCheckoutStatusUncached as never,
-      listPaseoWorktrees,
+      listRamblaWorktrees,
     });
 
     try {
@@ -1846,8 +1846,8 @@ describe("WorkspaceGitServiceImpl D2 read methods", () => {
       ).resolves.toEqual([worktrees, worktrees]);
       await expect(service.listWorktrees(nestedWorkspaceDir)).resolves.toEqual(worktrees);
 
-      expect(listPaseoWorktrees).toHaveBeenCalledTimes(1);
-      expect(listPaseoWorktrees).toHaveBeenCalledWith({
+      expect(listRamblaWorktrees).toHaveBeenCalledTimes(1);
+      expect(listRamblaWorktrees).toHaveBeenCalledWith({
         cwd: realpathSync.native(repoDir).replace(/\\/g, "/"),
         paseoHome: "/tmp/paseo-test",
       });

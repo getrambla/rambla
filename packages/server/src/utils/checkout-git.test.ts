@@ -43,7 +43,7 @@ import {
   resolveRepositoryDefaultBranch,
   parseWorktreeList,
   renameCurrentBranch,
-  isPaseoWorktreePath,
+  isRamblaWorktreePath,
   isDescendantPath,
   warmCheckoutShortstatInBackground,
 } from "./checkout-git.js";
@@ -91,9 +91,9 @@ function createLegacyWorktreeForTest(
   });
 }
 import {
-  getPaseoWorktreeMetadataPath,
-  readPaseoWorktreeMetadata,
-  writePaseoWorktreeMetadata,
+  getRamblaWorktreeMetadataPath,
+  readRamblaWorktreeMetadata,
+  writeRamblaWorktreeMetadata,
 } from "./worktree-metadata.js";
 
 function initRepo(): { tempDir: string; repoDir: string } {
@@ -714,7 +714,7 @@ const x = 1;
     }
     expect(status.currentBranch).toBe("main");
     expect(realpathSync.native(status.repoRoot)).toBe(realpathSync.native(repoDir));
-    expect(status.isPaseoOwnedWorktree).toBe(false);
+    expect(status.isRamblaOwnedWorktree).toBe(false);
     expect(status.mainRepoRoot ?? null).toBeNull();
   });
 
@@ -967,7 +967,7 @@ const x = 1;
     expect(status.behindOfOrigin).toBeNull();
   });
 
-  it("does not report full history as unpushed for fresh no-track Paseo worktrees", async () => {
+  it("does not report full history as unpushed for fresh no-track Rambla worktrees", async () => {
     setupRemoteTrackingMain(repoDir, tempDir);
     commitFile(repoDir, "second.txt", "second\n", "second commit");
     execFileSync("git", ["push"], { cwd: repoDir });
@@ -983,7 +983,7 @@ const x = 1;
     const status = await getCheckoutStatus(worktree.worktreePath, { paseoHome });
     expect(status).toMatchObject({
       isGit: true,
-      isPaseoOwnedWorktree: true,
+      isRamblaOwnedWorktree: true,
       baseRef: "main",
       aheadBehind: { ahead: 0, behind: 0 },
       aheadOfOrigin: null,
@@ -1007,7 +1007,7 @@ const x = 1;
     const status = await getCheckoutStatus(worktree.worktreePath, { paseoHome });
     expect(status).toMatchObject({
       isGit: true,
-      isPaseoOwnedWorktree: true,
+      isRamblaOwnedWorktree: true,
       baseRef: "main",
       aheadBehind: { ahead: 1, behind: 0 },
       aheadOfOrigin: null,
@@ -1597,7 +1597,7 @@ const x = 1;
     expect(diff.diff).toContain("# untracked-large.txt: diff too large omitted");
   });
 
-  it("resolves the Git common directory once when reading Paseo worktree facts", async () => {
+  it("resolves the Git common directory once when reading Rambla worktree facts", async () => {
     const result = await createLegacyWorktreeForTest({
       branchName: "main",
       cwd: repoDir,
@@ -1632,7 +1632,7 @@ const x = 1;
     expect(status.isGit).toBe(true);
     expect(realpathSync.native(status.repoRoot)).toBe(realpathSync.native(result.worktreePath));
     expect(status.isDirty).toBe(true);
-    expect(status.isPaseoOwnedWorktree).toBe(true);
+    expect(status.isRamblaOwnedWorktree).toBe(true);
     expect(realpathSync.native(status.mainRepoRoot ?? "")).toBe(realpathSync.native(repoDir));
 
     const diff = await getCheckoutDiff(result.worktreePath, { mode: "uncommitted" }, { paseoHome });
@@ -1666,7 +1666,7 @@ const x = 1;
       return;
     }
     expect(realpathSync.native(status.repoRoot)).toBe(realpathSync.native(result.worktreePath));
-    expect(status.isPaseoOwnedWorktree).toBe(true);
+    expect(status.isRamblaOwnedWorktree).toBe(true);
     expect(realpathSync.native(status.mainRepoRoot ?? "")).toBe(realpathSync.native(repoDir));
   });
 
@@ -1689,7 +1689,7 @@ const x = 1;
 
     const status = await getCheckoutStatus(worktree.worktreePath, { paseoHome });
     expect(status.isGit).toBe(true);
-    expect(status.isPaseoOwnedWorktree).toBe(true);
+    expect(status.isRamblaOwnedWorktree).toBe(true);
     expect(realpathSync.native(status.mainRepoRoot ?? "")).toBe(
       realpathSync.native(mainCheckoutDir),
     );
@@ -1704,7 +1704,7 @@ const x = 1;
     const status = await getCheckoutStatus(worktreeDir, { paseoHome });
     expect(status.isGit).toBe(true);
     expect(realpathSync.native(status.repoRoot)).toBe(realpathSync.native(worktreeDir));
-    expect(status.isPaseoOwnedWorktree).toBe(false);
+    expect(status.isRamblaOwnedWorktree).toBe(false);
     expect(realpathSync.native(status.mainRepoRoot ?? "")).toBe(realpathSync.native(repoDir));
     expect(status.currentBranch).toBe("feature/plain");
   });
@@ -2648,7 +2648,7 @@ const x = 1;
       execFileSync("git", ["worktree", "add", workspaceDir, "contributor/old-change"], {
         cwd: repoDir,
       });
-      writePaseoWorktreeMetadata(workspaceDir, {
+      writeRamblaWorktreeMetadata(workspaceDir, {
         baseRefName: "main",
         changeRequestLookupTarget: {
           headRef: "old-change",
@@ -2688,7 +2688,7 @@ const x = 1;
     const workspaceDir = join(paseoHome, "worktrees", "repo", "renamed-by-agent");
     mkdirSync(join(paseoHome, "worktrees", "repo"), { recursive: true });
     execFileSync("git", ["worktree", "add", workspaceDir, "placeholder"], { cwd: repoDir });
-    writePaseoWorktreeMetadata(workspaceDir, {
+    writeRamblaWorktreeMetadata(workspaceDir, {
       baseRefName: "main",
       changeRequestLookupTarget: {
         headRef: "placeholder",
@@ -2725,7 +2725,7 @@ const x = 1;
     const workspaceDir = join(paseoHome, "worktrees", "repo", "pinned-worktree");
     mkdirSync(join(paseoHome, "worktrees", "repo"), { recursive: true });
     execFileSync("git", ["worktree", "add", workspaceDir, "feature/pinned"], { cwd: repoDir });
-    writePaseoWorktreeMetadata(workspaceDir, {
+    writeRamblaWorktreeMetadata(workspaceDir, {
       baseRefName: "main",
       changeRequestLookupTarget: {
         headRef: "feature/pinned",
@@ -2764,7 +2764,7 @@ const x = 1;
     execFileSync("git", ["worktree", "add", workspaceDir, "contributor/old-change-1"], {
       cwd: repoDir,
     });
-    writePaseoWorktreeMetadata(workspaceDir, {
+    writeRamblaWorktreeMetadata(workspaceDir, {
       baseRefName: "main",
       changeRequestLookupTarget: {
         headRef: "old-change",
@@ -2786,7 +2786,7 @@ const x = 1;
     execFileSync("git", ["worktree", "add", workspaceDir, "contributor/old-change"], {
       cwd: repoDir,
     });
-    writePaseoWorktreeMetadata(workspaceDir, {
+    writeRamblaWorktreeMetadata(workspaceDir, {
       baseRefName: "main",
       changeRequestLookupTarget: {
         headRef: "old-change",
@@ -2851,7 +2851,7 @@ const x = 1;
     execFileSync("git", ["worktree", "add", workspaceDir, "mixedowner/old-change"], {
       cwd: repoDir,
     });
-    writePaseoWorktreeMetadata(workspaceDir, {
+    writeRamblaWorktreeMetadata(workspaceDir, {
       baseRefName: "main",
       changeRequestLookupTarget: {
         headRef: "old-change",
@@ -2903,7 +2903,7 @@ const x = 1;
     execFileSync("git", ["worktree", "add", workspaceDir, "feature/gitlab-mr"], {
       cwd: repoDir,
     });
-    writePaseoWorktreeMetadata(workspaceDir, {
+    writeRamblaWorktreeMetadata(workspaceDir, {
       baseRefName: "main",
       changeRequestLookupTarget: {
         headRef: "feature/gitlab-mr",
@@ -2917,7 +2917,7 @@ const x = 1;
     const forge = createGitHubServiceRecordingPullRequestTargets({ requestedTargets });
 
     await renameCurrentBranch(workspaceCwd, "feature/renamed");
-    expect(readPaseoWorktreeMetadata(workspaceDir)?.changeRequestLookupTarget).toMatchObject({
+    expect(readRamblaWorktreeMetadata(workspaceDir)?.changeRequestLookupTarget).toMatchObject({
       localBranchName: "feature/renamed",
     });
     const renamedFacts = await getCheckoutSnapshotFacts(workspaceDir, { paseoHome });
@@ -2953,7 +2953,7 @@ const x = 1;
     execFileSync("git", ["worktree", "add", workspaceDir, "feature/placeholder"], {
       cwd: repoDir,
     });
-    writePaseoWorktreeMetadata(workspaceDir, {
+    writeRamblaWorktreeMetadata(workspaceDir, {
       baseRefName: "main",
       changeRequestLookupTarget: {
         headRef: "feature/placeholder",
@@ -2963,7 +2963,7 @@ const x = 1;
 
     await renameCurrentBranch(workspaceDir, "feature/generated");
 
-    expect(readPaseoWorktreeMetadata(workspaceDir)?.changeRequestLookupTarget).toEqual({
+    expect(readRamblaWorktreeMetadata(workspaceDir)?.changeRequestLookupTarget).toEqual({
       headRef: "feature/generated",
       localBranchName: "feature/generated",
     });
@@ -3553,7 +3553,7 @@ const x = 1;
     );
   });
 
-  it("uses stored baseRefName for Paseo worktrees (no heuristics)", async () => {
+  it("uses stored baseRefName for Rambla worktrees (no heuristics)", async () => {
     // Create a non-default base branch with a unique commit.
     execFileSync("git", ["checkout", "-b", "develop"], { cwd: repoDir });
     writeFileSync(join(repoDir, "file.txt"), "develop\n");
@@ -3602,7 +3602,7 @@ const x = 1;
     ).rejects.toThrow("Base ref mismatch: stored refs/heads/main, requested other");
   });
 
-  it("excludes dirty working tree changes from Paseo worktree base diffs", async () => {
+  it("excludes dirty working tree changes from Rambla worktree base diffs", async () => {
     const worktree = await createLegacyWorktreeForTest({
       branchName: "feature",
       cwd: repoDir,
@@ -3661,7 +3661,7 @@ const x = 1;
     });
     execFileSync("git", ["checkout", "main"], { cwd: repoDir });
 
-    // Create a Paseo worktree configured to use develop as base.
+    // Create a Rambla worktree configured to use develop as base.
     const worktree = await createLegacyWorktreeForTest({
       branchName: "feature",
       cwd: repoDir,
@@ -3709,7 +3709,7 @@ const x = 1;
       cwd: worktree.worktreePath,
     });
 
-    const metadataPath = getPaseoWorktreeMetadataPath(worktree.worktreePath);
+    const metadataPath = getRamblaWorktreeMetadataPath(worktree.worktreePath);
     rmSync(metadataPath, { force: true });
 
     const baseDiff = await getCheckoutDiff(worktree.worktreePath, { mode: "base" }, { paseoHome });
@@ -3719,7 +3719,7 @@ const x = 1;
     expect(shortstat).toEqual({ additions: 1, deletions: 0 });
   });
 
-  it("falls back to plain git checkout status when Paseo worktree metadata is missing", async () => {
+  it("falls back to plain git checkout status when Rambla worktree metadata is missing", async () => {
     const worktree = await createLegacyWorktreeForTest({
       branchName: "feature",
       cwd: repoDir,
@@ -3728,14 +3728,14 @@ const x = 1;
       paseoHome,
     });
 
-    const metadataPath = getPaseoWorktreeMetadataPath(worktree.worktreePath);
+    const metadataPath = getRamblaWorktreeMetadataPath(worktree.worktreePath);
     rmSync(metadataPath, { force: true });
 
     const status = await getCheckoutStatus(worktree.worktreePath, { paseoHome });
     expect(status.isGit).toBe(true);
     expect(status.currentBranch).toBe("feature");
     expect(realpathSync.native(status.repoRoot)).toBe(realpathSync.native(worktree.worktreePath));
-    expect(status.isPaseoOwnedWorktree).toBe(true);
+    expect(status.isRamblaOwnedWorktree).toBe(true);
     expect(realpathSync.native(status.mainRepoRoot ?? "")).toBe(realpathSync.native(repoDir));
     expect(status.baseRef).toBe("main");
   });
@@ -3768,32 +3768,32 @@ const x = 1;
     });
   });
 
-  describe("isPaseoWorktreePath", () => {
+  describe("isRamblaWorktreePath", () => {
     it("matches Unix .rambla/worktrees/ paths", () => {
-      expect(isPaseoWorktreePath("/home/user/.rambla/worktrees/feature")).toBe(true);
+      expect(isRamblaWorktreePath("/home/user/.rambla/worktrees/feature")).toBe(true);
     });
 
     it("matches Windows .rambla\\worktrees\\ paths", () => {
-      expect(isPaseoWorktreePath("C:\\Users\\dev\\.rambla\\worktrees\\feature")).toBe(true);
+      expect(isRamblaWorktreePath("C:\\Users\\dev\\.rambla\\worktrees\\feature")).toBe(true);
     });
 
     it("matches worktrees under a custom RAMBLA_HOME", () => {
-      const customPaseoHome = process.platform === "win32" ? "C:\\paseo" : "/var/lib/paseo";
+      const customRamblaHome = process.platform === "win32" ? "C:\\paseo" : "/var/lib/paseo";
       const worktreePath =
         process.platform === "win32"
-          ? win32.join(customPaseoHome, "worktrees", "project", "feature")
-          : `${customPaseoHome}/worktrees/project/feature`;
+          ? win32.join(customRamblaHome, "worktrees", "project", "feature")
+          : `${customRamblaHome}/worktrees/project/feature`;
 
       expect(
-        isPaseoWorktreePath(worktreePath, {
-          paseoHome: customPaseoHome,
+        isRamblaWorktreePath(worktreePath, {
+          paseoHome: customRamblaHome,
         }),
       ).toBe(true);
     });
 
     it("rejects paths without .rambla/worktrees segment", () => {
-      expect(isPaseoWorktreePath("/home/user/repo")).toBe(false);
-      expect(isPaseoWorktreePath("C:\\Users\\dev\\repo")).toBe(false);
+      expect(isRamblaWorktreePath("/home/user/repo")).toBe(false);
+      expect(isRamblaWorktreePath("C:\\Users\\dev\\repo")).toBe(false);
     });
   });
 

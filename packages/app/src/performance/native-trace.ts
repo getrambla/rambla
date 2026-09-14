@@ -2,12 +2,12 @@ import type { DaemonClientTrace } from "@getpaseo/client/internal/daemon-client"
 import { requireOptionalNativeModule } from "expo-modules-core";
 import { isProfileBuild } from "@/constants/build-profile";
 
-interface PaseoNativeTraceModule {
+interface RamblaNativeTraceModule {
   beginSection(name: string): void;
   endSection(): void;
 }
 
-const traceModule = requireOptionalNativeModule<PaseoNativeTraceModule>("PaseoNativeTrace");
+const traceModule = requireOptionalNativeModule<RamblaNativeTraceModule>("RamblaNativeTrace");
 
 export const nativePerformanceTrace: DaemonClientTrace = {
   isEnabled() {

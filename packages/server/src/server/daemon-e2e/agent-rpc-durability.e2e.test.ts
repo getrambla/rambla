@@ -4,7 +4,7 @@ import path from "node:path";
 import { expect, test } from "vitest";
 
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon, type TestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 
 const CREATED_AT = "2026-06-29T11:12:42.000Z";
 const HEALTHY_UPDATED_AT = "2026-06-29T11:40:00.000Z";
@@ -22,11 +22,11 @@ interface StaleAgentFixture {
 
 test("agent fetch RPCs tolerate an agent whose workspace project record is gone", async () => {
   const fixture = seedStaleAgentFixture();
-  let daemon: TestPaseoDaemon | null = null;
+  let daemon: TestRamblaDaemon | null = null;
   let client: DaemonClient | null = null;
 
   try {
-    daemon = await createTestPaseoDaemon({ paseoHomeRoot: fixture.paseoHomeRoot, cleanup: false });
+    daemon = await createTestRamblaDaemon({ paseoHomeRoot: fixture.paseoHomeRoot, cleanup: false });
     client = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
     await client.connect();
 

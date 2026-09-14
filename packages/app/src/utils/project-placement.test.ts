@@ -29,7 +29,7 @@ describe("project-placement", () => {
         currentBranch: "main",
         remoteUrl: "https://github.com/acme/repo.git",
         worktreeRoot: "/Users/test/repo",
-        isPaseoOwnedWorktree: false as const,
+        isRamblaOwnedWorktree: false as const,
         mainRepoRoot: null,
       },
     };

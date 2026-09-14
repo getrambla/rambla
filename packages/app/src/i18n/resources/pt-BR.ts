@@ -1774,7 +1774,7 @@ export const ptBR: TranslationResources = {
   serviceUrl: {
     title: "Abrir URL do serviço",
     message: "Abrir {{url}}?",
-    inPaseo: "No Rambla",
+    inRambla: "No Rambla",
     externalBrowser: "Navegador externo",
     dontAskAgain: "Não perguntar novamente",
   },

@@ -47,7 +47,7 @@ function createSnapshot(overrides?: {
       mainRepoRoot: "/tmp/repo",
       currentBranch: "feature",
       remoteUrl: "https://github.com/acme/repo.git",
-      isPaseoOwnedWorktree: true,
+      isRamblaOwnedWorktree: true,
       isDirty: false,
       baseRef: "main",
       aheadBehind: { ahead: 0, behind: 0 },
@@ -81,7 +81,7 @@ function createLogger(): Logger {
 function createHarness(overrides?: {
   autoArchivedChangeRequestUrl?: string | null;
   snapshot?: WorkspaceGitRuntimeSnapshot;
-  isPaseoOwnedWorktreeCwd?: ArchiveIfSafeDependencies["isPaseoOwnedWorktreeCwd"];
+  isRamblaOwnedWorktreeCwd?: ArchiveIfSafeDependencies["isRamblaOwnedWorktreeCwd"];
   archiveByScope?: ArchiveIfSafeDependencies["archiveByScope"];
 }) {
   const getSnapshot = vi.fn(async () =>
@@ -119,18 +119,18 @@ function createHarness(overrides?: {
           removedDirectory: false,
         }) satisfies ArchiveResult),
   ) as unknown as ArchiveIfSafeDependencies["archiveByScope"];
-  const isPaseoOwnedWorktreeCwd = vi.fn(
-    overrides?.isPaseoOwnedWorktreeCwd ??
+  const isRamblaOwnedWorktreeCwd = vi.fn(
+    overrides?.isRamblaOwnedWorktreeCwd ??
       (async () => ({
         allowed: true,
         repoRoot: "/tmp/repo",
         worktreeRoot: WORKTREES_ROOT,
         worktreePath: CWD,
       })),
-  ) as unknown as ArchiveIfSafeDependencies["isPaseoOwnedWorktreeCwd"];
+  ) as unknown as ArchiveIfSafeDependencies["isRamblaOwnedWorktreeCwd"];
   const deps: ArchiveIfSafeDependencies = {
     archiveByScope,
-    isPaseoOwnedWorktreeCwd,
+    isRamblaOwnedWorktreeCwd,
     killTerminalsForWorkspace: vi.fn(),
   };
   const log = createLogger();
@@ -176,7 +176,7 @@ function createGitRepo(): { tempDir: string; repoDir: string } {
     cwd: repoDir,
     stdio: "pipe",
   });
-  execFileSync("git", ["config", "user.name", "Paseo Test"], {
+  execFileSync("git", ["config", "user.name", "Rambla Test"], {
     cwd: repoDir,
     stdio: "pipe",
   });
@@ -187,7 +187,7 @@ function createGitRepo(): { tempDir: string; repoDir: string } {
   return { tempDir, repoDir };
 }
 
-async function createPaseoOwnedWorktree(
+async function createRamblaOwnedWorktree(
   repoDir: string,
   paseoHome: string,
   worktreeSlug: string,
@@ -274,7 +274,7 @@ function createRealOutcomeHarness(input: {
             mainRepoRoot: input.repoDir,
             currentBranch: "feature",
             remoteUrl: "https://github.com/acme/repo.git",
-            isPaseoOwnedWorktree: true,
+            isRamblaOwnedWorktree: true,
             isDirty: false,
             baseRef: "main",
             aheadBehind: { ahead: 0, behind: 0 },
@@ -366,7 +366,7 @@ describe("archiveIfSafe", () => {
 
     await runArchiveIfSafe(harness);
 
-    expect(harness.deps.isPaseoOwnedWorktreeCwd).not.toHaveBeenCalled();
+    expect(harness.deps.isRamblaOwnedWorktreeCwd).not.toHaveBeenCalled();
     expect(harness.deps.archiveByScope).not.toHaveBeenCalled();
   });
 
@@ -377,7 +377,7 @@ describe("archiveIfSafe", () => {
 
     await runArchiveIfSafe(harness);
 
-    expect(harness.deps.isPaseoOwnedWorktreeCwd).not.toHaveBeenCalled();
+    expect(harness.deps.isRamblaOwnedWorktreeCwd).not.toHaveBeenCalled();
     expect(harness.deps.archiveByScope).not.toHaveBeenCalled();
   });
 
@@ -391,14 +391,14 @@ describe("archiveIfSafe", () => {
     expect(harness.deps.archiveByScope).toHaveBeenCalledTimes(1);
   });
 
-  test("does nothing when the cwd is not a Paseo-owned worktree", async () => {
+  test("does nothing when the cwd is not a Rambla-owned worktree", async () => {
     const harness = createHarness({
-      isPaseoOwnedWorktreeCwd: async () => ({ allowed: false, worktreePath: CWD }),
+      isRamblaOwnedWorktreeCwd: async () => ({ allowed: false, worktreePath: CWD }),
     });
 
     await runArchiveIfSafe(harness);
 
-    expect(harness.deps.isPaseoOwnedWorktreeCwd).toHaveBeenCalledWith(CWD, {
+    expect(harness.deps.isRamblaOwnedWorktreeCwd).toHaveBeenCalledWith(CWD, {
       paseoHome: RAMBLA_HOME,
     });
     expect(harness.deps.archiveByScope).not.toHaveBeenCalled();
@@ -419,7 +419,7 @@ describe("archiveIfSafe", () => {
     );
   });
 
-  test("archives a clean Paseo-owned worktree after merge", async () => {
+  test("archives a clean Rambla-owned worktree after merge", async () => {
     const harness = createHarness();
 
     await runArchiveIfSafe(harness);
@@ -506,7 +506,7 @@ describe("archiveIfSafe", () => {
   test("real outcome: keeps sibling workspace and directory on last reference", async () => {
     const { tempDir, repoDir } = createGitRepo();
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "merged-with-sibling");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "merged-with-sibling");
     const workspaceA = "ws-merged-with-sibling-a";
     const workspaceB = "ws-merged-with-sibling-b";
     const archivedWorkspaceIds = new Set<string>();
@@ -537,7 +537,7 @@ describe("archiveIfSafe", () => {
   test("real outcome: removes directory when no sibling workspace remains", async () => {
     const { tempDir, repoDir } = createGitRepo();
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "merged-last-ref");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "merged-last-ref");
     const workspaceA = "ws-merged-last-ref";
     const archivedWorkspaceIds = new Set<string>();
 
@@ -563,7 +563,7 @@ describe("archiveIfSafe", () => {
   test("real outcome: an unarchived workspace is not archived again for the same merged PR", async () => {
     const { tempDir, repoDir } = createGitRepo();
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "merged-then-unarchived");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "merged-then-unarchived");
     const workspace = {
       workspaceId: "ws-merged-then-unarchived",
       cwd: worktree.worktreePath,

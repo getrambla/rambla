@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import assert from "node:assert";
-import { runLocalPaseo } from "./helpers/local-cli.ts";
+import { runLocalRambla } from "./helpers/local-cli.ts";
 import { startTestDaemon } from "./helpers/test-daemon.ts";
 
 console.log("=== Daemon Status Auth ===\n");
@@ -13,7 +13,7 @@ const daemon = await startTestDaemon({
 try {
   {
     console.log("Test 1: status reports password requirement without marking daemon unreachable");
-    const result = await runLocalPaseo(["daemon", "status", "--json"], {
+    const result = await runLocalRambla(["daemon", "status", "--json"], {
       RAMBLA_HOME: daemon.paseoHome,
       RAMBLA_HOST: "",
       RAMBLA_PASSWORD: "",
@@ -33,7 +33,7 @@ try {
 
   {
     console.log("Test 2: status reports rejected supplied password separately");
-    const result = await runLocalPaseo(["daemon", "status", "--json"], {
+    const result = await runLocalRambla(["daemon", "status", "--json"], {
       RAMBLA_HOME: daemon.paseoHome,
       RAMBLA_HOST: "",
       RAMBLA_PASSWORD: "wrong-secret",
@@ -51,7 +51,7 @@ try {
 
   {
     console.log("Test 3: status reaches the same daemon when password is supplied");
-    const result = await runLocalPaseo(["daemon", "status", "--json"], {
+    const result = await runLocalRambla(["daemon", "status", "--json"], {
       RAMBLA_HOME: daemon.paseoHome,
       RAMBLA_HOST: "",
       RAMBLA_PASSWORD: "shared-secret",

@@ -16,7 +16,7 @@ export function collectAgentWorkingDirectorySuggestions(
     if (!cwd) {
       continue;
     }
-    if (isPaseoOwnedWorktreePath(cwd)) {
+    if (isRamblaOwnedWorktreePath(cwd)) {
       continue;
     }
 
@@ -38,7 +38,7 @@ export function collectAgentWorkingDirectorySuggestions(
     .map(([cwd]) => cwd);
 }
 
-function isPaseoOwnedWorktreePath(cwd: string): boolean {
+function isRamblaOwnedWorktreePath(cwd: string): boolean {
   return RAMBLA_WORKTREE_PATH_PATTERN.test(cwd.replace(/\\/g, "/"));
 }
 

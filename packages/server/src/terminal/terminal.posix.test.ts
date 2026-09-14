@@ -617,7 +617,7 @@ describe.skipIf(isPlatform("win32"))("terminal POSIX-only", () => {
       temporaryDirs.push(homeDir);
       writeFileSync(join(homeDir, ".zshrc"), "PS1='RAMBLA_CUSTOM_PROMPT> '\n");
 
-      const fakeAppRoot = join(homeDir, "Paseo.app", "Contents", "Resources");
+      const fakeAppRoot = join(homeDir, "Rambla.app", "Contents", "Resources");
       const inaccessiblePackagedIntegrationDir = join(
         fakeAppRoot,
         "app.asar",

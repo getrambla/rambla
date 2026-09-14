@@ -25,7 +25,7 @@ function resolveLink(
 }
 
 describe("resolveWorkspaceScriptLink", () => {
-  it("defaults to the memorable Paseo URL locally and keeps direct as a fallback", () => {
+  it("defaults to the memorable Rambla URL locally and keeps direct as a fallback", () => {
     expect(
       resolveLink({ type: "directTcp", endpoint: "localhost:6767", display: "localhost:6767" }),
     ).toEqual({

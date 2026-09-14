@@ -574,7 +574,7 @@ describe("uninstallSkills", () => {
     await fs.rm(sandbox.root, { recursive: true, force: true });
   });
 
-  it("removes every Paseo skill from all three targets and preserves user dirs", async () => {
+  it("removes every Rambla skill from all three targets and preserves user dirs", async () => {
     await writeCurrentBundle(sandbox.targets.sourceDir);
     await installSkills(sandbox.targets, ALL_SKILLS);
     for (const name of ["unslop", "tdd", "devbox"]) {

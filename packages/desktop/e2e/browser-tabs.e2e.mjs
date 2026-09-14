@@ -84,7 +84,7 @@ function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-function seedPaseoHome(paseoHome, listen, workspaceRoot) {
+function seedRamblaHome(paseoHome, listen, workspaceRoot) {
   const timestamp = "2026-01-01T00:00:00.000Z";
   const projects = workspaceIds.map((workspaceId, index) => {
     const cwd = path.join(workspaceRoot, `workspace-${index + 1}`);
@@ -910,7 +910,7 @@ async function main() {
     reservePort(),
   ]);
   const listen = `127.0.0.1:${daemonPort}`;
-  seedPaseoHome(paseoHome, listen, workspaceRoot);
+  seedRamblaHome(paseoHome, listen, workspaceRoot);
   const target = await startTargetPage();
   const children = [];
   let browser = null;

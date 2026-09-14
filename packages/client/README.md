@@ -1,15 +1,15 @@
 # @getpaseo/client
 
-TypeScript SDK for building integrations on top of a Paseo daemon.
+TypeScript SDK for building integrations on top of a Rambla daemon.
 
 ```bash
 npm install @getpaseo/client
 ```
 
 ```ts
-import { createPaseoClient } from "@getpaseo/client";
+import { createRamblaClient } from "@getpaseo/client";
 
-const client = createPaseoClient({ url: "ws://127.0.0.1:6767/ws" });
+const client = createRamblaClient({ url: "ws://127.0.0.1:6767/ws" });
 await client.connect();
 
 const agent = await client.agents.create({
@@ -24,7 +24,7 @@ console.log(result.lastMessage);
 await client.close();
 ```
 
-The public API is the package root. Imports under `@getpaseo/client/internal/*` are unsupported implementation details used by Paseo's own packages.
+The public API is the package root. Imports under `@getpaseo/client/internal/*` are unsupported implementation details used by Rambla's own packages.
 
 Read the [SDK documentation](https://rambla.sh/docs/sdk) for agents, workspaces, terminals, provider discovery, events, recipes, and the API reference. Runnable TypeScript patterns also live in [`examples/`](./examples/README.md).
 

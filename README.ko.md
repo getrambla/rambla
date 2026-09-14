@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="packages/website/public/logo.svg" width="64" height="64" alt="Paseo 로고">
+  <img src="packages/website/public/logo.svg" width="64" height="64" alt="Rambla 로고">
 </p>
 
-<h1 align="center">Paseo</h1>
+<h1 align="center">Rambla</h1>
 
 <p align="center">
   <a href="README.md">English</a> ·
@@ -24,7 +24,7 @@
   <a href="https://discord.gg/jz8T2uahpH">
     <img src="https://img.shields.io/badge/Discord-555?logo=discord" alt="Discord">
   </a>
-  <a href="https://www.reddit.com/r/PaseoAI/">
+  <a href="https://www.reddit.com/r/RamblaAI/">
     <img src="https://img.shields.io/badge/Reddit-555?logo=reddit" alt="Reddit">
   </a>
 </p>
@@ -32,11 +32,11 @@
 <p align="center">Claude Code, Codex, Copilot, OpenCode, Pi 에이전트를 위한 하나의 인터페이스</p>
 
 <p align="center">
-  <img src="https://rambla.sh/hero-mockup.png" alt="Paseo app screenshot" width="100%">
+  <img src="https://rambla.sh/hero-mockup.png" alt="Rambla app screenshot" width="100%">
 </p>
 
 <p align="center">
-  <img src="https://rambla.sh/mobile-mockup.png" alt="Paseo mobile app" width="100%">
+  <img src="https://rambla.sh/mobile-mockup.png" alt="Rambla mobile app" width="100%">
 </p>
 
 내 컴퓨터에서 에이전트를 병렬로 실행하세요. 데스크톱이나 휴대폰에서 배포하세요.
@@ -45,11 +45,11 @@
 - **여러 제공자 지원:** Claude Code, Codex, Copilot, OpenCode, Pi를 하나의 인터페이스에서 사용할 수 있습니다. 작업마다 알맞은 모델을 고를 수 있습니다.
 - **음성 제어:** 음성 모드에서 작업을 말로 지시하거나 문제를 음성으로 함께 검토할 수 있습니다. 손을 쓰지 않고 작업해야 할 때 유용합니다.
 - **여러 기기 지원:** iOS, Android, 데스크톱, 웹, CLI를 지원합니다. 데스크톱에서 시작해 휴대폰으로 확인하고 터미널에서 자동화할 수 있습니다.
-- **개인정보 보호 우선:** Paseo는 텔레메트리, 추적, 강제 로그인을 사용하지 않습니다.
+- **개인정보 보호 우선:** Rambla는 텔레메트리, 추적, 강제 로그인을 사용하지 않습니다.
 
 ## 시작하기
 
-Paseo는 코딩 에이전트를 관리하는 로컬 서버인 데몬을 실행합니다. 데스크톱 앱, 모바일 앱, 웹 앱, CLI 같은 클라이언트가 이 데몬에 연결합니다.
+Rambla는 코딩 에이전트를 관리하는 로컬 서버인 데몬을 실행합니다. 데스크톱 앱, 모바일 앱, 웹 앱, CLI 같은 클라이언트가 이 데몬에 연결합니다.
 
 ### 준비 사항
 
@@ -69,14 +69,14 @@ Paseo는 코딩 에이전트를 관리하는 로컬 서버인 데몬을 실행�
 
 ### CLI / 헤드리스 환경
 
-CLI를 설치하고 Paseo를 시작하세요.
+CLI를 설치하고 Rambla를 시작하세요.
 
 ```bash
 npm install -g @getpaseo/cli
 paseo
 ```
 
-Paseo가 로컬에서 시작된 뒤 기기 페어링을 위한 종단 간 암호화 릴레이를 켤지 묻습니다. 거절하면 TCP, Tailscale 또는 다른 VPN으로 직접 연결할 수 있습니다. 이 방식은 서버나 원격 머신에서 유용합니다.
+Rambla가 로컬에서 시작된 뒤 기기 페어링을 위한 종단 간 암호화 릴레이를 켤지 묻습니다. 거절하면 TCP, Tailscale 또는 다른 VPN으로 직접 연결할 수 있습니다. 이 방식은 서버나 원격 머신에서 유용합니다.
 
 자세한 설치와 설정은 아래 문서를 참고하세요.
 
@@ -86,7 +86,7 @@ Paseo가 로컬에서 시작된 뒤 기기 페어링을 위한 종단 간 암호
 
 ### Docker
 
-Docker에서 Paseo 데몬과 셀프 호스팅 웹 UI를 실행하세요:
+Docker에서 Rambla 데몬과 셀프 호스팅 웹 UI를 실행하세요:
 
 ```bash
 docker run -d --name paseo \
@@ -119,7 +119,7 @@ paseo --host workstation.local:6767 run "run the full test suite"
 
 ## 스킬
 
-스킬은 에이전트가 Paseo를 통해 다른 에이전트를 오케스트레이션하는 방법을 알려 줍니다.
+스킬은 에이전트가 Rambla를 통해 다른 에이전트를 오케스트레이션하는 방법을 알려 줍니다.
 
 ```bash
 npx skills add getrambla/rambla
@@ -135,7 +135,7 @@ npx skills add getrambla/rambla
 
 모노레포 패키지 구성은 다음과 같습니다.
 
-- `packages/server`: Paseo 데몬(에이전트 프로세스 오케스트레이션, WebSocket API, MCP 서버 제공)
+- `packages/server`: Rambla 데몬(에이전트 프로세스 오케스트레이션, WebSocket API, MCP 서버 제공)
 - `packages/app`: Expo 클라이언트(iOS, Android, 웹)
 - `packages/cli`: `paseo` CLI(데몬과 에이전트 워크플로)
 - `packages/desktop`: Electron 데스크톱 앱

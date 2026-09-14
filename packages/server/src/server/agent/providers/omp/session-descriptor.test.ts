@@ -57,7 +57,7 @@ describe("OMP session descriptor", () => {
         type: "title",
         id: "title-1",
         timestamp: "2026-06-09T00:00:00.000Z",
-        title: "Deploy Paseo and verify",
+        title: "Deploy Rambla and verify",
       },
       {
         type: "session",
@@ -86,7 +86,7 @@ describe("OMP session descriptor", () => {
       expect.objectContaining({
         providerHandleId: sessionFile,
         cwd,
-        title: "Deploy Paseo and verify",
+        title: "Deploy Rambla and verify",
         firstPromptPreview: "import me",
       }),
     ]);

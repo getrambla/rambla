@@ -30,7 +30,7 @@ function candidate(input: {
         currentBranch: branch,
         remoteUrl: null,
         worktreeRoot: "/tmp/repo",
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: null,
       },
     },

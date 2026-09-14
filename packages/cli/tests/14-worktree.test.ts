@@ -3,7 +3,7 @@
 /**
  * Phase 14: Worktree Command Tests
  *
- * Tests the worktree commands for managing Paseo-managed git worktrees.
+ * Tests the worktree commands for managing Rambla-managed git worktrees.
  * Since daemon may not be running, we test both:
  * - Help and argument parsing
  * - Graceful error handling when daemon not running

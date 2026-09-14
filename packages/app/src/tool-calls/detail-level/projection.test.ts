@@ -291,7 +291,7 @@ describe("tool call detail-level projection", () => {
     });
   });
 
-  it("counts Paseo calls separately from other tools", () => {
+  it("counts Rambla calls separately from other tools", () => {
     const calls = [
       toolCall("1", { type: "unknown", input: null, output: null }, { name: "paseo.list_agents" }),
       toolCall(
@@ -310,7 +310,7 @@ describe("tool call detail-level projection", () => {
     });
   });
 
-  it("classifies direct Brave search and Paseo runtime tool names", () => {
+  it("classifies direct Brave search and Rambla runtime tool names", () => {
     const unknownDetail = { type: "unknown" as const, input: null, output: null };
     const calls = [
       toolCall("1", unknownDetail, { name: "brave-search_brave_web_search" }),

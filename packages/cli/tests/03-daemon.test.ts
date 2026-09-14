@@ -24,7 +24,7 @@ import { mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import { dirname, join } from "path";
 import YAML from "yaml";
-import { runLocalPaseo } from "./helpers/local-cli.ts";
+import { runLocalRambla } from "./helpers/local-cli.ts";
 
 console.log("=== Daemon Commands ===\n");
 
@@ -34,7 +34,7 @@ const paseoHome = await mkdtemp(join(tmpdir(), "paseo-test-home-"));
 const require = createRequire(import.meta.url);
 
 function daemonCommand(args: string[]) {
-  return runLocalPaseo(["daemon", ...args], { RAMBLA_HOME: paseoHome });
+  return runLocalRambla(["daemon", ...args], { RAMBLA_HOME: paseoHome });
 }
 
 async function stopChildProcess(child: ChildProcess): Promise<void> {
@@ -111,7 +111,7 @@ try {
   // Test 1: daemon --help shows subcommands
   {
     console.log("Test 1: daemon --help shows subcommands");
-    const result = await runLocalPaseo(["daemon", "--help"]);
+    const result = await runLocalRambla(["daemon", "--help"]);
     assert.strictEqual(result.exitCode, 0, "daemon --help should exit 0");
     assert(result.stdout.includes("start"), "help should mention start");
     assert(result.stdout.includes("status"), "help should mention status");
@@ -178,7 +178,7 @@ try {
   // Global hosts do not change local daemon lifecycle commands.
   {
     console.log("Test 5b: daemon status ignores a global --host");
-    const result = await runLocalPaseo(["--host", "localhost:1", "daemon", "status", "--json"], {
+    const result = await runLocalRambla(["--host", "localhost:1", "daemon", "status", "--json"], {
       RAMBLA_HOME: paseoHome,
     });
     assert.strictEqual(result.exitCode, 0, `daemon status should stay local: ${result.stderr}`);
@@ -310,7 +310,7 @@ try {
 
       reloadConfig.daemon.browserTools.enabled = false;
       await writeFile(configPath, `${JSON.stringify(reloadConfig, null, 2)}\n`, "utf-8");
-      const aliasReload = await runLocalPaseo(["reload", "--host", listen, "--json"], {
+      const aliasReload = await runLocalRambla(["reload", "--host", listen, "--json"], {
         RAMBLA_HOME: paseoHome,
       });
       assert.strictEqual(aliasReload.exitCode, 0, aliasReload.stderr);
@@ -341,7 +341,7 @@ try {
         const foreignPairing = await retryWhileWorkerRuns(
           worker,
           () =>
-            runLocalPaseo(["daemon", "pair", "--home", foreignHome, "--json"], {
+            runLocalRambla(["daemon", "pair", "--home", foreignHome, "--json"], {
               RAMBLA_HOME: foreignHome,
             }),
           (result) => result.stderr.includes("different Rambla home"),

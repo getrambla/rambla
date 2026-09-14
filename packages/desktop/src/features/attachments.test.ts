@@ -4,10 +4,10 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { copyAttachmentFileToManagedStorage } from "./attachments";
 
-const originalPaseoHome = process.env.RAMBLA_HOME;
+const originalRamblaHome = process.env.RAMBLA_HOME;
 let testHome: string | null = null;
 
-async function useTempPaseoHome(): Promise<string> {
+async function useTempRamblaHome(): Promise<string> {
   testHome = await mkdtemp(path.join(os.tmpdir(), "paseo-desktop-attachments-"));
   process.env.RAMBLA_HOME = testHome;
   return testHome;
@@ -15,10 +15,10 @@ async function useTempPaseoHome(): Promise<string> {
 
 describe("desktop attachment files", () => {
   afterEach(async () => {
-    if (originalPaseoHome === undefined) {
+    if (originalRamblaHome === undefined) {
       delete process.env.RAMBLA_HOME;
     } else {
-      process.env.RAMBLA_HOME = originalPaseoHome;
+      process.env.RAMBLA_HOME = originalRamblaHome;
     }
 
     if (testHome) {
@@ -28,7 +28,7 @@ describe("desktop attachment files", () => {
   });
 
   it("accepts dot-prefixed picker extensions for managed copies", async () => {
-    const paseoHome = await useTempPaseoHome();
+    const paseoHome = await useTempRamblaHome();
     const sourcePath = path.join(paseoHome, "report.md");
     await writeFile(sourcePath, "# Report\n");
 
@@ -46,7 +46,7 @@ describe("desktop attachment files", () => {
   });
 
   it("normalizes legacy bare extensions for managed copies", async () => {
-    const paseoHome = await useTempPaseoHome();
+    const paseoHome = await useTempRamblaHome();
     const sourcePath = path.join(paseoHome, "report.md");
     await writeFile(sourcePath, "# Report\n");
 

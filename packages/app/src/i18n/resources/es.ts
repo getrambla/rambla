@@ -1788,7 +1788,7 @@ export const es: TranslationResources = {
   serviceUrl: {
     title: "Servicio abiertoURL",
     message: "¿Abrir{{url}}?",
-    inPaseo: "En Rambla",
+    inRambla: "En Rambla",
     externalBrowser: "Navegador externo",
     dontAskAgain: "no vuelvas a preguntar",
   },

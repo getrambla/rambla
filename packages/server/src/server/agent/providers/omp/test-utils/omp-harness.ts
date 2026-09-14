@@ -11,7 +11,7 @@ import type {
   AgentStreamEvent,
   AgentTimelineItem,
 } from "../../../agent-sdk-types.js";
-import type { PaseoToolCatalog } from "../../../tools/types.js";
+import type { RamblaToolCatalog } from "../../../tools/types.js";
 import {
   OmpAgentClient,
   OmpAgentSession,
@@ -92,7 +92,7 @@ export class OmpHarness {
 
   async start(
     config: Partial<AgentSessionConfig> = {},
-    paseoTools?: PaseoToolCatalog,
+    paseoTools?: RamblaToolCatalog,
   ): Promise<void> {
     const session = await this.client.createSession(
       { provider: "omp", cwd: CWD, ...config },

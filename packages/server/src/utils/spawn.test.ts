@@ -159,7 +159,7 @@ describe("execCommand", () => {
     });
   });
 
-  test("internal env mode preserves Paseo-owned launcher env", async () => {
+  test("internal env mode preserves Rambla-owned launcher env", async () => {
     const result = await execCommand(process.execPath, ["-e", printEnvScript], {
       envMode: "internal",
       baseEnv: {

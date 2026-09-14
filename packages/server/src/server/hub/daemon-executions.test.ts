@@ -27,7 +27,7 @@ test("sequential replay after reconstruction keeps one durable owned agent", asy
   expect(reconstructed.durableAgentCount).toBe(1);
 });
 
-test("Hub MCP configuration reaches the provider alongside Paseo MCP without entering snapshots", async () => {
+test("Hub MCP configuration reaches the provider alongside Rambla MCP without entering snapshots", async () => {
   const hub = await HubRelationshipHarness.startWithAgentMcp();
   await hub.beginConnect().result;
   hub.connectLatestSocket();
@@ -155,7 +155,7 @@ test("Hub returns path-specific structured provider option feedback", async () =
   });
 });
 
-test("new Hub executions cannot override the daemon-owned Paseo MCP server", async () => {
+test("new Hub executions cannot override the daemon-owned Rambla MCP server", async () => {
   const hub = await launchRelationship();
   hub.beginOwnedCreate("reserved-mcp-create", "reserved-mcp-execution", {
     mcpServers: {
@@ -179,7 +179,7 @@ test("new Hub executions cannot override the daemon-owned Paseo MCP server", asy
   expect(await hub.durableOwnedAgentIds()).toEqual([]);
 });
 
-test("reserved Paseo MCP input does not invalidate replay of an owned execution", async () => {
+test("reserved Rambla MCP input does not invalidate replay of an owned execution", async () => {
   const hub = await launchRelationship();
   hub.beginOwnedCreate("original-create", "replayed-execution");
   const original = await hub.ownedCreateResult("original-create");

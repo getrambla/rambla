@@ -2,7 +2,7 @@
 
 ## 0.8.0 - 2026-09-10
 
-Paseo 0.8 adds plugin header buttons, custom providers, and richer chat components, alongside fixes for desktop updates and mobile keyboards.
+Rambla 0.8 adds plugin header buttons, custom providers, and richer chat components, alongside fixes for desktop updates and mobile keyboards.
 
 **Before upgrading:** desktop now requires macOS 13 or newer. Plugins written for 0.7 need the [0.8 migration guide](https://paseo.sh/docs/plugins/v0.8/migration), including separate client/server entries and the revised composer pill API.
 
@@ -18,7 +18,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Added a fullscreen Mermaid viewer on web and desktop ([#4107](https://github.com/getpaseo/paseo/pull/4107) by [@gengjiawen](https://github.com/gengjiawen))
 - Added Copy, Copy line, and Select all to the web diff context menu ([#4229](https://github.com/getpaseo/paseo/pull/4229))
 - Added Gajae Code to the ACP provider catalog ([#3471](https://github.com/getpaseo/paseo/pull/3471) by [@Yeachan-Heo](https://github.com/Yeachan-Heo))
-- Added per-provider controls for disabling all or selected Paseo tools ([#4277](https://github.com/getpaseo/paseo/pull/4277) by [@mcowger](https://github.com/mcowger))
+- Added per-provider controls for disabling all or selected Rambla tools ([#4277](https://github.com/getpaseo/paseo/pull/4277) by [@mcowger](https://github.com/mcowger))
 - Added explicit approval before running setup, automatic terminals, or scripts in fork pull request workspaces ([#4215](https://github.com/getpaseo/paseo/pull/4215))
 - Added Hub follow-ups to existing agents, including archived workspace recovery ([#4354](https://github.com/getpaseo/paseo/pull/4354))
 - Added provider catalog discovery to Hub executions ([#4242](https://github.com/getpaseo/paseo/pull/4242))
@@ -38,7 +38,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Added live project subscriptions through `paseo.projects.subscribe()` ([#3983](https://github.com/getpaseo/paseo/pull/3983) by [@omercnet](https://github.com/omercnet))
 - Added permission responses through `agent.respondToPermission()` ([#3985](https://github.com/getpaseo/paseo/pull/3985) by [@omercnet](https://github.com/omercnet))
 - Added provider usage queries through `providers.listUsage()` ([#4062](https://github.com/getpaseo/paseo/pull/4062) by [@ivanbrykov](https://github.com/ivanbrykov))
-- Added supported Paseo version requirements to plugin manifests ([#4430](https://github.com/getpaseo/paseo/pull/4430))
+- Added supported Rambla version requirements to plugin manifests ([#4430](https://github.com/getpaseo/paseo/pull/4430))
 - Changed plugins to separate client and server entries with runtime-specific SDK imports ([#4347](https://github.com/getpaseo/paseo/pull/4347) by [@liujin0506](https://github.com/liujin0506), [@panrafal](https://github.com/panrafal))
 - Changed composer pill registration to use `button`, `registration.update()`, and `registration.remove()` ([#4577](https://github.com/getpaseo/paseo/pull/4577))
 - Changed `paseo plugin ls` to show runtime state, installed commit, and load errors without contacting a remote ([#4265](https://github.com/getpaseo/paseo/pull/4265))
@@ -139,7 +139,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Added workspace management and layout actions to the Command Center ([#3013](https://github.com/getpaseo/paseo/pull/3013) by [@cleiter](https://github.com/cleiter))
 - Added contextual composer-pill contributions for plugins ([#3956](https://github.com/getpaseo/paseo/pull/3956))
 - Added host UI primitives for client plugins ([#3967](https://github.com/getpaseo/paseo/pull/3967))
-- Added readable prompts, details, and results for Paseo tool calls ([#4066](https://github.com/getpaseo/paseo/pull/4066))
+- Added readable prompts, details, and results for Rambla tool calls ([#4066](https://github.com/getpaseo/paseo/pull/4066))
 - Added zoom and pan to workspace images and assistant timeline previews ([#4032](https://github.com/getpaseo/paseo/pull/4032), [#4049](https://github.com/getpaseo/paseo/pull/4049), [#4064](https://github.com/getpaseo/paseo/pull/4064))
 - Added opening child folders directly in the preferred desktop editor ([#3615](https://github.com/getpaseo/paseo/pull/3615) by [@caikovsky](https://github.com/caikovsky))
 - Added host navigation from plugin surfaces to agents and workspaces ([#3901](https://github.com/getpaseo/paseo/pull/3901) by [@omercnet](https://github.com/omercnet))
@@ -255,7 +255,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Added workspace panel, tab, and pane actions to the Command Center ([#3685](https://github.com/getpaseo/paseo/pull/3685))
 - Added `paseo project` to create, list, rename, and delete projects from the terminal ([#3460](https://github.com/getpaseo/paseo/pull/3460))
 - Added `paseo reload` to apply runtime-safe `config.json` changes without restarting the daemon ([#3365](https://github.com/getpaseo/paseo/pull/3365))
-- Added Paseo skill management to Host → Agents, including remote hosts ([#3451](https://github.com/getpaseo/paseo/pull/3451))
+- Added Rambla skill management to Host → Agents, including remote hosts ([#3451](https://github.com/getpaseo/paseo/pull/3451))
 - Added project filtering to the sidebar display menu ([#3563](https://github.com/getpaseo/paseo/pull/3563) by [@cleiter](https://github.com/cleiter))
 - Added optional branch and project names on workspace rows ([#3445](https://github.com/getpaseo/paseo/pull/3445))
 - Added drag-and-drop reordering for pinned workspaces ([#3341](https://github.com/getpaseo/paseo/pull/3341))
@@ -303,7 +303,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Fixed Pi chats ending in an error state during a successful automatic retry ([#3639](https://github.com/getpaseo/paseo/pull/3639))
 - Fixed Claude usage appearing unavailable when macOS Keychain contains multiple credential items ([#3597](https://github.com/getpaseo/paseo/pull/3597) by [@t-benoit](https://github.com/t-benoit))
 - Fixed provider usage checks overwriting Claude or Codex credential files ([#3442](https://github.com/getpaseo/paseo/pull/3442) by [@danberindei](https://github.com/danberindei))
-- Fixed active Codex agents failing to open when their native thread was archived outside Paseo ([#3334](https://github.com/getpaseo/paseo/pull/3334))
+- Fixed active Codex agents failing to open when their native thread was archived outside Rambla ([#3334](https://github.com/getpaseo/paseo/pull/3334))
 - Fixed agents remaining impossible to stop after the provider had already settled their turn ([#3742](https://github.com/getpaseo/paseo/pull/3742))
 - Fixed worktree creation rejecting Git-valid branch names containing uppercase letters, underscores, or dots ([#3591](https://github.com/getpaseo/paseo/pull/3591))
 - Fixed project icons showing stale images in New Workspace ([#3600](https://github.com/getpaseo/paseo/pull/3600))
@@ -359,7 +359,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Fixed crash when persisted cache was incompatible ([#3289](https://github.com/getpaseo/paseo/pull/3289))
 - Fixed open delegated agents being archived with their parent ([#3279](https://github.com/getpaseo/paseo/pull/3279))
 - Fixed agent creation when profiles carried modes unsupported by the selected provider ([#3331](https://github.com/getpaseo/paseo/pull/3331))
-- Fixed Claude agents waiting on Paseo's ten-minute MCP timeout ([#3315](https://github.com/getpaseo/paseo/pull/3315))
+- Fixed Claude agents waiting on Rambla's ten-minute MCP timeout ([#3315](https://github.com/getpaseo/paseo/pull/3315))
 - Fixed Copy resume command for Hermes agents ([#3300](https://github.com/getpaseo/paseo/pull/3300) by [@desmond-rai](https://github.com/desmond-rai))
 
 ## 0.3.1 - 2026-08-09
@@ -399,7 +399,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
   - Choose what a sidebar workspace row shows: host, pull request, checks, and scripts
   - Name each host and give it a colour ([#2790](https://github.com/getpaseo/paseo/pull/2790))
 - Search your history by workspace, agent, and branch ([#2995](https://github.com/getpaseo/paseo/pull/2995))
-- Use Paseo in Korean ([#2895](https://github.com/getpaseo/paseo/pull/2895) by [@himomohi](https://github.com/himomohi), [@Kesta-bos](https://github.com/Kesta-bos))
+- Use Rambla in Korean ([#2895](https://github.com/getpaseo/paseo/pull/2895) by [@himomohi](https://github.com/himomohi), [@Kesta-bos](https://github.com/Kesta-bos))
 - Run git and workspace actions from the Command Center ([#2749](https://github.com/getpaseo/paseo/pull/2749))
 - Change model, reasoning, mode, plan, and fast from the Command Center ([#2274](https://github.com/getpaseo/paseo/pull/2274) by [@kedrzu](https://github.com/kedrzu))
 - Fork an agent while it's running ([#2638](https://github.com/getpaseo/paseo/pull/2638) by [@kaspesi](https://github.com/kaspesi))
@@ -407,7 +407,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Jump between prompts in a chat ([#2792](https://github.com/getpaseo/paseo/pull/2792))
 - Preview HTML files ([#2712](https://github.com/getpaseo/paseo/pull/2712) by [@nicholas-salgueiro-britecore](https://github.com/nicholas-salgueiro-britecore), [@nickmaglowsch](https://github.com/nickmaglowsch))
 - See Claude workflows in the subagent track ([#2933](https://github.com/getpaseo/paseo/pull/2933))
-- Choose which orchestration skills Paseo installs ([#2680](https://github.com/getpaseo/paseo/pull/2680))
+- Choose which orchestration skills Rambla installs ([#2680](https://github.com/getpaseo/paseo/pull/2680))
 - Approve all ACP tool calls with one setting ([#2752](https://github.com/getpaseo/paseo/pull/2752))
 - Add custom HTTP headers to direct host connections ([#2922](https://github.com/getpaseo/paseo/pull/2922))
 - Pick a local branch or its origin counterpart as the base for a new worktree ([#2328](https://github.com/getpaseo/paseo/pull/2328) by [@mcowger](https://github.com/mcowger))
@@ -419,7 +419,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Recent chats stay live in the background, so switching back shows current messages right away ([#2842](https://github.com/getpaseo/paseo/pull/2842))
 - Coming back to a workspace from Settings is faster ([#2791](https://github.com/getpaseo/paseo/pull/2791))
 - Workspace Git status stays responsive in large repositories ([#2979](https://github.com/getpaseo/paseo/pull/2979))
-- Paseo runs fewer git processes on busy machines ([#2797](https://github.com/getpaseo/paseo/pull/2797))
+- Rambla runs fewer git processes on busy machines ([#2797](https://github.com/getpaseo/paseo/pull/2797))
 - Copying part of an assistant response keeps its lists, links, and formatting ([#2808](https://github.com/getpaseo/paseo/pull/2808), [#2930](https://github.com/getpaseo/paseo/pull/2930), [#2935](https://github.com/getpaseo/paseo/pull/2935) by [@cleiter](https://github.com/cleiter))
 - See the full conversation from a native Claude subagent ([#2498](https://github.com/getpaseo/paseo/pull/2498) by [@ebg1223](https://github.com/ebg1223), [#2760](https://github.com/getpaseo/paseo/pull/2760))
 - OpenCode subagents show their task, type, model, and token usage ([#2909](https://github.com/getpaseo/paseo/pull/2909) by [@BrianAguilarWasco](https://github.com/BrianAguilarWasco))
@@ -437,7 +437,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - The file viewer shows one accurate status when a file changes or is deleted ([#2670](https://github.com/getpaseo/paseo/pull/2670), [#2694](https://github.com/getpaseo/paseo/pull/2694))
 - The Nix desktop package is smaller ([#2550](https://github.com/getpaseo/paseo/pull/2550) by [@colonelpanic8](https://github.com/colonelpanic8))
 - The Nix desktop app uses the right icon on Linux and macOS ([#2506](https://github.com/getpaseo/paseo/pull/2506), [#2783](https://github.com/getpaseo/paseo/pull/2783) by [@colonelpanic8](https://github.com/colonelpanic8))
-- Paseo Desktop builds from the Nix flake on macOS ([#2556](https://github.com/getpaseo/paseo/pull/2556) by [@colonelpanic8](https://github.com/colonelpanic8))
+- Rambla Desktop builds from the Nix flake on macOS ([#2556](https://github.com/getpaseo/paseo/pull/2556) by [@colonelpanic8](https://github.com/colonelpanic8))
 
 ### Fixed
 
@@ -498,7 +498,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Interrupting Pi no longer surfaces a stream error ([#2311](https://github.com/getpaseo/paseo/pull/2311) by [@mcowger](https://github.com/mcowger))
 - Grok usage shows again in Settings ([#2353](https://github.com/getpaseo/paseo/pull/2353) by [@jasonhnd](https://github.com/jasonhnd))
 - OMP models that report no context window now load ([#2406](https://github.com/getpaseo/paseo/pull/2406) by [@astartsky](https://github.com/astartsky))
-- Paseo's own tools are available directly in OMP ([#2418](https://github.com/getpaseo/paseo/pull/2418) by [@perezd](https://github.com/perezd))
+- Rambla's own tools are available directly in OMP ([#2418](https://github.com/getpaseo/paseo/pull/2418) by [@perezd](https://github.com/perezd))
 - Codex finds the skills defined in your project ([#2423](https://github.com/getpaseo/paseo/pull/2423) by [@dwyanewang](https://github.com/dwyanewang))
 - Pull request comments containing HTML render correctly ([#2432](https://github.com/getpaseo/paseo/pull/2432) by [@mcowger](https://github.com/mcowger))
 - Self-hosted forge links keep their port ([#2478](https://github.com/getpaseo/paseo/pull/2478) by [@muzhi1991](https://github.com/muzhi1991))
@@ -557,7 +557,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Add files to chat directly from Files and Changes ([#2275](https://github.com/getpaseo/paseo/pull/2275) by [@nikuscs](https://github.com/nikuscs))
 - Browse workspace commit history and open individual commit diffs from Changes ([#1534](https://github.com/getpaseo/paseo/pull/1534), [#2146](https://github.com/getpaseo/paseo/pull/2146), [#2312](https://github.com/getpaseo/paseo/pull/2312) by [@adradr](https://github.com/adradr))
 - Switch models from the Command Center for active agents and new drafts ([#2147](https://github.com/getpaseo/paseo/pull/2147) by [@kedrzu](https://github.com/kedrzu))
-- Open existing agents from Paseo links or the CLI ([#2324](https://github.com/getpaseo/paseo/pull/2324))
+- Open existing agents from Rambla links or the CLI ([#2324](https://github.com/getpaseo/paseo/pull/2324))
 - Configure workspace service ports with a fixed range or external allocator ([#2165](https://github.com/getpaseo/paseo/pull/2165) by [@mcowger](https://github.com/mcowger))
 - Search keyboard shortcuts by action, note, or key combination ([#2160](https://github.com/getpaseo/paseo/pull/2160))
 - Turn thinking off for supported Claude models ([#2257](https://github.com/getpaseo/paseo/pull/2257))
@@ -608,7 +608,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Pinned workspaces no longer disappear briefly when reopening the compact sidebar ([#2210](https://github.com/getpaseo/paseo/pull/2210))
 - Terminal panes no longer remain at 80x24 after focus or visibility changes ([#2059](https://github.com/getpaseo/paseo/pull/2059), [#2154](https://github.com/getpaseo/paseo/pull/2154) by [@cleiter](https://github.com/cleiter))
 - Sign-in popups in the desktop browser now complete successfully ([#2137](https://github.com/getpaseo/paseo/pull/2137))
-- Browser typing and shortcuts no longer submit the active Paseo prompt ([#1982](https://github.com/getpaseo/paseo/pull/1982))
+- Browser typing and shortcuts no longer submit the active Rambla prompt ([#1982](https://github.com/getpaseo/paseo/pull/1982))
 - Agent browser tabs remain controllable after switching workspaces ([#2156](https://github.com/getpaseo/paseo/pull/2156))
 - Archived workspaces now show the correct Unarchive or Restore action ([#2002](https://github.com/getpaseo/paseo/pull/2002))
 - Archived sessions can be reimported into the current workspace ([#2123](https://github.com/getpaseo/paseo/pull/2123), [#2265](https://github.com/getpaseo/paseo/pull/2265) by [@nikuscs](https://github.com/nikuscs))
@@ -624,11 +624,11 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 
 > **Important update notice**
 >
-> If you installed Paseo Desktop 0.1.108, you need to [download and reinstall Paseo manually](https://paseo.sh/download) to get this fix. The bug in 0.1.108 prevents its automatic updater from installing 0.1.109. Users on 0.1.107 or earlier can update normally.
+> If you installed Rambla Desktop 0.1.108, you need to [download and reinstall Rambla manually](https://paseo.sh/download) to get this fix. The bug in 0.1.108 prevents its automatic updater from installing 0.1.109. Users on 0.1.107 or earlier can update normally.
 
 ### Fixed
 
-- Paseo Desktop no longer gets stuck connecting or loses native window controls after updating ([#2111](https://github.com/getpaseo/paseo/pull/2111) by [@cleiter](https://github.com/cleiter))
+- Rambla Desktop no longer gets stuck connecting or loses native window controls after updating ([#2111](https://github.com/getpaseo/paseo/pull/2111) by [@cleiter](https://github.com/cleiter))
 
 ## 0.1.108 - 2026-07-16
 
@@ -653,16 +653,16 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 ### Fixed
 
 - New Workspace keeps your prompt and attachments when you switch projects or hosts ([#2030](https://github.com/getpaseo/paseo/pull/2030), [#2036](https://github.com/getpaseo/paseo/pull/2036))
-- OpenCode sessions close without crashing Paseo ([#2027](https://github.com/getpaseo/paseo/pull/2027) by [@mcowger](https://github.com/mcowger))
+- OpenCode sessions close without crashing Rambla ([#2027](https://github.com/getpaseo/paseo/pull/2027) by [@mcowger](https://github.com/mcowger))
 - Pi slash commands no longer leave chats stuck as running ([#2066](https://github.com/getpaseo/paseo/pull/2066) by [@ebg1223](https://github.com/ebg1223))
 - Background-agent updates now appear after the main reply ([#2058](https://github.com/getpaseo/paseo/pull/2058) by [@1254087415](https://github.com/1254087415))
 - Codex subagents no longer disappear from the Subagents track ([#2068](https://github.com/getpaseo/paseo/pull/2068))
 - Forked chats open ready to edit in their new tab ([#2038](https://github.com/getpaseo/paseo/pull/2038))
-- Paseo Desktop opens normally after an interrupted shutdown ([#1962](https://github.com/getpaseo/paseo/pull/1962))
+- Rambla Desktop opens normally after an interrupted shutdown ([#1962](https://github.com/getpaseo/paseo/pull/1962))
 - Keyboard shortcuts now work with `-`, `=`, `;`, and `'` ([#2047](https://github.com/getpaseo/paseo/pull/2047) by [@OnCloud125252](https://github.com/OnCloud125252))
 - Codebuddy Code models now appear in the model picker ([#1979](https://github.com/getpaseo/paseo/pull/1979) by [@park0er](https://github.com/park0er))
 - Workspace search now includes OpenCode commands and workflows ([#2049](https://github.com/getpaseo/paseo/pull/2049))
-- Nix installations now include the Paseo web app ([#1978](https://github.com/getpaseo/paseo/pull/1978) by [@liamdiprose](https://github.com/liamdiprose))
+- Nix installations now include the Rambla web app ([#1978](https://github.com/getpaseo/paseo/pull/1978) by [@liamdiprose](https://github.com/liamdiprose))
 
 ## 0.1.107 - 2026-07-13
 
@@ -693,7 +693,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 
 ### Added
 
-- Approve Codex MCP permission requests in Paseo ([#2001](https://github.com/getpaseo/paseo/pull/2001))
+- Approve Codex MCP permission requests in Rambla ([#2001](https://github.com/getpaseo/paseo/pull/2001))
 
 ### Improved
 
@@ -704,7 +704,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Reduced mobile chat freezes and blank screens when switching workspaces while agents are streaming ([#1989](https://github.com/getpaseo/paseo/pull/1989))
 - OpenCode sessions start reliably instead of occasionally losing the first turn ([#2015](https://github.com/getpaseo/paseo/pull/2015) by [@mcowger](https://github.com/mcowger))
 - Switching between workspaces no longer flashes a white screen
-- Pi keeps your existing MCP tools and settings when Paseo adds its own ([#1990](https://github.com/getpaseo/paseo/pull/1990) by [@mcowger](https://github.com/mcowger))
+- Pi keeps your existing MCP tools and settings when Rambla adds its own ([#1990](https://github.com/getpaseo/paseo/pull/1990) by [@mcowger](https://github.com/mcowger))
 
 ## 0.1.105 - 2026-07-10
 
@@ -752,7 +752,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Browser tabs opened by agents stay in the background until you switch to them ([#1875](https://github.com/getpaseo/paseo/pull/1875))
 - Clearer cards when an agent asks a question ([#1643](https://github.com/getpaseo/paseo/pull/1643) by [@cleiter](https://github.com/cleiter))
 - Diagnostic reports include desktop app logs ([#1914](https://github.com/getpaseo/paseo/pull/1914))
-- Paseo's built-in tools take less context ([#1939](https://github.com/getpaseo/paseo/pull/1939))
+- Rambla's built-in tools take less context ([#1939](https://github.com/getpaseo/paseo/pull/1939))
 
 ### Fixed
 
@@ -781,7 +781,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Fork chats into a new tab or new worktree ([#1788](https://github.com/getpaseo/paseo/pull/1788))
 - See workspaces from all connected hosts ([#1538](https://github.com/getpaseo/paseo/pull/1538), [#1775](https://github.com/getpaseo/paseo/pull/1775), [#1825](https://github.com/getpaseo/paseo/pull/1825))
 - Daemon can now serve the web UI ([#1635](https://github.com/getpaseo/paseo/pull/1635), [#1739](https://github.com/getpaseo/paseo/pull/1739))
-- Run Paseo from an official Docker image ([#1740](https://github.com/getpaseo/paseo/pull/1740) by [@Herbrant](https://github.com/Herbrant))
+- Run Rambla from an official Docker image ([#1740](https://github.com/getpaseo/paseo/pull/1740) by [@Herbrant](https://github.com/Herbrant))
 - Update a daemon remotely from the app ([#1513](https://github.com/getpaseo/paseo/pull/1513) by [@thedavidweng](https://github.com/thedavidweng))
 - Configure separate OpenAI endpoints for speech-to-text and text-to-speech ([#1823](https://github.com/getpaseo/paseo/pull/1823))
 - Drop files into any composer ([#1750](https://github.com/getpaseo/paseo/pull/1750), [#1801](https://github.com/getpaseo/paseo/pull/1801))
@@ -808,7 +808,7 @@ Paseo 0.8 adds plugin header buttons, custom providers, and richer chat componen
 - Streamed chat images stay in order ([#1805](https://github.com/getpaseo/paseo/pull/1805))
 - Chat actions stay below tool output ([#1827](https://github.com/getpaseo/paseo/pull/1827))
 - Claude subagent narration stays out of chat ([#1807](https://github.com/getpaseo/paseo/pull/1807))
-- Kiro slash commands and skills appear in Paseo ([#1792](https://github.com/getpaseo/paseo/pull/1792) by [@park0er](https://github.com/park0er))
+- Kiro slash commands and skills appear in Rambla ([#1792](https://github.com/getpaseo/paseo/pull/1792) by [@park0er](https://github.com/park0er))
 - Agent lists survive stale project records ([#1812](https://github.com/getpaseo/paseo/pull/1812))
 - Windows image previews handle drive-letter paths ([#1811](https://github.com/getpaseo/paseo/pull/1811))
 - OpenCode closes cleanly on Windows ([#1771](https://github.com/getpaseo/paseo/pull/1771) by [@agamotto](https://github.com/agamotto))
@@ -972,7 +972,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 ### Added
 
 - **Attach pull request comments, reviews, threads, and failed check logs to chat from the PR panel** ([#1400](https://github.com/getpaseo/paseo/pull/1400))
-- **Use Paseo in Arabic, Chinese, English, French, Russian, and Spanish** ([#1282](https://github.com/getpaseo/paseo/pull/1282), [#1478](https://github.com/getpaseo/paseo/pull/1478) by [@chyendongnhanh338](https://github.com/chyendongnhanh338), [@dwyanewang](https://github.com/dwyanewang))
+- **Use Rambla in Arabic, Chinese, English, French, Russian, and Spanish** ([#1282](https://github.com/getpaseo/paseo/pull/1282), [#1478](https://github.com/getpaseo/paseo/pull/1478) by [@chyendongnhanh338](https://github.com/chyendongnhanh338), [@dwyanewang](https://github.com/dwyanewang))
 - **Create reusable terminal profiles from Host settings**
 - **Open workspaces in Antigravity** ([#1424](https://github.com/getpaseo/paseo/pull/1424) by [@krumpyzoid](https://github.com/krumpyzoid))
 
@@ -1016,7 +1016,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Fixed
 
-- New Paseo worktree branches can push their first commits
+- New Rambla worktree branches can push their first commits
 - Imported sessions no longer open blank or in the wrong workspace
 - Windows Explorer opens the selected workspace instead of Documents ([#1412](https://github.com/getpaseo/paseo/pull/1412) by [@bjspi](https://github.com/bjspi))
 - Windows editor shortcuts installed as command shims launch correctly ([#1387](https://github.com/getpaseo/paseo/pull/1387) by [@Peter7896](https://github.com/Peter7896))
@@ -1065,7 +1065,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 - The new workspace screen no longer opens behind the mobile sidebar
 - Global agent listing works again ([#1420](https://github.com/getpaseo/paseo/pull/1420))
 - OpenCode compaction summaries stay out of chat
-- OpenCode agents sharing a workspace keep their own Paseo tools
+- OpenCode agents sharing a workspace keep their own Rambla tools
 
 ## 0.1.90 - 2026-06-04
 
@@ -1075,7 +1075,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 - **Start a new workspace from the global sidebar button without choosing a project first** ([#1324](https://github.com/getpaseo/paseo/pull/1324))
 - **Open the active file directly in your editor, file manager, or GitHub instead of only opening the workspace root** ([#1285](https://github.com/getpaseo/paseo/pull/1285) by [@aaronzhongg](https://github.com/aaronzhongg))
 - **Automatically archive clean PR workspaces after the PR is merged from host settings** ([#1313](https://github.com/getpaseo/paseo/pull/1313))
-- **Desktop-managed Paseo skills stay current after installing a newer desktop build** ([#1309](https://github.com/getpaseo/paseo/pull/1309))
+- **Desktop-managed Rambla skills stay current after installing a newer desktop build** ([#1309](https://github.com/getpaseo/paseo/pull/1309))
 - **Dart files and Dart code blocks are now syntax-highlighted** ([#1326](https://github.com/getpaseo/paseo/pull/1326))
 
 ### Improved
@@ -1085,7 +1085,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 - Scheduled agents open with the real prompt and title instead of looking empty ([#1316](https://github.com/getpaseo/paseo/pull/1316))
 - Git controls prioritize the action that gets a ready branch shipped ([#1316](https://github.com/getpaseo/paseo/pull/1316))
 - Multiple agent questions are shown one at a time
-- OpenCode questions with free-write answers show the typed response in Paseo
+- OpenCode questions with free-write answers show the typed response in Rambla
 - Delegated agent activity is visible on the parent workspace
 - Sessions are ordered by latest activity
 - ACP provider catalog entries are updated for Claude Agent, Cline, Codebuddy Code, Factory Droid, and Qoder
@@ -1156,7 +1156,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Added
 
-- Permission prompts from OpenCode subagents now surface in Paseo so you can approve or deny them
+- Permission prompts from OpenCode subagents now surface in Rambla so you can approve or deny them
 
 ### Fixed
 
@@ -1207,10 +1207,10 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Improved
 
-- Copy an OpenCode resume command to continue the session outside Paseo
+- Copy an OpenCode resume command to continue the session outside Rambla
 - Model selector lists every enabled provider, with a Retry button when one fails to load
 - Provider settings are easier to search and manage
-- Other agents connecting to Paseo via MCP see the same providers, models, and modes as the app ([#1198](https://github.com/getpaseo/paseo/pull/1198))
+- Other agents connecting to Rambla via MCP see the same providers, models, and modes as the app ([#1198](https://github.com/getpaseo/paseo/pull/1198))
 - OpenCode Edit tool calls render as inline diffs
 - Typing a slash command shows the best match first
 - Daemon starts faster on workspaces with many git folders
@@ -1271,8 +1271,8 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Added
 
-- **Paseo can now be installed as a web app from supported browsers** ([#1144](https://github.com/getpaseo/paseo/pull/1144))
-- **Pi extension dialogs now appear as Paseo permission prompts** ([#1134](https://github.com/getpaseo/paseo/pull/1134) by [@yuruiz](https://github.com/yuruiz))
+- **Rambla can now be installed as a web app from supported browsers** ([#1144](https://github.com/getpaseo/paseo/pull/1144))
+- **Pi extension dialogs now appear as Rambla permission prompts** ([#1134](https://github.com/getpaseo/paseo/pull/1134) by [@yuruiz](https://github.com/yuruiz))
 - Added community links and a home button to the sidebar
 
 ### Improved
@@ -1306,7 +1306,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 - **Pi has been revamped with first-class support**
   - Runs through your installed Pi CLI, so your Pi extensions and configuration carry over
-  - Pi agents can call Paseo tools when you have the Pi MCP extension installed
+  - Pi agents can call Rambla tools when you have the Pi MCP extension installed
   - Import a Pi session you started in the terminal
   - Copy Pi's resume command from any agent to continue the session in your terminal
   - Windows: Pi sessions match correctly across symlinked and junctioned workspace paths
@@ -1323,7 +1323,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 ### Improved
 
 - **Stale host connections recover automatically without a manual refresh**
-- Paseo opens to the workspace you were on last time you used it ([#1101](https://github.com/getpaseo/paseo/pull/1101))
+- Rambla opens to the workspace you were on last time you used it ([#1101](https://github.com/getpaseo/paseo/pull/1101))
 - Workspaces remember which editor you opened them in
 - Outdated daemons now suggest an upgrade when they receive a command they don't understand
 - Voice mode is hidden while an agent is running
@@ -1411,7 +1411,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 - Claude Code now picks up models from `~/.claude/settings.json` so custom model lists show up in the model picker
 - Local Claude Code settings (`.claude/settings.local.json`) apply per workspace
 - Diagnostics for generic ACP providers surface in the model picker
-- Allow setting fast mode for Paseo subagents ([#909](https://github.com/getpaseo/paseo/pull/909), [#910](https://github.com/getpaseo/paseo/pull/910) by [@kongjiadongyuan](https://github.com/kongjiadongyuan))
+- Allow setting fast mode for Rambla subagents ([#909](https://github.com/getpaseo/paseo/pull/909), [#910](https://github.com/getpaseo/paseo/pull/910) by [@kongjiadongyuan](https://github.com/kongjiadongyuan))
 
 ### Improved
 
@@ -1462,7 +1462,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Fixed
 
-- **OpenCode agent turns no longer stall** Paseo now follows OpenCode's global event stream, so turns stream reliably without falling back to fragile recovery paths ([#916](https://github.com/getpaseo/paseo/pull/916))
+- **OpenCode agent turns no longer stall** Rambla now follows OpenCode's global event stream, so turns stream reliably without falling back to fragile recovery paths ([#916](https://github.com/getpaseo/paseo/pull/916))
 
 ## 0.1.73 - 2026-05-10
 
@@ -1493,10 +1493,10 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Added
 
-- **Import existing Claude, Codex, and OpenCode sessions** into Paseo — pick up a conversation you started in the terminal and keep going from the app, with the full timeline ([#766](https://github.com/getpaseo/paseo/pull/766), [#833](https://github.com/getpaseo/paseo/pull/833))
+- **Import existing Claude, Codex, and OpenCode sessions** into Rambla — pick up a conversation you started in the terminal and keep going from the app, with the full timeline ([#766](https://github.com/getpaseo/paseo/pull/766), [#833](https://github.com/getpaseo/paseo/pull/833))
 - **Subagents now appear in a collapsible section above the composer** so you can jump into agents your main agent spawned ([#532](https://github.com/getpaseo/paseo/pull/532))
 - Merge a pull request directly from the checkout pane ([#814](https://github.com/getpaseo/paseo/pull/814))
-- Customize the per-project prompts Paseo uses to auto-generate agent titles, branch names, commit messages, and pull request descriptions ([#836](https://github.com/getpaseo/paseo/pull/836))
+- Customize the per-project prompts Rambla uses to auto-generate agent titles, branch names, commit messages, and pull request descriptions ([#836](https://github.com/getpaseo/paseo/pull/836))
 - Open an empty workspace without typing a prompt first ([#834](https://github.com/getpaseo/paseo/pull/834))
 - Project settings are now grouped with inline links to the relevant docs ([#837](https://github.com/getpaseo/paseo/pull/837))
 - Rich context menu on desktop — copy link, copy image, and spellcheck suggestions
@@ -1522,7 +1522,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Breaking
 
-- **Claude agents now require `claude` on your PATH** Install Claude Code globally (`npm install -g @anthropic-ai/claude-code`) before running a Claude agent — Paseo no longer ships a bundled fallback binary. Same posture as Codex and OpenCode, and shrinks the desktop install by ~210 MB per platform
+- **Claude agents now require `claude` on your PATH** Install Claude Code globally (`npm install -g @anthropic-ai/claude-code`) before running a Claude agent — Rambla no longer ships a bundled fallback binary. Same posture as Codex and OpenCode, and shrinks the desktop install by ~210 MB per platform
 
 ### Added
 
@@ -1580,7 +1580,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Fixed
 
-- Paseo now recovers automatically when an internal daemon process crashes — your agents stay connected instead of getting stuck and you don't have to restart anything
+- Rambla now recovers automatically when an internal daemon process crashes — your agents stay connected instead of getting stuck and you don't have to restart anything
 - Answering an interactive question from a Claude agent now reaches Claude correctly instead of being dropped ([#760](https://github.com/getpaseo/paseo/pull/760) by [@somus](https://github.com/somus))
 
 ## 0.1.68 - 2026-05-05
@@ -1619,7 +1619,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 - Password authentication and SSL support for daemon connections ([#635](https://github.com/getpaseo/paseo/pull/635))
 - Connect to a daemon via relay using a pairing offer URL from the CLI ([#639](https://github.com/getpaseo/paseo/pull/639))
 - **Windows:** Native ARM64 builds are now available
-- Bundled Paseo skills now refresh automatically on desktop app launch
+- Bundled Rambla skills now refresh automatically on desktop app launch
 
 ### Improved
 
@@ -1632,7 +1632,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 ### Fixed
 
 - **Apple Silicon Mac:** The desktop update pipeline now publishes manifests atomically, closing a race that could install the Intel build on Apple Silicon Macs and cause 100%+ renderer CPU usage. Affected users will self-heal — electron-updater's Rosetta detection migrates back to arm64 on the next update poll ([#555](https://github.com/getpaseo/paseo/issues/555))
-- **Linux:** `.deb` and `.rpm` packages now show as `Paseo` in the dock and process list instead of `Paseo.bin`. `--no-sandbox` is now scoped to AppImage only, matching VS Code's sandbox handling ([#602](https://github.com/getpaseo/paseo/issues/602))
+- **Linux:** `.deb` and `.rpm` packages now show as `Rambla` in the dock and process list instead of `Rambla.bin`. `--no-sandbox` is now scoped to AppImage only, matching VS Code's sandbox handling ([#602](https://github.com/getpaseo/paseo/issues/602))
 - **Windows:** Git diff commands no longer break on paths with special characters ([#629](https://github.com/getpaseo/paseo/pull/629))
 - Cursor CLI and other ACP custom providers launch reliably ([#628](https://github.com/getpaseo/paseo/pull/628))
 - Daemon stays up when WebSocket clients disconnect mid-stream, and crashes now write a fatal log entry instead of disappearing silently ([#613](https://github.com/getpaseo/paseo/pull/613) by [@yuruiz](https://github.com/yuruiz))
@@ -1679,7 +1679,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 - Tool call badges have a button to open the referenced file directly
 - Open the current branch on GitHub from a workspace's open menu ([#583](https://github.com/getpaseo/paseo/pull/583) by [@Myriad-Dreamin](https://github.com/Myriad-Dreamin))
 - Enable or disable providers from Settings without editing config files
-- Paseo prompts you to configure a worktree setup script when one is missing
+- Rambla prompts you to configure a worktree setup script when one is missing
 - Choose whether the daemon shuts down when you close the desktop app
 
 ### Improved
@@ -1818,7 +1818,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 - OpenCode todo and compaction events render in the timeline ([#429](https://github.com/getpaseo/paseo/pull/429) by [@aaronflorey](https://github.com/aaronflorey))
 - OpenCode sessions archive cleanly when closed ([#408](https://github.com/getpaseo/paseo/pull/408) by [@aaronflorey](https://github.com/aaronflorey))
 - OpenCode slash commands recover from SSE timeouts ([#407](https://github.com/getpaseo/paseo/pull/407) by [@aaronflorey](https://github.com/aaronflorey))
-- Paseo MCP tools work against archived agents, matching the CLI ([#423](https://github.com/getpaseo/paseo/pull/423))
+- Rambla MCP tools work against archived agents, matching the CLI ([#423](https://github.com/getpaseo/paseo/pull/423))
 - Native scrollbars match the active theme across all web views ([#399](https://github.com/getpaseo/paseo/pull/399) by [@ethersh](https://github.com/ethersh))
 
 ### Fixed
@@ -1844,8 +1844,8 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Added
 
-- Provider profiles — define custom providers in your Paseo config that appear alongside built-ins. Override a built-in's binary, env, or models, or create entirely new providers. See the [configuration guide](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md)
-- ACP agent support — add any ACP-compatible agent to Paseo with `extends: "acp"` in your provider config. No code changes needed
+- Provider profiles — define custom providers in your Rambla config that appear alongside built-ins. Override a built-in's binary, env, or models, or create entirely new providers. See the [configuration guide](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md)
+- ACP agent support — add any ACP-compatible agent to Rambla with `extends: "acp"` in your provider config. No code changes needed
 - Choose provider and model when creating scheduled agents
 - Max reasoning effort option for Opus 4.6 models
 - Cmd+, (Ctrl+, on Windows/Linux) opens settings
@@ -1873,7 +1873,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Improved
 
-- Paseo tools are no longer injected into agents by default — opt in from Settings when you need agent-to-agent orchestration
+- Rambla tools are no longer injected into agents by default — opt in from Settings when you need agent-to-agent orchestration
 - Agent provider and mode are now resolved server-side, so CLI commands like `paseo run` use consistent defaults without client-side lookups
 
 ### Fixed
@@ -1886,7 +1886,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Added
 
-- Agents get Paseo tools automatically — every new agent gets access to terminals, schedules, worktrees, and other agents through MCP. Toggle it off in Settings under "Inject Paseo tools"
+- Agents get Rambla tools automatically — every new agent gets access to terminals, schedules, worktrees, and other agents through MCP. Toggle it off in Settings under "Inject Rambla tools"
 - Git pull — pull remote changes directly from the workspace header. Promoted to the primary action when your branch is behind origin
 - Child agent notifications — parent agents are automatically notified when a child agent finishes, errors, or needs permission approval
 - Agent reload — `paseo agent reload` restarts an agent's underlying process from the CLI
@@ -1898,7 +1898,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 - Unavailable git actions now explain why in a toast instead of being silently greyed out
 - Streaming markdown on mobile renders significantly faster
 - Sidebar, branch switcher, and agent panel no longer re-render unnecessarily — noticeable on large workspaces
-- Paseo tool calls in agent timelines show the Paseo logo and human-readable names
+- Rambla tool calls in agent timelines show the Rambla logo and human-readable names
 - Relay and pairing URLs are stripped from daemon logs
 
 ### Fixed
@@ -1949,7 +1949,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 ### Added
 
 - Context window meter — see how much of the context window your agent has used, with color thresholds at 70% and 90%. Works with Claude Code, Codex, and OpenCode
-- Open in editor — jump from any workspace straight into Cursor, VS Code, Zed, or your file manager. Paseo remembers your choice
+- Open in editor — jump from any workspace straight into Cursor, VS Code, Zed, or your file manager. Rambla remembers your choice
 - Side-by-side diffs — toggle between unified and split-column diff views, with a whitespace visibility option
 - Spoken messages — when using voice mode, agent speech now appears as regular messages in the conversation instead of raw tool output
 - Plan actions — plan cards now show the actions your agent supports (e.g. "Implement", "Deny") instead of generic accept/reject buttons
@@ -1999,7 +1999,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Fixed
 
-- Desktop app now resolves the user's full login shell environment at startup, fixing tools like `codex`, `node`, `bun`, and `direnv` not being found when Paseo is launched from Finder or Dock. Terminals spawned by Paseo now inherit the same PATH and environment variables as a normal terminal session. Approach adapted from VS Code's battle-tested shell environment resolution
+- Desktop app now resolves the user's full login shell environment at startup, fixing tools like `codex`, `node`, `bun`, and `direnv` not being found when Rambla is launched from Finder or Dock. Terminals spawned by Rambla now inherit the same PATH and environment variables as a normal terminal session. Approach adapted from VS Code's battle-tested shell environment resolution
 - Input field on running agent screens now correctly receives keyboard focus
 - Mobile model selector alignment and sizing
 
@@ -2031,7 +2031,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 - Provider-declared features system — providers can expose dynamic toggles and selects that the app renders automatically. First consumer: Codex fast mode
 - Codex plan mode — start agents in plan-only mode with a dedicated plan card UI for reviewing proposed changes before execution
 - OpenCode custom agents and slash commands — user-defined agents from opencode.json now appear in the mode picker, and slash commands accept optional arguments
-- Desktop Integrations settings — install the Paseo CLI and orchestration skills directly from the app without touching the terminal
+- Desktop Integrations settings — install the Rambla CLI and orchestration skills directly from the app without touching the terminal
 - Daemon status dialog in desktop settings for quick health checks
 - Auto-restart daemon on version mismatch — the desktop app detects when the running daemon is outdated and restarts it automatically
 - Setup hint and paseo.sh link on the mobile welcome screen so new App Store users know what to do next
@@ -2438,7 +2438,7 @@ _This release only fixes an Android issue — desktop users don't need to update
 
 ### Added
 
-- Update the Paseo desktop app and local daemon directly from Settings
+- Update the Rambla desktop app and local daemon directly from Settings
 - Microphone and notification permission controls in Settings
 - Thinking/reasoning mode — agents can use extended thinking when the provider supports it
 - Autonomous run mode — let agents keep working without manual approval at each step

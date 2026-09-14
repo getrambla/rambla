@@ -1,13 +1,13 @@
 import { useCallback, type ReactNode } from "react";
 import { PluginClientStateProvider, usePluginClientStateSource } from "./client-state.js";
-import { PaseoApiProvider, usePaseoContextValue } from "./paseo-context.js";
+import { RamblaApiProvider, useRamblaContextValue } from "./paseo-context.js";
 import { PluginRpcProvider, usePluginRpcContextValue } from "./rpc-context.js";
 
 export type PluginRuntimeContextBridge = (children: ReactNode) => ReactNode;
 
 /** Rebuilds plugin runtime contexts inside React Native portal hosts. */
 export function usePluginRuntimeContextBridge(): PluginRuntimeContextBridge {
-  const paseo = usePaseoContextValue();
+  const paseo = useRamblaContextValue();
   const rpc = usePluginRpcContextValue();
   const state = usePluginClientStateSource();
 
@@ -23,9 +23,9 @@ export function usePluginRuntimeContextBridge(): PluginRuntimeContextBridge {
         children
       );
       return (
-        <PaseoApiProvider paseo={paseo}>
+        <RamblaApiProvider paseo={paseo}>
           <PluginRpcProvider invoke={rpc.invoke}>{content}</PluginRpcProvider>
-        </PaseoApiProvider>
+        </RamblaApiProvider>
       );
     },
     [paseo, rpc, state],

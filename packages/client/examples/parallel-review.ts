@@ -1,7 +1,7 @@
-import type { PaseoAgentHandle, PaseoClient } from "@getpaseo/client";
+import type { RamblaAgentHandle, RamblaClient } from "@getpaseo/client";
 
-export async function reviewInParallel(client: PaseoClient, cwd: string): Promise<string[]> {
-  const agents: PaseoAgentHandle[] = [];
+export async function reviewInParallel(client: RamblaClient, cwd: string): Promise<string[]> {
+  const agents: RamblaAgentHandle[] = [];
 
   try {
     agents.push(

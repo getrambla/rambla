@@ -56,7 +56,7 @@ describe("OpenCode bridge adapter", () => {
       },
     );
 
-    expect(client.capabilities.supportsNativePaseoTools).toBe(true);
+    expect(client.capabilities.supportsNativeRamblaTools).toBe(true);
     expect(runtime.acquisitions.map(({ kind }) => kind)).toEqual(["current", "current"]);
     await expect(readBridgeContext(bridge, "ses_first")).resolves.toEqual({
       env: { RAMBLA_AGENT_ID: "agent-one", RAMBLA_AGENT_CWD: "/workspace/one" },

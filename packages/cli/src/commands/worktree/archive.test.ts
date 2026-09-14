@@ -4,16 +4,16 @@ import { runArchiveCommandWithDeps } from "./archive.js";
 
 function createFakeDaemonClient(
   overrides: Partial<
-    Pick<DaemonClient, "getPaseoWorktreeList" | "archivePaseoWorktree" | "close">
+    Pick<DaemonClient, "getRamblaWorktreeList" | "archiveRamblaWorktree" | "close">
   > = {},
 ): DaemonClient {
   return {
-    getPaseoWorktreeList: async () => ({
+    getRamblaWorktreeList: async () => ({
       worktrees: [],
       error: null,
       requestId: "req-list",
     }),
-    archivePaseoWorktree: async () => ({
+    archiveRamblaWorktree: async () => ({
       success: true,
       removedAgents: [],
       error: null,
@@ -32,10 +32,10 @@ describe("runArchiveCommand", () => {
   it("sends scope worktree when archiving by worktree path", async () => {
     const worktreePath = "/tmp/paseo-home/worktrees/repo/feature";
     const archiveCalls: Array<{
-      input: Parameters<DaemonClient["archivePaseoWorktree"]>[0];
+      input: Parameters<DaemonClient["archiveRamblaWorktree"]>[0];
     }> = [];
     const fakeClient = createFakeDaemonClient({
-      getPaseoWorktreeList: async () => ({
+      getRamblaWorktreeList: async () => ({
         worktrees: [
           {
             worktreePath,
@@ -47,7 +47,7 @@ describe("runArchiveCommand", () => {
         error: null,
         requestId: "req-list",
       }),
-      archivePaseoWorktree: async (input) => {
+      archiveRamblaWorktree: async (input) => {
         archiveCalls.push({ input });
         return {
           success: true,
@@ -83,10 +83,10 @@ describe("runArchiveCommand", () => {
   it("archives by matching branch name when no directory name matches", async () => {
     const worktreePath = "/tmp/paseo-home/worktrees/repo/feature-branch";
     const archiveCalls: Array<{
-      input: Parameters<DaemonClient["archivePaseoWorktree"]>[0];
+      input: Parameters<DaemonClient["archiveRamblaWorktree"]>[0];
     }> = [];
     const fakeClient = createFakeDaemonClient({
-      getPaseoWorktreeList: async () => ({
+      getRamblaWorktreeList: async () => ({
         worktrees: [
           {
             worktreePath,
@@ -98,7 +98,7 @@ describe("runArchiveCommand", () => {
         error: null,
         requestId: "req-list",
       }),
-      archivePaseoWorktree: async (input) => {
+      archiveRamblaWorktree: async (input) => {
         archiveCalls.push({ input });
         return {
           success: true,
@@ -124,7 +124,7 @@ describe("runArchiveCommand", () => {
 
   it("throws a CommandError when the worktree is not found", async () => {
     const fakeClient = createFakeDaemonClient({
-      getPaseoWorktreeList: async () => ({
+      getRamblaWorktreeList: async () => ({
         worktrees: [],
         error: null,
         requestId: "req-list",

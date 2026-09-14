@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { LegalPage, PaseoLegalIdentity } from "~/components/legal-page";
+import { LegalPage, RamblaLegalIdentity } from "~/components/legal-page";
 import { pageMeta } from "~/meta";
 
 export const Route = createFileRoute("/terms")({
@@ -23,7 +23,7 @@ function Terms() {
 
       <section>
         <h2>Who provides the services</h2>
-        <PaseoLegalIdentity />
+        <RamblaLegalIdentity />
       </section>
 
       <section>

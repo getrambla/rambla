@@ -10,7 +10,7 @@ import type { PluginBeforeRequests, PluginLifecycleEvents } from "@getpaseo/plug
 import { ClaudeAgentClient } from "../agent/providers/claude/agent.js";
 import { CodexAppServerAgentClient } from "../agent/providers/codex-app-server-agent.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 
 type RecordedHook =
   | {
@@ -110,7 +110,7 @@ test.skipIf(process.platform !== "linux")(
       sync: true,
     });
     const logger = pino({ level: "info" }, destination);
-    const daemon = await createTestPaseoDaemon({
+    const daemon = await createTestRamblaDaemon({
       daemonVersion: "0.8.0",
       logger,
       agentClients: {

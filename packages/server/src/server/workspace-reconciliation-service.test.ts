@@ -152,7 +152,7 @@ function createWorkspaceGitServiceStub(
           currentBranch: null,
           remoteUrl: null,
           worktreeRoot: null,
-          isPaseoOwnedWorktree: false,
+          isRamblaOwnedWorktree: false,
           mainRepoRoot: null,
         };
       }
@@ -162,7 +162,7 @@ function createWorkspaceGitServiceStub(
         currentBranch: metadata.currentBranch ?? metadata.workspaceDisplayName,
         remoteUrl: metadata.gitRemote ?? null,
         worktreeRoot: null,
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: null,
       };
     },
@@ -179,7 +179,7 @@ function createCheckout(
     currentBranch: null,
     remoteUrl: null,
     worktreeRoot: null,
-    isPaseoOwnedWorktree: false,
+    isRamblaOwnedWorktree: false,
     mainRepoRoot: null,
     ...overrides,
   };
@@ -700,7 +700,7 @@ describe("WorkspaceReconciliationService", () => {
       branch: null,
       worktreeRoot: null,
       baseBranch: null,
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       mainRepoRoot: null,
       createdAt: timestamp,
       updatedAt: expect.any(String),
@@ -1509,7 +1509,7 @@ describe("WorkspaceReconciliationService", () => {
       createCheckout(rootPath, {
         isGit: true,
         worktreeRoot: rootPath,
-        isPaseoOwnedWorktree: true,
+        isRamblaOwnedWorktree: true,
         mainRepoRoot: "/tmp/main-repo",
       }),
     );
@@ -1558,14 +1558,14 @@ describe("WorkspaceReconciliationService", () => {
         directory: rootPath,
         fields: {
           worktreeRoot: rootPath,
-          isPaseoOwnedWorktree: true,
+          isRamblaOwnedWorktree: true,
           mainRepoRoot: "/tmp/main-repo",
         },
       },
     ]);
     expect(workspaces.get("w1")).toMatchObject({
       worktreeRoot: rootPath,
-      isPaseoOwnedWorktree: true,
+      isRamblaOwnedWorktree: true,
       mainRepoRoot: "/tmp/main-repo",
     });
   });

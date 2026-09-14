@@ -12,7 +12,7 @@ import {
   type DaemonTestContext,
   DaemonClient,
 } from "./test-utils/index.js";
-import { createTestPaseoDaemon } from "./test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "./test-utils/paseo-daemon.js";
 import { createTestAgentClients } from "./test-utils/fake-agent-client.js";
 import { getFullAccessConfig, getAskModeConfig } from "./daemon-e2e/agent-configs.js";
 import { parsePcm16MonoWav, wordSimilarity } from "./test-utils/dictation-e2e.js";
@@ -67,7 +67,7 @@ function tmpCwd(): string {
 }
 
 test("DaemonClient connects to a password-protected daemon", async () => {
-  const daemon = await createTestPaseoDaemon({
+  const daemon = await createTestRamblaDaemon({
     auth: { password: "$2b$12$GMhF7pN4QnMlHOQXOqjd1OitKWPSmAO3FwB0PHzKtcZR/sAMryz76" },
   });
   const client = new DaemonClient({
@@ -86,7 +86,7 @@ test("DaemonClient connects to a password-protected daemon", async () => {
 });
 
 test("DaemonClient surfaces password auth failures from WebSocket close reasons", async () => {
-  const daemon = await createTestPaseoDaemon({
+  const daemon = await createTestRamblaDaemon({
     auth: { password: "$2b$12$GMhF7pN4QnMlHOQXOqjd1OitKWPSmAO3FwB0PHzKtcZR/sAMryz76" },
   });
   const missingPasswordClient = new DaemonClient({
@@ -113,7 +113,7 @@ test("DaemonClient surfaces password auth failures from WebSocket close reasons"
 });
 
 test("createAgent without an initial prompt returns an idle snapshot", async () => {
-  const daemon = await createTestPaseoDaemon();
+  const daemon = await createTestRamblaDaemon();
   const client = new DaemonClient({
     url: `ws://127.0.0.1:${daemon.port}/ws`,
     appVersion: "0.1.82",
@@ -139,7 +139,7 @@ test("createAgent without an initial prompt returns an idle snapshot", async () 
 });
 
 test("DaemonClient uploads file bytes to daemon temp storage", async () => {
-  const daemon = await createTestPaseoDaemon();
+  const daemon = await createTestRamblaDaemon();
   const client = new DaemonClient({
     url: `ws://127.0.0.1:${daemon.port}/ws`,
     appVersion: "0.1.82",
@@ -177,7 +177,7 @@ test("DaemonClient uploads file bytes to daemon temp storage", async () => {
 });
 
 test("createAgent with background initialPrompt returns a running snapshot before turn completion", async () => {
-  const daemon = await createTestPaseoDaemon();
+  const daemon = await createTestRamblaDaemon();
   const client = new DaemonClient({
     url: `ws://127.0.0.1:${daemon.port}/ws`,
     appVersion: "0.1.82",
@@ -405,7 +405,7 @@ test("createAgent fails when the initial turn cannot start", async () => {
     startError: "Initial turn failed to start",
   });
 
-  const daemon = await createTestPaseoDaemon({
+  const daemon = await createTestRamblaDaemon({
     agentClients: { codex: testAgent },
   });
   const client = new DaemonClient({
@@ -443,7 +443,7 @@ function createUninterruptibleClient(): AgentClient {
 
 test("DaemonClient rejects a replacement prompt when cancellation is not acknowledged", async () => {
   const cwd = tmpCwd();
-  const daemon = await createTestPaseoDaemon({
+  const daemon = await createTestRamblaDaemon({
     agentClients: { codex: createUninterruptibleClient() },
   });
   const client = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
@@ -465,7 +465,7 @@ test("DaemonClient rejects a replacement prompt when cancellation is not acknowl
 
 test("DaemonClient rejects Stop when cancellation is not acknowledged", async () => {
   const cwd = tmpCwd();
-  const daemon = await createTestPaseoDaemon({
+  const daemon = await createTestRamblaDaemon({
     agentClients: { codex: createUninterruptibleClient() },
   });
   const client = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
@@ -1247,7 +1247,7 @@ test("receives server_info on websocket connect", async () => {
 }, 15000);
 
 test("a Desktop-managed daemon does not advertise npm self-update", async () => {
-  const daemon = await createTestPaseoDaemon({ desktopManaged: true });
+  const daemon = await createTestRamblaDaemon({ desktopManaged: true });
   const client = new DaemonClient({
     url: `ws://127.0.0.1:${daemon.port}/ws`,
     clientId: `cid-desktop-managed-${randomUUID()}`,

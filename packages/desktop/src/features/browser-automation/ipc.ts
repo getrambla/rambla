@@ -19,11 +19,11 @@ import {
 import { executeAutomationCommand } from "./service.js";
 import { BrowserSnapshotEngine } from "./snapshot-engine.js";
 import {
-  listRegisteredPaseoBrowserIds,
-  listRegisteredPaseoBrowserIdsForWorkspace,
-  getPaseoBrowserWebContentsForHostWindow,
-  getWorkspaceActivePaseoBrowserIdForHostWindow,
-  getPaseoBrowserWorkspaceId,
+  listRegisteredRamblaBrowserIds,
+  listRegisteredRamblaBrowserIdsForWorkspace,
+  getRamblaBrowserWebContentsForHostWindow,
+  getWorkspaceActiveRamblaBrowserIdForHostWindow,
+  getRamblaBrowserWorkspaceId,
 } from "../browser-webviews/index.js";
 
 const MAX_CONSOLE_MESSAGES_PER_TAB = 200;
@@ -386,15 +386,15 @@ function normalizeConsoleMessage(input: {
 
 function createRegistry(hostWebContentsId: number): BrowserRegistry {
   return {
-    listRegisteredBrowserIds: listRegisteredPaseoBrowserIds,
-    listRegisteredBrowserIdsForWorkspace: listRegisteredPaseoBrowserIdsForWorkspace,
+    listRegisteredBrowserIds: listRegisteredRamblaBrowserIds,
+    listRegisteredBrowserIdsForWorkspace: listRegisteredRamblaBrowserIdsForWorkspace,
     getTabContents(browserId: string): TabContents | null {
-      const contents = getPaseoBrowserWebContentsForHostWindow(browserId, hostWebContentsId);
+      const contents = getRamblaBrowserWebContentsForHostWindow(browserId, hostWebContentsId);
       return contents ? adaptWebContents(contents) : null;
     },
-    getBrowserWorkspaceId: getPaseoBrowserWorkspaceId,
+    getBrowserWorkspaceId: getRamblaBrowserWorkspaceId,
     getWorkspaceActiveBrowserId(workspaceId: string): string | null {
-      return getWorkspaceActivePaseoBrowserIdForHostWindow(workspaceId, hostWebContentsId);
+      return getWorkspaceActiveRamblaBrowserIdForHostWindow(workspaceId, hostWebContentsId);
     },
   };
 }

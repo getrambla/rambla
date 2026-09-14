@@ -86,7 +86,7 @@ function createGitRepo(): { tempDir: string; repoDir: string } {
     cwd: repoDir,
     stdio: "pipe",
   });
-  execFileSync("git", ["config", "user.name", "Paseo Test"], {
+  execFileSync("git", ["config", "user.name", "Rambla Test"], {
     cwd: repoDir,
     stdio: "pipe",
   });
@@ -97,7 +97,7 @@ function createGitRepo(): { tempDir: string; repoDir: string } {
   return { tempDir, repoDir };
 }
 
-async function createPaseoOwnedWorktree(
+async function createRamblaOwnedWorktree(
   repoDir: string,
   paseoHome: string,
   worktreeSlug: string,
@@ -192,7 +192,7 @@ describe("archiveByScope", () => {
   test("workspace scope archives the record and removes the directory on last reference", async () => {
     const { tempDir, repoDir } = createGitRepo();
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "last-ref-workspace");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "last-ref-workspace");
     const workspaceId = "ws-last-ref";
 
     const result = await archiveByScope(
@@ -237,7 +237,7 @@ describe("archiveByScope", () => {
       stdio: "pipe",
     });
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "sibling-workspace");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "sibling-workspace");
     const workspaceA = "ws-sibling-a";
     const workspaceB = "ws-sibling-b";
 
@@ -280,7 +280,7 @@ describe("archiveByScope", () => {
       stdio: "pipe",
     });
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "blocked-teardown");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "blocked-teardown");
     const workspaceId = "ws-blocked-teardown";
     const deps = createArchiveDeps({
       paseoHome,
@@ -290,7 +290,7 @@ describe("archiveByScope", () => {
           cwd: worktree.worktreePath,
           kind: "worktree",
           worktreeRoot: worktree.worktreePath,
-          isPaseoOwnedWorktree: true,
+          isRamblaOwnedWorktree: true,
           mainRepoRoot: repoDir,
         },
       ],
@@ -316,7 +316,7 @@ describe("archiveByScope", () => {
   test("workspace scope keeps a worktree for an active workspace in a subdirectory", async () => {
     const { tempDir, repoDir } = createGitRepo();
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "subdirectory-sibling");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "subdirectory-sibling");
     const sourceWorkspaceId = "ws-subdirectory-source";
     const siblingWorkspaceId = "ws-subdirectory-sibling";
     const siblingDirectory = path.join(worktree.worktreePath, "packages", "app");
@@ -331,14 +331,14 @@ describe("archiveByScope", () => {
             cwd: worktree.worktreePath,
             kind: "worktree",
             worktreeRoot: worktree.worktreePath,
-            isPaseoOwnedWorktree: true,
+            isRamblaOwnedWorktree: true,
           },
           {
             workspaceId: siblingWorkspaceId,
             cwd: siblingDirectory,
             kind: "worktree",
             worktreeRoot: worktree.worktreePath,
-            isPaseoOwnedWorktree: true,
+            isRamblaOwnedWorktree: true,
           },
         ],
       }),
@@ -358,7 +358,7 @@ describe("archiveByScope", () => {
   test("archiving a subdirectory workspace keeps its active worktree root", async () => {
     const { tempDir, repoDir } = createGitRepo();
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "subdirectory-target");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "subdirectory-target");
     const rootWorkspaceId = "ws-subdirectory-root";
     const subdirectoryWorkspaceId = "ws-subdirectory-target";
     const subdirectory = path.join(worktree.worktreePath, "packages", "app");
@@ -373,14 +373,14 @@ describe("archiveByScope", () => {
             cwd: worktree.worktreePath,
             kind: "worktree",
             worktreeRoot: worktree.worktreePath,
-            isPaseoOwnedWorktree: true,
+            isRamblaOwnedWorktree: true,
           },
           {
             workspaceId: subdirectoryWorkspaceId,
             cwd: subdirectory,
             kind: "worktree",
             worktreeRoot: worktree.worktreePath,
-            isPaseoOwnedWorktree: true,
+            isRamblaOwnedWorktree: true,
           },
         ],
       }),
@@ -419,7 +419,7 @@ describe("archiveByScope", () => {
     });
 
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "nested-teardown");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "nested-teardown");
     const workspaceCwd = path.join(worktree.worktreePath, nestedRelative);
     const matchesWorkspaceCwd = createRealpathAwarePathMatcher(workspaceCwd);
     const workspaceId = "ws-nested-teardown";
@@ -433,7 +433,7 @@ describe("archiveByScope", () => {
             cwd: workspaceCwd,
             kind: "worktree",
             worktreeRoot: worktree.worktreePath,
-            isPaseoOwnedWorktree: true,
+            isRamblaOwnedWorktree: true,
             mainRepoRoot: repoDir,
           },
         ],
@@ -485,7 +485,7 @@ describe("archiveByScope", () => {
       stdio: "pipe",
     });
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "worktree-scope");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "worktree-scope");
     const workspaceA = "ws-worktree-a";
     const workspaceB = "ws-worktree-b";
     const workspaceC = "ws-worktree-subdirectory";
@@ -500,21 +500,21 @@ describe("archiveByScope", () => {
             cwd: worktree.worktreePath,
             kind: "worktree",
             worktreeRoot: worktree.worktreePath,
-            isPaseoOwnedWorktree: true,
+            isRamblaOwnedWorktree: true,
           },
           {
             workspaceId: workspaceB,
             cwd: worktree.worktreePath,
             kind: "worktree",
             worktreeRoot: worktree.worktreePath,
-            isPaseoOwnedWorktree: true,
+            isRamblaOwnedWorktree: true,
           },
           {
             workspaceId: workspaceC,
             cwd: subdirectory,
             kind: "worktree",
             worktreeRoot: worktree.worktreePath,
-            isPaseoOwnedWorktree: true,
+            isRamblaOwnedWorktree: true,
           },
         ],
       }),
@@ -534,7 +534,7 @@ describe("archiveByScope", () => {
     expect(readFileSync(path.join(repoDir, "nested-scope-teardown.log"), "utf8")).toBe("ok");
   });
 
-  test("workspace scope never removes a non-Paseo-owned directory", async () => {
+  test("workspace scope never removes a non-Rambla-owned directory", async () => {
     const { tempDir } = createGitRepo();
     const localCheckoutDir = mkdtempSync(path.join(tempDir, "local-checkout-"));
     const workspaceId = "ws-local-checkout";
@@ -560,7 +560,7 @@ describe("archiveByScope", () => {
   test("worktree scope keeps the directory when one record teardown fails", async () => {
     const { tempDir, repoDir } = createGitRepo();
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "partial-failure");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "partial-failure");
     const workspaceA = "ws-partial-a";
     const workspaceB = "ws-partial-b";
 
@@ -620,7 +620,7 @@ describe("archiveByScope", () => {
   test("worktree scope removes an owned directory with zero matching records", async () => {
     const { tempDir, repoDir } = createGitRepo();
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "zero-records");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "zero-records");
 
     const result = await archiveByScope(
       createArchiveDeps({
@@ -643,7 +643,7 @@ describe("archiveByScope", () => {
   test("marks archiving, emits an upsert carrying the archiving state, then clears it and emits a remove", async () => {
     const { tempDir, repoDir } = createGitRepo();
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "lifecycle");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "lifecycle");
     const workspaceId = "ws-lifecycle";
 
     const deps = createArchiveDeps({
@@ -727,7 +727,7 @@ describe("archiveByScope", () => {
   test("archives stored snapshots only for the target workspace", async () => {
     const { tempDir, repoDir } = createGitRepo();
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "snapshot-scope");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "snapshot-scope");
     const targetWorkspaceId = "ws-snapshot-target";
     const otherWorkspaceId = "ws-snapshot-other";
     const liveAgentId = "agent-live";
@@ -815,7 +815,7 @@ describe("archiveByScope", () => {
   test("worktree scope archives three workspaces on the directory and removes it", async () => {
     const { tempDir, repoDir } = createGitRepo();
     const paseoHome = path.join(tempDir, ".rambla");
-    const worktree = await createPaseoOwnedWorktree(repoDir, paseoHome, "worktree-scope-n3");
+    const worktree = await createRamblaOwnedWorktree(repoDir, paseoHome, "worktree-scope-n3");
     const workspaceA = "ws-worktree-n3-a";
     const workspaceB = "ws-worktree-n3-b";
     const workspaceC = "ws-worktree-n3-c";

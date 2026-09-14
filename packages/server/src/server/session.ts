@@ -238,19 +238,19 @@ import {
 } from "./workspace-directory.js";
 import { shouldEmitPendingBootstrapUpdate } from "./workspace-bootstrap-dedupe.js";
 import {
-  createPaseoWorktree,
-  type CreatePaseoWorktreeInput,
-  type CreatePaseoWorktreeResult,
+  createRamblaWorktree,
+  type CreateRamblaWorktreeInput,
+  type CreateRamblaWorktreeResult,
 } from "./paseo-worktree-service.js";
 import { WorkspaceAutoName } from "./workspace-auto-name.js";
 import {
   buildAgentSessionConfig as buildWorktreeAgentSessionConfig,
-  createPaseoWorktreeWorkflow as createWorktreeWorkflow,
-  type CreatePaseoWorktreeSetupContinuationInput,
-  type CreatePaseoWorktreeWorkflowResult,
-  handleCreatePaseoWorktreeRequest as handleCreateWorktreeRequest,
-  handlePaseoWorktreeArchiveRequest as handleWorktreeArchiveRequest,
-  handlePaseoWorktreeListRequest as handleWorktreeListRequest,
+  createRamblaWorktreeWorkflow as createWorktreeWorkflow,
+  type CreateRamblaWorktreeSetupContinuationInput,
+  type CreateRamblaWorktreeWorkflowResult,
+  handleCreateRamblaWorktreeRequest as handleCreateWorktreeRequest,
+  handleRamblaWorktreeArchiveRequest as handleWorktreeArchiveRequest,
+  handleRamblaWorktreeListRequest as handleWorktreeListRequest,
   handleWorkspaceSetupStatusRequest as handleWorkspaceSetupStatusRequestMessage,
   handleWorkspaceSetupRunRequest as handleWorkspaceSetupRunRequestMessage,
 } from "./worktree-session.js";
@@ -1034,8 +1034,8 @@ export class Session {
       agentStorage: this.agentStorage,
       github: this.github,
       workspaceGitService: this.workspaceGitService,
-      createPaseoWorktreeWorkflow: (input, workflowOptions) =>
-        this.createPaseoWorktreeWorkflow(input, workflowOptions),
+      createRamblaWorktreeWorkflow: (input, workflowOptions) =>
+        this.createRamblaWorktreeWorkflow(input, workflowOptions),
       archiveAgentForClose: (agentId) => this.archiveAgentForClose(agentId),
       findWorkspaceIdForCwd: (cwd) => this.findWorkspaceIdForCwd(cwd),
       listActiveWorkspaces: () => this.listActiveWorkspaceRefs(),
@@ -2557,11 +2557,11 @@ export class Session {
       case "project.list.request":
         return this.handleProjectListRequest(msg);
       case "paseo_worktree_list_request":
-        return this.handlePaseoWorktreeListRequest(msg);
+        return this.handleRamblaWorktreeListRequest(msg);
       case "paseo_worktree_archive_request":
-        return this.handlePaseoWorktreeArchiveRequest(msg);
+        return this.handleRamblaWorktreeArchiveRequest(msg);
       case "create_paseo_worktree_request":
-        return this.handleCreatePaseoWorktreeRequest(msg);
+        return this.handleCreateRamblaWorktreeRequest(msg);
       // COMPAT(desktopEditorBridge): added in v0.1.88, remove after 2026-12-03 once old clients no longer call daemon editor RPCs.
       case "list_available_editors_request":
         return this.handleLegacyListAvailableEditorsRequest(msg);
@@ -3649,7 +3649,7 @@ export class Session {
       }`,
     );
 
-    let createdWorktreeForCleanup: CreatePaseoWorktreeWorkflowResult | null = null;
+    let createdWorktreeForCleanup: CreateRamblaWorktreeWorkflowResult | null = null;
     let createdAgentId: string | null = null;
     try {
       const requestedCwd = resolve(config.cwd);
@@ -3748,7 +3748,7 @@ export class Session {
 
   private async resolveSessionCreateAgentIntent(input: {
     request: CreateAgentRequestMessage;
-    createdWorktree: CreatePaseoWorktreeWorkflowResult | null;
+    createdWorktree: CreateRamblaWorktreeWorkflowResult | null;
     workspacePromptTitle: string | null;
   }): Promise<ResolvedSessionCreateAgentIntent> {
     const { request, createdWorktree } = input;
@@ -4180,7 +4180,7 @@ export class Session {
     firstAgentContext?: FirstAgentContext,
   ): Promise<{
     sessionConfig: AgentSessionConfig;
-    setupContinuation?: CreatePaseoWorktreeWorkflowResult["setupContinuation"];
+    setupContinuation?: CreateRamblaWorktreeWorkflowResult["setupContinuation"];
     createdWorkspaceId?: string;
   }> {
     return buildWorktreeAgentSessionConfig(
@@ -4189,8 +4189,8 @@ export class Session {
         worktreesRoot: this.worktreesRoot,
         sessionLogger: this.sessionLogger,
         workspaceGitService: this.workspaceGitService,
-        createPaseoWorktree: (input, serviceOptions) =>
-          this.createPaseoWorktreeWorkflow(input, {
+        createRamblaWorktree: (input, serviceOptions) =>
+          this.createRamblaWorktreeWorkflow(input, {
             ...serviceOptions,
             setupContinuation: {
               kind: "agent",
@@ -4493,7 +4493,7 @@ export class Session {
     }
   }
 
-  private async handlePaseoWorktreeListRequest(
+  private async handleRamblaWorktreeListRequest(
     msg: Extract<SessionInboundMessage, { type: "paseo_worktree_list_request" }>,
   ): Promise<void> {
     return handleWorktreeListRequest(
@@ -4506,7 +4506,7 @@ export class Session {
     );
   }
 
-  private async handlePaseoWorktreeArchiveRequest(
+  private async handleRamblaWorktreeArchiveRequest(
     msg: Extract<SessionInboundMessage, { type: "paseo_worktree_archive_request" }>,
   ): Promise<void> {
     return handleWorktreeArchiveRequest(
@@ -4985,7 +4985,7 @@ export class Session {
     }
 
     const worktreeSlug =
-      workspace.isPaseoOwnedWorktree && workspace.worktreeRoot
+      workspace.isRamblaOwnedWorktree && workspace.worktreeRoot
         ? basename(workspace.worktreeRoot)
         : undefined;
 
@@ -5030,7 +5030,7 @@ export class Session {
     return {
       currentBranch: snapshot.git.currentBranch,
       remoteUrl: snapshot.git.remoteUrl,
-      isPaseoOwnedWorktree: snapshot.git.isPaseoOwnedWorktree,
+      isRamblaOwnedWorktree: snapshot.git.isRamblaOwnedWorktree,
       isDirty: snapshot.git.isDirty,
       aheadBehind: snapshot.git.aheadBehind,
       aheadOfOrigin: snapshot.git.aheadOfOrigin,
@@ -5075,7 +5075,7 @@ export class Session {
   }
 
   private async describeCreatedWorktreeWorkspace(
-    result: CreatePaseoWorktreeResult,
+    result: CreateRamblaWorktreeResult,
   ): Promise<WorkspaceDescriptorPayload> {
     const projectRecord = await this.projectRegistry.get(result.workspace.projectId);
     return {
@@ -5109,7 +5109,7 @@ export class Session {
       gitRuntime: {
         currentBranch: result.worktree.branchName || null,
         remoteUrl: null,
-        isPaseoOwnedWorktree: true,
+        isRamblaOwnedWorktree: true,
         isDirty: false,
         aheadBehind: null,
         aheadOfOrigin: null,
@@ -5306,13 +5306,13 @@ export class Session {
     await this.restoreWorkspaceAndEmit(record.workspaceId);
   }
 
-  private async createPaseoWorktree(
-    input: CreatePaseoWorktreeInput,
+  private async createRamblaWorktree(
+    input: CreateRamblaWorktreeInput,
     options?: {
       resolveDefaultBranch?: (repoRoot: string) => Promise<string>;
     },
-  ): Promise<CreatePaseoWorktreeResult> {
-    const result = await createPaseoWorktree(input, {
+  ): Promise<CreateRamblaWorktreeResult> {
+    const result = await createRamblaWorktree(input, {
       github: this.github,
       ...(options?.resolveDefaultBranch
         ? { resolveDefaultBranch: options.resolveDefaultBranch }
@@ -5341,7 +5341,7 @@ export class Session {
         cwd: workspace.cwd,
         kind: workspace.kind,
         worktreeRoot: workspace.worktreeRoot,
-        isPaseoOwnedWorktree: workspace.isPaseoOwnedWorktree,
+        isRamblaOwnedWorktree: workspace.isRamblaOwnedWorktree,
         mainRepoRoot: workspace.mainRepoRoot,
       }));
   }
@@ -6198,7 +6198,7 @@ export class Session {
 
     const sourceCwd = await resolveWorktreeSourceCwd(source, this.projectRegistry);
 
-    const result = await this.createPaseoWorktreeWorkflow(
+    const result = await this.createRamblaWorktreeWorkflow(
       {
         cwd: sourceCwd,
         projectId: source.projectId,
@@ -6719,7 +6719,7 @@ export class Session {
     });
   }
 
-  private async handleCreatePaseoWorktreeRequest(
+  private async handleCreateRamblaWorktreeRequest(
     request: Extract<SessionInboundMessage, { type: "create_paseo_worktree_request" }>,
   ): Promise<void> {
     return handleCreateWorktreeRequest(
@@ -6729,25 +6729,25 @@ export class Session {
         describeWorkspaceRecord: (result) => this.describeCreatedWorktreeWorkspace(result),
         emit: (message) => this.emit(message),
         sessionLogger: this.sessionLogger,
-        createPaseoWorktreeWorkflow: (input) => this.createPaseoWorktreeWorkflow(input),
+        createRamblaWorktreeWorkflow: (input) => this.createRamblaWorktreeWorkflow(input),
       },
       request,
     );
   }
 
-  private async createPaseoWorktreeWorkflow(
-    input: CreatePaseoWorktreeInput,
+  private async createRamblaWorktreeWorkflow(
+    input: CreateRamblaWorktreeInput,
     options?: {
       resolveDefaultBranch?: (repoRoot: string) => Promise<string>;
-      setupContinuation?: CreatePaseoWorktreeSetupContinuationInput;
+      setupContinuation?: CreateRamblaWorktreeSetupContinuationInput;
     },
-  ): Promise<CreatePaseoWorktreeWorkflowResult> {
+  ): Promise<CreateRamblaWorktreeWorkflowResult> {
     return createWorktreeWorkflow(
       {
         paseoHome: this.paseoHome,
         worktreesRoot: this.worktreesRoot,
-        createPaseoWorktree: (workflowInput, serviceOptions) =>
-          this.createPaseoWorktree(workflowInput, serviceOptions),
+        createRamblaWorktree: (workflowInput, serviceOptions) =>
+          this.createRamblaWorktree(workflowInput, serviceOptions),
         warmWorkspaceGitData: (workspace) => this.warmWorkspaceGitDataForWorkspace(workspace),
         autoNameWorkspaceBranchForFirstAgent: (autoNameInput) =>
           this.workspaceAutoName.scheduleForWorktree(autoNameInput, {

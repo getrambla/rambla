@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createArchiveFinishedSubagents, type ManagedSubagentSnapshot } from "./archive-finished";
-import type { PaseoSubagentRow, ProviderSubagentRow } from "./select";
+import type { RamblaSubagentRow, ProviderSubagentRow } from "./select";
 
-function paseo(id: string, status: PaseoSubagentRow["status"] = "idle"): PaseoSubagentRow {
+function paseo(id: string, status: RamblaSubagentRow["status"] = "idle"): RamblaSubagentRow {
   return {
     kind: "paseo",
     id,
@@ -109,9 +109,9 @@ describe("createArchiveFinishedSubagents", () => {
 
     second.resolve();
     await expect(operation).resolves.toEqual({
-      archivedPaseoIds: ["first", "second"],
+      archivedRamblaIds: ["first", "second"],
       dismissedProviderIds: ["native"],
-      skippedPaseoIds: ["resumed"],
+      skippedRamblaIds: ["resumed"],
       failures: [],
     });
     expect(progress).toEqual(["0/4", "1/4", "2/4", "3/4", "4/4"]);
@@ -148,9 +148,9 @@ describe("createArchiveFinishedSubagents", () => {
     second.resolve();
     archive.setRows([]);
     await expect(firstAttempt).resolves.toEqual({
-      archivedPaseoIds: ["second"],
+      archivedRamblaIds: ["second"],
       dismissedProviderIds: [],
-      skippedPaseoIds: [],
+      skippedRamblaIds: [],
       failures: [{ id: "first", error: firstError }],
     });
 
@@ -181,9 +181,9 @@ describe("createArchiveFinishedSubagents", () => {
     const retryError = new Error("retry failed");
     retry.reject(retryError);
     await expect(retryAttempt).resolves.toEqual({
-      archivedPaseoIds: [],
+      archivedRamblaIds: [],
       dismissedProviderIds: [],
-      skippedPaseoIds: [],
+      skippedRamblaIds: [],
       failures: [{ id: "first", error: retryError }],
     });
 
@@ -245,9 +245,9 @@ describe("createArchiveFinishedSubagents", () => {
 
     expect(archive.getState()).toEqual({ eligibleCount: 0, status: { kind: "idle" } });
     await expect(archive.archiveFinished()).resolves.toEqual({
-      archivedPaseoIds: [],
+      archivedRamblaIds: [],
       dismissedProviderIds: [],
-      skippedPaseoIds: [],
+      skippedRamblaIds: [],
       failures: [],
     });
   });
@@ -271,9 +271,9 @@ describe("createArchiveFinishedSubagents", () => {
 
     expect(archive.getState()).toEqual({ eligibleCount: 0, status: { kind: "idle" } });
     await expect(archive.archiveFinished()).resolves.toEqual({
-      archivedPaseoIds: [],
+      archivedRamblaIds: [],
       dismissedProviderIds: [],
-      skippedPaseoIds: [],
+      skippedRamblaIds: [],
       failures: [],
     });
   });
@@ -306,9 +306,9 @@ describe("createArchiveFinishedSubagents", () => {
       });
 
       await expect(archive.archiveFinished()).resolves.toEqual({
-        archivedPaseoIds: [],
+        archivedRamblaIds: [],
         dismissedProviderIds: [],
-        skippedPaseoIds: [],
+        skippedRamblaIds: [],
         failures: [{ id: "failed", error }],
       });
       expect(archive.getState()).toEqual({ eligibleCount: 1, status: { kind: "idle" } });
@@ -340,9 +340,9 @@ describe("createArchiveFinishedSubagents", () => {
     const operation = archive.archiveFinished();
     archive.setRows([]);
     await expect(operation).resolves.toEqual({
-      archivedPaseoIds: [],
+      archivedRamblaIds: [],
       dismissedProviderIds: [],
-      skippedPaseoIds: [],
+      skippedRamblaIds: [],
       failures: [
         { id: "first", error: firstError },
         { id: "second", error: secondError },
@@ -355,9 +355,9 @@ describe("createArchiveFinishedSubagents", () => {
       status: { kind: "failed", failedCount: 1, totalCount: 1 },
     });
     await expect(archive.archiveFinished()).resolves.toEqual({
-      archivedPaseoIds: ["first"],
+      archivedRamblaIds: ["first"],
       dismissedProviderIds: [],
-      skippedPaseoIds: [],
+      skippedRamblaIds: [],
       failures: [],
     });
     expect(calls).toEqual(["first", "second", "first"]);
@@ -393,9 +393,9 @@ describe("createArchiveFinishedSubagents", () => {
     });
 
     await expect(archive.archiveFinished()).resolves.toEqual({
-      archivedPaseoIds: ["first"],
+      archivedRamblaIds: ["first"],
       dismissedProviderIds: [],
-      skippedPaseoIds: ["resumed", "missing", "archived", "reparented", "running", "initializing"],
+      skippedRamblaIds: ["resumed", "missing", "archived", "reparented", "running", "initializing"],
       failures: [],
     });
 
@@ -419,9 +419,9 @@ describe("createArchiveFinishedSubagents", () => {
     });
 
     await expect(archive.archiveFinished()).resolves.toEqual({
-      archivedPaseoIds: [],
+      archivedRamblaIds: [],
       dismissedProviderIds: ["finished"],
-      skippedPaseoIds: [],
+      skippedRamblaIds: [],
       failures: [],
     });
 

@@ -38,7 +38,7 @@ nix build .#desktop
 ```
 
 Linux produces the `rambla-desktop` launcher and desktop entry. macOS produces
-`Applications/Paseo.app` plus the `rambla-desktop` launcher. Both use the nixpkgs
+`Applications/Rambla.app` plus the `rambla-desktop` launcher. Both use the nixpkgs
 Electron runtime and the checkout's built daemon, client, and renderer rather
 than downloading a published desktop release.
 
@@ -49,7 +49,7 @@ than downloading a published desktop release.
 - The **server itself** (e.g. when launched by the desktop app or `npm run start`) defaults to `~/.rambla` (see `packages/server/src/server/paseo-home.ts`).
 - **Repo dev scripts** default to `$ROOT/.dev/paseo-home`, where `$ROOT` is the current checkout or worktree root. This keeps all dev state scoped to the checkout instead of the packaged desktop app.
 - **`npm run cli -- ...`** runs through the same dev-home wrapper as the dev scripts, so the in-repo CLI automatically targets the current checkout's `.dev/paseo-home` and configured dev daemon endpoint.
-- **Paseo-created worktrees** seed `$RAMBLA_WORKTREE_PATH/.dev/paseo-home` from `$RAMBLA_SOURCE_CHECKOUT_PATH/.dev/paseo-home` by copying durable JSON metadata. Runtime files like pid files, sockets, and logs are not copied.
+- **Rambla-created worktrees** seed `$RAMBLA_WORKTREE_PATH/.dev/paseo-home` from `$RAMBLA_SOURCE_CHECKOUT_PATH/.dev/paseo-home` by copying durable JSON metadata. Runtime files like pid files, sockets, and logs are not copied.
 - **This repo's worktree setup** also best-effort seeds `packages/app/ios` and the newest `.dev/ios-build` entry from the source checkout so iOS simulator services can reuse native project and Xcode cache state when it is safe enough to do so.
 
 Override knobs:
@@ -68,7 +68,7 @@ RAMBLA_DEV_RESET_HOME=1 npm run dev            # clear and reseed the derived wo
 - Root checkout desktop dev Expo: first free port from `8082` through `8089`.
 - `npm run dev` (Windows): `localhost:6767` for the daemon.
 
-In Paseo-managed worktree services, use the injected service environment rather than hardcoded root checkout ports.
+In Rambla-managed worktree services, use the injected service environment rather than hardcoded root checkout ports.
 
 ### Expo Router
 
@@ -78,7 +78,7 @@ startup routing, remembered workspace restore, or active workspace selection.
 
 ### iOS simulator preview service
 
-Paseo worktrees expose the native iOS dev app through the `ios-simulator` service in `paseo.json`. The service URL serves the simulator preview at `/.sim`, so the preview link is `${RAMBLA_URL}/.sim`.
+Rambla worktrees expose the native iOS dev app through the `ios-simulator` service in `paseo.json`. The service URL serves the simulator preview at `/.sim`, so the preview link is `${RAMBLA_URL}/.sim`.
 
 **Prerequisites (macOS only).** The service shells out to the Apple toolchain, so beyond the `npm ci` that worktree setup runs you must install:
 
@@ -92,7 +92,7 @@ The service is designed for concurrent worktrees: it derives a deterministic sim
 
 Worktree setup best-effort seeds the generated iOS project and newest native build cache from the source checkout before the service runs. The service still validates the native project by running Expo prebuild and Xcode; the seed only avoids paying all setup/build cost from a cold worktree every time.
 
-Starting the service must not create, focus, reveal, or leave behind macOS Simulator.app windows — a guard hides Simulator.app every 250ms, so the native window vanishes if you focus it. The user-visible surface is the interactive `/.sim` preview: a `serve-sim` stream (60 FPS MJPEG + a WebSocket control channel) that Metro mounts at `basePath: "/.sim"` (`packages/app/metro.config.cjs`) and that forwards taps and gestures, so first-launch prompts like "Open in PaseoDebug?" are answered there, not in the native window. Open the `${RAMBLA_URL}/.sim` link the service prints — not `serve-sim`'s raw stream port (`:3100`), which is view-only. Because the stream sits behind the daemon proxy it is convenient for remote viewing but laggy up close; for fast local dev at the Mac, use the native simulator path below.
+Starting the service must not create, focus, reveal, or leave behind macOS Simulator.app windows — a guard hides Simulator.app every 250ms, so the native window vanishes if you focus it. The user-visible surface is the interactive `/.sim` preview: a `serve-sim` stream (60 FPS MJPEG + a WebSocket control channel) that Metro mounts at `basePath: "/.sim"` (`packages/app/metro.config.cjs`) and that forwards taps and gestures, so first-launch prompts like "Open in RamblaDebug?" are answered there, not in the native window. Open the `${RAMBLA_URL}/.sim` link the service prints — not `serve-sim`'s raw stream port (`:3100`), which is view-only. Because the stream sits behind the daemon proxy it is convenient for remote viewing but laggy up close; for fast local dev at the Mac, use the native simulator path below.
 
 **Troubleshooting.** If `xcrun simctl` fails with `unable to find utility "simctl"`, the active developer directory is still the Command Line Tools even though Xcode is installed. Point it at Xcode: `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`, then confirm with `xcrun --find simctl`.
 
@@ -109,7 +109,7 @@ npm run ios        # → expo run:ios (packages/app): builds and launches the ap
 **Pointing the app at a daemon.** The client resolves its local daemon from `EXPO_PUBLIC_LOCAL_DAEMON` (`packages/app/src/runtime/host-runtime.ts`); when unset it falls back to `localhost:6767`, the production `~/.rambla` daemon. To target a worktree's dev daemon instead, set it on the build command:
 
 ```bash
-EXPO_PUBLIC_LOCAL_DAEMON=localhost:${RAMBLA_SERVICE_DAEMON_PORT} npm run ios   # worktree daemon running as a Paseo service
+EXPO_PUBLIC_LOCAL_DAEMON=localhost:${RAMBLA_SERVICE_DAEMON_PORT} npm run ios   # worktree daemon running as a Rambla service
 EXPO_PUBLIC_LOCAL_DAEMON=localhost:6768 npm run ios                          # standalone `npm run dev:server`
 ```
 
@@ -127,7 +127,7 @@ port and prints the selected DevTools endpoint. Set
 fixed port.
 
 Desktop dev also scopes Electron `userData` to the current dev root. This prevents
-desktop-only environment inherited by terminals opened inside Paseo from coupling
+desktop-only environment inherited by terminals opened inside Rambla from coupling
 a new worktree instance to the parent desktop instance's profile or single-instance
 lock.
 
@@ -248,7 +248,7 @@ For the desktop Explorer sidebar toggle, run the app against the root checkout's
 npm run profile:explorer-toggle --workspace=@getpaseo/app
 ```
 
-The harness verifies port `6768`, opens the Paseo workspace, creates and warms the Explorer pane,
+The harness verifies port `6768`, opens the Rambla workspace, creates and warms the Explorer pane,
 records an idle control, then measures settled and 50 ms burst Cmd+E toggles. It reports
 input-to-DOM and input-to-paint latency, React commits, mounts, unmounts, and DOM mutations. Set
 `RAMBLA_PROFILE_TRACE_PATH=/tmp/explorer-toggle.trace.json` or
@@ -280,7 +280,7 @@ boundaries are nested. A printable key after an empty newline should not change 
 
 ### Preview Windows and Linux window controls on macOS
 
-Desktop development can replace native macOS traffic lights with Paseo's custom controls:
+Desktop development can replace native macOS traffic lights with Rambla's custom controls:
 
 ```bash
 RAMBLA_DESKTOP_WINDOW_CONTROLS=windows npm run dev:desktop
@@ -345,7 +345,7 @@ semantics, and environment-variable overrides.
 
 ### Agent Tool Catalog Measurement
 
-Measure the MCP `tools/list` payload that Paseo injects into agents with:
+Measure the MCP `tools/list` payload that Rambla injects into agents with:
 
 ```bash
 npm run measure:agent-tools --workspace=@getpaseo/server
@@ -378,7 +378,7 @@ of commands. Both run sequentially.
 
 Lifecycle commands run in the worktree through a stable script shell: `bash`
 resolved from `PATH` on macOS/Linux, and PowerShell with `-NoProfile` on
-Windows. They inherit the daemon environment plus Paseo's lifecycle variables;
+Windows. They inherit the daemon environment plus Rambla's lifecycle variables;
 login and interactive shell startup files are not loaded, and Bash's `BASH_ENV`
 hook is unset. ACP single-string terminal commands use the same non-login Bash
 behavior on macOS/Linux, but preserve their existing `cmd.exe /c` string semantics
@@ -435,7 +435,7 @@ Service ports use OS ephemeral allocation by default. Set `worktrees.servicePort
 executable. Since `portScript` is executed directly without a shell, it must point to a real executable (e.g., a binary or a script with a proper shebang like `#!/bin/sh`) rather than an inline shell command or shell pipeline. For inline shell commands or pipelines, wrap them in a small script. `portScript` runs in the workspace directory with four arguments: service name,
 workspace ID, branch name, and worktree path. A missing branch is passed as an empty string. The same
 values are available as `RAMBLA_SCRIPTNAME`, `RAMBLA_WORKSPACE_ID`, `RAMBLA_BRANCH_NAME`, and
-`RAMBLA_WORKTREE_PATH`. The script must print one valid TCP port. Paseo trusts the external allocator,
+`RAMBLA_WORKTREE_PATH`. The script must print one valid TCP port. Rambla trusts the external allocator,
 so the port may already be bound. `portScript` takes precedence when both values are present.
 
 ## Bundled daemon web UI
@@ -542,7 +542,7 @@ install.
 
 ## CLI reference
 
-Use `npm run cli` to run the in-repo CLI from source (`npx tsx packages/cli/src/index.ts`). The script wraps the CLI with `scripts/dev-home.sh`, so it automatically uses this checkout's `.dev/paseo-home` and dev daemon endpoint unless you pass an explicit override. The globally installed `paseo` binary on macOS is a symlink into the installed Paseo desktop app, not this checkout — use it to drive the desktop's built-in daemon, but use `npm run cli` when you want to talk to the CLI you are editing.
+Use `npm run cli` to run the in-repo CLI from source (`npx tsx packages/cli/src/index.ts`). The script wraps the CLI with `scripts/dev-home.sh`, so it automatically uses this checkout's `.dev/paseo-home` and dev daemon endpoint unless you pass an explicit override. The globally installed `paseo` binary on macOS is a symlink into the installed Rambla desktop app, not this checkout — use it to drive the desktop's built-in daemon, but use `npm run cli` when you want to talk to the CLI you are editing.
 
 Canonical automation uses `paseo project create/ls/rename/delete`, `paseo workspace create/ls/rename/archive`, `paseo heartbeat create/update/delete`, and the full `paseo schedule` group. MCP heartbeat automation is intentionally smaller: create and delete only. Detach remains an explicit user lifecycle action rather than an agent tool. `paseo run --new-workspace local|worktree` composes workspace creation with agent creation. The old `paseo worktree` and `paseo run --worktree` forms are hidden compatibility aliases.
 
@@ -551,7 +551,7 @@ npm run cli -- ls -a -g              # List all agents globally
 npm run cli -- ls -a -g --json       # Same, as JSON
 npm run cli -- inspect <id>          # Show detailed agent info
 npm run cli -- logs <id>             # View agent timeline
-npm run cli -- agent open <id>       # Focus an existing agent in Paseo Desktop
+npm run cli -- agent open <id>       # Focus an existing agent in Rambla Desktop
 npm run cli -- daemon status         # Check daemon status
 npm run cli -- clone owner/repo --dir ~/workspace # Clone GitHub repo and register project
 ```
@@ -611,7 +611,7 @@ Get the session ID from the agent JSON (`persistence.sessionId`), then:
 
 ## Testing with Playwright MCP
 
-Point Playwright MCP at the running Expo web target. For root checkout dev, `npm run dev:app` reserves `http://localhost:8081`. For Paseo-managed worktree app services, use the service URL or port shown by Paseo for that worktree.
+Point Playwright MCP at the running Expo web target. For root checkout dev, `npm run dev:app` reserves `http://localhost:8081`. For Rambla-managed worktree app services, use the service URL or port shown by Rambla for that worktree.
 
 Do NOT use browser history (back/forward). Always navigate by clicking UI elements or using `browser_navigate` with the full URL — the app uses client-side routing and browser history breaks state.
 
@@ -624,7 +624,7 @@ PWA install metadata lives in `packages/app/public/manifest.json` and is linked
 from `packages/app/public/index.html`. Keep the install icons in `public/` so
 Cloudflare serves them from stable root URLs after `expo export`.
 
-Do not add service-worker caching casually. Paseo is a live control surface for
+Do not add service-worker caching casually. Rambla is a live control surface for
 agents, and an aggressive service worker can strand installed users on stale web
 code. If offline behavior becomes a product requirement, add it deliberately
 with an update strategy and test the installed-app upgrade path.

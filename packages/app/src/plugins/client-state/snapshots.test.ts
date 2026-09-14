@@ -5,7 +5,7 @@ import { createPluginAgentSnapshot, createPluginWorkspaceSnapshot } from "./snap
 const workspace: WorkspaceDescriptor = {
   id: "workspace-1",
   projectId: "project-1",
-  projectDisplayName: "Paseo",
+  projectDisplayName: "Rambla",
   projectRootPath: "/repo/paseo",
   workspaceDirectory: "/repo/paseo/review",
   projectKind: "git",
@@ -61,7 +61,7 @@ describe("plugin context snapshots", () => {
     expect(snapshot).toEqual({
       id: "workspace-1",
       projectId: "project-1",
-      projectDisplayName: "Paseo",
+      projectDisplayName: "Rambla",
       projectRootPath: "/repo/paseo",
       directory: "/repo/paseo/review",
       projectKind: "git",

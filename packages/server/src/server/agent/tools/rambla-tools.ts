@@ -37,7 +37,7 @@ import type { FirstAgentContext } from "../../messages.js";
 import { everyMsToFiveFieldCron } from "@getpaseo/protocol/schedule/cadence";
 import { expandUserPath, isSameOrDescendantPath, resolvePathFromBase } from "../../path-utils.js";
 import type { TerminalManager } from "../../../terminal/terminal-manager.js";
-import type { CreatePaseoWorktreeWorkflowFn } from "../../worktree-session.js";
+import type { CreateRamblaWorktreeWorkflowFn } from "../../worktree-session.js";
 import type { ScheduleService } from "../../schedule/service.js";
 import {
   ScheduleRunSchema,
@@ -80,22 +80,22 @@ import { resolveWorktreeSourceCwd } from "../../workspace-source.js";
 import type { WorkspaceScriptsService } from "../../session/workspace-scripts/workspace-scripts-service.js";
 import {
   type ArchiveCommandDependencies,
-  type CreatePaseoWorktreeCommandInput,
-  createPaseoWorktreeCommand,
+  type CreateRamblaWorktreeCommandInput,
+  createRamblaWorktreeCommand,
 } from "../../worktree/commands.js";
 import { registerBrowserTools } from "../../browser-tools/tools.js";
 import type { BrowserToolsBroker } from "../../browser-tools/broker.js";
 import type {
-  PaseoToolCatalog,
-  PaseoToolConfig,
-  PaseoToolDefinition,
-  PaseoToolExecutionContext,
-  PaseoToolResult,
+  RamblaToolCatalog,
+  RamblaToolConfig,
+  RamblaToolDefinition,
+  RamblaToolExecutionContext,
+  RamblaToolResult,
 } from "./types.js";
-import type { ProviderPaseoToolsPolicy } from "@getpaseo/protocol/provider-config";
-import { isPaseoToolEnabled } from "../paseo-tool-policy.js";
+import type { ProviderRamblaToolsPolicy } from "@getpaseo/protocol/provider-config";
+import { isRamblaToolEnabled } from "../paseo-tool-policy.js";
 
-export interface PaseoToolHostDependencies {
+export interface RamblaToolHostDependencies {
   agentManager: AgentManager;
   agentStorage: AgentStorage;
   terminalManager?: TerminalManager | null;
@@ -122,7 +122,7 @@ export interface PaseoToolHostDependencies {
   workspaceScripts?: Pick<WorkspaceScriptsService, "list" | "launch" | "stop">;
   markWorkspaceArchiving?: ArchiveDependencies["markWorkspaceArchiving"];
   clearWorkspaceArchiving?: ArchiveDependencies["clearWorkspaceArchiving"];
-  createPaseoWorktree?: CreatePaseoWorktreeWorkflowFn;
+  createRamblaWorktree?: CreateRamblaWorktreeWorkflowFn;
   // Mints a fresh directory workspace for a cwd and returns its id.
   ensureWorkspaceForCreate?: (
     cwd: string,
@@ -130,7 +130,7 @@ export interface PaseoToolHostDependencies {
   ) => Promise<string>;
   browserToolsEnabled?: boolean;
   browserToolsBroker?: BrowserToolsBroker | null;
-  paseoToolPolicy?: ProviderPaseoToolsPolicy;
+  paseoToolPolicy?: ProviderRamblaToolsPolicy;
   paseoHome?: string;
   worktreesRoot?: string;
   /**
@@ -210,7 +210,7 @@ interface WorkspaceWorktreeOptions {
 }
 
 type WorkspaceWorktreeTarget = Pick<
-  CreatePaseoWorktreeCommandInput,
+  CreateRamblaWorktreeCommandInput,
   "action" | "branchName" | "refName" | "checkoutSource"
 >;
 
@@ -541,7 +541,7 @@ function resolveTerminalKeyToken(key: string, literal: boolean): string {
   }
 }
 
-export function createPaseoToolCatalog(options: PaseoToolHostDependencies): PaseoToolCatalog {
+export function createRamblaToolCatalog(options: RamblaToolHostDependencies): RamblaToolCatalog {
   const {
     agentManager,
     agentStorage,
@@ -558,7 +558,7 @@ export function createPaseoToolCatalog(options: PaseoToolHostDependencies): Pase
   const childLogger = logger.child({ module: "agent", component: "paseo-tool-catalog" });
   const callerContext = callerAgentId ? (resolveCallerContext?.(callerAgentId) ?? null) : null;
 
-  const parseToolInput = async (tool: PaseoToolDefinition, input: unknown): Promise<unknown> => {
+  const parseToolInput = async (tool: RamblaToolDefinition, input: unknown): Promise<unknown> => {
     const inputSchema = tool.inputSchema;
     if (!inputSchema) {
       return input;
@@ -572,14 +572,14 @@ export function createPaseoToolCatalog(options: PaseoToolHostDependencies): Pase
     return schema.parseAsync(input);
   };
 
-  const tools = new Map<string, PaseoToolDefinition>();
+  const tools = new Map<string, RamblaToolDefinition>();
   const registerTool = (
     name: string,
-    config: PaseoToolConfig,
+    config: RamblaToolConfig,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Tool handlers are schema-validated at registration boundaries.
-    handler: (input: any, context: PaseoToolExecutionContext) => Promise<PaseoToolResult>,
+    handler: (input: any, context: RamblaToolExecutionContext) => Promise<RamblaToolResult>,
   ) => {
-    if (!isPaseoToolEnabled(options.paseoToolPolicy, name)) {
+    if (!isRamblaToolEnabled(options.paseoToolPolicy, name)) {
       return;
     }
     tools.set(name, {
@@ -588,19 +588,19 @@ export function createPaseoToolCatalog(options: PaseoToolHostDependencies): Pase
       description: config.description ?? name,
       inputSchema: config.inputSchema,
       outputSchema: config.outputSchema,
-      handler: handler as PaseoToolDefinition["handler"],
+      handler: handler as RamblaToolDefinition["handler"],
     });
   };
-  const toCatalog = (): PaseoToolCatalog => ({
+  const toCatalog = (): RamblaToolCatalog => ({
     tools,
-    getTool(name: string): PaseoToolDefinition | undefined {
+    getTool(name: string): RamblaToolDefinition | undefined {
       return tools.get(name);
     },
     async executeTool(
       name: string,
       input: unknown,
-      context: PaseoToolExecutionContext = {},
-    ): Promise<PaseoToolResult> {
+      context: RamblaToolExecutionContext = {},
+    ): Promise<RamblaToolResult> {
       const tool = tools.get(name);
       if (!tool) {
         throw new Error(`Rambla tool not found: ${name}`);
@@ -1311,11 +1311,11 @@ export function createPaseoToolCatalog(options: PaseoToolHostDependencies): Pase
           prNumber,
           forge,
         });
-        const result = await createPaseoWorktreeCommand(
+        const result = await createRamblaWorktreeCommand(
           {
             paseoHome: options.paseoHome,
             worktreesRoot: options.worktreesRoot,
-            createPaseoWorktreeWorkflow: options.createPaseoWorktree,
+            createRamblaWorktreeWorkflow: options.createRamblaWorktree,
           },
           {
             cwd,
@@ -1450,7 +1450,7 @@ export function createPaseoToolCatalog(options: PaseoToolHostDependencies): Pase
           worktreesRoot: options.worktreesRoot,
           terminalManager,
           providerSnapshotManager,
-          createPaseoWorktree: options.createPaseoWorktree,
+          createRamblaWorktree: options.createRamblaWorktree,
           ...(options.ensureWorkspaceForCreate
             ? { ensureWorkspaceForCreate: options.ensureWorkspaceForCreate }
             : {}),
@@ -3170,7 +3170,7 @@ interface ArchiveWorktreeCommandContext {
 }
 
 function archiveWorktreeDependencies(
-  options: PaseoToolHostDependencies,
+  options: RamblaToolHostDependencies,
   context: ArchiveWorktreeCommandContext,
 ): ArchiveCommandDependencies {
   if (!options.github) {

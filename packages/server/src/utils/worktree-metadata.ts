@@ -12,14 +12,14 @@ const ChangeRequestLookupTargetSchema = z.object({
 // baseRefName is the display name; baseRef is the exact ref the worktree was cut from
 // ("refs/remotes/upstream/main"). baseRef is optional because worktrees written before it
 // existed only have the name — there are no migrations, so readers fall back.
-const PaseoWorktreeMetadataV1Schema = z.object({
+const RamblaWorktreeMetadataV1Schema = z.object({
   version: z.literal(1),
   baseRefName: z.string().min(1),
   baseRef: z.string().min(1).optional(),
   changeRequestLookupTarget: ChangeRequestLookupTargetSchema.optional(),
 });
 
-const PaseoWorktreeMetadataV2Schema = z.object({
+const RamblaWorktreeMetadataV2Schema = z.object({
   version: z.literal(2),
   baseRefName: z.string().min(1),
   baseRef: z.string().min(1).optional(),
@@ -44,24 +44,24 @@ const PaseoWorktreeMetadataV2Schema = z.object({
     .optional(),
 });
 
-const PaseoWorktreeMetadataSchema = z.union([
-  PaseoWorktreeMetadataV1Schema,
-  PaseoWorktreeMetadataV2Schema,
+const RamblaWorktreeMetadataSchema = z.union([
+  RamblaWorktreeMetadataV1Schema,
+  RamblaWorktreeMetadataV2Schema,
 ]);
 
-export type PaseoWorktreeMetadata = z.infer<typeof PaseoWorktreeMetadataSchema>;
-export type PaseoWorktreeChangeRequestHint = z.infer<typeof ChangeRequestLookupTargetSchema>;
+export type RamblaWorktreeMetadata = z.infer<typeof RamblaWorktreeMetadataSchema>;
+export type RamblaWorktreeChangeRequestHint = z.infer<typeof ChangeRequestLookupTargetSchema>;
 
-export function createPaseoWorktreeChangeRequestHint(
-  input: PaseoWorktreeChangeRequestHint,
-): PaseoWorktreeChangeRequestHint {
+export function createRamblaWorktreeChangeRequestHint(
+  input: RamblaWorktreeChangeRequestHint,
+): RamblaWorktreeChangeRequestHint {
   return ChangeRequestLookupTargetSchema.parse(input);
 }
 
-export function getPaseoWorktreeChangeRequestHintForBranch(
-  metadata: PaseoWorktreeMetadata | null,
+export function getRamblaWorktreeChangeRequestHintForBranch(
+  metadata: RamblaWorktreeMetadata | null,
   currentBranch: string,
-): PaseoWorktreeChangeRequestHint | null {
+): RamblaWorktreeChangeRequestHint | null {
   const target = metadata?.changeRequestLookupTarget;
   if (!target) {
     return null;
@@ -90,18 +90,18 @@ function normalizeLegacyGitHubOwnerForBranch(owner: string): string | null {
   return /^[a-z0-9-]+$/.test(normalized) ? normalized : null;
 }
 
-export function rebindPaseoWorktreeChangeRequestHint(
+export function rebindRamblaWorktreeChangeRequestHint(
   worktreeRoot: string,
   previousBranch: string,
   currentBranch: string,
 ): boolean {
-  const metadata = readPaseoWorktreeMetadata(worktreeRoot);
-  const target = getPaseoWorktreeChangeRequestHintForBranch(metadata, previousBranch);
+  const metadata = readRamblaWorktreeMetadata(worktreeRoot);
+  const target = getRamblaWorktreeChangeRequestHintForBranch(metadata, previousBranch);
   if (!metadata || !target) {
     return false;
   }
 
-  writePaseoWorktreeMetadataFile(worktreeRoot, {
+  writeRamblaWorktreeMetadataFile(worktreeRoot, {
     ...metadata,
     changeRequestLookupTarget: {
       ...target,
@@ -116,19 +116,19 @@ export function rebindPaseoWorktreeChangeRequestHint(
   return true;
 }
 
-export function pinPaseoWorktreeBranchIdentityIfMissing(
+export function pinRamblaWorktreeBranchIdentityIfMissing(
   worktreeRoot: string,
   branch: string,
 ): boolean {
-  const metadata = readPaseoWorktreeMetadata(worktreeRoot);
+  const metadata = readRamblaWorktreeMetadata(worktreeRoot);
   if (!metadata || metadata.changeRequestLookupTarget) {
     return false;
   }
-  const target = createPaseoWorktreeChangeRequestHint({
+  const target = createRamblaWorktreeChangeRequestHint({
     headRef: branch,
     localBranchName: branch,
   });
-  writePaseoWorktreeMetadataFile(worktreeRoot, {
+  writeRamblaWorktreeMetadataFile(worktreeRoot, {
     ...metadata,
     changeRequestLookupTarget: target,
   });
@@ -157,7 +157,7 @@ function getGitDirForWorktreeRoot(worktreeRoot: string): string {
   return gitPath;
 }
 
-export function getPaseoWorktreeMetadataPath(worktreeRoot: string): string {
+export function getRamblaWorktreeMetadataPath(worktreeRoot: string): string {
   const gitDir = getGitDirForWorktreeRoot(worktreeRoot);
   return join(gitDir, "paseo", "worktree.json");
 }
@@ -209,12 +209,12 @@ function assertValidBaseRef(value: string): void {
   }
 }
 
-export function writePaseoWorktreeMetadata(
+export function writeRamblaWorktreeMetadata(
   worktreeRoot: string,
   options: {
     baseRefName: string;
     baseRef?: string;
-    changeRequestLookupTarget?: PaseoWorktreeChangeRequestHint;
+    changeRequestLookupTarget?: RamblaWorktreeChangeRequestHint;
   },
 ): void {
   const baseRefName = normalizeBaseRefName(options.baseRefName);
@@ -224,7 +224,7 @@ export function writePaseoWorktreeMetadata(
     assertValidBaseRef(baseRef);
   }
 
-  const metadata: PaseoWorktreeMetadata = {
+  const metadata: RamblaWorktreeMetadata = {
     version: 1,
     baseRefName,
     ...(baseRef ? { baseRef } : {}),
@@ -232,10 +232,10 @@ export function writePaseoWorktreeMetadata(
       ? { changeRequestLookupTarget: options.changeRequestLookupTarget }
       : {}),
   };
-  writePaseoWorktreeMetadataFile(worktreeRoot, metadata);
+  writeRamblaWorktreeMetadataFile(worktreeRoot, metadata);
 }
 
-export function writePaseoWorktreeRuntimeMetadata(
+export function writeRamblaWorktreeRuntimeMetadata(
   worktreeRoot: string,
   options: { worktreePort: number },
 ): void {
@@ -243,22 +243,22 @@ export function writePaseoWorktreeRuntimeMetadata(
     throw new Error(`Invalid worktree runtime port: ${options.worktreePort}`);
   }
 
-  const current = readPaseoWorktreeMetadata(worktreeRoot);
+  const current = readRamblaWorktreeMetadata(worktreeRoot);
   if (!current) {
     throw new Error("Cannot persist worktree runtime metadata: missing base metadata");
   }
 
-  const next: PaseoWorktreeMetadata = {
+  const next: RamblaWorktreeMetadata = {
     ...current,
     version: 2,
     runtime: {
       worktreePort: options.worktreePort,
     },
   };
-  writePaseoWorktreeMetadataFile(worktreeRoot, next);
+  writeRamblaWorktreeMetadataFile(worktreeRoot, next);
 }
 
-export function writePaseoWorktreeFirstAgentBranchAutoNameMetadata(
+export function writeRamblaWorktreeFirstAgentBranchAutoNameMetadata(
   worktreeRoot: string,
   options: { placeholderBranchName: string },
 ): void {
@@ -267,12 +267,12 @@ export function writePaseoWorktreeFirstAgentBranchAutoNameMetadata(
     throw new Error("Placeholder branch name is required");
   }
 
-  const current = readPaseoWorktreeMetadata(worktreeRoot);
+  const current = readRamblaWorktreeMetadata(worktreeRoot);
   if (!current) {
     throw new Error("Cannot persist first-agent branch auto-name metadata: missing base metadata");
   }
 
-  writePaseoWorktreeMetadataFile(worktreeRoot, {
+  writeRamblaWorktreeMetadataFile(worktreeRoot, {
     ...current,
     version: 2,
     firstAgentBranchAutoName: {
@@ -282,16 +282,16 @@ export function writePaseoWorktreeFirstAgentBranchAutoNameMetadata(
   });
 }
 
-export function markPaseoWorktreeFirstAgentBranchAutoNameAttempted(
+export function markRamblaWorktreeFirstAgentBranchAutoNameAttempted(
   worktreeRoot: string,
   options: { attemptedAt?: string } = {},
-): PaseoWorktreeMetadata | null {
-  const current = readPaseoWorktreeMetadata(worktreeRoot);
+): RamblaWorktreeMetadata | null {
+  const current = readRamblaWorktreeMetadata(worktreeRoot);
   if (!current || current.version !== 2 || current.firstAgentBranchAutoName?.status !== "pending") {
     return current;
   }
 
-  const next: PaseoWorktreeMetadata = {
+  const next: RamblaWorktreeMetadata = {
     ...current,
     firstAgentBranchAutoName: {
       status: "attempted",
@@ -299,30 +299,30 @@ export function markPaseoWorktreeFirstAgentBranchAutoNameAttempted(
       attemptedAt: options.attemptedAt ?? new Date().toISOString(),
     },
   };
-  writePaseoWorktreeMetadataFile(worktreeRoot, next);
+  writeRamblaWorktreeMetadataFile(worktreeRoot, next);
   return next;
 }
 
-export function readPaseoWorktreeMetadata(worktreeRoot: string): PaseoWorktreeMetadata | null {
-  const metadataPath = getPaseoWorktreeMetadataPath(worktreeRoot);
+export function readRamblaWorktreeMetadata(worktreeRoot: string): RamblaWorktreeMetadata | null {
+  const metadataPath = getRamblaWorktreeMetadataPath(worktreeRoot);
   if (!existsSync(metadataPath)) {
     return null;
   }
   const parsed = JSON.parse(readFileSync(metadataPath, "utf8"));
-  return PaseoWorktreeMetadataSchema.parse(parsed);
+  return RamblaWorktreeMetadataSchema.parse(parsed);
 }
 
-export function requirePaseoWorktreeBaseRefName(worktreeRoot: string): string {
-  const metadataPath = getPaseoWorktreeMetadataPath(worktreeRoot);
-  const metadata = readPaseoWorktreeMetadata(worktreeRoot);
+export function requireRamblaWorktreeBaseRefName(worktreeRoot: string): string {
+  const metadataPath = getRamblaWorktreeMetadataPath(worktreeRoot);
+  const metadata = readRamblaWorktreeMetadata(worktreeRoot);
   if (!metadata) {
     throw new Error(`Missing Rambla worktree base metadata: ${metadataPath}`);
   }
   return metadata.baseRefName;
 }
 
-export function readPaseoWorktreeRuntimePort(worktreeRoot: string): number | null {
-  const metadata = readPaseoWorktreeMetadata(worktreeRoot);
+export function readRamblaWorktreeRuntimePort(worktreeRoot: string): number | null {
+  const metadata = readRamblaWorktreeMetadata(worktreeRoot);
   if (!metadata) {
     return null;
   }
@@ -332,11 +332,11 @@ export function readPaseoWorktreeRuntimePort(worktreeRoot: string): number | nul
   return null;
 }
 
-function writePaseoWorktreeMetadataFile(
+function writeRamblaWorktreeMetadataFile(
   worktreeRoot: string,
-  metadata: PaseoWorktreeMetadata,
+  metadata: RamblaWorktreeMetadata,
 ): void {
-  const metadataPath = getPaseoWorktreeMetadataPath(worktreeRoot);
+  const metadataPath = getRamblaWorktreeMetadataPath(worktreeRoot);
   mkdirSync(join(getGitDirForWorktreeRoot(worktreeRoot), "paseo"), { recursive: true });
   const tempPath = `${metadataPath}.${process.pid}.${Date.now()}.tmp`;
   writeFileSync(tempPath, `${JSON.stringify(metadata, null, 2)}\n`, "utf8");

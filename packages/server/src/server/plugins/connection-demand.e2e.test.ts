@@ -2,9 +2,9 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "vitest";
-import { createPaseoApi } from "@getpaseo/client";
+import { createRamblaApi } from "@getpaseo/client";
 import { DaemonClient } from "../test-utils/daemon-client.js";
-import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 
 test("an RPC-only plugin receives no agent, project or provider data", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "paseo-quiet-plugin-"));
@@ -27,7 +27,7 @@ export default function contribute(server) {
   return () => process.off("message", observe);
 }`,
   );
-  const daemon = await createTestPaseoDaemon();
+  const daemon = await createTestRamblaDaemon();
   const client = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
   const idle = new DaemonClient({ url: `ws://127.0.0.1:${daemon.port}/ws` });
   const legacy = new DaemonClient({
@@ -49,7 +49,7 @@ export default function contribute(server) {
     await client.patchDaemonConfig({ pluginsEnabled: true });
     await client.installDirectoryPlugin(directory);
     const agent = await client.createAgent({ provider: "claude", cwd: directory });
-    const api = createPaseoApi(client);
+    const api = createRamblaApi(client);
     const received: string[] = [];
     const release = api.agents
       .ref(agent.id)

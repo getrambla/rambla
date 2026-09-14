@@ -22,7 +22,7 @@ function makeSources(): DesktopDiagnosticSources {
       contents: "daemon line one\ndaemon line two",
     }),
     getAppLogs: async () => ({
-      logPath: "/logs/Paseo/main.log",
+      logPath: "/logs/Rambla/main.log",
       contents: "[login-shell-env] start\n[login-shell-env] failed",
     }),
     getUpdaterDiagnostics: async () => ({
@@ -111,7 +111,7 @@ describe("desktop diagnostic report", () => {
 
     expect(result.status).toBe("done");
     expect(report).toContain("  Log path: /paseo/home/daemon.log");
-    expect(report).toContain("  App log path: /logs/Paseo/main.log");
+    expect(report).toContain("  App log path: /logs/Rambla/main.log");
     expect(report).toContain("Desktop daemon log tail\n  daemon line one\n  daemon line two");
     expect(report).toContain(
       "Desktop app log tail\n  [login-shell-env] start\n  [login-shell-env] failed",

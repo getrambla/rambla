@@ -72,7 +72,7 @@ githubTest(
     cleanupPaths.add(repository);
     run(repository, "git", ["init", "-b", "main"]);
     run(repository, "git", ["config", "user.email", "paseo-test@example.com"]);
-    run(repository, "git", ["config", "user.name", "Paseo Test"]);
+    run(repository, "git", ["config", "user.name", "Rambla Test"]);
     writeFileSync(path.join(repository, "README.md"), "producer repro\n");
     run(repository, "git", ["add", "README.md"]);
     run(repository, "git", ["-c", "commit.gpgsign=false", "commit", "-m", "initial"]);

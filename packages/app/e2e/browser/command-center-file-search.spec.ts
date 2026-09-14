@@ -48,7 +48,7 @@ test("workspace file search stays geometrically stable through delayed loading a
   test.setTimeout(120_000);
   const seeded = await seedWorkspace({
     repoPrefix: "command-center-file-search-",
-    title: "Paseo-shaped file search",
+    title: "Rambla-shaped file search",
     repo: { files: paseoSizedFiles() },
   });
 

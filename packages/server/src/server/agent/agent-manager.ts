@@ -17,7 +17,7 @@ import {
 } from "@getpaseo/protocol/agent-labels";
 import type { Logger } from "pino";
 import type { ProviderOptions, ToolPolicy } from "@getpaseo/protocol/agent-types";
-import type { ProviderPaseoToolsPolicy } from "@getpaseo/protocol/provider-config";
+import type { ProviderRamblaToolsPolicy } from "@getpaseo/protocol/provider-config";
 import { z } from "zod";
 import type { TerminalManager } from "../../terminal/terminal-manager.js";
 
@@ -78,10 +78,10 @@ import {
 import { invokeRewindCapability, type RewindMode } from "./rewind/rewind.js";
 import { isSystemInjectedEnvelope } from "./agent-prompt.js";
 import { isStaleProviderSessionError } from "./stale-provider-session-error.js";
-import { stripInternalPaseoMcpServer, withRuntimePaseoMcpServer } from "./runtime-mcp-config.js";
+import { stripInternalRamblaMcpServer, withRuntimeRamblaMcpServer } from "./runtime-mcp-config.js";
 import { resolveCreateAgentTitles } from "./create-agent-title.js";
-import type { PaseoToolCatalogFactory } from "./tools/types.js";
-import { isPaseoToolPolicyEnabled } from "./paseo-tool-policy.js";
+import type { RamblaToolCatalogFactory } from "./tools/types.js";
+import { isRamblaToolPolicyEnabled } from "./paseo-tool-policy.js";
 import {
   ProviderSubagentStore,
   type ProviderSubagentDescriptor,
@@ -140,7 +140,7 @@ export type AgentRunCancellationResult =
 interface PreparedSessionConfig {
   storedConfig: AgentSessionConfig;
   launchConfig: AgentSessionConfig;
-  paseoToolPolicy: ProviderPaseoToolsPolicy | undefined;
+  paseoToolPolicy: ProviderRamblaToolsPolicy | undefined;
 }
 
 interface NormalizeConfigOptions {
@@ -182,7 +182,7 @@ function buildStoredAgentConfig(record: StoredAgentRecord): AgentSessionConfig {
     config.systemPrompt = record.config.systemPrompt;
   }
   if (record.config.mcpServers != null) config.mcpServers = record.config.mcpServers;
-  return stripInternalPaseoMcpServer(config);
+  return stripInternalRamblaMcpServer(config);
 }
 
 export { AGENT_LIFECYCLE_STATUSES, type AgentLifecycleStatus };
@@ -302,8 +302,8 @@ export interface AgentManagerOptions {
   mcpBaseUrl?: string;
   mcpAuthToken?: string;
   paseoToolsEnabled?: boolean;
-  paseoToolCatalogFactory?: PaseoToolCatalogFactory;
-  resolvePaseoToolPolicy?: (provider: AgentProvider) => ProviderPaseoToolsPolicy | undefined;
+  paseoToolCatalogFactory?: RamblaToolCatalogFactory;
+  resolveRamblaToolPolicy?: (provider: AgentProvider) => ProviderRamblaToolsPolicy | undefined;
   appendSystemPrompt?: string;
   agentStreamCoalesceWindowMs?: number;
   rescueTimeouts?: AgentManagerRescueTimeouts;
@@ -716,11 +716,11 @@ export class AgentManager {
   private mcpBaseUrl: string | null;
   private readonly mcpAuthToken: string | null;
   private paseoToolsEnabled = true;
-  private paseoToolCatalogFactory: PaseoToolCatalogFactory | null = null;
-  private readonly paseoToolPolicies = new Map<string, ProviderPaseoToolsPolicy | undefined>();
-  private readonly resolvePaseoToolPolicy: (
+  private paseoToolCatalogFactory: RamblaToolCatalogFactory | null = null;
+  private readonly paseoToolPolicies = new Map<string, ProviderRamblaToolsPolicy | undefined>();
+  private readonly resolveRamblaToolPolicy: (
     provider: AgentProvider,
-  ) => ProviderPaseoToolsPolicy | undefined;
+  ) => ProviderRamblaToolsPolicy | undefined;
   private appendSystemPrompt: string;
   private onAgentAttention?: AgentAttentionCallback;
   private onAgentArchived?: AgentArchivedCallback;
@@ -739,8 +739,8 @@ export class AgentManager {
     this.onWorkspaceStateMayHaveChanged = options?.onWorkspaceStateMayHaveChanged;
     this.mcpBaseUrl = options?.mcpBaseUrl ?? null;
     this.mcpAuthToken = options?.mcpAuthToken ?? null;
-    this.configurePaseoTools(options);
-    this.resolvePaseoToolPolicy = options.resolvePaseoToolPolicy ?? (() => undefined);
+    this.configureRamblaTools(options);
+    this.resolveRamblaToolPolicy = options.resolveRamblaToolPolicy ?? (() => undefined);
     this.appendSystemPrompt = options.appendSystemPrompt ?? "";
     this.logger = options.logger.child({ module: "agent", component: "agent-manager" });
     this.rescueTimeouts = {
@@ -764,7 +764,7 @@ export class AgentManager {
     });
   }
 
-  private configurePaseoTools(options: AgentManagerOptions): void {
+  private configureRamblaTools(options: AgentManagerOptions): void {
     this.paseoToolsEnabled = options.paseoToolsEnabled ?? true;
     this.paseoToolCatalogFactory = options.paseoToolCatalogFactory ?? null;
   }
@@ -827,15 +827,15 @@ export class AgentManager {
     this.acceptingAgentRegistrations = false;
   }
 
-  setPaseoToolsEnabled(enabled: boolean): void {
+  setRamblaToolsEnabled(enabled: boolean): void {
     this.paseoToolsEnabled = enabled;
   }
 
-  setPaseoToolCatalogFactory(factory: PaseoToolCatalogFactory | null): void {
+  setRamblaToolCatalogFactory(factory: RamblaToolCatalogFactory | null): void {
     this.paseoToolCatalogFactory = factory;
   }
 
-  getPaseoToolPolicy(agentId: string): ProviderPaseoToolsPolicy | undefined {
+  getRamblaToolPolicy(agentId: string): ProviderRamblaToolsPolicy | undefined {
     return this.paseoToolPolicies.get(agentId);
   }
 
@@ -1404,7 +1404,7 @@ export class AgentManager {
     let handedToRegistration = false;
     try {
       const importedConfig = await this.normalizeConfig(
-        stripInternalPaseoMcpServer(imported.config),
+        stripInternalRamblaMcpServer(imported.config),
       );
       const timelineRows = buildImportedTimelineRows(imported.timeline);
       const initialTitle = resolveImportedAgentTitle(importedConfig, timelineRows);
@@ -1478,8 +1478,8 @@ export class AgentManager {
       refreshConfig,
       agentId,
     );
-    const hadPreviousPaseoToolPolicy = this.paseoToolPolicies.has(agentId);
-    const previousPaseoToolPolicy = this.paseoToolPolicies.get(agentId);
+    const hadPreviousRamblaToolPolicy = this.paseoToolPolicies.has(agentId);
+    const previousRamblaToolPolicy = this.paseoToolPolicies.get(agentId);
     const launchContext = await this.buildLaunchContext(
       agentId,
       client,
@@ -1549,8 +1549,8 @@ export class AgentManager {
       throw error;
     } finally {
       if (!handedToRegistration) {
-        if (hadPreviousPaseoToolPolicy) {
-          this.paseoToolPolicies.set(agentId, previousPaseoToolPolicy);
+        if (hadPreviousRamblaToolPolicy) {
+          this.paseoToolPolicies.set(agentId, previousRamblaToolPolicy);
         } else {
           this.paseoToolPolicies.delete(agentId);
         }
@@ -5039,16 +5039,16 @@ export class AgentManager {
     agentId: string,
     env?: Record<string, string>,
   ): Promise<PreparedSessionConfig> {
-    const storedConfig = await this.normalizeConfig(stripInternalPaseoMcpServer(config), { env });
+    const storedConfig = await this.normalizeConfig(stripInternalRamblaMcpServer(config), { env });
     const paseoToolPolicy = this.paseoToolsEnabled
-      ? this.resolvePaseoToolPolicy(storedConfig.provider)
+      ? this.resolveRamblaToolPolicy(storedConfig.provider)
       : { enabled: false };
     const launchConfig = this.applyDaemonAppendSystemPrompt(
-      withRuntimePaseoMcpServer({
+      withRuntimeRamblaMcpServer({
         config: storedConfig,
         agentId,
         mcpBaseUrl:
-          this.paseoToolsEnabled && isPaseoToolPolicyEnabled(paseoToolPolicy)
+          this.paseoToolsEnabled && isRamblaToolPolicyEnabled(paseoToolPolicy)
             ? this.mcpBaseUrl
             : null,
         mcpAuthToken: this.mcpAuthToken,
@@ -5074,7 +5074,7 @@ export class AgentManager {
     agentId: string,
     client: AgentClient,
     cwd: string,
-    paseoToolPolicy: ProviderPaseoToolsPolicy | undefined,
+    paseoToolPolicy: ProviderRamblaToolsPolicy | undefined,
     env?: Record<string, string>,
     opening?: {
       reason: PluginSessionOpenRequest["reason"];
@@ -5105,8 +5105,8 @@ export class AgentManager {
     };
     if (
       this.paseoToolsEnabled &&
-      isPaseoToolPolicyEnabled(paseoToolPolicy) &&
-      client.capabilities.supportsNativePaseoTools &&
+      isRamblaToolPolicyEnabled(paseoToolPolicy) &&
+      client.capabilities.supportsNativeRamblaTools &&
       this.paseoToolCatalogFactory
     ) {
       context.paseoTools = await this.paseoToolCatalogFactory({
@@ -5121,7 +5121,7 @@ export class AgentManager {
     launchConfig: AgentSessionConfig,
     launchContext: AgentLaunchContext,
   ): AgentSessionConfig {
-    return launchContext.paseoTools ? stripInternalPaseoMcpServer(launchConfig) : launchConfig;
+    return launchContext.paseoTools ? stripInternalRamblaMcpServer(launchConfig) : launchConfig;
   }
 
   private async requireAvailableClient(options: { provider: AgentProvider }): Promise<AgentClient> {

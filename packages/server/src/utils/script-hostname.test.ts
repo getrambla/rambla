@@ -46,7 +46,7 @@ describe("buildScriptHostname", () => {
   it("slugifies script, default branch project, and non-default branch labels", () => {
     expect(
       buildScriptHostname({
-        projectSlug: "Paseo App",
+        projectSlug: "Rambla App",
         branchName: "Feature/Auth Flow",
         scriptName: "Web/API @ Dev",
       }),

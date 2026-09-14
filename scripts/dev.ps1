@@ -19,9 +19,9 @@ if (-not $env:RAMBLA_HOME) {
         $env:RAMBLA_HOME = Join-Path ([System.IO.Path]::GetTempPath()) "paseo-dev-$([System.Guid]::NewGuid().ToString('N').Substring(0,6))"
         New-Item -ItemType Directory -Force -Path $env:RAMBLA_HOME | Out-Null
         # Register cleanup on exit
-        $TempPaseoHome = $env:RAMBLA_HOME
+        $TempRamblaHome = $env:RAMBLA_HOME
         Register-EngineEvent PowerShell.Exiting -Action {
-            Remove-Item -Recurse -Force $TempPaseoHome -ErrorAction SilentlyContinue
+            Remove-Item -Recurse -Force $TempRamblaHome -ErrorAction SilentlyContinue
         } | Out-Null
     }
 }
@@ -34,7 +34,7 @@ if (-not $env:RAMBLA_LOCAL_MODELS_DIR) {
 
 Write-Host @"
 ======================================================
-  Paseo Dev (Windows)
+  Rambla Dev (Windows)
 ======================================================
   Home:    $($env:RAMBLA_HOME)
   Models:  $($env:RAMBLA_LOCAL_MODELS_DIR)

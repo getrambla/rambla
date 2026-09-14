@@ -8,7 +8,7 @@ import { Writable } from "node:stream";
 import { spawn } from "node:child_process";
 
 import { generateLocalPairingOffer } from "../pairing-offer.js";
-import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
+import { createTestRamblaDaemon } from "../test-utils/paseo-daemon.js";
 
 function createCapturingLogger() {
   const lines: string[] = [];
@@ -81,7 +81,7 @@ describe("ConnectionOfferV2 (daemon E2E)", () => {
 
     const { logger } = createCapturingLogger();
 
-    const daemon = await createTestPaseoDaemon({
+    const daemon = await createTestRamblaDaemon({
       listen: "0.0.0.0",
       logger,
       relayEnabled: true,
@@ -125,7 +125,7 @@ describe("ConnectionOfferV2 (daemon E2E)", () => {
     const tempHomeRoot = await mkdtemp(path.join(os.tmpdir(), "paseo-offer-home-"));
 
     const { logger: logger1 } = createCapturingLogger();
-    const daemon1 = await createTestPaseoDaemon({
+    const daemon1 = await createTestRamblaDaemon({
       listen: "0.0.0.0",
       logger: logger1,
       relayEnabled: true,
@@ -153,7 +153,7 @@ describe("ConnectionOfferV2 (daemon E2E)", () => {
       await daemon1.close();
 
       const { logger: logger2 } = createCapturingLogger();
-      const daemon2 = await createTestPaseoDaemon({
+      const daemon2 = await createTestRamblaDaemon({
         listen: "0.0.0.0",
         logger: logger2,
         relayEnabled: true,

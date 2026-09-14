@@ -4,8 +4,8 @@ import type pino from "pino";
 import type { SessionInboundMessage, SessionOutboundMessage } from "../../messages.js";
 import type { ProjectRegistry } from "../../workspace-registry.js";
 import {
-  readPaseoConfigForEdit,
-  writePaseoConfigForEdit,
+  readRamblaConfigForEdit,
+  writeRamblaConfigForEdit,
   type ProjectConfigRpcError,
 } from "../../../utils/paseo-config-file.js";
 import { hasUncommittedWorktreeSetupChanges } from "./worktree-setup-commit-status.js";
@@ -47,7 +47,7 @@ export class ProjectConfigSession {
       return;
     }
 
-    const result = readPaseoConfigForEdit(repoRoot);
+    const result = readRamblaConfigForEdit(repoRoot);
     if (!result.ok) {
       this.logger.warn(
         { repoRoot, requestId: msg.requestId, outcome: result.error.code },
@@ -94,7 +94,7 @@ export class ProjectConfigSession {
       { repoRoot, requestId: msg.requestId, outcome: "write_attempt" },
       "Writing project config",
     );
-    const result = writePaseoConfigForEdit({
+    const result = writeRamblaConfigForEdit({
       repoRoot,
       config: msg.config,
       expectedRevision: msg.expectedRevision,

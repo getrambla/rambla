@@ -1,7 +1,7 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { createPaseoApi, createPaseoClient } from "./index.js";
+import { createRamblaApi, createRamblaClient } from "./index.js";
 import { DaemonClient } from "./daemon-client.js";
-import type { PaseoAgent, PaseoClient, PaseoWorkspace } from "./index.js";
+import type { RamblaAgent, RamblaClient, RamblaWorkspace } from "./index.js";
 
 type FakeWebSocketHandler = (...args: unknown[]) => void;
 
@@ -87,9 +87,9 @@ async function connectClient(
     providerUsageList: true,
     providersSnapshotCwd: true,
   },
-): Promise<{ client: PaseoClient; ws: FakeWebSocket }> {
+): Promise<{ client: RamblaClient; ws: FakeWebSocket }> {
   vi.stubGlobal("WebSocket", FakeWebSocket);
-  const client = createPaseoClient({
+  const client = createRamblaClient({
     url: "ws://daemon.test",
     reconnect: { enabled: false },
   });
@@ -121,7 +121,7 @@ async function connectClient(
   return { client, ws };
 }
 
-function createWorkspace(input: Partial<PaseoWorkspace> = {}): PaseoWorkspace {
+function createWorkspace(input: Partial<RamblaWorkspace> = {}): RamblaWorkspace {
   return {
     id: "workspace_sdk",
     projectId: "project_sdk",
@@ -142,7 +142,7 @@ function createWorkspace(input: Partial<PaseoWorkspace> = {}): PaseoWorkspace {
   };
 }
 
-function createAgent(input: Partial<PaseoAgent> = {}): PaseoAgent {
+function createAgent(input: Partial<RamblaAgent> = {}): RamblaAgent {
   return {
     id: "agent_sdk",
     provider: "codex",
@@ -174,7 +174,7 @@ function createAgent(input: Partial<PaseoAgent> = {}): PaseoAgent {
   };
 }
 
-test("createPaseoClient exposes workspace list through the daemon client", async () => {
+test("createRamblaClient exposes workspace list through the daemon client", async () => {
   const { client, ws } = await connectClient();
 
   const listPromise = client.workspaces.list({
@@ -219,14 +219,14 @@ test("createPaseoClient exposes workspace list through the daemon client", async
   await client.close();
 });
 
-test("createPaseoApi borrows daemon capabilities without exposing connection ownership", () => {
+test("createRamblaApi borrows daemon capabilities without exposing connection ownership", () => {
   const daemonClient = new DaemonClient({
     url: "ws://daemon.test",
     clientId: "borrowed-api",
     reconnect: { enabled: false },
   });
 
-  const paseo = createPaseoApi(daemonClient);
+  const paseo = createRamblaApi(daemonClient);
 
   expect(Object.keys(paseo).sort()).toEqual([
     "agents",
@@ -427,7 +427,7 @@ test("agent actions list the daemon directory without exposing the low-level cli
                 isGit: false,
                 currentBranch: null,
                 remoteUrl: null,
-                isPaseoOwnedWorktree: false,
+                isRamblaOwnedWorktree: false,
                 mainRepoRoot: null,
               },
             },

@@ -40,9 +40,9 @@ import type {
 import { createWorktree } from "../utils/worktree.js";
 import { createRealpathAwarePathMatcher } from "../utils/path.js";
 import {
-  readPaseoWorktreeMetadata,
-  writePaseoWorktreeFirstAgentBranchAutoNameMetadata,
-  writePaseoWorktreeMetadata,
+  readRamblaWorktreeMetadata,
+  writeRamblaWorktreeFirstAgentBranchAutoNameMetadata,
+  writeRamblaWorktreeMetadata,
 } from "../utils/worktree-metadata.js";
 import type { WorkspaceGitRuntimeSnapshot } from "./workspace-git-service.js";
 import type { GeneratedWorkspaceName } from "./worktree-branch-name-generator.js";
@@ -156,7 +156,7 @@ interface SessionTestAccess {
   }>;
   handleArchiveAgentRequest(agentId: string, requestId: string): Promise<unknown>;
   handleMessage(message: unknown): Promise<unknown>;
-  handleCreatePaseoWorktreeRequest(params: unknown): Promise<unknown>;
+  handleCreateRamblaWorktreeRequest(params: unknown): Promise<unknown>;
   listAgentPayloads(...args: unknown[]): Promise<unknown[]>;
   listFetchWorkspacesEntries(params: unknown): Promise<ListFetchResult>;
   listFetchAgentsEntries(params: unknown): Promise<ListFetchResult>;
@@ -407,7 +407,7 @@ function createWorkspaceRuntimeSnapshot(
       mainRepoRoot: null,
       currentBranch: "main",
       remoteUrl: "https://github.com/acme/repo.git",
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       isDirty: false,
       baseRef: "main",
       aheadBehind: { ahead: 0, behind: 0 },
@@ -969,7 +969,7 @@ test("create_agent_request keeps requested child cwd when grouped under an exist
         currentBranch: "main",
         remoteUrl: null,
         worktreeRoot: parent,
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: null,
       }),
     });
@@ -1088,7 +1088,7 @@ test("create_agent_request launches from an exact subdirectory in a created work
       cwd: parent,
       stdio: "pipe",
     });
-    execFileSync("git", ["config", "user.name", "Paseo Test"], { cwd: parent, stdio: "pipe" });
+    execFileSync("git", ["config", "user.name", "Rambla Test"], { cwd: parent, stdio: "pipe" });
     writeFileSync(path.join(child, "README.md"), "app\n");
     execFileSync("git", ["add", "."], { cwd: parent, stdio: "pipe" });
     execFileSync("git", ["commit", "-m", "initial"], { cwd: parent, stdio: "pipe" });
@@ -1123,7 +1123,7 @@ test("create_agent_request launches from an exact subdirectory in a created work
         currentBranch: "main",
         remoteUrl: null,
         worktreeRoot: parent,
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: null,
       }),
       resolveRepoRoot: async () => parent,
@@ -2543,7 +2543,7 @@ test("workspace placements preserve checkout facts independently from the projec
     cwd: "/tmp/manual-worktree",
     kind: "worktree",
     displayName: "manual",
-    isPaseoOwnedWorktree: false,
+    isRamblaOwnedWorktree: false,
     mainRepoRoot: "/tmp/main-repo",
     createdAt: "2026-03-01T12:00:00.000Z",
     updatedAt: "2026-03-01T12:00:00.000Z",
@@ -2563,7 +2563,7 @@ test("workspace placements preserve checkout facts independently from the projec
     cwd: "/tmp/paseo-worktree/packages/app",
     kind: "worktree",
     displayName: "app",
-    isPaseoOwnedWorktree: true,
+    isRamblaOwnedWorktree: true,
     mainRepoRoot: "/tmp/main-repo",
     createdAt: "2026-03-01T12:00:00.000Z",
     updatedAt: "2026-03-01T12:00:00.000Z",
@@ -2594,7 +2594,7 @@ test("workspace placements preserve checkout facts independently from the projec
     expect.objectContaining({
       checkout: expect.objectContaining({
         isGit: true,
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: "/tmp/main-repo",
       }),
     }),
@@ -2605,7 +2605,7 @@ test("workspace placements preserve checkout facts independently from the projec
     expect.objectContaining({
       checkout: expect.objectContaining({
         isGit: false,
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: null,
       }),
     }),
@@ -3478,7 +3478,7 @@ test("fetch_agent_request still resolves archived historical agents", async () =
       currentBranch: null,
       remoteUrl: null,
       worktreeRoot: null,
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       mainRepoRoot: null,
     },
   });
@@ -3534,7 +3534,7 @@ test("git branch workspace uses branch as canonical name", async () => {
       currentBranch: "feature/name-from-server",
       remoteUrl: "https://github.com/acme/repo-branch.git",
       worktreeRoot: cwd,
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       mainRepoRoot: null,
     },
   });
@@ -4079,7 +4079,7 @@ test("create paseo worktree response preserves an explicit non-Git project", asy
           repoRoot: repoDir,
           currentBranch: "main",
           remoteUrl: null,
-          isPaseoOwnedWorktree: false,
+          isRamblaOwnedWorktree: false,
           mainRepoRoot: null,
         },
       });
@@ -4091,7 +4091,7 @@ test("create paseo worktree response preserves an explicit non-Git project", asy
           repoRoot: cwd,
           currentBranch: "worktree-123",
           remoteUrl: null,
-          isPaseoOwnedWorktree: true,
+          isRamblaOwnedWorktree: true,
           mainRepoRoot: repoDir,
         },
       });
@@ -4102,7 +4102,7 @@ test("create paseo worktree response preserves an explicit non-Git project", asy
         repoRoot: cwd,
         currentBranch: "main",
         remoteUrl: null,
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: null,
       },
     });
@@ -4159,7 +4159,7 @@ test("create paseo worktree response preserves an explicit non-Git project", asy
     if (isSessionOutboundMessage(message)) emitted.push(message);
   };
   try {
-    await session.handleCreatePaseoWorktreeRequest({
+    await session.handleCreateRamblaWorktreeRequest({
       type: "create_paseo_worktree_request",
       cwd: repoDir,
       projectId: explicitProject.projectId,
@@ -4318,7 +4318,7 @@ test("open_project_request registers a workspace before any agent exists", async
       currentBranch: null,
       remoteUrl: null,
       worktreeRoot: null,
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       mainRepoRoot: null,
     },
   });
@@ -4373,7 +4373,7 @@ test("import_agent_request registers a workspace for a never-seen cwd", async ()
       currentBranch: null,
       remoteUrl: null,
       worktreeRoot: null,
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       mainRepoRoot: null,
     },
   });
@@ -4561,7 +4561,7 @@ test("open_project_response returns immediately even when the GitHub fetch is sl
     currentBranch: "main",
     remoteUrl: "https://github.com/acme/slow.git",
     worktreeRoot: requestedCwd,
-    isPaseoOwnedWorktree: false,
+    isRamblaOwnedWorktree: false,
     mainRepoRoot: null,
   });
   let resolveSnapshot: (snapshot: WorkspaceGitRuntimeSnapshot) => void = () => {};
@@ -4640,7 +4640,7 @@ test("open_project_request emits a workspace_update with githubRuntime once the 
     currentBranch: "main",
     remoteUrl: "https://github.com/acme/repo.git",
     worktreeRoot: requestedCwd,
-    isPaseoOwnedWorktree: false,
+    isRamblaOwnedWorktree: false,
     mainRepoRoot: null,
   });
   session.workspaceGitService.peekSnapshot = () => peeked.value;
@@ -4896,7 +4896,7 @@ test("open_project_request reclassifies an archived directory workspace when git
     currentBranch: "feature/desktop-daemon-settings",
     remoteUrl: "git@github.com:getpaseo/paseo.git",
     worktreeRoot: cwd,
-    isPaseoOwnedWorktree: false,
+    isRamblaOwnedWorktree: false,
     mainRepoRoot: repoRoot,
   });
   session.workspaceGitService.getSnapshot = async () =>
@@ -4906,7 +4906,7 @@ test("open_project_request reclassifies an archived directory workspace when git
         repoRoot: cwd,
         currentBranch: "feature/desktop-daemon-settings",
         remoteUrl: "git@github.com:getpaseo/paseo.git",
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: repoRoot,
       },
     });
@@ -5012,7 +5012,7 @@ test("open_project_request reclassifies an active directory workspace when git m
     currentBranch: requestedCwd === repoRoot ? "main" : "feature/desktop-daemon-settings",
     remoteUrl: "git@github.com:getpaseo/paseo.git",
     worktreeRoot: requestedCwd,
-    isPaseoOwnedWorktree: false,
+    isRamblaOwnedWorktree: false,
     mainRepoRoot: requestedCwd === repoRoot ? null : repoRoot,
   });
   session.workspaceGitService.getSnapshot = async (requestedCwd: string) =>
@@ -5022,7 +5022,7 @@ test("open_project_request reclassifies an active directory workspace when git m
         repoRoot: requestedCwd,
         currentBranch: requestedCwd === repoRoot ? "main" : "feature/desktop-daemon-settings",
         remoteUrl: "git@github.com:getpaseo/paseo.git",
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: requestedCwd === repoRoot ? null : repoRoot,
       },
     });
@@ -5102,7 +5102,7 @@ test("open_project_request gives a plain git worktree its own exact-root project
     currentBranch: requestedCwd === repoRoot ? "main" : "feature/desktop-daemon-settings",
     remoteUrl: "git@github.com:getpaseo/paseo.git",
     worktreeRoot: requestedCwd,
-    isPaseoOwnedWorktree: false,
+    isRamblaOwnedWorktree: false,
     mainRepoRoot: requestedCwd === repoRoot ? null : repoRoot,
   });
   session.workspaceGitService.getSnapshot = async (requestedCwd: string) =>
@@ -5112,7 +5112,7 @@ test("open_project_request gives a plain git worktree its own exact-root project
         repoRoot: requestedCwd,
         currentBranch: requestedCwd === repoRoot ? "main" : "feature/desktop-daemon-settings",
         remoteUrl: "git@github.com:getpaseo/paseo.git",
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         mainRepoRoot: requestedCwd === repoRoot ? null : repoRoot,
       },
     });
@@ -5716,7 +5716,7 @@ function createRecreateWorktreeRepo(): { tempDir: string; repoDir: string } {
     cwd: repoDir,
     stdio: "pipe",
   });
-  execFileSync("git", ["config", "user.name", "Paseo Test"], { cwd: repoDir, stdio: "pipe" });
+  execFileSync("git", ["config", "user.name", "Rambla Test"], { cwd: repoDir, stdio: "pipe" });
   execFileSync("git", ["config", "commit.gpgsign", "false"], { cwd: repoDir, stdio: "pipe" });
   writeFileSync(path.join(repoDir, "README.md"), "main\n");
   execFileSync("git", ["add", "README.md"], { cwd: repoDir, stdio: "pipe" });
@@ -5877,7 +5877,7 @@ test.skip("open_project_request collapses a git subdirectory onto the repo root 
       currentBranch: "main",
       remoteUrl: null,
       worktreeRoot: repoRoot,
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       mainRepoRoot: null,
     },
   });
@@ -5968,7 +5968,7 @@ test("archive_workspace_request archives a worktree-kind workspace and removes t
     cwd: repoDir,
     stdio: "pipe",
   });
-  execFileSync("git", ["config", "user.name", "Paseo Test"], { cwd: repoDir, stdio: "pipe" });
+  execFileSync("git", ["config", "user.name", "Rambla Test"], { cwd: repoDir, stdio: "pipe" });
   execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "--allow-empty", "-m", "initial"], {
     cwd: repoDir,
     stdio: "pipe",
@@ -6018,7 +6018,7 @@ test("archive_workspace_request archives a worktree-kind workspace and removes t
           mainRepoRoot: repoDir,
           currentBranch: "worktree-kind-archive",
           remoteUrl: null,
-          isPaseoOwnedWorktree: true,
+          isRamblaOwnedWorktree: true,
           isDirty: false,
           baseRef: null,
           aheadBehind: null,
@@ -6142,7 +6142,7 @@ test.skip("opening a new worktree reconciles older local workspaces into the rem
       currentBranch: cwd === mainWorkspaceId ? "main" : "feature-a",
       remoteUrl: "https://github.com/zimakki/inkwell.git",
       worktreeRoot: cwd,
-      isPaseoOwnedWorktree: cwd !== mainWorkspaceId,
+      isRamblaOwnedWorktree: cwd !== mainWorkspaceId,
       mainRepoRoot: cwd === mainWorkspaceId ? null : mainWorkspaceId,
     },
   });
@@ -6248,7 +6248,7 @@ test.skip("fetch_workspaces_request reconciles remote URL changes for existing w
       currentBranch: cwd === mainWorkspaceId ? "main" : "feature-a",
       remoteUrl: "https://github.com/new-owner/inkwell.git",
       worktreeRoot: cwd,
-      isPaseoOwnedWorktree: cwd !== mainWorkspaceId,
+      isRamblaOwnedWorktree: cwd !== mainWorkspaceId,
       mainRepoRoot: cwd === mainWorkspaceId ? null : mainWorkspaceId,
     },
   });
@@ -6349,7 +6349,7 @@ test.skip("reconcile archives stale subdirectory workspace records when collapsi
       currentBranch: "main",
       remoteUrl: "https://github.com/acme/repo.git",
       worktreeRoot: repoRoot,
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       mainRepoRoot: null,
     },
   });
@@ -7049,7 +7049,7 @@ test("fetch_workspaces_response reads runtime fields from passive workspace git 
       currentBranch: runtimeSnapshot.git.currentBranch,
       remoteUrl: runtimeSnapshot.git.remoteUrl,
       worktreeRoot: cwd,
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       mainRepoRoot: null,
     },
   });
@@ -7070,7 +7070,7 @@ test("fetch_workspaces_response reads runtime fields from passive workspace git 
       gitRuntime: {
         currentBranch: "runtime-branch",
         remoteUrl: "https://github.com/acme/repo.git",
-        isPaseoOwnedWorktree: false,
+        isRamblaOwnedWorktree: false,
         isDirty: true,
         aheadBehind: { ahead: 3, behind: 1 },
         aheadOfOrigin: 3,
@@ -7220,7 +7220,7 @@ test("workspace_update includes updated runtime fields", async () => {
       currentBranch: runtimeSnapshot.git.currentBranch,
       remoteUrl: runtimeSnapshot.git.remoteUrl,
       worktreeRoot: cwd,
-      isPaseoOwnedWorktree: false,
+      isRamblaOwnedWorktree: false,
       mainRepoRoot: null,
     },
   });
@@ -8916,7 +8916,7 @@ function createWorkspaceCreatePrRepo(): WorkspaceCreatePrRepoFixture {
     cwd: repoDir,
     stdio: "pipe",
   });
-  execFileSync("git", ["config", "user.name", "Paseo Test"], { cwd: repoDir, stdio: "pipe" });
+  execFileSync("git", ["config", "user.name", "Rambla Test"], { cwd: repoDir, stdio: "pipe" });
   execFileSync("git", ["config", "commit.gpgsign", "false"], { cwd: repoDir, stdio: "pipe" });
   writeFileSync(path.join(repoDir, "README.md"), "main\n");
   execFileSync("git", ["add", "README.md"], { cwd: repoDir, stdio: "pipe" });
@@ -9251,14 +9251,14 @@ test("workspace auto-name uses the backing root for a nested worktree", async ()
     cwd: repoDir,
     stdio: "pipe",
   });
-  execFileSync("git", ["config", "user.name", "Paseo Test"], { cwd: repoDir, stdio: "pipe" });
+  execFileSync("git", ["config", "user.name", "Rambla Test"], { cwd: repoDir, stdio: "pipe" });
   execFileSync("git", ["config", "commit.gpgsign", "false"], { cwd: repoDir, stdio: "pipe" });
   writeFileSync(path.join(repoDir, "README.md"), "hello\n");
   execFileSync("git", ["add", "README.md"], { cwd: repoDir, stdio: "pipe" });
   execFileSync("git", ["commit", "-m", "initial"], { cwd: repoDir, stdio: "pipe" });
   execFileSync("git", ["branch", "-M", "placeholder-branch"], { cwd: repoDir, stdio: "pipe" });
-  writePaseoWorktreeMetadata(repoDir, { baseRefName: "main" });
-  writePaseoWorktreeFirstAgentBranchAutoNameMetadata(repoDir, {
+  writeRamblaWorktreeMetadata(repoDir, { baseRefName: "main" });
+  writeRamblaWorktreeFirstAgentBranchAutoNameMetadata(repoDir, {
     placeholderBranchName: "placeholder-branch",
   });
   const workspaceCwd = path.join(repoDir, "packages", "app");
@@ -9273,7 +9273,7 @@ test("workspace auto-name uses the backing root for a nested worktree", async ()
     title: "Fix checkout title",
     branch: "placeholder-branch",
     worktreeRoot: repoDir,
-    isPaseoOwnedWorktree: true,
+    isRamblaOwnedWorktree: true,
     createdAt: "2026-03-01T12:00:00.000Z",
     updatedAt: "2026-03-01T12:00:00.000Z",
   });
@@ -9328,7 +9328,7 @@ test("workspace auto-name uses the backing root for a nested worktree", async ()
         .toString()
         .trim(),
     ).toBe("placeholder-branch");
-    expect(readPaseoWorktreeMetadata(repoDir)).toMatchObject({
+    expect(readRamblaWorktreeMetadata(repoDir)).toMatchObject({
       version: 2,
       firstAgentBranchAutoName: {
         status: "attempted",

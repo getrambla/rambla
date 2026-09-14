@@ -47,7 +47,7 @@ import type {
   ImportProviderSessionContext,
   ResolveAgentDefaultModeInput,
 } from "./agent-sdk-types.js";
-import type { PaseoToolCatalog } from "./tools/types.js";
+import type { RamblaToolCatalog } from "./tools/types.js";
 import type { ProviderDefinition } from "./provider-registry.js";
 
 const DESKTOP_OPEN_AGENT_TAB_LABEL = getOpenAgentTabLabel("desktop-client");
@@ -3005,7 +3005,7 @@ test("reloadAgentSession preserves the live session when its replacement cannot 
     clients: { codex: new UnsupportedReloadClient() },
     registry: new AgentStorage(join(workdir, "agents"), logger),
     logger,
-    resolvePaseoToolPolicy: () => paseoToolPolicy,
+    resolveRamblaToolPolicy: () => paseoToolPolicy,
   });
 
   try {
@@ -3028,7 +3028,7 @@ test("reloadAgentSession preserves the live session when its replacement cannot 
     expect(original.closed).toBe(false);
     expect(manager.getAgent(created.id)?.session).toBe(original);
     expect(manager.getAgent(created.id)?.lifecycle).toBe("idle");
-    expect(manager.getPaseoToolPolicy(created.id)).toEqual({
+    expect(manager.getRamblaToolPolicy(created.id)).toEqual({
       disabledTools: ["list_agents"],
     });
   } finally {
@@ -3036,12 +3036,12 @@ test("reloadAgentSession preserves the live session when its replacement cannot 
   }
 });
 
-test("createAgent passes native Paseo tools through launch context without internal MCP", async () => {
+test("createAgent passes native Rambla tools through launch context without internal MCP", async () => {
   const workdir = mkdtempSync(join(tmpdir(), "agent-manager-test-"));
   const storagePath = join(workdir, "agents");
   const storage = new AgentStorage(storagePath, logger);
 
-  const paseoTools: PaseoToolCatalog = {
+  const paseoTools: RamblaToolCatalog = {
     tools: new Map(),
     getTool: () => undefined,
     executeTool: async () => {
@@ -3053,7 +3053,7 @@ test("createAgent passes native Paseo tools through launch context without inter
     override readonly capabilities = {
       ...TEST_CAPABILITIES,
       supportsMcpServers: true,
-      supportsNativePaseoTools: true,
+      supportsNativeRamblaTools: true,
     };
     lastConfig: AgentSessionConfig | null = null;
     lastLaunchContext: AgentLaunchContext | undefined;
@@ -3175,7 +3175,7 @@ test("uses each provider's current policy for new sessions and snapshots it by a
     override readonly capabilities = {
       ...TEST_CAPABILITIES,
       supportsMcpServers: true,
-      supportsNativePaseoTools: true,
+      supportsNativeRamblaTools: true,
     };
     readonly launchContexts: AgentLaunchContext[] = [];
     readonly configs: AgentSessionConfig[] = [];
@@ -3193,7 +3193,7 @@ test("uses each provider's current policy for new sessions and snapshots it by a
   const codex = new CaptureClient("codex");
   const claude = new CaptureClient("claude");
   const policyInputs: Array<{ callerAgentId?: string; paseoToolPolicy?: unknown }> = [];
-  const paseoTools: PaseoToolCatalog = {
+  const paseoTools: RamblaToolCatalog = {
     tools: new Map(),
     getTool: () => undefined,
     executeTool: async () => {
@@ -3205,7 +3205,7 @@ test("uses each provider's current policy for new sessions and snapshots it by a
     registry: storage,
     logger,
     mcpBaseUrl: "http://127.0.0.1:6767/mcp/agents",
-    resolvePaseoToolPolicy: (provider) => policies.get(provider),
+    resolveRamblaToolPolicy: (provider) => policies.get(provider),
     paseoToolCatalogFactory: async (context) => {
       policyInputs.push(context);
       return paseoTools;
@@ -3230,10 +3230,10 @@ test("uses each provider's current policy for new sessions and snapshots it by a
   expect(claude.launchContexts[0]?.paseoTools).toBeUndefined();
   expect(codex.configs[0]?.mcpServers?.paseo).toBeUndefined();
   expect(claude.configs[0]?.mcpServers).toBeUndefined();
-  expect(manager.getPaseoToolPolicy(codexAgent.id)).toEqual({
+  expect(manager.getRamblaToolPolicy(codexAgent.id)).toEqual({
     disabledTools: ["list_agents"],
   });
-  expect(manager.getPaseoToolPolicy(claudeAgent.id)).toEqual({ enabled: false });
+  expect(manager.getRamblaToolPolicy(claudeAgent.id)).toEqual({ enabled: false });
 
   policies.set("codex", { disabledTools: ["create_agent"] });
   const nextCodexAgent = await manager.createAgent(
@@ -3242,10 +3242,10 @@ test("uses each provider's current policy for new sessions and snapshots it by a
     { workspaceId: undefined },
   );
 
-  expect(manager.getPaseoToolPolicy(codexAgent.id)).toEqual({
+  expect(manager.getRamblaToolPolicy(codexAgent.id)).toEqual({
     disabledTools: ["list_agents"],
   });
-  expect(manager.getPaseoToolPolicy(nextCodexAgent.id)).toEqual({
+  expect(manager.getRamblaToolPolicy(nextCodexAgent.id)).toEqual({
     disabledTools: ["create_agent"],
   });
   expect(policyInputs).toEqual([
@@ -3257,12 +3257,12 @@ test("uses each provider's current policy for new sessions and snapshots it by a
   ]);
 
   await manager.archiveAgent(claudeAgent.id);
-  expect(manager.getPaseoToolPolicy(claudeAgent.id)).toBeUndefined();
+  expect(manager.getRamblaToolPolicy(claudeAgent.id)).toBeUndefined();
 
   rmSync(workdir, { recursive: true, force: true });
 });
 
-test("keeps the global Paseo-tools gate outside provider policy and MCP injection", async () => {
+test("keeps the global Rambla-tools gate outside provider policy and MCP injection", async () => {
   const workdir = mkdtempSync(join(tmpdir(), "agent-manager-test-"));
   const storage = new AgentStorage(join(workdir, "agents"), logger);
 
@@ -3285,7 +3285,7 @@ test("keeps the global Paseo-tools gate outside provider policy and MCP injectio
     registry: storage,
     logger,
     mcpBaseUrl: "http://127.0.0.1:6767/mcp/agents",
-    resolvePaseoToolPolicy: () => ({ disabledTools: ["list_agents"] }),
+    resolveRamblaToolPolicy: () => ({ disabledTools: ["list_agents"] }),
   });
   const enabledAgent = await enabledManager.createAgent(
     { provider: "codex", cwd: workdir },
@@ -3306,7 +3306,7 @@ test("keeps the global Paseo-tools gate outside provider policy and MCP injectio
     logger,
     mcpBaseUrl: "http://127.0.0.1:6767/mcp/agents",
     paseoToolsEnabled: false,
-    resolvePaseoToolPolicy: () => ({ enabled: true }),
+    resolveRamblaToolPolicy: () => ({ enabled: true }),
     paseoToolCatalogFactory: () => {
       catalogFactoryCalls += 1;
       return paseoTools;
@@ -3320,7 +3320,7 @@ test("keeps the global Paseo-tools gate outside provider policy and MCP injectio
 
   expect(disabledClient.lastConfig?.mcpServers).toBeUndefined();
   expect(catalogFactoryCalls).toBe(0);
-  expect(disabledManager.getPaseoToolPolicy(disabledAgent.id)).toEqual({ enabled: false });
+  expect(disabledManager.getRamblaToolPolicy(disabledAgent.id)).toEqual({ enabled: false });
 
   rmSync(workdir, { recursive: true, force: true });
 });

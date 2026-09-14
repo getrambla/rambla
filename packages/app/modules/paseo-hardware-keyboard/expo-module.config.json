@@ -1,7 +1,7 @@
 {
   "platforms": ["ios"],
   "ios": {
-    "modules": ["PaseoHardwareKeyboardModule"],
-    "reactDelegateHandlers": ["PaseoHardwareKeyboardReactDelegateHandler"]
+    "modules": ["RamblaHardwareKeyboardModule"],
+    "reactDelegateHandlers": ["RamblaHardwareKeyboardReactDelegateHandler"]
   }
 }

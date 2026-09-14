@@ -27,6 +27,6 @@ appId: sh.rambla
 
 - runFlow:
     when:
-      visible: "Welcome to Paseo"
+      visible: "Welcome to Rambla"
     commands:
-      - assertVisible: "Welcome to Paseo"
+      - assertVisible: "Welcome to Rambla"

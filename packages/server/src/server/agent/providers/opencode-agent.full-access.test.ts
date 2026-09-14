@@ -241,7 +241,7 @@ describe("OpenCode auto_accept feature", () => {
         availableModes: [
           { id: "build", label: "Build" },
           { id: "plan", label: "Plan" },
-          { id: "paseo-custom", label: "Paseo Custom" },
+          { id: "paseo-custom", label: "Rambla Custom" },
         ],
       }),
     ).toEqual({ modeId: "paseo-custom", featureValues: { auto_accept: true } });

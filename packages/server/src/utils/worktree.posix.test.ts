@@ -4,24 +4,24 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   createWorktree as createWorktreePrimitive,
   deriveWorktreeProjectHash,
-  deletePaseoWorktree,
+  deleteRamblaWorktree,
   InvalidGitBranchNameError,
   getScriptConfigs,
   getWorktreeSetupCommands,
   getWorktreeTerminalSpecs,
   getWorktreeTeardownCommands,
   isServiceScript,
-  isPaseoOwnedWorktreeCwd,
-  listPaseoWorktrees,
-  readPaseoConfig,
+  isRamblaOwnedWorktreeCwd,
+  listRamblaWorktrees,
+  readRamblaConfig,
   resolveWorktreeRuntimeEnv,
   type WorktreeSetupCommandProgressEvent,
   runWorktreeSetupCommands,
   type CreateWorktreeOptions,
   type WorktreeConfig,
 } from "./worktree";
-import type { PaseoConfig } from "@getpaseo/protocol/paseo-config-schema";
-import { getPaseoWorktreeMetadataPath, readPaseoWorktreeMetadata } from "./worktree-metadata.js";
+import type { RamblaConfig } from "@getpaseo/protocol/paseo-config-schema";
+import { getRamblaWorktreeMetadataPath, readRamblaWorktreeMetadata } from "./worktree-metadata.js";
 import {
   getCheckoutDiff,
   getCheckoutStatus,
@@ -48,8 +48,8 @@ import { delimiter, dirname, join } from "path";
 import { tmpdir } from "os";
 import net from "node:net";
 
-function loadConfigForTest(repoRoot: string): PaseoConfig | null {
-  const result = readPaseoConfig(repoRoot);
+function loadConfigForTest(repoRoot: string): RamblaConfig | null {
+  const result = readRamblaConfig(repoRoot);
   return result.ok ? result.config : null;
 }
 
@@ -125,7 +125,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       expect(result.worktreePath).toBe(join(paseoHome, "worktrees", projectHash, "hello-world"));
       expect(existsSync(result.worktreePath)).toBe(true);
       expect(existsSync(join(result.worktreePath, "file.txt"))).toBe(true);
-      const metadataPath = getPaseoWorktreeMetadataPath(result.worktreePath);
+      const metadataPath = getRamblaWorktreeMetadataPath(result.worktreePath);
       expect(existsSync(metadataPath)).toBe(true);
       const metadata = JSON.parse(readFileSync(metadataPath, "utf8"));
       expect(metadata).toMatchObject({
@@ -149,16 +149,16 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
 
       expect(result.worktreePath).toBe(join(worktreesRoot, projectHash, "custom-root"));
       await expect(
-        isPaseoOwnedWorktreeCwd(result.worktreePath, { paseoHome, worktreesRoot }),
+        isRamblaOwnedWorktreeCwd(result.worktreePath, { paseoHome, worktreesRoot }),
       ).resolves.toMatchObject({ allowed: true, worktreeRoot: join(worktreesRoot, projectHash) });
       await expect(
-        isPaseoOwnedWorktreeCwd(result.worktreePath, { paseoHome }),
+        isRamblaOwnedWorktreeCwd(result.worktreePath, { paseoHome }),
       ).resolves.toMatchObject({ allowed: false });
 
-      const worktrees = await listPaseoWorktrees({ cwd: repoDir, paseoHome, worktreesRoot });
+      const worktrees = await listRamblaWorktrees({ cwd: repoDir, paseoHome, worktreesRoot });
       expect(worktrees.map((entry) => entry.path)).toContain(result.worktreePath);
 
-      await deletePaseoWorktree({
+      await deleteRamblaWorktree({
         cwd: repoDir,
         worktreePath: result.worktreePath,
         paseoHome,
@@ -172,7 +172,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       const varTempDir = mkdtempSync(join(tmpdir(), "worktree-realpath-test-"));
       const privateTempDir = realpathSync(varTempDir);
       const varRepoDir = join(varTempDir, "test-repo");
-      const varPaseoHome = join(varTempDir, "paseo-home");
+      const varRamblaHome = join(varTempDir, "paseo-home");
       mkdirSync(varRepoDir, { recursive: true });
       execFileSync("git", ["init", "-b", "main"], { cwd: varRepoDir });
       execFileSync("git", ["config", "user.email", "test@test.com"], { cwd: varRepoDir });
@@ -188,7 +188,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: varRepoDir,
         baseBranch: "main",
         worktreeSlug: "realpath-test",
-        paseoHome: varPaseoHome,
+        paseoHome: varRamblaHome,
       });
 
       const projectHash = await deriveWorktreeProjectHash(varRepoDir);
@@ -201,8 +201,8 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       );
       expect(existsSync(privateWorktreePath)).toBe(true);
 
-      const ownership = await isPaseoOwnedWorktreeCwd(privateWorktreePath, {
-        paseoHome: varPaseoHome,
+      const ownership = await isRamblaOwnedWorktreeCwd(privateWorktreePath, {
+        paseoHome: varRamblaHome,
       });
       expect(ownership.allowed).toBe(true);
 
@@ -218,7 +218,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         paseoHome,
       });
 
-      const ownership = await isPaseoOwnedWorktreeCwd(result.worktreePath, { paseoHome });
+      const ownership = await isRamblaOwnedWorktreeCwd(result.worktreePath, { paseoHome });
       expect(ownership.allowed).toBe(true);
       expect(ownership.repoRoot).toBe(repoDir);
     });
@@ -227,7 +227,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       const nonGitDir = join(tempDir, "not-a-repo");
       mkdirSync(nonGitDir, { recursive: true });
 
-      const ownership = await isPaseoOwnedWorktreeCwd(nonGitDir, { paseoHome });
+      const ownership = await isRamblaOwnedWorktreeCwd(nonGitDir, { paseoHome });
 
       expect(ownership.allowed).toBe(false);
       expect(ownership.worktreePath).toBe(realpathSync(nonGitDir));
@@ -256,7 +256,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: result.worktreePath,
       });
 
-      const metadataPath = getPaseoWorktreeMetadataPath(result.worktreePath);
+      const metadataPath = getRamblaWorktreeMetadataPath(result.worktreePath);
       const metadata = JSON.parse(readFileSync(metadataPath, "utf8"));
       expect(metadata).toMatchObject({
         version: 1,
@@ -284,7 +284,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         .trim();
       expect(currentBranch).toBe("dev");
 
-      const metadataPath = getPaseoWorktreeMetadataPath(result.worktreePath);
+      const metadataPath = getRamblaWorktreeMetadataPath(result.worktreePath);
       const metadata = JSON.parse(readFileSync(metadataPath, "utf8"));
       expect(metadata).toMatchObject({
         version: 1,
@@ -324,7 +324,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
 
       expect(result.branchName).toBe("main-1");
       expect(existsSync(result.worktreePath)).toBe(true);
-      expect(readPaseoWorktreeMetadata(result.worktreePath)?.changeRequestLookupTarget).toEqual({
+      expect(readRamblaWorktreeMetadata(result.worktreePath)?.changeRequestLookupTarget).toEqual({
         headRef: "main-1",
         localBranchName: "main-1",
       });
@@ -377,7 +377,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         .trim();
       expect(currentBranch).toBe("user/feature");
 
-      const metadataPath = getPaseoWorktreeMetadataPath(result.worktreePath);
+      const metadataPath = getRamblaWorktreeMetadataPath(result.worktreePath);
       const metadata = JSON.parse(readFileSync(metadataPath, "utf8"));
       expect(metadata).toMatchObject({ baseRefName: "main" });
     });
@@ -484,7 +484,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         "from-origin\n",
       );
       expect(
-        JSON.parse(readFileSync(getPaseoWorktreeMetadataPath(originResult.worktreePath), "utf8")),
+        JSON.parse(readFileSync(getRamblaWorktreeMetadataPath(originResult.worktreePath), "utf8")),
       ).toMatchObject({ baseRefName: "main" });
     });
 
@@ -525,7 +525,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       // to the commit the worktree was cut from: "main" resolves local-first, which here is
       // a different commit than the fork's upstream.
       expect(
-        JSON.parse(readFileSync(getPaseoWorktreeMetadataPath(result.worktreePath), "utf8")),
+        JSON.parse(readFileSync(getRamblaWorktreeMetadataPath(result.worktreePath), "utf8")),
       ).toMatchObject({ baseRefName: "main", baseRef: "refs/remotes/upstream/main" });
 
       // An untouched child must report no work of its own. Comparing against the wrong base
@@ -612,7 +612,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       });
 
       expect(
-        JSON.parse(readFileSync(getPaseoWorktreeMetadataPath(result.worktreePath), "utf8")),
+        JSON.parse(readFileSync(getRamblaWorktreeMetadataPath(result.worktreePath), "utf8")),
       ).toMatchObject({
         baseRefName: "release+hotfix",
         baseRef: "refs/remotes/upstream/release+hotfix",
@@ -1371,8 +1371,8 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       expect(fromRepoA.worktreePath.endsWith("alpha-1")).toBe(false);
       expect(fromRepoB.worktreePath.endsWith("alpha-1")).toBe(false);
 
-      const repoAWorktrees = await listPaseoWorktrees({ cwd: repoA, paseoHome });
-      const repoBWorktrees = await listPaseoWorktrees({ cwd: repoB, paseoHome });
+      const repoAWorktrees = await listRamblaWorktrees({ cwd: repoA, paseoHome });
+      const repoBWorktrees = await listRamblaWorktrees({ cwd: repoB, paseoHome });
 
       expect(repoAWorktrees.map((entry) => entry.path)).toEqual([fromRepoA.worktreePath]);
       expect(repoBWorktrees.map((entry) => entry.path)).toEqual([fromRepoB.worktreePath]);
@@ -1394,14 +1394,14 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         paseoHome,
       });
 
-      const worktrees = await listPaseoWorktrees({ cwd: repoDir, paseoHome });
+      const worktrees = await listRamblaWorktrees({ cwd: repoDir, paseoHome });
       const paths = worktrees.map((worktree) => worktree.path).sort();
       expect(paths).toEqual([first.worktreePath, second.worktreePath].sort());
 
-      await deletePaseoWorktree({ cwd: repoDir, worktreePath: first.worktreePath, paseoHome });
+      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: first.worktreePath, paseoHome });
       expect(existsSync(first.worktreePath)).toBe(false);
 
-      const remaining = await listPaseoWorktrees({ cwd: repoDir, paseoHome });
+      const remaining = await listRamblaWorktrees({ cwd: repoDir, paseoHome });
       expect(remaining.map((worktree) => worktree.path)).toEqual([second.worktreePath]);
     });
 
@@ -1417,10 +1417,10 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       const nestedDir = join(created.worktreePath, "nested", "dir");
       mkdirSync(nestedDir, { recursive: true });
 
-      await deletePaseoWorktree({ cwd: repoDir, worktreePath: nestedDir, paseoHome });
+      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: nestedDir, paseoHome });
       expect(existsSync(created.worktreePath)).toBe(false);
 
-      const remaining = await listPaseoWorktrees({ cwd: repoDir, paseoHome });
+      const remaining = await listRamblaWorktrees({ cwd: repoDir, paseoHome });
       expect(remaining.some((worktree) => worktree.path === created.worktreePath)).toBe(false);
     });
 
@@ -1454,7 +1454,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         branchName: created.branchName,
       });
 
-      await deletePaseoWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome });
+      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome });
       expect(existsSync(created.worktreePath)).toBe(false);
 
       const teardownLog = readFileSync(join(repoDir, "teardown.log"), "utf8");
@@ -1486,7 +1486,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         paseoHome,
       });
 
-      await deletePaseoWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome });
+      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome });
 
       expect(getWorktreeTeardownCommands(repoDir)).toEqual([
         'cleanup_message="teardown string"\necho "$cleanup_message" > "$RAMBLA_SOURCE_CHECKOUT_PATH/teardown.log"',
@@ -1518,7 +1518,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         paseoHome,
       });
 
-      await deletePaseoWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome });
+      await deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome });
 
       expect(readFileSync(join(repoDir, "teardown-port.log"), "utf8").trim()).toBe("port=unset");
       expect(existsSync(created.worktreePath)).toBe(false);
@@ -1550,7 +1550,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       });
 
       await expect(
-        deletePaseoWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome }),
+        deleteRamblaWorktree({ cwd: repoDir, worktreePath: created.worktreePath, paseoHome }),
       ).rejects.toThrow("Worktree teardown command failed");
 
       expect(existsSync(created.worktreePath)).toBe(true);
