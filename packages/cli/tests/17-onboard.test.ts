@@ -5,6 +5,7 @@ import { readFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { $ } from "zx";
+import { runLocalRambla } from "./helpers/local-cli.ts";
 import { getAvailablePort } from "./helpers/network.ts";
 
 $.verbose = false;
@@ -15,9 +16,19 @@ const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-onboard-home-"));
 const port = await getAvailablePort();
 
 try {
+  const configured = await runLocalRambla([
+    "daemon",
+    "config",
+    "set",
+    "daemon.listen",
+    `127.0.0.1:${port}`,
+    "--home",
+    ramblaHome,
+  ]);
+  assert.strictEqual(configured.exitCode, 0, configured.stderr);
+
   console.log("Test 1: `rambla` runs blocking onboarding without implicit relay pairing");
-  const onboard =
-    await $`RAMBLA_HOME=${ramblaHome} RAMBLA_LISTEN=127.0.0.1:${port} RAMBLA_PAIRING_QR=0 npx rambla`.nothrow();
+  const onboard = await $`RAMBLA_HOME=${ramblaHome} RAMBLA_PAIRING_QR=0 npx rambla`.nothrow();
 
   assert.strictEqual(
     onboard.exitCode,
@@ -37,8 +48,8 @@ try {
   assert(onboard.stdout.includes("rambla --help"), "onboard output should include --help shortcut");
   assert(onboard.stdout.includes("rambla ls"), "onboard output should include ls shortcut");
   assert(
-    onboard.stdout.includes('rambla run "your prompt"'),
-    "onboard output should include run shortcut",
+    onboard.stdout.includes(`rambla run --home ${JSON.stringify(ramblaHome)} "your prompt"`),
+    "onboard output should include a run shortcut for the selected home",
   );
   assert(onboard.stdout.includes("rambla status"), "onboard output should include status shortcut");
   assert(
@@ -58,8 +69,7 @@ try {
   assert.strictEqual(enableRelay.exitCode, 0, `relay enable should succeed: ${enableRelay.stderr}`);
   assert(enableRelay.stdout.includes("#offer="), "relay enable should produce a pairing offer");
 
-  const noRelayOnboard =
-    await $`RAMBLA_HOME=${ramblaHome} RAMBLA_LISTEN=127.0.0.1:${port} npx rambla --no-relay`.nothrow();
+  const noRelayOnboard = await $`RAMBLA_HOME=${ramblaHome} npx rambla --no-relay`.nothrow();
   assert.strictEqual(
     noRelayOnboard.exitCode,
     0,

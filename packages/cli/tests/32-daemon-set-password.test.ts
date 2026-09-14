@@ -51,7 +51,10 @@ try {
     const config = JSON.parse(await readFile(join(ramblaHome, "config.json"), "utf-8"));
 
     assert.strictEqual(result.configPath, join(ramblaHome, "config.json"));
-    assert.strictEqual(result.restartCommand, "rambla daemon restart");
+    assert.strictEqual(
+      result.restartCommand,
+      `rambla daemon restart --home ${JSON.stringify(ramblaHome)}`,
+    );
     assert.strictEqual(config.daemon.listen, "127.0.0.1:9999");
     assert.strictEqual(config.daemon.relay.enabled, false);
     assert.notStrictEqual(config.daemon.auth.password, "shared-secret");
@@ -68,6 +71,7 @@ try {
     const result = await runSetPasswordCommand(
       {
         home: ramblaHome,
+        daemonTarget: { kind: "instance", home: ramblaHome },
         promptPassword: promptSequence(["new-secret", "new-secret"]),
       },
       {} as Command,
@@ -88,6 +92,7 @@ try {
       runSetPasswordCommand(
         {
           home: ramblaHome,
+          daemonTarget: { kind: "instance", home: ramblaHome },
           promptPassword: promptSequence(["first-secret", "second-secret"]),
         },
         {} as Command,

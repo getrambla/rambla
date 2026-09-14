@@ -1,0 +1,90 @@
+// Daemon configuration inputs. General provider credentials and executable/runtime
+// controls remain available to managed launches and their agent processes.
+export const DAEMON_SETTING_ENV_KEYS = [
+  "MCP_DEBUG",
+  "OPENAI_STT_BASE_URL",
+  "OPENAI_TTS_BASE_URL",
+  "RAMBLA_ALLOWED_HOSTS",
+  "RAMBLA_APP_BASE_URL",
+  "RAMBLA_CORS_ORIGINS",
+  "RAMBLA_DICTATION_ENABLED",
+  "RAMBLA_DICTATION_LANGUAGE",
+  "RAMBLA_DICTATION_LOCAL_STT_MODEL",
+  "RAMBLA_DICTATION_STT_PROVIDER",
+  "RAMBLA_GIT_CONCURRENCY",
+  "RAMBLA_GIT_MAX_PROCESSES_PER_SECOND",
+  "RAMBLA_GIT_MAX_PROCESS_CONCURRENCY",
+  "RAMBLA_HOSTNAMES",
+  "RAMBLA_LISTEN",
+  "RAMBLA_LOCAL_MODELS_DIR",
+  "RAMBLA_LOG",
+  "RAMBLA_LOG_CONSOLE_FORMAT",
+  "RAMBLA_LOG_CONSOLE_LEVEL",
+  "RAMBLA_LOG_FILE_LEVEL",
+  "RAMBLA_LOG_FILE_PATH",
+  "RAMBLA_LOG_FILE_ROTATE_COUNT",
+  "RAMBLA_LOG_FILE_ROTATE_SIZE",
+  "RAMBLA_LOG_FORMAT",
+  "RAMBLA_LOG_LEVEL",
+  "RAMBLA_LOG_ROTATE_COUNT",
+  "RAMBLA_LOG_ROTATE_SIZE",
+  "RAMBLA_PASSWORD",
+  "RAMBLA_RELAY_ENABLED",
+  "RAMBLA_RELAY_ENDPOINT",
+  "RAMBLA_RELAY_PUBLIC_ENDPOINT",
+  "RAMBLA_RELAY_PUBLIC_USE_TLS",
+  "RAMBLA_RELAY_USE_TLS",
+  "RAMBLA_SERVICE_PROXY_ENABLED",
+  "RAMBLA_SERVICE_PROXY_LISTEN",
+  "RAMBLA_SERVICE_PROXY_PUBLIC_BASE_URL",
+  "RAMBLA_TRUSTED_PROXIES",
+  "RAMBLA_VOICE_LANGUAGE",
+  "RAMBLA_VOICE_LLM_PROVIDER",
+  "RAMBLA_VOICE_LOCAL_STT_MODEL",
+  "RAMBLA_VOICE_LOCAL_TTS_MODEL",
+  "RAMBLA_VOICE_LOCAL_TTS_SPEAKER_ID",
+  "RAMBLA_VOICE_LOCAL_TTS_SPEED",
+  "RAMBLA_VOICE_MODE_ENABLED",
+  "RAMBLA_VOICE_STT_PROVIDER",
+  "RAMBLA_VOICE_TTS_PROVIDER",
+  "RAMBLA_VOICE_TURN_DETECTION_PROVIDER",
+  "RAMBLA_WEB_UI_DIST_DIR",
+  "RAMBLA_WEB_UI_ENABLED",
+  "PORT",
+  "STT_CONFIDENCE_THRESHOLD",
+  "STT_MODEL",
+  "TTS_MODEL",
+  "TTS_VOICE",
+] as const;
+
+const CONFIG_CONTEXT_ENV_KEYS = [
+  "RAMBLA_NODE_ENV",
+  "RAMBLA_DESKTOP_MANAGED",
+  "OPENAI_API_KEY",
+  "OPENAI_BASE_URL",
+  "OPENAI_STT_API_KEY",
+  "OPENAI_TTS_API_KEY",
+] as const;
+
+export function configurationEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return Object.fromEntries(
+    [...DAEMON_SETTING_ENV_KEYS, ...CONFIG_CONTEXT_ENV_KEYS].map((key) => [key, env[key]]),
+  );
+}
+
+export function daemonLaunchEnvironment(input: {
+  env: NodeJS.ProcessEnv;
+  home: string;
+  mode: "managed" | "deployment";
+  desktopManaged?: boolean;
+}): NodeJS.ProcessEnv {
+  const env = { ...input.env };
+  if (input.mode === "managed") {
+    for (const key of DAEMON_SETTING_ENV_KEYS) delete env[key];
+  }
+  delete env.RAMBLA_HOST;
+  delete env.RAMBLA_DESKTOP_MANAGED;
+  env.RAMBLA_HOME = input.home;
+  if (input.desktopManaged) env.RAMBLA_DESKTOP_MANAGED = "1";
+  return env;
+}

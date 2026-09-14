@@ -2,17 +2,20 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { RamblaApiProvider, PluginRpcProvider } from "@getrambla/plugin/client/host";
 import type { ReactNode } from "react";
 import type { InstalledPlugin } from "./types";
-import type { PluginSurfaceRuntime } from "./surface-runtime";
+import { usePluginSurfaceRuntime } from "./surface-runtime";
+import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
 
 export function PluginRuntimeBoundary({
   plugin,
-  runtime,
+  client,
   children,
 }: {
   plugin: InstalledPlugin;
-  runtime: PluginSurfaceRuntime;
+  client: DaemonClient;
   children: ReactNode;
 }) {
+  const runtime = usePluginSurfaceRuntime(client, plugin);
+  if (!runtime) return null;
   return (
     <QueryClientProvider client={plugin.queryClient}>
       <RamblaApiProvider rambla={runtime.rambla}>
