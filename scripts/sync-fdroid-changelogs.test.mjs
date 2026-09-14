@@ -266,7 +266,7 @@ test("renders the real 0.1.109 notice, which is the entry's whole point", () => 
 });
 
 test("preserves the standalone 0.1.96 Android notice", () => {
-  const changelog = readFileSync(path.resolve("CHANGELOG.md"), "utf8");
+  const changelog = readFileSync(path.resolve("PASEO-CHANGELOG.md"), "utf8");
   const entry = changelog.match(/## 0\.1\.96 - 2026-06-13\n([\s\S]*?)(?=\n## |$)/)?.[1];
   assert.ok(entry);
 
