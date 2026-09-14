@@ -1,6 +1,8 @@
 name: Merge upstream
 
-# Daily merge-only sync from getrambla/rambla. The merge must be conflict-free
+# Daily sync from getpaseo/paseo. Upstream's tree is rebranded on the standing
+# upstream-rebrand branch and merged from there, so brand strings never show up
+# as a difference. See fork/merge-upstream.sh. The merge must be conflict-free
 # and the server must build, or nothing is pushed. Never rebases.
 
 on:
@@ -14,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   ONNXRUNTIME_NODE_INSTALL: skip
@@ -24,35 +26,37 @@ jobs:
     name: merge upstream
     runs-on: ubuntu-latest
     steps:
+      # The default token cannot push .github/workflows, and the rebrand branch
+      # mirrors upstream's tree including its workflows.
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.RAMBLA_BOT_APP_ID }}
+          private-key: ${{ secrets.RAMBLA_BOT_APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: "npm"
 
-      - name: Merge upstream/main
-        id: merge
+      # oxfmt comes from node_modules; the build gate needs the deps anyway.
+      - run: npm ci
+
+      - name: Sync
         run: |
           git config user.name "rambla-merge-bot"
           git config user.email "rambla-merge-bot@users.noreply.github.com"
-          git remote add upstream https://github.com/getrambla/rambla.git
-          git fetch upstream main
-
-          if ! git merge upstream/main --no-edit; then
-          {
-            echo "::error::Upstream merge conflicts — resolve locally with 'just merge-upstream'. Conflicted files:"
-            git diff --name-only --diff-filter=U
-          } | tee /dev/stderr
-            git merge --abort
-            exit 1
-          fi
+          fork/merge-upstream.sh
 
       - name: Build server (gate before push)
-        run: |
-          npm ci
-          npm run build:server
+        run: npm run build:server
 
-      - name: Push
-        run: git push origin main
+      - name: Commit and push
+        run: |
+          git commit --no-edit
+          git push origin main upstream-rebrand
