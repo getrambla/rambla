@@ -7,8 +7,10 @@ name: Merge upstream
 
 on:
   schedule:
-    # 08:00 America/Denver (14:00 UTC); GitHub schedules are approximate.
-    - cron: "0 14 * * *"
+    # 14:00 America/Denver (20:00 UTC); GitHub schedules are approximate.
+    # Upstream is in Spain and cuts releases through its afternoon and evening,
+    # so this fires around midnight there, after the day's releases have landed.
+    - cron: "0 20 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -48,15 +50,25 @@ jobs:
       - run: npm ci
 
       - name: Sync
+        id: sync
         run: |
           git config user.name "rambla-merge-bot"
           git config user.email "rambla-merge-bot@users.noreply.github.com"
           fork/merge-upstream.sh
+          # Absent on the days upstream has released nothing new, which is most
+          # of them. Skips a full server build that would gate nothing.
+          if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build server (gate before push)
+        if: steps.sync.outputs.merged == 'true'
         run: npm run build:server
 
       - name: Commit and push
+        if: steps.sync.outputs.merged == 'true'
         run: |
           # Refuse to record anything while the index still holds a conflict,
           # rather than trusting the previous step to have caught it.
