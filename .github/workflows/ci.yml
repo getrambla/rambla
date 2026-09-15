@@ -53,6 +53,11 @@ jobs:
       - name: Validate CI contracts
         run: node --test scripts/ci-workflow.test.mjs scripts/daemon-launch-contract.test.mjs scripts/sync-fdroid-changelogs.test.mjs
 
+      # Fork-only. Its own step rather than an argument on the line above, which
+      # upstream edits whenever it adds a contract test.
+      - name: Validate the generated changelog
+        run: node --test fork/build-changelog.test.mjs
+
   format:
     name: format
     needs: changes

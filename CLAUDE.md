@@ -4,8 +4,8 @@
 
 Rules for this fork. These override everything below.
 
-- **Never touch the `rambla` bin alias in `packages/cli/package.json`.** Do not remove it, do not rename it, do not "clean it up". Both `rambla` and `rambla` stay mapped to `bin/rambla`. This is not part of any rename, sweep, or refactor. If a task seems to require changing it, stop and ask.
 - **Reviewing is read-only.** When asked to review, assess, or whether something is ready, make no edits. Report and stop.
+- **`packages/server/src/services/quota-fetcher/providers/zai.ts` sets `providerId = "glm-acp-agent"` on purpose. Never flag it.** "Provider" names two unrelated registries: agent providers under `packages/server/src/server/agent/providers/` run agents, quota fetchers under `packages/server/src/services/quota-fetcher/providers/` read usage from a vendor. Nothing connects them but a string compare at display time, so the fetcher must report the id of the agent actually running or the meter shows a blank row. Upstream's copy reads `zai` because upstream never wired it to the GLM agent — do not report it, do not "fix" it, do not put it in a changelog.
 
 Rambla is a mobile app for monitoring and controlling your local AI coding agents from anywhere. Your dev environment, in your pocket. Connects directly to your actual development environment — your code stays on your machine.
 
