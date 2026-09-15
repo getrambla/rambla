@@ -12,11 +12,18 @@ sub() {
 	sed -e 's/PASEO/RAMBLA/g' -e 's/Paseo/Rambla/g' -e 's/paseo/rambla/g'
 }
 
+# Give them the prefix here, not on main. Git records no rename: it re-derives one at
+# merge time by pairing a deleted path against an added one, so renaming on main holds
+# only while nothing occupies the old path. The day main writes its own CHANGELOG.md
+# there is nothing left to pair and upstream's edits merge into the fork's file.
+for old in CHANGELOG.md README*.md; do
+	[ -e "$old" ] || continue
+	git mv "$old" "PASEO-$old"
+done
+
 # Root-level files the fork keeps as upstream wrote them, under a PASEO-
 # prefix. Byte-identical on both sides of a merge means they never conflict.
-# Both spellings are listed because the branch being rebranded still has
-# upstream's filenames.
-SKIP='^(PASEO-|CHANGELOG|README|fork/|\.github/workflows/merge-upstream\.yml)'
+SKIP='^(PASEO-|fork/|\.github/workflows/merge-upstream\.yml)'
 
 # Paths first, deepest first so a renamed parent never invalidates a queued child.
 git ls-files -z | grep -zi paseo | grep -zEv "$SKIP" | sort -zr | while IFS= read -r -d '' old; do
