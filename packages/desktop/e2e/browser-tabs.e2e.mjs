@@ -540,8 +540,8 @@ async function verifyHiddenBrowserScreenshots({
       browserId,
       function: "() => { document.body.style.background = 'rgb(0,255,0)'; }",
     });
-    const response = await callBrowserToolUntilReady(client, "browser_screenshot", { browserId });
-    const screenshot = response.content.find((item) => item.type === "image");
+    const content = await callBrowserToolUntilReady(client, "browser_screenshot", { browserId });
+    const screenshot = content.find((item) => item.type === "image");
     assert(screenshot, "browser_screenshot returned no image");
     fs.writeFileSync(
       path.join(artifactDir, "hidden-browser-viewport.png"),
