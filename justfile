@@ -163,6 +163,8 @@ restart:
 status:
     systemctl --user status rambla
 
+install: install-app install-daemon
+
 [script]
 install-daemon: && install-service
     eval "$(mise env -s bash)"
