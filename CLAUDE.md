@@ -4,6 +4,7 @@
 
 Rules for this fork. These override everything below.
 
+- **Prefer a new `*.rambla.test.ts` file for fork tests.** `rambla/fork/rebrand.sh` never renames upstream's `*.paseo.test.ts`, so the two sets stay out of each other's way on a merge. Keep the category suffix last: `foo.rambla.e2e.test.ts`, `foo.rambla.browser.test.ts`. Edit an upstream test in place only when the fix or feature changes behavior that test already asserts — then keep the edit as small as it can be, since it will conflict on merge.
 - **Reviewing is read-only.** When asked to review, assess, or whether something is ready, make no edits. Report and stop.
 - **`packages/server/src/services/quota-fetcher/providers/zai.ts` sets `providerId = "glm-acp-agent"` on purpose. Never flag it.** "Provider" names two unrelated registries: agent providers under `packages/server/src/server/agent/providers/` run agents, quota fetchers under `packages/server/src/services/quota-fetcher/providers/` read usage from a vendor. Nothing connects them but a string compare at display time, so the fetcher must report the id of the agent actually running or the meter shows a blank row. Upstream's copy reads `zai` because upstream never wired it to the GLM agent — do not report it, do not "fix" it, do not put it in a changelog.
 
