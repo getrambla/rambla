@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 import { Readable, Writable } from "node:stream";
+import { createTwoFilesPatch } from "diff";
 
 import { terminateWithTreeKill } from "../../../utils/tree-kill.js";
 import type { ProcessTerminator } from "../../../utils/tree-kill.js";
@@ -3639,15 +3640,17 @@ function buildReadToolDetail(context: MapToolDetailContext): ToolCallDetail {
 
 function buildEditToolDetail(context: MapToolDetailContext): ToolCallDetail {
   const { snapshot, firstLocation, textContent, diffContent, rawInput } = context;
+  const oldString = diffContent?.oldText ?? readString(rawInput, ["oldText", "oldString"]);
+  const newString =
+    snapshot.kind === "delete"
+      ? ""
+      : (diffContent?.newText ?? readString(rawInput, ["newText", "newString"]));
   return {
     type: "edit",
     filePath: firstLocation ?? readString(rawInput, ["path", "filePath", "file"]) ?? snapshot.title,
-    oldString: diffContent?.oldText ?? readString(rawInput, ["oldText", "oldString"]),
-    newString:
-      snapshot.kind === "delete"
-        ? ""
-        : (diffContent?.newText ?? readString(rawInput, ["newText", "newString"])),
-    unifiedDiff: textContent ?? undefined,
+    oldString,
+    newString,
+    unifiedDiff: textContent ?? buildAcpUnifiedDiff(firstLocation, oldString, newString),
   };
 }
 
@@ -3659,19 +3662,52 @@ function isWholeFileWriteShape(rawInput: Record<string, unknown> | null): boolea
   );
 }
 
+// Hunk-trimmed unified diff computed from an ACP diff block's whole-file
+// oldText/newText. Clients render `unifiedDiff` when present, so deriving it
+// here gives every ACP agent the trimmed view instead of a whole-file LCS
+// dump. context=3 matches git's default; the header rows are skipped because
+// the client's parser only consumes @@ hunks and +/- lines.
+function buildAcpUnifiedDiff(
+  filePath: string | undefined,
+  oldText: string | undefined,
+  newText: string | undefined,
+): string | undefined {
+  if (
+    filePath === undefined ||
+    oldText === undefined ||
+    newText === undefined ||
+    oldText === newText
+  ) {
+    return undefined;
+  }
+  return createTwoFilesPatch(
+    `a/${filePath}`,
+    `b/${filePath}`,
+    oldText,
+    newText,
+    undefined,
+    undefined,
+    { context: 3 },
+  )
+    .split("\n")
+    .filter((line) => !line.startsWith("Index:") && !line.startsWith("==="))
+    .join("\n")
+    .trimEnd();
+}
+
 function buildWriteToolDetail(context: MapToolDetailContext): ToolCallDetail {
   const { snapshot, firstLocation, textContent, diffContent, rawInput } = context;
+  const oldText = diffContent?.oldText;
+  const newText = diffContent?.newText;
   return {
     type: "write",
     filePath: firstLocation ?? readString(rawInput, ["path", "filePath", "file"]) ?? snapshot.title,
-    content: diffContent?.newText ?? readString(rawInput, ["content"]),
+    content: newText ?? readString(rawInput, ["content"]),
     // Overwrites carry what they replaced so the UI can render a diff;
     // creations have no oldText and render as additions.
-    ...(diffContent?.oldText !== undefined && diffContent?.oldText !== null
-      ? { oldString: diffContent.oldText }
-      : {}),
-    ...(diffContent?.newText !== undefined ? { newString: diffContent.newText } : {}),
-    unifiedDiff: textContent ?? undefined,
+    ...(oldText !== undefined && oldText !== null ? { oldString: oldText } : {}),
+    ...(newText !== undefined ? { newString: newText } : {}),
+    unifiedDiff: textContent ?? buildAcpUnifiedDiff(firstLocation, oldText ?? undefined, newText),
   };
 }
 
