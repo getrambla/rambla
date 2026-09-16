@@ -10,6 +10,9 @@ format:
 
 alias fmt := format
 
+testflight:
+    gh workflow run "iOS TestFlight"
+
 # Build rambla
 [script]
 build:
