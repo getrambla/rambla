@@ -71,6 +71,12 @@ git -C "$REPO" worktree add --quiet "$WT" "$BRANCH"
 # strategy never looks at the other side, so it cannot conflict.
 git -C "$WT" merge -s ours --no-commit "$TARGET" >/dev/null
 git -C "$WT" read-tree -u --reset "$TARGET"
+# Upstream's tree carries upstream's npm dependency hash, main carries the
+# fork's, and both differ from the base every sync, so the merge conflicts on
+# that one line every single time. Put main's value on this side so the two
+# agree and git has nothing to resolve. The value is right either way: the Nix
+# Update Hash workflow recomputes it on push.
+git -C "$REPO" show HEAD:nix/npm-deps.hash >"$WT/nix/npm-deps.hash"
 
 (cd "$WT" && bash "$HERE/rebrand.sh")
 "$REPO/node_modules/.bin/oxfmt" "$WT" >/dev/null
