@@ -114,7 +114,9 @@ export default {
       ...(variant.googleServiceInfoPlist
         ? { googleServicesFile: variant.googleServiceInfoPlist }
         : {}),
-      buildNumber: nativeReleaseVersion.iosBuildNumber,
+      // CI sets IOS_BUILD_NUMBER so repeat uploads of the same version get a
+      // higher CFBundleVersion; Apple rejects a duplicate (ITMS-4238).
+      buildNumber: process.env.IOS_BUILD_NUMBER || nativeReleaseVersion.iosBuildNumber,
     },
     android: {
       adaptiveIcon: {

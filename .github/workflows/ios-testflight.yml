@@ -74,7 +74,7 @@ jobs:
             const { getNativeReleaseVersion } = require("./native-release-version");
             const derived = getNativeReleaseVersion(require("./package.json").version);
             console.log(`app_version=${derived.appVersion}`);
-            console.log(`app_build_version=${derived.iosBuildNumber}`);
+            console.log(`app_build_version=${derived.iosBuildNumber}.${process.env.GITHUB_RUN_NUMBER}`);
           ' > "$RUNNER_TEMP/ios-version.env"
           cat "$RUNNER_TEMP/ios-version.env"
           cat "$RUNNER_TEMP/ios-version.env" >> "$GITHUB_OUTPUT"
@@ -131,6 +131,7 @@ jobs:
       - name: Generate the Xcode project
         env:
           APP_VARIANT: production
+          IOS_BUILD_NUMBER: ${{ steps.version.outputs.app_build_version }}
         run: npx expo prebuild --platform ios --clean --no-install --non-interactive
 
       # Restored after prebuild because --clean deletes ios/ outright.
