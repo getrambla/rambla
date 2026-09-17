@@ -1297,7 +1297,11 @@ export class ACPAgentClient implements AgentClient {
     try {
       await this.resolveLaunchCommand();
       return true;
-    } catch {
+    } catch (error) {
+      this.logger.error(
+        { provider: this.provider, err: error },
+        "ACP provider availability check failed",
+      );
       return false;
     }
   }
@@ -1353,6 +1357,7 @@ export class ACPAgentClient implements AgentClient {
 
     const spawnErrorPromise = new Promise<never>((_, reject) => {
       child.once("error", (error) => {
+        console.error("DEBUG spawn error event:", error);
         const stderr = stderrChunks.join("").trim();
         reject(new Error(stderr ? `${String(error)}\n${stderr}` : String(error)));
       });
@@ -1443,6 +1448,18 @@ export class ACPAgentClient implements AgentClient {
     probe: UninitializedACPProcess,
     sessionId: string | null = null,
   ): Promise<void> {
+    // A probe that never completed initialize has no other error channel:
+    // upstream refresh logs only the deadline message, so surface the agent's
+    // raw stderr here. Healthy probes (initialize set) stay silent.
+    if (!probe.initialize) {
+      const stderr = (probe.stderrChunks ?? []).join("").trim();
+      if (stderr) {
+        this.logger.error(
+          { provider: this.provider, stderr },
+          "ACP agent produced stderr but never completed initialize",
+        );
+      }
+    }
     try {
       if (sessionId && probe.initialize?.agentCapabilities?.sessionCapabilities?.close) {
         await withTimeout(
@@ -1804,6 +1821,7 @@ export class ACPAgentSession implements AgentSession, ACPClient {
   }
 
   private async closeAfterInitializationFailure(error: unknown): Promise<never> {
+    this.logger.error({ provider: this.provider, err: error }, "ACP session initialization failed");
     try {
       await this.close();
     } catch (closeError) {
