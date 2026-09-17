@@ -16,8 +16,42 @@ logos svg="":
     node fork/brand/generate.mjs {{svg}}
     npm run format:files -- packages/app/src/components/icons/rambla-logo.tsx
 
-testflight:
+# Dispatch an iOS TestFlight build and follow it. Ctrl-C stops watching, not
+# the build. Pass any argument (`just testflight quiet`) to dispatch and exit.
+[script]
+testflight quiet="":
+    set -eu
+    before="$(gh run list --workflow="iOS TestFlight" --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
     gh workflow run "iOS TestFlight"
+
+    # `gh workflow run` does not report the run it created, so wait for one
+    # that is not the run that was already there.
+    run_id=""
+    for _ in $(seq 1 30); do
+        now="$(gh run list --workflow="iOS TestFlight" --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+        if [ "$now" != "$before" ]; then run_id="$now"; break; fi
+        sleep 2
+    done
+    if [ -z "$run_id" ]; then
+        echo 'error: no new run appeared in 60s. Check: gh run list --workflow="iOS TestFlight"' >&2
+        exit 1
+    fi
+
+    job_id=""
+    for _ in $(seq 1 30); do
+        job_id="$(gh run view "$run_id" --json jobs --jq '.jobs[] | select(.name == "build") | .databaseId' 2>/dev/null || true)"
+        if [ -n "$job_id" ]; then break; fi
+        sleep 2
+    done
+    if [ -n "$job_id" ]; then
+        echo "Step detail:  gh run view --job=$job_id"
+    fi
+
+    if [ -n "{{ quiet }}" ]; then
+        echo "Live view:    gh run watch $run_id"
+        exit 0
+    fi
+    gh run watch "$run_id"
 
 # Build rambla
 [script]
