@@ -95,6 +95,17 @@ interface DictationStreamState {
   finalTimeout: ReturnType<typeof setTimeout> | null;
 }
 
+/** Seconds of PCM16 mono audio represented by a byte count at the given sample rate. */
+function pcm16SecondsFromBytes(bytes: number, sampleRate: number): number {
+  return bytes / Math.max(1, sampleRate * PCM_CHANNELS * (PCM_BITS_PER_SAMPLE / 8));
+}
+
+/** Seconds of audio forwarded to the provider for this stream so far. */
+function receivedSeconds(state: DictationStreamState): number {
+  const bytes = state.debugAudioChunks.reduce((total, chunk) => total + chunk.length, 0);
+  return pcm16SecondsFromBytes(bytes, state.outputRate);
+}
+
 export type DictationStreamOutboundMessage =
   | { type: "dictation_stream_ack"; payload: { dictationId: string; ackSeq: number } }
   | {
@@ -543,6 +554,10 @@ export class DictationStreamManager {
     const state = this.streams.get(dictationId);
     const debugRecordingPath = await this.maybePersistDictationStreamAudio(dictationId);
     if (!state || this.streams.get(dictationId) !== state) return;
+    this.logger.error(
+      { dictationId, error, receivedSeconds: receivedSeconds(state) },
+      "Dictation stream failed; audio discarded",
+    );
     this.emit({
       type: "dictation_stream_error",
       payload: {
@@ -624,6 +639,14 @@ export class DictationStreamManager {
       return;
     }
     if (state.peakSinceCommit < DICTATION_SILENCE_PEAK_THRESHOLD) {
+      this.logger.warn(
+        {
+          dictationId: state.dictationId,
+          peakSinceCommit: state.peakSinceCommit,
+          discardedSeconds: pcm16SecondsFromBytes(state.bytesSinceCommit, state.outputRate),
+        },
+        "Dictation auto-commit: clearing silence-only window",
+      );
       state.stt.clear();
       state.bytesSinceCommit = 0;
       state.peakSinceCommit = 0;
@@ -662,11 +685,12 @@ export class DictationStreamManager {
 
     if (state.bytesSinceCommit > 0) {
       if (state.peakSinceCommit < DICTATION_SILENCE_PEAK_THRESHOLD) {
-        this.logger.debug(
+        this.logger.warn(
           {
             dictationId,
             bytesSinceCommit: state.bytesSinceCommit,
             peakSinceCommit: state.peakSinceCommit,
+            discardedSeconds: pcm16SecondsFromBytes(state.bytesSinceCommit, state.outputRate),
           },
           "Dictation finish: clearing silence-only tail (skip final commit)",
         );
@@ -728,7 +752,7 @@ export class DictationStreamManager {
 
     const droppedSegments = this.dropUncommittedNonFinalTranscripts(state);
     if (droppedSegments > 0) {
-      this.logger.debug(
+      this.logger.warn(
         { dictationId, droppedSegments },
         "Dropped abandoned non-final dictation transcript segments before finalization",
       );
@@ -743,6 +767,10 @@ export class DictationStreamManager {
     }
 
     if (orderedSegmentIds.length === 0) {
+      this.logger.warn(
+        { dictationId, receivedSeconds: receivedSeconds(state) },
+        "Dictation finalized with an empty transcript",
+      );
       void (async () => {
         const debugRecordingPath = await this.maybePersistDictationStreamAudio(dictationId);
         if (this.streams.get(dictationId) !== state) return;

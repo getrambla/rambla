@@ -68,7 +68,6 @@ describe("acp-agent.rambla: ACP probe failure logging", () => {
         call.level.label === "error" &&
         call.message === "ACP agent produced stderr but never completed initialize",
     );
-    console.log("CALLS:", JSON.stringify(capture.calls, null, 1));
     expect(stderrErrors).toHaveLength(1);
     expect(stderrErrors[0]?.details.provider).toBe("claude-acp");
     expect(String(stderrErrors[0]?.details.stderr)).toContain(
