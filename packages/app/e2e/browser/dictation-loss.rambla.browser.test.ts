@@ -1,6 +1,7 @@
 import type { WebSocketRoute } from "@playwright/test";
 import { expect, test, type Page } from "../support/fixtures";
 import { gotoAppShell } from "../support/helpers/app";
+import { installAddModuleCounter, readAddModuleCounter } from "../support/helpers/audio-worklet";
 import { daemonWsRoutePattern } from "../support/helpers/daemon-port";
 import {
   openNewWorkspaceComposer,
@@ -117,10 +118,29 @@ async function installSyntheticMicrophone(page: Page): Promise<void> {
         const destination = context.createMediaStreamDestination();
         source.connect(destination);
         source.start();
+        (window as Window & { __ramblaSyntheticTrack?: MediaStreamTrack }).__ramblaSyntheticTrack =
+          destination.stream.getAudioTracks()[0];
         return destination.stream;
       },
     });
   }, RAMP);
+}
+
+/**
+ * Ends the synthetic microphone. The harness dispatches the event itself: a
+ * track from a MediaStreamAudioDestinationNode never ends on its own, and
+ * `track.stop()` deliberately does not fire `ended`. This proves the app's
+ * response to the event, not a real device loss.
+ */
+async function endSyntheticMicrophone(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const track = (window as Window & { __ramblaSyntheticTrack?: MediaStreamTrack })
+      .__ramblaSyntheticTrack;
+    if (!track) {
+      throw new Error("The synthetic microphone was never opened");
+    }
+    track.dispatchEvent(new Event("ended"));
+  });
 }
 
 /** Owns the daemon socket so every dictation reply — including its absence — is the test's choice. */
@@ -279,6 +299,7 @@ test.describe("Dictation loss", () => {
   test("captures the audio supplied while the main thread is blocked", async ({ page }) => {
     const seeded = await seedWorkspace({ repoPrefix: "dictation-jam-" });
     await installSyntheticMicrophone(page);
+    await installAddModuleCounter(page);
     const harness = await installDictationHarness(page, {
       onFinish: (tools) => {
         tools.acceptFinish(5_000);
@@ -293,14 +314,13 @@ test.describe("Dictation loss", () => {
       await jamMainThread(page, JAM_MS);
       await page.waitForTimeout(3_000);
 
-      const streamedWhileRecording = harness.segments.length;
       await insertButton(page).click();
       await harness.waitForFinish();
 
       expect(
-        streamedWhileRecording,
-        "Capture never streamed PCM segments while recording, so this ran the MediaRecorder fallback rather than the createScriptProcessor path this test measures",
-      ).toBeGreaterThanOrEqual(4);
+        await readAddModuleCounter(page),
+        "Capture never loaded its audio worklet, so this measured some other capture path",
+      ).toEqual({ calls: 1, resolved: 1, urls: ["/rambla-audio-capture-processor.js"] });
 
       const seqs = harness.segments.map((segment) => segment.seq);
       expect(
@@ -338,6 +358,76 @@ test.describe("Dictation loss", () => {
         Math.round(worstDriftMs),
         `Captured audio does not match the audio supplied around a ${JAM_MS} ms main-thread block. Each segment should start where the previous one ended; measured offsets into the supplied audio were ${drifts.join(", ")} ms, so the recording runs up to ${Math.round(worstDriftMs)} ms away from what the microphone supplied`,
       ).toBeLessThanOrEqual(CAPTURE_TOLERANCE_MS);
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("streams the audio captured right before the press that ends the recording", async ({
+    page,
+  }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-tail-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal(SPOKEN);
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(2);
+      // Press part way into a segment, so the audio under test is the part the
+      // capture still held rather than one that had already been sent.
+      await harness.waitForSegments(harness.segments.length + 1);
+      const streamedBeforePress = harness.segments.length;
+      await page.waitForTimeout(400);
+
+      // The pencil and the arrow share every line up to the transcript.
+      await insertButton(page).click();
+      await harness.waitForFinish();
+
+      const tail = harness.segments.slice(streamedBeforePress);
+      expect(
+        tail.length,
+        "Nothing was streamed after the press, so the audio spoken into the last part-second of the recording never reached the daemon",
+      ).toBeGreaterThan(0);
+
+      const last = harness.segments[streamedBeforePress - 1];
+      const spokenBefore = rampPositionMs(last.pcm.readInt16LE(last.pcm.length - 2));
+      const tailStart = rampPositionMs(tail[0].pcm.readInt16LE(0));
+      expect(
+        Math.round(tailStart - spokenBefore),
+        `The audio streamed after the press does not continue the recording: the previous segment ended at ${Math.round(spokenBefore)} ms of the supplied audio and the tail starts at ${Math.round(tailStart)} ms`,
+      ).toBeLessThanOrEqual(CAPTURE_TOLERANCE_MS);
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("reports a microphone that ends mid-dictation instead of falling silent", async ({
+    page,
+  }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-device-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal(SPOKEN);
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(2);
+
+      await endSyntheticMicrophone(page);
+
+      await expect(
+        retryButton(page),
+        "A microphone that ends mid-dictation must report a failure and keep the audio, not leave the user talking into nothing",
+      ).toBeVisible({ timeout: 15_000 });
     } finally {
       await seeded.cleanup();
     }
