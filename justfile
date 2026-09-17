@@ -10,6 +10,12 @@ format:
 
 alias fmt := format
 
+# Redraw every brand asset — app, store, desktop, web, favicons, in-app mark.
+# Pass an SVG to adopt a new design; pass nothing to redraw from the stored one.
+logos svg="":
+    node fork/brand/generate.mjs {{svg}}
+    npm run format:files -- packages/app/src/components/icons/rambla-logo.tsx
+
 testflight:
     gh workflow run "iOS TestFlight"
 

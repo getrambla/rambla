@@ -79,6 +79,11 @@ git -C "$WT" read-tree -u --reset "$TARGET"
 git -C "$REPO" show HEAD:nix/npm-deps.hash >"$WT/nix/npm-deps.hash"
 
 (cd "$WT" && bash "$HERE/rebrand.sh")
+# Same trick as the dependency hash above, for artwork. Upstream owns the paths
+# every icon lives at, so redraw ours onto this side of the merge. Both sides
+# then hold identical bytes and git has nothing to resolve — no conflict on a
+# binary file nobody can diff, and no chance of Paseo's mark shipping.
+node "$HERE/brand/generate.mjs" --out "$WT"
 "$REPO/node_modules/.bin/oxfmt" "$WT" >/dev/null
 
 git -C "$WT" add -A

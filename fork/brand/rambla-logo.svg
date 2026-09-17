@@ -1,49 +1,52 @@
-<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-<defs><linearGradient id="rambla-tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7a48dc"/><stop offset="1" stop-color="#4719a0"/></linearGradient></defs>
-<rect width="48" height="48" rx="10.78" fill="url(#rambla-tile)"/>
-<g transform="translate(1.480,3.720) scale(0.05851)"><mask id="rambla-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="700">
+<svg width="700" height="700" viewBox="0 0 700 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Rambla</title>
+  <desc>A songbird singing, drawn as the letter R.</desc>
+  <!-- Rambla brand mark. Colour #5E2CC0.
+       Derived from research/logo/designs/eo.svg; see research/logo/rambla-logo-history.md
+       for the full derivation. Geometry is unchanged from eo. -->
+  <mask id="rambla-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="700">
     <rect width="700" height="700" fill="#fff"/>
     <circle cx="435.7" cy="79.6" r="9.5" fill="#000"/>
   </mask>
   <g mask="url(#rambla-cut)">
-    
+    <!-- neck, head, jaw -->
     <path d="M255 320 L255 268
              C255 184 273 126 330 94
              C394 58 472 74 499 132
              C524 184 508 252 458 286
              C449.6 290.8 438.5 295.4 426.05 298.61"
-          stroke="#ffffff" stroke-width="46" stroke-linecap="butt" stroke-linejoin="round" fill="none"/>
-    
+          stroke="#5E2CC0" stroke-width="46" stroke-linecap="butt" stroke-linejoin="round" fill="none"/>
+    <!-- jaw taper into the shoulder -->
     <path d="M428.3 274
              C407.4 281 363.8 283.3 347.4 268.6
              A19 19 0 0 0 320.6 295.4
              C352 326 400 336 442.9 317.6 Z"
-          fill="#ffffff"/>
-    
+          fill="#5E2CC0"/>
+    <!-- body, arched -->
     <path d="M232 300
              C232 400 235 534 209.3 630.7
              A9 9 0 0 0 226.7 635.3
              C263.1 498 278 442 278 300 Z"
-          fill="#ffffff"/>
-    
+          fill="#5E2CC0"/>
+    <!-- upper mandible -->
     <path d="M466 74
              C498 64 528 58 553.1 60.8
              C556 61.5 556.5 65 553.5 66
              C534 72 512 86 492 99
              C481 90 471 82 466 74 Z"
-          fill="#ffffff"/>
-    
+          fill="#5E2CC0"/>
+    <!-- lower mandible -->
     <path d="M490 124
              C517.6 111.1 533.6 107.8 558 89.5
              C561.5 88.5 562 84 558.5 82.5
              C538 87.5 516 94 492 99
              C490.5 108 490 116 490 124 Z"
-          fill="#ffffff"/>
-    
+          fill="#5E2CC0"/>
+    <!-- wing -->
     <path d="M347.4 268.6
              C440.9 362.1 500.4 484.1 516.5 615.3
              A9 9 0 0 1 498.6 617.5
              C470.8 495.4 409.1 383.9 320.6 295.4 Z"
-          fill="#ffffff"/>
-  </g></g><circle cx="39.0864" cy="39.0864" r="8.9136" fill="#22c55e"/>
+          fill="#5E2CC0"/>
+  </g>
 </svg>
