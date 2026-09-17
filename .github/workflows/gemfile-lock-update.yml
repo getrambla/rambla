@@ -1,0 +1,60 @@
+name: Gemfile Lock Update
+
+# The Gemfile pins a range (`fastlane "~> 2.234"`), so the lockfile is what
+# decides which fastlane the iOS release builds with. Running on every push to
+# main keeps it current without anyone remembering to; the commit is skipped
+# when the resolve produces no change, which is almost every run.
+#
+# The [skip ci] below is load-bearing. This pushes with an app token, not
+# GITHUB_TOKEN, and app-token pushes do retrigger workflows.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.RAMBLA_BOT_APP_ID }}
+          private-key: ${{ secrets.RAMBLA_BOT_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          working-directory: packages/app
+          bundler-cache: false
+
+      # --update, not a plain `bundle lock`: an existing lockfile already
+      # satisfies the range, so a plain lock never moves off whatever version
+      # resolved first. The --add-platform calls run one at a time because
+      # bundler only applies the last flag when they are combined, and the
+      # macOS runner cannot install from a lockfile that lists linux only.
+      - name: Refresh the gem lockfile
+        working-directory: packages/app
+        run: |
+          set -euo pipefail
+          bundle lock --update
+          bundle lock --add-platform arm64-darwin
+          bundle lock --add-platform x86_64-darwin
+
+      - name: Commit the refreshed lockfile
+        working-directory: packages/app
+        run: |
+          git diff --quiet Gemfile.lock && exit 0
+          git config user.name "rambla-ai[bot]"
+          git config user.email "266920839+rambla-ai[bot]@users.noreply.github.com"
+          git add Gemfile.lock
+          git commit -m "chore: refresh packages/app/Gemfile.lock [skip ci]"
+          git push
