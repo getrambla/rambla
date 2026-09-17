@@ -14,7 +14,7 @@ alias fmt := format
 # Pass an SVG to adopt a new design; pass nothing to redraw from the stored one.
 logos svg="":
     node fork/brand/generate.mjs {{svg}}
-    npm run format:files -- packages/app/src/components/icons/rambla-logo.tsx
+    npm run format:files -- packages/app/src/components/icons/rambla-logo.tsx packages/app/src/components/icons/rambla-logo-mask.ts
 
 # Dispatch an iOS TestFlight build and follow it. Ctrl-C stops watching, not
 # the build. Pass any argument (`just testflight quiet`) to dispatch and exit.
