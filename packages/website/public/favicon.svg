@@ -1,49 +1,32 @@
 <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
 <defs><linearGradient id="rambla-tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7a48dc"/><stop offset="1" stop-color="#4719a0"/></linearGradient></defs>
 <rect width="48" height="48" rx="10.78" fill="url(#rambla-tile)"/>
-<g transform="translate(1.480,3.720) scale(0.05851)"><mask id="rambla-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="700">
+<g transform="translate(-3.177,-5.952) scale(0.07660)"><mask id="rambla-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="700">
     <rect width="700" height="700" fill="#fff"/>
-    <circle cx="435.7" cy="79.6" r="9.5" fill="#000"/>
+    <circle cx="256" cy="204" r="13" fill="#000"/>
+    
+    <path d="M337 234 C402 246 443 278 464 316
+             C430 293 386 272 337 261
+             C326 255 328 236 337 234 Z" fill="#000"/>
+    <path d="M337 278 C402 290 443 322 464 360
+             C430 337 386 316 337 305
+             C326 299 328 280 337 278 Z" fill="#000"/>
+    <path d="M337 322 C402 334 443 366 464 404
+             C430 381 386 360 337 349
+             C326 343 328 324 337 322 Z" fill="#000"/>
   </mask>
-  <g mask="url(#rambla-cut)">
+  <g mask="url(#rambla-cut)" fill="#ffffff">
     
-    <path d="M255 320 L255 268
-             C255 184 273 126 330 94
-             C394 58 472 74 499 132
-             C524 184 508 252 458 286
-             C449.6 290.8 438.5 295.4 426.05 298.61"
-          stroke="#ffffff" stroke-width="46" stroke-linecap="butt" stroke-linejoin="round" fill="none"/>
+    <path d="M198 600 L198 268
+             C198 202 240 166 300 166
+             L320 180 L306 434 L262 434 L262 600 Z"/>
     
-    <path d="M428.3 274
-             C407.4 281 363.8 283.3 347.4 268.6
-             A19 19 0 0 0 320.6 295.4
-             C352 326 400 336 442.9 317.6 Z"
-          fill="#ffffff"/>
+    <path d="M204 206 L136 220 L206 248 Z"/>
     
-    <path d="M232 300
-             C232 400 235 534 209.3 630.7
-             A9 9 0 0 0 226.7 635.3
-             C263.1 498 278 442 278 300 Z"
-          fill="#ffffff"/>
+    <path d="M300 166 C428 166 512 238 512 312
+             C512 390 430 436 300 436 Z"/>
     
-    <path d="M466 74
-             C498 64 528 58 553.1 60.8
-             C556 61.5 556.5 65 553.5 66
-             C534 72 512 86 492 99
-             C481 90 471 82 466 74 Z"
-          fill="#ffffff"/>
-    
-    <path d="M490 124
-             C517.6 111.1 533.6 107.8 558 89.5
-             C561.5 88.5 562 84 558.5 82.5
-             C538 87.5 516 94 492 99
-             C490.5 108 490 116 490 124 Z"
-          fill="#ffffff"/>
-    
-    <path d="M347.4 268.6
-             C440.9 362.1 500.4 484.1 516.5 615.3
-             A9 9 0 0 1 498.6 617.5
-             C470.8 495.4 409.1 383.9 320.6 295.4 Z"
-          fill="#ffffff"/>
+    <path d="M320 402 C412 434 508 500 574 578
+             L530 616 C456 538 376 486 294 456 Z"/>
   </g></g>
 </svg>
