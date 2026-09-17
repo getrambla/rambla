@@ -45,16 +45,12 @@ jobs:
 
       # --update, not a plain `bundle lock`: an existing lockfile already
       # satisfies the range, so a plain lock never moves off whatever version
-      # resolved first. The --add-platform calls run one at a time because
-      # bundler only applies the last flag when they are combined, and the
-      # macOS runner cannot install from a lockfile that lists linux only.
+      # resolved first. --add-platform takes a list; repeating the flag keeps
+      # only the last value. The darwin entries are required because this
+      # resolves on linux and the macOS runner installs from the result.
       - name: Refresh the gem lockfile
         working-directory: packages/app
-        run: |
-          set -euo pipefail
-          bundle lock --update
-          bundle lock --add-platform arm64-darwin
-          bundle lock --add-platform x86_64-darwin
+        run: bundle lock --update --add-platform arm64-darwin x86_64-darwin
 
       - name: Commit the refreshed lockfile
         working-directory: packages/app
