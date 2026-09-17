@@ -12,6 +12,13 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Two pushes in quick succession would otherwise both resolve and both try to
+# push, and the loser fails non-fast-forward. Cancelling is free here: the run
+# has no side effect until the commit at the end.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
