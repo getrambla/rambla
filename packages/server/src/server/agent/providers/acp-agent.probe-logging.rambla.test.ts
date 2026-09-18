@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -9,7 +9,10 @@ import {
   type CreateCaptureLoggerResult,
 } from "../../../test-utils/capture-logger.js";
 
-const STUB_AGENT = "#!/bin/sh\necho 'stub agent: simulated startup failure' >&2\nsleep 30\n";
+// Run the stub under node, not /bin/sh: Windows ignores shebangs and spawn fails with ENOENT.
+const STUB_AGENT = `process.stderr.write("stub agent: simulated startup failure\\n");
+setTimeout(() => {}, 30000);
+`;
 
 describe("acp-agent.rambla: ACP probe failure logging", () => {
   let stubDir: string;
@@ -18,9 +21,8 @@ describe("acp-agent.rambla: ACP probe failure logging", () => {
 
   beforeAll(() => {
     stubDir = mkdtempSync(join(tmpdir(), "rambla-acp-probe-log-"));
-    stubAgentPath = join(stubDir, "stub-acp-agent");
+    stubAgentPath = join(stubDir, "stub-acp-agent.mjs");
     writeFileSync(stubAgentPath, STUB_AGENT);
-    chmodSync(stubAgentPath, 0o755);
   });
 
   afterAll(() => {
@@ -31,12 +33,12 @@ describe("acp-agent.rambla: ACP probe failure logging", () => {
     capture?.logger.flushSync?.();
   });
 
-  function createSession(command: string = stubAgentPath): ACPAgentClient {
+  function createSession(): ACPAgentClient {
     capture = createCaptureLogger();
     return new ACPAgentClient({
       provider: "claude-acp",
       logger: capture.logger,
-      defaultCommand: [command],
+      defaultCommand: [process.execPath, stubAgentPath],
       defaultModes: [],
       capabilities: {
         supportsStreaming: true,

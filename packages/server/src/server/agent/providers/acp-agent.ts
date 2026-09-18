@@ -1357,7 +1357,6 @@ export class ACPAgentClient implements AgentClient {
 
     const spawnErrorPromise = new Promise<never>((_, reject) => {
       child.once("error", (error) => {
-        console.error("DEBUG spawn error event:", error);
         const stderr = stderrChunks.join("").trim();
         reject(new Error(stderr ? `${String(error)}\n${stderr}` : String(error)));
       });
