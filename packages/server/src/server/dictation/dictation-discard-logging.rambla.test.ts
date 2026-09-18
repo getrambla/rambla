@@ -54,9 +54,13 @@ class FakeSttProvider implements SpeechToTextProvider {
   }
 }
 
-const buildPcmBase64 = (sampleValue: number, sampleCount: number): string => {
-  const samples = new Int16Array(sampleCount);
-  samples.fill(sampleValue);
+const buildPcmBase64 = (
+  sampleValue: number,
+  sampleCount: number,
+  trailingSilenceSamples = 0,
+): string => {
+  const samples = new Int16Array(sampleCount + trailingSilenceSamples);
+  samples.fill(sampleValue, 0, sampleCount);
   return Buffer.from(samples.buffer).toString("base64");
 };
 
@@ -152,7 +156,7 @@ describe("dictation.rambla: discarded audio is logged above debug level", () => 
     await manager.handleChunk({
       dictationId: "d-dropped",
       seq: 0,
-      audioBase64: buildPcmBase64(2000, 24000),
+      audioBase64: buildPcmBase64(2000, 24000, 7200),
       format: FORMAT,
     });
 

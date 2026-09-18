@@ -21,7 +21,6 @@ export class SherpaParakeetRealtimeTranscriptionSession
   private lastDecodeAt = 0;
   private decoding = false;
   private pendingDecode = false;
-  private pendingCommitCount = 0;
   private readonly minDecodeIntervalMs: number;
 
   constructor(params: { engine: SherpaOfflineRecognizerEngine; minDecodeIntervalMs?: number }) {
@@ -59,29 +58,25 @@ export class SherpaParakeetRealtimeTranscriptionSession
       return;
     }
 
-    this.pendingCommitCount += 1;
+    // The segment ends here, synchronously. Audio appended after this call — in
+    // the same tick or later — belongs to the next segment, so a decode that
+    // resolves afterwards cannot pull it into this transcript.
+    const segmentId = this.currentSegmentId;
+    const previousSegmentId = this.previousSegmentId;
+    const audio = this.pcm16;
+    this.previousSegmentId = segmentId;
+    this.currentSegmentId = uuidv4();
+    this.lastPartialText = "";
+    this.pcm16 = Buffer.alloc(0);
+
     void (async () => {
       try {
-        await this.maybeDecode(true);
-        // A commit that lands while a decode is already running must not ship
-        // that decode's partial text as final: queue it so a fresh decode runs
-        // over the audio that arrived in the meantime.
-        while (this.pendingCommitCount > 0 && this.connected && this.currentSegmentId) {
-          this.pendingCommitCount -= 1;
-          await this.maybeDecode(true);
+        // A fresh decode over exactly this segment's audio: a decode still in
+        // flight covers a different buffer and its text is never shipped final.
+        const finalText = await this.decodePcm16(audio);
 
-          const finalText = this.lastPartialText;
-          const segmentId = this.currentSegmentId!;
-          const previousSegmentId = this.previousSegmentId;
-
-          this.emit("committed", { segmentId, previousSegmentId });
-          this.emit("transcript", { segmentId, transcript: finalText, isFinal: true });
-
-          this.previousSegmentId = segmentId;
-          this.currentSegmentId = uuidv4();
-          this.lastPartialText = "";
-          this.pcm16 = Buffer.alloc(0);
-        }
+        this.emit("committed", { segmentId, previousSegmentId });
+        this.emit("transcript", { segmentId, transcript: finalText, isFinal: true });
       } catch (err) {
         this.emit("error", err instanceof Error ? err : new Error(String(err)));
       }
@@ -119,9 +114,16 @@ export class SherpaParakeetRealtimeTranscriptionSession
     }
 
     this.decoding = true;
+    const decodedSegmentId = this.currentSegmentId;
+    const audio = this.pcm16;
     try {
-      const text = await this.decodeNow();
+      const text = await this.decodePcm16(audio);
       this.lastDecodeAt = Date.now();
+      // A commit may have ended that segment while this decode ran; its text
+      // describes audio that has already shipped, so it must not land here.
+      if (decodedSegmentId !== this.currentSegmentId) {
+        return;
+      }
       if (text !== this.lastPartialText) {
         this.lastPartialText = text;
         this.emit("transcript", {
@@ -139,12 +141,12 @@ export class SherpaParakeetRealtimeTranscriptionSession
     }
   }
 
-  private async decodeNow(): Promise<string> {
-    if (this.pcm16.length === 0) {
+  private async decodePcm16(pcm16: Buffer): Promise<string> {
+    if (pcm16.length === 0) {
       return "";
     }
 
-    const peak = pcm16lePeakAbs(this.pcm16);
+    const peak = pcm16lePeakAbs(pcm16);
     const peakFloat = peak / 32768.0;
     const targetPeak = 0.6;
     const maxGain = 50;
@@ -153,7 +155,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
 
     const stream = this.engine.createStream();
     try {
-      const floatSamples = pcm16leToFloat32(this.pcm16, gain);
+      const floatSamples = pcm16leToFloat32(pcm16, gain);
       this.engine.acceptWaveform(stream, this.engine.sampleRate, floatSamples);
       this.engine.recognizer.decode(stream);
       const result = this.engine.recognizer.getResult(stream);

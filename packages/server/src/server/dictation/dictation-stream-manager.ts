@@ -26,6 +26,15 @@ const DICTATION_SILENCE_PEAK_THRESHOLD = Number.parseInt(
   process.env.RAMBLA_DICTATION_SILENCE_PEAK_THRESHOLD ?? "300",
   10,
 );
+// A window boundary landing inside a word is heard whole by the window before it
+// and by the window after it, so the word is transcribed twice. Wait for the
+// speaker to pause, then cut there.
+const DICTATION_GAP_SCAN_WINDOW_SECONDS = 0.02;
+// Longer than the silent closure inside a stop consonant, so a cut here falls
+// between words rather than inside one.
+const DICTATION_GAP_MIN_SECONDS = 0.12;
+// How long a commit may wait for that pause before cutting wherever it is.
+const DICTATION_AUTO_COMMIT_MAX_EXTRA_SECONDS = 5;
 
 function parseNonNegativeNumber(value: string | undefined): number | null {
   if (value === undefined) {
@@ -98,6 +107,28 @@ interface DictationStreamState {
 /** Seconds of PCM16 mono audio represented by a byte count at the given sample rate. */
 function pcm16SecondsFromBytes(bytes: number, sampleRate: number): number {
   return bytes / Math.max(1, sampleRate * PCM_CHANNELS * (PCM_BITS_PER_SAMPLE / 8));
+}
+
+/** Byte offset inside the first pause at or after `fromByte`, or null when the audio never goes quiet. */
+function findPauseOffset(pcm16: Buffer, fromByte: number, sampleRate: number): number | null {
+  const scanBytes = Math.max(2, Math.round(sampleRate * DICTATION_GAP_SCAN_WINDOW_SECONDS) * 2);
+  const minPauseBytes = Math.max(scanBytes, Math.round(sampleRate * DICTATION_GAP_MIN_SECONDS) * 2);
+  const start = Math.max(0, fromByte - (fromByte % 2));
+  let pauseStart: number | null = null;
+  for (let offset = start; offset + scanBytes <= pcm16.length; offset += scanBytes) {
+    const peak = pcm16lePeakAbs(pcm16.subarray(offset, offset + scanBytes));
+    if (peak >= DICTATION_SILENCE_PEAK_THRESHOLD) {
+      pauseStart = null;
+      continue;
+    }
+    pauseStart ??= offset;
+    const pauseEnd = offset + scanBytes;
+    if (pauseEnd - pauseStart >= minPauseBytes) {
+      const middle = pauseStart + Math.floor((pauseEnd - pauseStart) / 2);
+      return middle - (middle % 2);
+    }
+  }
+  return null;
 }
 
 /** Seconds of audio forwarded to the provider for this stream so far. */
@@ -385,16 +416,19 @@ export class DictationStreamManager {
 
       const resampled = state.resampler ? state.resampler.processChunk(pcm16) : pcm16;
       if (resampled.length > 0) {
-        state.stt.appendPcm16(resampled);
-        state.debugAudioChunks.push(resampled);
-        state.bytesSinceCommit += resampled.length;
-        state.peakSinceCommit = Math.max(state.peakSinceCommit, pcm16lePeakAbs(resampled));
-        try {
-          this.maybeAutoCommitDictationSegment(state);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          void this.failAndCleanupDictationStream(params.dictationId, message, true);
-          return;
+        const parts = this.splitChunkAtAutoCommitPause(state, resampled);
+        for (let part = 0; part < parts.length; part += 1) {
+          state.stt.appendPcm16(parts[part]);
+          state.debugAudioChunks.push(parts[part]);
+          state.bytesSinceCommit += parts[part].length;
+          state.peakSinceCommit = Math.max(state.peakSinceCommit, pcm16lePeakAbs(parts[part]));
+          try {
+            this.maybeAutoCommitDictationSegment(state, part === 0 && parts.length > 1);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            void this.failAndCleanupDictationStream(params.dictationId, message, true);
+            return;
+          }
         }
 
         if (state.debugChunkWriter) {
@@ -631,7 +665,26 @@ export class DictationStreamManager {
     };
   }
 
-  private maybeAutoCommitDictationSegment(state: DictationStreamState): void {
+  /** Splits a chunk so a due auto-commit window ends on a pause instead of mid-word. */
+  private splitChunkAtAutoCommitPause(state: DictationStreamState, chunk: Buffer): Buffer[] {
+    if (state.finishRequested || state.autoCommitBytes <= 0) {
+      return [chunk];
+    }
+    if (state.bytesSinceCommit + chunk.length < state.autoCommitBytes) {
+      return [chunk];
+    }
+    const offset = findPauseOffset(
+      chunk,
+      Math.max(0, state.autoCommitBytes - state.bytesSinceCommit),
+      state.outputRate,
+    );
+    if (offset === null || offset <= 0 || offset >= chunk.length) {
+      return [chunk];
+    }
+    return [chunk.subarray(0, offset), chunk.subarray(offset)];
+  }
+
+  private maybeAutoCommitDictationSegment(state: DictationStreamState, atPause: boolean): void {
     if (state.finishRequested) {
       return;
     }
@@ -650,6 +703,12 @@ export class DictationStreamManager {
       state.stt.clear();
       state.bytesSinceCommit = 0;
       state.peakSinceCommit = 0;
+      return;
+    }
+    const maxExtraBytes = Math.round(
+      DICTATION_AUTO_COMMIT_MAX_EXTRA_SECONDS * state.outputRate * PCM_CHANNELS * 2,
+    );
+    if (!atPause && state.bytesSinceCommit < state.autoCommitBytes + maxExtraBytes) {
       return;
     }
 

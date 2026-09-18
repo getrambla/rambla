@@ -64,9 +64,13 @@ class FakeSttProvider implements SpeechToTextProvider {
   }
 }
 
-const buildPcmBase64 = (sampleValue: number, sampleCount: number): string => {
-  const samples = new Int16Array(sampleCount);
-  samples.fill(sampleValue);
+const buildPcmBase64 = (
+  sampleValue: number,
+  sampleCount: number,
+  trailingSilenceSamples = 0,
+): string => {
+  const samples = new Int16Array(sampleCount + trailingSilenceSamples);
+  samples.fill(sampleValue, 0, sampleCount);
   return Buffer.from(samples.buffer).toString("base64");
 };
 
@@ -266,7 +270,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
       await manager.handleChunk({
         dictationId: "d-segmented",
         seq: 0,
-        audioBase64: buildPcmBase64(2000, 24000),
+        audioBase64: buildPcmBase64(2000, 24000, 7200),
         format: "audio/pcm;rate=24000;bits=16",
       });
       expect(session.commitCalls).toBe(1);
@@ -314,7 +318,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     await manager.handleChunk({
       dictationId: "d-delayed-auto-commit",
       seq: 0,
-      audioBase64: buildPcmBase64(2000, 24000),
+      audioBase64: buildPcmBase64(2000, 24000, 7200),
       format: "audio/pcm;rate=24000;bits=16",
     });
     expect(session.commitCalls).toBe(1);
@@ -349,7 +353,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     await manager.handleChunk({
       dictationId: "d-tail-during-commit",
       seq: 0,
-      audioBase64: buildPcmBase64(2000, 24000),
+      audioBase64: buildPcmBase64(2000, 24000, 7200),
       format: "audio/pcm;rate=24000;bits=16",
     });
     await manager.handleChunk({
@@ -390,7 +394,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     await manager.handleChunk({
       dictationId: "d-cleared-partial",
       seq: 0,
-      audioBase64: buildPcmBase64(2000, 24000),
+      audioBase64: buildPcmBase64(2000, 24000, 7200),
       format: "audio/pcm;rate=24000;bits=16",
     });
     session.emitCommitted("seg-first");
@@ -504,7 +508,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
       await manager.handleChunk({
         dictationId: "d-clear-tail",
         seq: 0,
-        audioBase64: buildPcmBase64(2000, 24000),
+        audioBase64: buildPcmBase64(2000, 24000, 7200),
         format: "audio/pcm;rate=24000;bits=16",
       });
 
@@ -608,6 +612,10 @@ describe("DictationStreamManager (commit during in-flight decode)", () => {
   it("a commit during an in-flight decode transcribes the audio that arrived during it", async () => {
     const engine = new FakeParakeetEngine();
     const session = new SherpaParakeetRealtimeTranscriptionSession({ engine });
+    const committedTranscripts: string[] = [];
+    session.on("transcript", (payload: { transcript: string; isFinal: boolean }) => {
+      if (payload.isFinal) committedTranscripts.push(payload.transcript);
+    });
     const emitted: Array<{ type: string; payload: unknown }> = [];
     const manager = new DictationStreamManager({
       logger: pino({ level: "silent" }),
@@ -618,12 +626,13 @@ describe("DictationStreamManager (commit during in-flight decode)", () => {
     });
 
     await manager.handleStart("d-commit-in-flight", "audio/pcm;rate=24000;bits=16");
-    // Feed both chunks in the same tick so the second lands while the decode
-    // triggered by the first (and its auto-commit) is still in flight.
+    // The first chunk runs past the auto-commit window and then goes quiet, so
+    // the window commits at that pause while its own decode is still in flight.
+    // Both chunks are fed in the same tick so the second lands during it.
     const first = manager.handleChunk({
       dictationId: "d-commit-in-flight",
       seq: 0,
-      audioBase64: buildPcmBase64(2000, 24_000),
+      audioBase64: buildPcmBase64(2000, 27_000, 7_200),
       format: "audio/pcm;rate=24000;bits=16",
     });
     const second = manager.handleChunk({
@@ -634,6 +643,11 @@ describe("DictationStreamManager (commit during in-flight decode)", () => {
     });
     await first;
     await second;
+
+    // Pins the scenario: the mid-stream commit landed before finish, and it
+    // covered its own window only. Without this the test passes on the
+    // finish-time commit alone and stops covering a commit inside a decode.
+    expect(committedTranscripts).toEqual(["hello there"]);
 
     await manager.handleFinish("d-commit-in-flight", 1);
     await tick();
@@ -648,6 +662,10 @@ describe("DictationStreamManager (commit during in-flight decode)", () => {
   it("audio is never discarded without appearing in a transcript", async () => {
     const engine = new FakeParakeetEngine();
     const session = new SherpaParakeetRealtimeTranscriptionSession({ engine });
+    const committedTranscripts: string[] = [];
+    session.on("transcript", (payload: { transcript: string; isFinal: boolean }) => {
+      if (payload.isFinal) committedTranscripts.push(payload.transcript);
+    });
     const emitted: Array<{ type: string; payload: unknown }> = [];
     const manager = new DictationStreamManager({
       logger: pino({ level: "silent" }),
@@ -661,7 +679,7 @@ describe("DictationStreamManager (commit during in-flight decode)", () => {
     const first = manager.handleChunk({
       dictationId: "d-no-discard",
       seq: 0,
-      audioBase64: buildPcmBase64(2000, 24_000),
+      audioBase64: buildPcmBase64(2000, 27_000, 7_200),
       format: "audio/pcm;rate=24000;bits=16",
     });
     const second = manager.handleChunk({
@@ -672,6 +690,10 @@ describe("DictationStreamManager (commit during in-flight decode)", () => {
     });
     await first;
     await second;
+
+    // Pins the scenario: the mid-stream auto-commit landed, bounded to its
+    // own window, before any finish-time commit.
+    expect(committedTranscripts).toEqual(["hello there"]);
 
     await manager.handleFinish("d-no-discard", 1);
     await tick();
