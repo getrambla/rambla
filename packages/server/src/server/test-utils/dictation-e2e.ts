@@ -1,6 +1,7 @@
-import { mkdtempSync, writeFileSync, rmSync, existsSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { OpenAI } from "openai";
 
 export function requireEnv(name: string): string {
@@ -61,6 +62,42 @@ export function parsePcm16MonoWav(buffer: Buffer): { sampleRate: number; pcm16: 
     throw new Error("WAV PCM16 data length must be even");
   }
   return { sampleRate: fmt.sampleRate, pcm16: dataChunk };
+}
+
+function pcm16MonoToWav(pcm16: Buffer, sampleRate: number): Buffer {
+  const wav = Buffer.alloc(44 + pcm16.length);
+  wav.write("RIFF", 0);
+  wav.writeUInt32LE(36 + pcm16.length, 4);
+  wav.write("WAVE", 8);
+  wav.write("fmt ", 12);
+  wav.writeUInt32LE(16, 16);
+  wav.writeUInt16LE(1, 20);
+  wav.writeUInt16LE(1, 22);
+  wav.writeUInt32LE(sampleRate, 24);
+  wav.writeUInt32LE(sampleRate * 2, 28);
+  wav.writeUInt16LE(2, 32);
+  wav.writeUInt16LE(16, 34);
+  wav.write("data", 36);
+  wav.writeUInt32LE(pcm16.length, 40);
+  pcm16.copy(wav, 44);
+  return wav;
+}
+
+/**
+ * Writes the audio a test feeds the pipeline to `.debug/recordings/<scenario>/combined.wav`,
+ * with no environment variable to set, so it can be listened to. Only ever call
+ * this with audio that makes a sound; a constant sample level is silent and a
+ * .wav of it would claim to be something it is not.
+ */
+export function writeFixtureWav(scenario: string, pcm16: Buffer, sampleRate: number): string {
+  // Anchored to the workspace that holds this checkout, not to the working
+  // directory, so a test leaves its audio in one place however it was launched.
+  const workspaceRoot = fileURLToPath(new URL("../../../../../../", import.meta.url));
+  const dir = path.resolve(workspaceRoot, ".debug", "recordings", scenario);
+  mkdirSync(dir, { recursive: true });
+  const wavPath = path.join(dir, "combined.wav");
+  writeFileSync(wavPath, pcm16MonoToWav(pcm16, sampleRate));
+  return wavPath;
 }
 
 export async function findLargestDebugWavFixture(): Promise<string> {

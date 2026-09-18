@@ -331,6 +331,9 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
 
     session.emitCommitted("seg-tail");
     session.emitTranscript("seg-tail", "the final words", true);
+    // The silence after the pause is committed too, and transcribes to nothing.
+    session.emitCommitted("seg-silent-tail");
+    session.emitTranscript("seg-silent-tail", "", true);
     await tick();
 
     const final = emitted.find((message) => message.type === "dictation_stream_final");
@@ -379,7 +382,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     );
   });
 
-  it("does not wait for an abandoned partial after clearing mid-stream silence", async () => {
+  it("does not wait for an abandoned partial after committing mid-stream silence", async () => {
     const session = new FakeRealtimeSession();
     const emitted: Array<{ type: string; payload: unknown }> = [];
     const manager = new DictationStreamManager({
@@ -407,7 +410,9 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
       audioBase64: buildPcmBase64(0, 24000),
       format: "audio/pcm;rate=24000;bits=16",
     });
-    expect(session.clearCalls).toBe(1);
+    expect(session.clearCalls).toBe(0);
+    session.emitCommitted("seg-silence");
+    session.emitTranscript("seg-silence", "", true);
 
     await manager.handleChunk({
       dictationId: "d-cleared-partial",
@@ -488,7 +493,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     expect((finishAccepted?.payload as { timeoutMs?: number } | undefined)?.timeoutMs).toBe(20_000);
   });
 
-  it("drops dangling uncommitted non-final transcripts when finishing after silence tail clear", async () => {
+  it("drops dangling uncommitted non-final transcripts when finishing after a silence tail", async () => {
     vi.useFakeTimers();
     const previousDebug = process.env.RAMBLA_DICTATION_DEBUG;
     process.env.RAMBLA_DICTATION_DEBUG = "false";
@@ -524,13 +529,15 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
       session.emitTranscript("seg-dangling", "", false);
 
       await manager.handleFinish("d-clear-tail", 1);
+      session.emitCommitted("seg-silent-tail");
+      session.emitTranscript("seg-silent-tail", "", true);
       await tick();
       await vi.advanceTimersByTimeAsync(5_100);
       await tick();
 
       const final = emitted.find((msg) => msg.type === "dictation_stream_final");
       const error = emitted.find((msg) => msg.type === "dictation_stream_error");
-      expect(session.clearCalls).toBeGreaterThan(0);
+      expect(session.clearCalls).toBe(0);
       expect(error).toBeUndefined();
       expect((final?.payload as { text?: string } | undefined)?.text).toBe("hello");
     } finally {

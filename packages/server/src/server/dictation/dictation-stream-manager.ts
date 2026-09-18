@@ -22,10 +22,16 @@ const DICTATION_FINAL_TIMEOUT_MAX_MS = 5 * 60 * 1000;
 const DICTATION_FINAL_TIMEOUT_PER_PENDING_SEGMENT_MS = 15 * 1000;
 const DICTATION_FINAL_TIMEOUT_PER_PENDING_AUDIO_SECOND_MS = 1500;
 const DICTATION_FINAL_TIMEOUT_PER_MISSING_SEQ_MS = 250;
-const DICTATION_SILENCE_PEAK_THRESHOLD = Number.parseInt(
-  process.env.RAMBLA_DICTATION_SILENCE_PEAK_THRESHOLD ?? "300",
-  10,
-);
+// A speaker trails off at the end of a sentence and a fan never stops, so how
+// loud a window is means nothing on its own; what counts is how far above the
+// room it rises. Nothing here decides whether audio is kept — the engine is the
+// one that can tell speech from noise, and it hears everything.
+const DICTATION_SPEECH_PEAK_FLOOR = 60;
+const DICTATION_SPEECH_FLOOR_MARGIN = 3;
+// The room is measured over the recent past, not the whole recording. Noise
+// suppression zeroes a pause outright, and one such moment kept forever would
+// hold the floor at zero and hide every later gap in a room that has a level.
+const DICTATION_NOISE_FLOOR_HISTORY_SECONDS = 4;
 // A window boundary landing inside a word is heard whole by the window before it
 // and by the window after it, so the word is transcribed twice. Wait for the
 // speaker to pause, then cut there.
@@ -92,8 +98,8 @@ interface DictationStreamState {
   ackSeq: number;
   autoCommitBytes: number;
   bytesSinceCommit: number;
-  peakSinceCommit: number;
   peakOverall: number;
+  noiseFloorSamples: Array<{ quietest: number; seconds: number }>;
   committedSegmentIds: string[];
   transcriptsBySegmentId: Map<string, string>;
   finalTranscriptSegmentIds: Set<string>;
@@ -110,15 +116,66 @@ function pcm16SecondsFromBytes(bytes: number, sampleRate: number): number {
   return bytes / Math.max(1, sampleRate * PCM_CHANNELS * (PCM_BITS_PER_SAMPLE / 8));
 }
 
+/** Quietest scan window in a buffer: what this stream sounds like with nobody speaking. */
+function windowPeakMin(pcm16: Buffer, sampleRate: number): number {
+  const scanBytes = Math.max(2, Math.round(sampleRate * DICTATION_GAP_SCAN_WINDOW_SECONDS) * 2);
+  if (pcm16.length < scanBytes) {
+    return pcm16lePeakAbs(pcm16);
+  }
+  let quietest = Number.POSITIVE_INFINITY;
+  for (let offset = 0; offset + scanBytes <= pcm16.length; offset += scanBytes) {
+    quietest = Math.min(quietest, pcm16lePeakAbs(pcm16.subarray(offset, offset + scanBytes)));
+  }
+  return quietest;
+}
+
+/** Records a chunk's quietest window and forgets the ones that are no longer recent. */
+function trackNoiseFloor(state: DictationStreamState, chunk: Buffer): void {
+  state.noiseFloorSamples.push({
+    quietest: windowPeakMin(chunk, state.outputRate),
+    seconds: pcm16SecondsFromBytes(chunk.length, state.outputRate),
+  });
+  let retained = 0;
+  for (let index = state.noiseFloorSamples.length - 1; index >= 0; index -= 1) {
+    retained += state.noiseFloorSamples[index].seconds;
+    if (retained >= DICTATION_NOISE_FLOOR_HISTORY_SECONDS) {
+      state.noiseFloorSamples.splice(0, index);
+      return;
+    }
+  }
+}
+
+/** The level the room is at now: the quietest window in the recent past. */
+function noiseFloorOf(state: DictationStreamState): number {
+  let quietest = Number.POSITIVE_INFINITY;
+  for (const sample of state.noiseFloorSamples) {
+    quietest = Math.min(quietest, sample.quietest);
+  }
+  return quietest;
+}
+
+/** Peak a window must reach to count as speech rather than as the room around the speaker. */
+function speechPeakThreshold(noiseFloor: number): number {
+  if (!Number.isFinite(noiseFloor)) {
+    return DICTATION_SPEECH_PEAK_FLOOR;
+  }
+  return Math.max(DICTATION_SPEECH_PEAK_FLOOR, noiseFloor * DICTATION_SPEECH_FLOOR_MARGIN);
+}
+
 /** Byte offset inside the first pause at or after `fromByte`, or null when the audio never goes quiet. */
-function findPauseOffset(pcm16: Buffer, fromByte: number, sampleRate: number): number | null {
+function findPauseOffset(
+  pcm16: Buffer,
+  fromByte: number,
+  sampleRate: number,
+  speechPeak: number,
+): number | null {
   const scanBytes = Math.max(2, Math.round(sampleRate * DICTATION_GAP_SCAN_WINDOW_SECONDS) * 2);
   const minPauseBytes = Math.max(scanBytes, Math.round(sampleRate * DICTATION_GAP_MIN_SECONDS) * 2);
   const start = Math.max(0, fromByte - (fromByte % 2));
   let pauseStart: number | null = null;
   for (let offset = start; offset + scanBytes <= pcm16.length; offset += scanBytes) {
     const peak = pcm16lePeakAbs(pcm16.subarray(offset, offset + scanBytes));
-    if (peak >= DICTATION_SILENCE_PEAK_THRESHOLD) {
+    if (peak >= speechPeak) {
       pauseStart = null;
       continue;
     }
@@ -293,8 +350,8 @@ export class DictationStreamManager {
       ackSeq: -1,
       autoCommitBytes,
       bytesSinceCommit: 0,
-      peakSinceCommit: 0,
       peakOverall: 0,
+      noiseFloorSamples: [],
       committedSegmentIds: [],
       transcriptsBySegmentId: new Map(),
       finalTranscriptSegmentIds: new Set(),
@@ -342,6 +399,7 @@ export class DictationStreamManager {
         : [...state.committedSegmentIds, segmentId];
       const partialText = orderedIds
         .map((id) => state.transcriptsBySegmentId.get(id) ?? "")
+        .filter((text) => text.length > 0)
         .join(" ")
         .trim();
       this.emitDictationPartial(dictationId, partialText);
@@ -418,13 +476,13 @@ export class DictationStreamManager {
 
       const resampled = state.resampler ? state.resampler.processChunk(pcm16) : pcm16;
       if (resampled.length > 0) {
+        trackNoiseFloor(state, resampled);
         const parts = this.splitChunkAtAutoCommitPause(state, resampled);
         for (let part = 0; part < parts.length; part += 1) {
           state.stt.appendPcm16(parts[part]);
           state.debugAudioChunks.push(parts[part]);
           state.bytesSinceCommit += parts[part].length;
-          state.peakSinceCommit = Math.max(state.peakSinceCommit, pcm16lePeakAbs(parts[part]));
-          state.peakOverall = Math.max(state.peakOverall, state.peakSinceCommit);
+          state.peakOverall = Math.max(state.peakOverall, pcm16lePeakAbs(parts[part]));
           try {
             this.maybeAutoCommitDictationSegment(state, part === 0 && parts.length > 1);
           } catch (error) {
@@ -680,6 +738,7 @@ export class DictationStreamManager {
       chunk,
       Math.max(0, state.autoCommitBytes - state.bytesSinceCommit),
       state.outputRate,
+      speechPeakThreshold(noiseFloorOf(state)),
     );
     if (offset === null || offset <= 0 || offset >= chunk.length) {
       return [chunk];
@@ -694,20 +753,6 @@ export class DictationStreamManager {
     if (state.autoCommitBytes <= 0 || state.bytesSinceCommit < state.autoCommitBytes) {
       return;
     }
-    if (state.peakSinceCommit < DICTATION_SILENCE_PEAK_THRESHOLD) {
-      this.logger.warn(
-        {
-          dictationId: state.dictationId,
-          peakSinceCommit: state.peakSinceCommit,
-          discardedSeconds: pcm16SecondsFromBytes(state.bytesSinceCommit, state.outputRate),
-        },
-        "Dictation auto-commit: clearing silence-only window",
-      );
-      state.stt.clear();
-      state.bytesSinceCommit = 0;
-      state.peakSinceCommit = 0;
-      return;
-    }
     const maxExtraBytes = Math.round(
       DICTATION_AUTO_COMMIT_MAX_EXTRA_SECONDS * state.outputRate * PCM_CHANNELS * 2,
     );
@@ -720,7 +765,6 @@ export class DictationStreamManager {
 
   private requestDictationCommit(state: DictationStreamState): void {
     state.bytesSinceCommit = 0;
-    state.peakSinceCommit = 0;
     state.inFlightCommitCount += 1;
     try {
       state.stt.commit();
@@ -746,29 +790,13 @@ export class DictationStreamManager {
     }
 
     if (state.bytesSinceCommit > 0) {
-      if (state.peakSinceCommit < DICTATION_SILENCE_PEAK_THRESHOLD) {
-        this.logger.warn(
-          {
-            dictationId,
-            bytesSinceCommit: state.bytesSinceCommit,
-            peakSinceCommit: state.peakSinceCommit,
-            discardedSeconds: pcm16SecondsFromBytes(state.bytesSinceCommit, state.outputRate),
-          },
-          "Dictation finish: clearing silence-only tail (skip final commit)",
-        );
-        state.stt.clear();
-        state.bytesSinceCommit = 0;
-        state.peakSinceCommit = 0;
-        state.awaitingFinalCommit = false;
-      } else {
-        state.awaitingFinalCommit = true;
-        try {
-          this.requestDictationCommit(state);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          void this.failAndCleanupDictationStream(dictationId, message, true);
-          return;
-        }
+      state.awaitingFinalCommit = true;
+      try {
+        this.requestDictationCommit(state);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        void this.failAndCleanupDictationStream(dictationId, message, true);
+        return;
       }
     } else {
       state.awaitingFinalCommit = false;
@@ -798,9 +826,10 @@ export class DictationStreamManager {
     dictationId: string,
     state: DictationStreamState,
   ): boolean {
-    // Silence transcribes to nothing legitimately; speech does not, so an empty
+    // A room transcribes to nothing legitimately; speech does not, so an empty
     // result there is a lost recording and must reach the user as a failure.
-    if (state.peakOverall < DICTATION_SILENCE_PEAK_THRESHOLD) {
+    // Getting this wrong costs a spurious error, never audio.
+    if (state.peakOverall < speechPeakThreshold(noiseFloorOf(state))) {
       return false;
     }
     void this.failAndCleanupDictationStream(
@@ -889,13 +918,22 @@ export class DictationStreamManager {
       return;
     }
 
+    // A segment holding only room noise transcribes to nothing, and joining that
+    // nothing would put a double space in the middle of the user's sentence.
     const orderedText = orderedSegmentIds
       .map((segmentId) => state.transcriptsBySegmentId.get(segmentId) ?? "")
+      .filter((text) => text.length > 0)
       .join(" ")
       .trim();
 
-    if (orderedText.length === 0 && this.failEmptyTranscriptAfterSpeech(dictationId, state)) {
-      return;
+    if (orderedText.length === 0) {
+      if (this.failEmptyTranscriptAfterSpeech(dictationId, state)) {
+        return;
+      }
+      this.logger.warn(
+        { dictationId, receivedSeconds: receivedSeconds(state) },
+        "Dictation finalized with an empty transcript",
+      );
     }
 
     void (async () => {

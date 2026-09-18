@@ -14,7 +14,12 @@ import {
   LocalSpeechWorkerClient,
   WorkerBackedSpeechToTextProvider,
 } from "../speech/providers/local/worker-client.js";
-import { chunkPcm16, normalizeTranscript, wordSimilarity } from "../test-utils/dictation-e2e.js";
+import {
+  chunkPcm16,
+  normalizeTranscript,
+  wordSimilarity,
+  writeFixtureWav,
+} from "../test-utils/dictation-e2e.js";
 
 const SOURCE_TEXT =
   "The morning after the storm, the whole street smelled of wet leaves and broken branches. " +
@@ -99,6 +104,9 @@ retentionTest(
     const sampleRate = parsePcmRateFromFormat(synthesized.format, 24000) ?? 24000;
     const audioSeconds = pcm16.length / (sampleRate * 2);
     console.log(`[dictation-retention] synthesized audio: ${audioSeconds.toFixed(1)}s`);
+    console.log(
+      `[dictation-retention] audio: ${writeFixtureWav("dictation-retention", pcm16, sampleRate)}`,
+    );
 
     const workerClient = new LocalSpeechWorkerClient({
       logger,

@@ -102,51 +102,6 @@ describe("dictation.rambla: discarded audio is logged above debug level", () => 
     });
   }
 
-  it("warns with the discarded duration when the silence-only tail is cleared at finish", async () => {
-    const capture = createCaptureLogger();
-    const manager = createManager({ capture, session: new FakeRealtimeSession() });
-
-    await manager.handleStart("d-tail", FORMAT);
-    await manager.handleChunk({
-      dictationId: "d-tail",
-      seq: 0,
-      audioBase64: buildPcmBase64(0, 2400),
-      format: FORMAT,
-    });
-    await manager.handleFinish("d-tail", 0);
-    await tick();
-
-    const warnings = findWarnings(
-      capture,
-      "Dictation finish: clearing silence-only tail (skip final commit)",
-    );
-    expect(warnings).toHaveLength(1);
-    expect(warnings[0]?.details.dictationId).toBe("d-tail");
-    expect(warnings[0]?.details.discardedSeconds).toBeCloseTo(secondsFor(2400), 5);
-  });
-
-  it("warns with the discarded duration when a mid-stream silence window is cleared", async () => {
-    const capture = createCaptureLogger();
-    const manager = createManager({
-      capture,
-      session: new FakeRealtimeSession(),
-      autoCommitSeconds: 1,
-    });
-
-    await manager.handleStart("d-window", FORMAT);
-    await manager.handleChunk({
-      dictationId: "d-window",
-      seq: 0,
-      audioBase64: buildPcmBase64(0, 24000),
-      format: FORMAT,
-    });
-
-    const warnings = findWarnings(capture, "Dictation auto-commit: clearing silence-only window");
-    expect(warnings).toHaveLength(1);
-    expect(warnings[0]?.details.dictationId).toBe("d-window");
-    expect(warnings[0]?.details.discardedSeconds).toBeCloseTo(secondsFor(24000), 5);
-  });
-
   it("warns when abandoned non-final transcript segments are dropped", async () => {
     const capture = createCaptureLogger();
     const session = new FakeRealtimeSession();
@@ -165,6 +120,8 @@ describe("dictation.rambla: discarded audio is logged above debug level", () => 
     session.emitTranscript("seg-dangling", "hel", false);
 
     await manager.handleFinish("d-dropped", 0);
+    session.emitCommitted("seg-tail");
+    session.emitTranscript("seg-tail", "", true);
     await tick();
 
     const warnings = findWarnings(
@@ -178,7 +135,8 @@ describe("dictation.rambla: discarded audio is logged above debug level", () => 
 
   it("warns when finalization emits an empty transcript after audio arrived", async () => {
     const capture = createCaptureLogger();
-    const manager = createManager({ capture, session: new FakeRealtimeSession() });
+    const session = new FakeRealtimeSession();
+    const manager = createManager({ capture, session });
 
     await manager.handleStart("d-empty", FORMAT);
     await manager.handleChunk({
@@ -188,6 +146,8 @@ describe("dictation.rambla: discarded audio is logged above debug level", () => 
       format: FORMAT,
     });
     await manager.handleFinish("d-empty", 0);
+    session.emitCommitted("seg-1");
+    session.emitTranscript("seg-1", "", true);
     await tick();
 
     const warnings = findWarnings(capture, "Dictation finalized with an empty transcript");
