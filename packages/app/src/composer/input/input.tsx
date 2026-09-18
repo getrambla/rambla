@@ -547,6 +547,7 @@ function MessageInputOverlay({
   isDictationProcessing,
   dictationStatus,
   dictationError,
+  canRetryFailedDictation,
   onCancelRecording,
   onAcceptRecording,
   onAcceptAndSendRecording,
@@ -570,6 +571,7 @@ function MessageInputOverlay({
   isDictationProcessing: boolean;
   dictationStatus: React.ComponentProps<typeof DictationOverlay>["status"];
   dictationError: string | null;
+  canRetryFailedDictation: boolean;
   onCancelRecording: () => Promise<void>;
   onAcceptRecording: () => Promise<void>;
   onAcceptAndSendRecording: () => Promise<void>;
@@ -589,7 +591,11 @@ function MessageInputOverlay({
         onCancel={onCancelRecording}
         onAccept={onAcceptRecording}
         onAcceptAndSend={onAcceptAndSendRecording}
-        onRetry={dictationStatus === "failed" ? onRetryFailedRecording : undefined}
+        onRetry={
+          dictationStatus === "failed" && canRetryFailedDictation
+            ? onRetryFailedRecording
+            : undefined
+        }
         onDiscard={dictationStatus === "failed" ? onDiscardFailedRecording : undefined}
       />
     );
@@ -1369,6 +1375,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       duration: dictationDuration,
       error: dictationError,
       status: dictationStatus,
+      canRetryFailedDictation,
       startDictation,
       cancelDictation,
       confirmDictation,
@@ -1894,6 +1901,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
             isDictationProcessing={isDictationProcessing}
             dictationStatus={dictationStatus}
             dictationError={dictationError}
+            canRetryFailedDictation={canRetryFailedDictation}
             onCancelRecording={handleCancelRecording}
             onAcceptRecording={handleAcceptRecording}
             onAcceptAndSendRecording={handleAcceptAndSendRecording}

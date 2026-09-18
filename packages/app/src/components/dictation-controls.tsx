@@ -225,7 +225,7 @@ export function DictationOverlay({
             <LoadingSpinner size="small" color={theme.colors.accentForeground} />
           </View>
         ) : null}
-        {!actionsDisabled && isFailed ? (
+        {!actionsDisabled && isFailed && onRetry ? (
           <Pressable
             onPress={onRetry}
             accessibilityRole="button"

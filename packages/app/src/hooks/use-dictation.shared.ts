@@ -22,6 +22,8 @@ export interface UseDictationResult {
   duration: number;
   error: string | null;
   status: DictationStatus;
+  /** Whether the failed recording still holds audio, so a retry has something to send. */
+  canRetryFailedDictation: boolean;
   startDictation: () => Promise<void>;
   cancelDictation: () => Promise<void>;
   confirmDictation: () => Promise<void>;

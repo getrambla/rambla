@@ -33,6 +33,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<DictationStatus>("idle");
+  const [canRetryFailedDictation, setCanRetryFailedDictation] = useState(false);
   const latestPartialTranscriptRef = useRef("");
 
   const onTranscriptRef = useRef(onTranscript);
@@ -185,25 +186,6 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     });
   }, [client]);
 
-  const handleStreamingTranscriptionSuccess = useCallback(
-    (text: string, requestId: string) => {
-      setIsProcessing(false);
-      isProcessingRef.current = false;
-      setDuration(0);
-      setStatus("idle");
-
-      const transcriptText =
-        text.trim().length > 0 ? text.trim() : latestPartialTranscriptRef.current.trim();
-      clearStreamingState();
-
-      if (!transcriptText) {
-        return;
-      }
-      onTranscriptRef.current?.(transcriptText, { requestId });
-    },
-    [clearStreamingState],
-  );
-
   const handleDictationFailure = useCallback(
     (failure: unknown) => {
       const normalized = toError(failure);
@@ -214,16 +196,38 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       isRecordingRef.current = false;
       setIsRecording(false);
 
-      if (senderRef.current?.hasSegments()) {
-        setStatus("failed");
+      const hasBufferedAudio = senderRef.current?.hasSegments() ?? false;
+      setStatus("failed");
+      setCanRetryFailedDictation(hasBufferedAudio);
+      if (hasBufferedAudio) {
         onPermanentFailureRef.current?.(normalized, { requestId: failureId });
-      } else {
-        setStatus("idle");
       }
 
       reportError(normalized, "Failed to complete dictation");
     },
     [reportError, stopDurationTracking],
+  );
+
+  const handleStreamingTranscriptionSuccess = useCallback(
+    (text: string, requestId: string) => {
+      const transcriptText =
+        text.trim().length > 0 ? text.trim() : latestPartialTranscriptRef.current.trim();
+
+      // Nothing came back, so keep the buffered audio for the failure overlay's retry.
+      if (!transcriptText) {
+        handleDictationFailure(new Error(t("common.errors.unexpectedDictationError")));
+        return;
+      }
+
+      setIsProcessing(false);
+      isProcessingRef.current = false;
+      setDuration(0);
+      setStatus("idle");
+      clearStreamingState();
+
+      onTranscriptRef.current?.(transcriptText, { requestId });
+    },
+    [clearStreamingState, handleDictationFailure, t],
   );
 
   const audio = useDictationAudioSource({
@@ -340,11 +344,18 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     if (actionGateRef.current.confirming) {
       return;
     }
+    // A cancel already in flight is the user discarding this recording on purpose,
+    // so the submit chasing it is refused rather than reported as a failure.
+    if (actionGateRef.current.cancelling) {
+      return;
+    }
     if (!isRecordingRef.current || isProcessingRef.current) {
       return;
     }
     const confirmAllowed = canConfirm ? canConfirm() : true;
     if (!confirmAllowed) {
+      await audio.stop().catch(() => undefined);
+      handleDictationFailure(new Error(t("common.errors.daemonClientDisconnected")));
       return;
     }
 
@@ -388,6 +399,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     handleStreamingTranscriptionSuccess,
     stopDurationTracking,
     ensureFinalTranscript,
+    t,
   ]);
 
   const retryFailedDictation = useCallback(async () => {
@@ -462,6 +474,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     duration,
     error,
     status,
+    canRetryFailedDictation,
     startDictation,
     cancelDictation,
     confirmDictation,
