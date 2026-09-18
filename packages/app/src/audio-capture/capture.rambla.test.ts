@@ -158,12 +158,29 @@ describe("web audio capture", () => {
 
     await capture.start();
     fake.emitSegment(4);
-    fake.cursor += 320;
+    fake.cursor += 799;
+    fake.emitSegment(4);
+    // Next gap: 801 frames = 50.06 ms, which rounds to 50 and must report.
+    fake.cursor += 801;
     fake.emitSegment(4);
 
     expect(errors).toEqual([
-      "Microphone capture skipped 320 frames of audio: the audio thread missed renders.",
+      "Microphone capture dropped 50 ms of audio: the audio thread missed renders.",
     ]);
+    expect(segments).toHaveLength(3);
+  });
+
+  it("drops sub-threshold gaps silently", async () => {
+    const fake = createFakeWorklet();
+    const { capture, errors, segments } = createCapture(fake);
+
+    await capture.start();
+    fake.emitSegment(4);
+    // 50 ms at 16 kHz is exactly 800 frames; 799 is one frame under the edge.
+    fake.cursor += 799;
+    fake.emitSegment(4);
+
+    expect(errors).toEqual([]);
     expect(segments).toHaveLength(2);
   });
 

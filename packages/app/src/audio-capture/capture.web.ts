@@ -15,6 +15,8 @@ const PROCESSOR_NAME = "rambla-audio-capture";
 const OUTPUT_SAMPLE_RATE = 16_000;
 const VOLUME_EVERY_QUANTA = 16;
 const FLUSH_TIMEOUT_MS = 500;
+/** Gaps below this many milliseconds are dropped silently; warm-up plus one-miss jitter. */
+export const GAP_WARN_MS = 50;
 
 export interface CaptureSegment {
   pcm: Int16Array;
@@ -22,7 +24,12 @@ export interface CaptureSegment {
 }
 
 export type WorkletMessage =
-  | { type: "segment"; pcm: ArrayBuffer; frames: number; firstFrameIndex: number }
+  | {
+      type: "segment";
+      pcm: ArrayBuffer;
+      frames: number;
+      firstFrameIndex: number;
+    }
   | { type: "volume"; rms: number }
   | { type: "flushed"; finalFrameIndex: number; final: boolean };
 
@@ -57,6 +64,8 @@ export interface AudioCaptureOptions {
   onInterruption?: () => void;
   backend?: CaptureBackend;
   flushTimeoutMs?: number;
+  /** Minimum gap in milliseconds that reports an error; smaller gaps drop silently. */
+  gapWarnMs?: number;
 }
 
 export interface AudioCapture {
@@ -86,7 +95,9 @@ export const webCaptureBackend: CaptureBackend = {
 
     try {
       await context.audioWorklet.addModule(processorUrl);
-      const node = new AudioWorkletNode(context, PROCESSOR_NAME, { processorOptions });
+      const node = new AudioWorkletNode(context, PROCESSOR_NAME, {
+        processorOptions,
+      });
       node.port.onmessage = (event: MessageEvent<WorkletMessage>) => onMessage(event.data);
 
       const source = context.createMediaStreamSource(stream);
@@ -155,10 +166,15 @@ export function createAudioCapture(options: AudioCaptureOptions): AudioCapture {
       resolveFlushed = null;
       return;
     }
-    if (deliveredFrameIndex !== null && message.firstFrameIndex !== deliveredFrameIndex) {
-      report(
-        `Microphone capture skipped ${message.firstFrameIndex - deliveredFrameIndex} frames of audio: the audio thread missed renders.`,
+    const GAP_WARN_FRAMES = ((options.gapWarnMs ?? GAP_WARN_MS) * OUTPUT_SAMPLE_RATE) / 1000;
+    if (
+      deliveredFrameIndex !== null &&
+      message.firstFrameIndex - deliveredFrameIndex >= GAP_WARN_FRAMES
+    ) {
+      const gapMs = Math.round(
+        ((message.firstFrameIndex - deliveredFrameIndex) / OUTPUT_SAMPLE_RATE) * 1000,
       );
+      report(`Microphone capture dropped ${gapMs} ms of audio: the audio thread missed renders.`);
     }
     deliveredFrameIndex = message.firstFrameIndex + message.frames;
     options.onSegment({
