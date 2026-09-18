@@ -245,11 +245,13 @@ async function callBrowserToolUntilReady(client, name, args = {}) {
   while (Date.now() < deadline) {
     const result = await client.callTool({ name, args });
     const payload = result.structuredContent;
-    if (payload?.ok === true) return payload.result;
-    if (payload?.ok !== false || payload.error?.retryable !== true) {
-      return mcpPayload(result, name);
+    if (payload?.ok === false && payload.error?.retryable === true) {
+      await delay(100);
+      continue;
     }
-    await delay(100);
+    // Screenshot bytes are stripped from structuredContent, so hand back the whole call result.
+    mcpPayload(result, name);
+    return result;
   }
   throw new Error(`${name} remained unavailable for ${timeoutMs}ms`);
 }
@@ -540,8 +542,8 @@ async function verifyHiddenBrowserScreenshots({
       browserId,
       function: "() => { document.body.style.background = 'rgb(0,255,0)'; }",
     });
-    const content = await callBrowserToolUntilReady(client, "browser_screenshot", { browserId });
-    const screenshot = content.find((item) => item.type === "image");
+    const response = await callBrowserToolUntilReady(client, "browser_screenshot", { browserId });
+    const screenshot = response.content.find((item) => item.type === "image");
     assert(screenshot, "browser_screenshot returned no image");
     fs.writeFileSync(
       path.join(artifactDir, "hidden-browser-viewport.png"),
