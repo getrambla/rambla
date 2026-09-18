@@ -9,6 +9,7 @@ import type {
   SpeechToTextProvider,
   StreamingTranscriptionSession,
 } from "../speech/speech-provider.js";
+import { SherpaParakeetRealtimeTranscriptionSession } from "../speech/providers/local/sherpa/sherpa-parakeet-realtime-session.js";
 
 class FakeRealtimeSession extends EventEmitter implements StreamingTranscriptionSession {
   connected = false;
@@ -560,6 +561,132 @@ it("cancellation during STT bootstrap closes the producer and never acknowledges
   await starting;
   expect(messages).toEqual([]);
   manager.cleanupAll();
+});
+
+class FakeParakeetStream {
+  samples = new Float32Array(0);
+  freed = false;
+
+  accept(samples: Float32Array): void {
+    const merged = new Float32Array(this.samples.length + samples.length);
+    merged.set(this.samples);
+    merged.set(samples, this.samples.length);
+    this.samples = merged;
+  }
+
+  free(): void {
+    this.freed = true;
+  }
+}
+
+function textForSamples(sampleCount: number): string {
+  if (sampleCount >= 26_000) return "hello there";
+  if (sampleCount >= 23_000) return "hello";
+  return "";
+}
+
+class FakeParakeetEngine {
+  readonly sampleRate = 24_000;
+  readonly streams: FakeParakeetStream[] = [];
+  readonly recognizer = {
+    decode: (_stream: FakeParakeetStream) => {},
+    getResult: (stream: FakeParakeetStream) => textForSamples(stream.samples.length),
+  };
+
+  createStream(): FakeParakeetStream {
+    const stream = new FakeParakeetStream();
+    this.streams.push(stream);
+    return stream;
+  }
+
+  acceptWaveform(stream: FakeParakeetStream, _sampleRate: number, samples: Float32Array): void {
+    stream.accept(samples);
+  }
+}
+
+describe("DictationStreamManager (commit during in-flight decode)", () => {
+  it("a commit during an in-flight decode transcribes the audio that arrived during it", async () => {
+    const engine = new FakeParakeetEngine();
+    const session = new SherpaParakeetRealtimeTranscriptionSession({ engine });
+    const emitted: Array<{ type: string; payload: unknown }> = [];
+    const manager = new DictationStreamManager({
+      logger: pino({ level: "silent" }),
+      emit: (msg) => emitted.push(msg),
+      sessionId: "s1",
+      stt: { id: "fake-parakeet", createSession: () => session },
+      autoCommitSeconds: 1,
+    });
+
+    await manager.handleStart("d-commit-in-flight", "audio/pcm;rate=24000;bits=16");
+    // Feed both chunks in the same tick so the second lands while the decode
+    // triggered by the first (and its auto-commit) is still in flight.
+    const first = manager.handleChunk({
+      dictationId: "d-commit-in-flight",
+      seq: 0,
+      audioBase64: buildPcmBase64(2000, 24_000),
+      format: "audio/pcm;rate=24000;bits=16",
+    });
+    const second = manager.handleChunk({
+      dictationId: "d-commit-in-flight",
+      seq: 1,
+      audioBase64: buildPcmBase64(2000, 2_400),
+      format: "audio/pcm;rate=24000;bits=16",
+    });
+    await first;
+    await second;
+
+    await manager.handleFinish("d-commit-in-flight", 1);
+    await tick();
+    await tick();
+
+    const final = emitted.find((msg) => msg.type === "dictation_stream_final");
+    expect((final?.payload as { text?: string } | undefined)?.text).toBe("hello there");
+    expect(emitted.find((msg) => msg.type === "dictation_stream_error")).toBeUndefined();
+    expect(session).toBeDefined();
+  });
+
+  it("audio is never discarded without appearing in a transcript", async () => {
+    const engine = new FakeParakeetEngine();
+    const session = new SherpaParakeetRealtimeTranscriptionSession({ engine });
+    const emitted: Array<{ type: string; payload: unknown }> = [];
+    const manager = new DictationStreamManager({
+      logger: pino({ level: "silent" }),
+      emit: (msg) => emitted.push(msg),
+      sessionId: "s1",
+      stt: { id: "fake-parakeet", createSession: () => session },
+      autoCommitSeconds: 1,
+    });
+
+    await manager.handleStart("d-no-discard", "audio/pcm;rate=24000;bits=16");
+    const first = manager.handleChunk({
+      dictationId: "d-no-discard",
+      seq: 0,
+      audioBase64: buildPcmBase64(2000, 24_000),
+      format: "audio/pcm;rate=24000;bits=16",
+    });
+    const second = manager.handleChunk({
+      dictationId: "d-no-discard",
+      seq: 1,
+      audioBase64: buildPcmBase64(2000, 2_400),
+      format: "audio/pcm;rate=24000;bits=16",
+    });
+    await first;
+    await second;
+
+    await manager.handleFinish("d-no-discard", 1);
+    await tick();
+    await tick();
+
+    const final = emitted.find((msg) => msg.type === "dictation_stream_final");
+    expect(final).toBeDefined();
+    // The tail audio's words must survive into the committed final transcript,
+    // not just into a partial that later gets dropped as abandoned.
+    expect((final?.payload as { text?: string } | undefined)?.text).toBe("hello there");
+    // The decode that produced the committed final must have covered every
+    // appended sample (24000 + 2400) — nothing cleared before being decoded.
+    const fullCoverage = engine.streams.some((stream) => stream.samples.length >= 26_400);
+    expect(fullCoverage).toBe(true);
+  });
 });
 
 it("closes every dictation stream when one provider cleanup fails", async () => {

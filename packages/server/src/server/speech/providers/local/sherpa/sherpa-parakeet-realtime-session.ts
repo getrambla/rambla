@@ -21,6 +21,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
   private lastDecodeAt = 0;
   private decoding = false;
   private pendingDecode = false;
+  private pendingCommitCount = 0;
   private readonly minDecodeIntervalMs: number;
 
   constructor(params: { engine: SherpaOfflineRecognizerEngine; minDecodeIntervalMs?: number }) {
@@ -58,20 +59,29 @@ export class SherpaParakeetRealtimeTranscriptionSession
       return;
     }
 
+    this.pendingCommitCount += 1;
     void (async () => {
       try {
         await this.maybeDecode(true);
-        const finalText = this.lastPartialText;
-        const segmentId = this.currentSegmentId!;
-        const previousSegmentId = this.previousSegmentId;
+        // A commit that lands while a decode is already running must not ship
+        // that decode's partial text as final: queue it so a fresh decode runs
+        // over the audio that arrived in the meantime.
+        while (this.pendingCommitCount > 0 && this.connected && this.currentSegmentId) {
+          this.pendingCommitCount -= 1;
+          await this.maybeDecode(true);
 
-        this.emit("committed", { segmentId, previousSegmentId });
-        this.emit("transcript", { segmentId, transcript: finalText, isFinal: true });
+          const finalText = this.lastPartialText;
+          const segmentId = this.currentSegmentId!;
+          const previousSegmentId = this.previousSegmentId;
 
-        this.previousSegmentId = segmentId;
-        this.currentSegmentId = uuidv4();
-        this.lastPartialText = "";
-        this.pcm16 = Buffer.alloc(0);
+          this.emit("committed", { segmentId, previousSegmentId });
+          this.emit("transcript", { segmentId, transcript: finalText, isFinal: true });
+
+          this.previousSegmentId = segmentId;
+          this.currentSegmentId = uuidv4();
+          this.lastPartialText = "";
+          this.pcm16 = Buffer.alloc(0);
+        }
       } catch (err) {
         this.emit("error", err instanceof Error ? err : new Error(String(err)));
       }
