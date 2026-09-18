@@ -93,6 +93,7 @@ interface DictationStreamState {
   autoCommitBytes: number;
   bytesSinceCommit: number;
   peakSinceCommit: number;
+  peakOverall: number;
   committedSegmentIds: string[];
   transcriptsBySegmentId: Map<string, string>;
   finalTranscriptSegmentIds: Set<string>;
@@ -293,6 +294,7 @@ export class DictationStreamManager {
       autoCommitBytes,
       bytesSinceCommit: 0,
       peakSinceCommit: 0,
+      peakOverall: 0,
       committedSegmentIds: [],
       transcriptsBySegmentId: new Map(),
       finalTranscriptSegmentIds: new Set(),
@@ -422,6 +424,7 @@ export class DictationStreamManager {
           state.debugAudioChunks.push(parts[part]);
           state.bytesSinceCommit += parts[part].length;
           state.peakSinceCommit = Math.max(state.peakSinceCommit, pcm16lePeakAbs(parts[part]));
+          state.peakOverall = Math.max(state.peakOverall, state.peakSinceCommit);
           try {
             this.maybeAutoCommitDictationSegment(state, part === 0 && parts.length > 1);
           } catch (error) {
@@ -790,6 +793,24 @@ export class DictationStreamManager {
     return droppedCount;
   }
 
+  /** Fails the stream instead of shipping empty text when the recording held audible speech. */
+  private failEmptyTranscriptAfterSpeech(
+    dictationId: string,
+    state: DictationStreamState,
+  ): boolean {
+    // Silence transcribes to nothing legitimately; speech does not, so an empty
+    // result there is a lost recording and must reach the user as a failure.
+    if (state.peakOverall < DICTATION_SILENCE_PEAK_THRESHOLD) {
+      return false;
+    }
+    void this.failAndCleanupDictationStream(
+      dictationId,
+      "Dictation received audible speech but produced no transcript",
+      true,
+    );
+    return true;
+  }
+
   private maybeFinalizeDictationStream(dictationId: string): void {
     const state = this.streams.get(dictationId);
     if (!state) {
@@ -826,6 +847,9 @@ export class DictationStreamManager {
     }
 
     if (orderedSegmentIds.length === 0) {
+      if (this.failEmptyTranscriptAfterSpeech(dictationId, state)) {
+        return;
+      }
       this.logger.warn(
         { dictationId, receivedSeconds: receivedSeconds(state) },
         "Dictation finalized with an empty transcript",
@@ -869,6 +893,10 @@ export class DictationStreamManager {
       .map((segmentId) => state.transcriptsBySegmentId.get(segmentId) ?? "")
       .join(" ")
       .trim();
+
+    if (orderedText.length === 0 && this.failEmptyTranscriptAfterSpeech(dictationId, state)) {
+      return;
+    }
 
     void (async () => {
       const debugRecordingPath = await this.maybePersistDictationStreamAudio(dictationId);
