@@ -3,6 +3,7 @@ import type {
   AudioEngineCallbacks,
   AudioPlaybackSource,
 } from "@/voice/audio-engine-types";
+import * as native from "@getrambla/expo-two-way-audio";
 
 interface QueuedAudio {
   audio: AudioPlaybackSource;
@@ -70,8 +71,6 @@ export function createAudioEngine(
   callbacks: AudioEngineCallbacks,
   _options?: AudioEngineTraceOptions,
 ): AudioEngine {
-  const native = require("@getrambla/expo-two-way-audio");
-
   const refs: {
     initialized: boolean;
     captureActive: boolean;
@@ -262,7 +261,9 @@ export function createAudioEngine(
       refs.muted = false;
       callbacks.onVolumeLevel(0);
       if (refs.initialized) {
-        native.tearDown();
+        // Never tearDown(): the native engine is process-wide, and dropping it kills a capture
+        // another wrapper still has in flight. Releasing the session is guarded natively.
+        native.releaseAudioSession();
         refs.initialized = false;
       }
       microphoneSubscription.remove();
@@ -277,11 +278,13 @@ export function createAudioEngine(
 
       try {
         await ensureMicrophonePermission();
+        // Another wrapper's destroy() can have left this flag stale; initialize() is idempotent.
+        refs.initialized = false;
         await ensureInitialized();
         const isRecording = native.toggleRecording(true);
         if (!isRecording) {
           throw new Error(
-            "Microphone capture could not start because Android audio focus is unavailable.",
+            "Microphone capture could not start because the audio engine is not available.",
           );
         }
         refs.captureActive = true;
