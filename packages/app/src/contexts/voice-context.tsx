@@ -190,7 +190,10 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
         await engine.startCapture();
       },
       async stopCapture() {
-        await engine.stopCapture();
+        // A refused start unwinds through here, and it must not stop whoever does hold capture.
+        if (captureConsumerRef.current === runtimeConsumer) {
+          await engine.stopCapture();
+        }
         claim.releaseCapture(runtimeConsumer);
       },
     };

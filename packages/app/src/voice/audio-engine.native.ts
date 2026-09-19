@@ -70,7 +70,7 @@ function resamplePcm16(pcm: Uint8Array, fromRate: number, toRate: number): Uint8
 
 export function createAudioEngine(
   callbacks: AudioEngineCallbacks,
-  _options?: AudioEngineTraceOptions,
+  options?: AudioEngineTraceOptions,
 ): AudioEngine {
   const refs: {
     initialized: boolean;
@@ -119,7 +119,16 @@ export function createAudioEngine(
   const interruptionSubscription = native.addExpoTwoWayAudioEventListener(
     "onAudioInterruption",
     (event: { data: string }) => {
-      if (event.data !== "blocked") {
+      if (event.data === "ended") {
+        // Native resumed recording on its own, so reconcile with who wants the microphone now.
+        if (options?.hasCaptureClaim?.()) {
+          refs.captureActive = true;
+        } else {
+          native.toggleRecording(false);
+        }
+        return;
+      }
+      if (event.data !== "began" && event.data !== "blocked") {
         return;
       }
       const wasCaptureActive = refs.captureActive;

@@ -52,8 +52,14 @@ export function useDictationAudioSource(config: DictationAudioSourceConfig): Dic
       throw new Error("The microphone is in use by something else.");
     }
     holdsClaimRef.current = true;
-    await engine.initialize();
-    await engine.startCapture();
+    try {
+      await engine.initialize();
+      await engine.startCapture();
+    } catch (error) {
+      claim.releaseCapture(consumerRef.current);
+      holdsClaimRef.current = false;
+      throw error;
+    }
   }, [engine, claim]);
 
   const stop = useCallback(async () => {

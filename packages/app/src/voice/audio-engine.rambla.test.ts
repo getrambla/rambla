@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const microphoneListeners = new Set<(event: { data: Uint8Array }) => void>();
+type NativeEventListener = (event: { data: Uint8Array | string }) => void;
+
+const microphoneListeners = new Set<NativeEventListener>();
+const interruptionListeners = new Set<NativeEventListener>();
 
 /**
  * Mirrors the process-wide native singleton in `ExpoTwoWayAudioModule.swift` and
@@ -21,13 +24,26 @@ const nativeSingleton = {
       listener({ data });
     }
   },
+  /** An interruption stops the native recording; a resume turns it back on before JavaScript hears it. */
+  emitInterruption(kind: string) {
+    if (kind === "began") {
+      nativeSingleton.recording = false;
+    }
+    if (kind === "ended") {
+      nativeSingleton.recording = true;
+    }
+    for (const listener of interruptionListeners) {
+      listener({ data: kind });
+    }
+  },
 };
 
 vi.mock("@getrambla/expo-two-way-audio", () => ({
-  addExpoTwoWayAudioEventListener: (
-    name: string,
-    listener: (event: { data: Uint8Array }) => void,
-  ) => {
+  addExpoTwoWayAudioEventListener: (name: string, listener: NativeEventListener) => {
+    if (name === "onAudioInterruption") {
+      interruptionListeners.add(listener);
+      return { remove: () => interruptionListeners.delete(listener) };
+    }
     if (name !== "onMicrophoneData") {
       return { remove: () => {} };
     }
@@ -84,6 +100,7 @@ describe("createAudioEngine (native)", () => {
     nativeSingleton.sessionActive = false;
     nativeSingleton.refuseRecording = false;
     microphoneListeners.clear();
+    interruptionListeners.clear();
   });
 
   it("blames the audio engine, not Android audio focus, when capture fails", async () => {
@@ -122,6 +139,65 @@ describe("createAudioEngine (native)", () => {
 
     expect(nativeSingleton.recording).toBe(true);
     expect(captured).toHaveLength(1);
+  });
+
+  it("stops treating capture as live when the system interrupts", async () => {
+    const captured: Uint8Array[] = [];
+    const volumes: number[] = [];
+    let interruptions = 0;
+    const engine = createAudioEngine({
+      onCaptureData: (pcm) => captured.push(pcm),
+      onVolumeLevel: (level) => volumes.push(level),
+      onInterruption: () => {
+        interruptions += 1;
+      },
+    });
+    await engine.initialize();
+    await engine.startCapture();
+    nativeSingleton.emitMicrophoneData(new Uint8Array([1, 2]));
+
+    nativeSingleton.emitInterruption("began");
+    nativeSingleton.emitMicrophoneData(new Uint8Array([3, 4]));
+
+    expect(interruptions).toBe(1);
+    expect(volumes).toContain(0);
+    expect(captured).toHaveLength(1);
+  });
+
+  it("re-asserts capture when the interruption ends and the consumer still holds the claim", async () => {
+    const captured: Uint8Array[] = [];
+    const engine = createAudioEngine(
+      {
+        onCaptureData: (pcm) => captured.push(pcm),
+        onVolumeLevel: () => {},
+      },
+      { hasCaptureClaim: () => true },
+    );
+    await engine.initialize();
+    await engine.startCapture();
+
+    nativeSingleton.emitInterruption("began");
+    nativeSingleton.emitInterruption("ended");
+    nativeSingleton.emitMicrophoneData(new Uint8Array([5, 6]));
+
+    expect(captured).toHaveLength(1);
+  });
+
+  it("turns native recording off when the interruption ends and nobody holds the claim", async () => {
+    const engine = createAudioEngine(
+      {
+        onCaptureData: () => {},
+        onVolumeLevel: () => {},
+      },
+      { hasCaptureClaim: () => false },
+    );
+    await engine.initialize();
+    await engine.startCapture();
+
+    nativeSingleton.emitInterruption("began");
+    nativeSingleton.emitInterruption("ended");
+
+    expect(nativeSingleton.recording).toBe(false);
   });
 
   it("hands the audio session back when the capturing wrapper is destroyed", async () => {
