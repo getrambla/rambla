@@ -198,6 +198,7 @@ describe("createAudioEngine (native)", () => {
     nativeSingleton.emitInterruption("ended");
 
     expect(nativeSingleton.recording).toBe(false);
+    expect(nativeSingleton.sessionActive).toBe(false);
   });
 
   it("hands the audio session back when the capturing wrapper is destroyed", async () => {

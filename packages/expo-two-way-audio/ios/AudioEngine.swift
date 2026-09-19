@@ -97,15 +97,20 @@ class AudioEngine {
     func setupAudioSession() {
         let session = AVAudioSession.sharedInstance()
 
+        // A session we failed to take must not read as active, or every caller above us
+        // believes it has the microphone.
         do {
             try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP])
         } catch {
             print("Could not set the audio category: \(error.localizedDescription)")
+            isSessionActive = false
+            return
         }
 
         do {
             try session.setPreferredSampleRate(voiceIOFormat.sampleRate)
         } catch {
+            // A refused sample rate is only a preference; the session is still usable.
             print("Could not set the preferred sample rate: \(error.localizedDescription)")
         }
 
@@ -113,7 +118,8 @@ class AudioEngine {
             try session.setActive(true)
             isSessionActive = true
         } catch {
-            print("Could not set the audio session as active")
+            print("Could not set the audio session as active: \(error.localizedDescription)")
+            isSessionActive = false
         }
     }
 
@@ -307,6 +313,11 @@ class AudioEngine {
     }
     
     func toggleRecording(_ val: Bool) -> Bool {
+        if val {
+            activateAudioSessionIfNeeded()
+            // Without a session there is no microphone, so report the refusal instead of recording silence.
+            guard isSessionActive else { return false }
+        }
         isRecording = val
         if !isRecording {
             avAudioEngine.inputNode.isVoiceProcessingInputMuted = true
@@ -314,7 +325,6 @@ class AudioEngine {
             inputBuffer = [Float](repeating: 0, count: 2048)
             updateInputVolume()
         } else {
-            activateAudioSessionIfNeeded()
             avAudioEngine.inputNode.isVoiceProcessingInputMuted = false
         }
         print("Recording \(isRecording ? "started" : "stopped")")

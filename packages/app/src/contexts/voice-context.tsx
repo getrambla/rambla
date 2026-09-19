@@ -198,7 +198,7 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
       ...engine,
       async startCapture() {
         if (!claim.claimCapture(runtimeConsumer)) {
-          throw new Error("The microphone is in use by something else.");
+          throw new Error("Stop dictation before starting voice mode.");
         }
         await engine.startCapture();
       },

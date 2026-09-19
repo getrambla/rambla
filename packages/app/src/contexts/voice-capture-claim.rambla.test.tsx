@@ -187,7 +187,9 @@ describe("voice capture claim", () => {
       await result.current.dictation.start();
     });
     await act(async () => {
-      await voiceMock.engine!.stopCapture();
+      await expect(voiceMock.engine!.startCapture()).rejects.toThrow(
+        "Stop dictation before starting voice mode.",
+      );
     });
 
     expect(engineMock.stopCapture).not.toHaveBeenCalled();

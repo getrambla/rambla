@@ -49,7 +49,7 @@ export function useDictationAudioSource(config: DictationAudioSourceConfig): Dic
       throw new Error("The microphone is not available.");
     }
     if (!claim.claimCapture(consumerRef.current)) {
-      throw new Error("The microphone is in use by something else.");
+      throw new Error("Stop voice mode before starting dictation.");
     }
     holdsClaimRef.current = true;
     try {
