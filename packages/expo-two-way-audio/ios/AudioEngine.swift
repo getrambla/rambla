@@ -348,11 +348,13 @@ class AudioEngine {
         playbackCountLock.unlock()
     }
 
-    func resumeRecordingAndPlayer(){
+    @discardableResult
+    func resumeRecordingAndPlayer() -> Bool {
         activateAudioSessionIfNeeded()
         self.checkEngineIsRunning()
         isRecording = toggleRecording(true)
         speechPlayer.play()
+        return isRecording
     }
     
     func tearDown() {
@@ -409,9 +411,10 @@ class AudioEngine {
             if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
                 let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
                 if options.contains(.shouldResume) {
-                    // Interruption ended. Resume playback.
-                    self.resumeRecordingAndPlayer()
-                    onAudioInterruptionCallback?("ended")
+                    // Interruption ended. Resume playback. A refused resume is "blocked",
+                    // or JavaScript goes on believing it is capturing.
+                    let resumed = self.resumeRecordingAndPlayer()
+                    onAudioInterruptionCallback?(resumed ? "ended" : "blocked")
                 } else {
                     // Interruption ends. Don't resume playback.
                     onAudioInterruptionCallback?("blocked")
