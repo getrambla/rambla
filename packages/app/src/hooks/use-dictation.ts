@@ -14,6 +14,11 @@ import {
   type UseDictationResult,
 } from "./use-dictation.shared";
 
+/** How long a sent finish waits for the daemon to take it before the recording is failed. */
+export const DICTATION_FINISH_ACCEPT_TIMEOUT_MS = 10_000;
+/** Margin added to the deadline the daemon states when it takes the finish. */
+export const DICTATION_FINISH_TIMEOUT_GRACE_MS = 5_000;
+
 export function useDictation(options: UseDictationOptions): UseDictationResult {
   const { t } = useTranslation();
   const {
@@ -70,6 +75,8 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
   // duration is used for UI only; no need to mirror into a ref.
 
   const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finishTimedOutRef = useRef<((error: Error) => void) | null>(null);
   const attemptGuardRef = useRef(new AttemptGuard());
   const actionGateRef = useRef<{ starting: boolean; confirming: boolean; cancelling: boolean }>({
     starting: false,
@@ -142,10 +149,48 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     await senderRef.current?.restartStream(reason);
   }, []);
 
-  const ensureFinalTranscript = useCallback(async (finalSeq: number): Promise<string> => {
-    const result = await senderRef.current!.finish(finalSeq);
-    return result.text;
+  const clearFinishTimeout = useCallback(() => {
+    if (finishTimerRef.current) {
+      clearTimeout(finishTimerRef.current);
+      finishTimerRef.current = null;
+    }
+    finishTimedOutRef.current = null;
   }, []);
+
+  const armFinishTimeout = useCallback(
+    (timeoutMs: number) => {
+      if (finishTimerRef.current) {
+        clearTimeout(finishTimerRef.current);
+      }
+      finishTimerRef.current = setTimeout(() => {
+        finishTimerRef.current = null;
+        finishTimedOutRef.current?.(new Error(t("common.errors.unexpectedDictationError")));
+      }, timeoutMs);
+    },
+    [t],
+  );
+
+  // A daemon that answers neither the finish nor its own stated deadline would
+  // otherwise leave the dictation processing forever with every control disabled.
+  const ensureFinalTranscript = useCallback(
+    async (finalSeq: number): Promise<string> => {
+      const timedOut = new Promise<never>((_, reject) => {
+        finishTimedOutRef.current = reject;
+      });
+      try {
+        const result = await Promise.race([
+          senderRef.current!.finish(finalSeq, () =>
+            armFinishTimeout(DICTATION_FINISH_ACCEPT_TIMEOUT_MS),
+          ),
+          timedOut,
+        ]);
+        return result.text;
+      } finally {
+        clearFinishTimeout();
+      }
+    },
+    [armFinishTimeout, clearFinishTimeout],
+  );
 
   useEffect(() => {
     if (!client) {
@@ -186,6 +231,21 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     });
   }, [client]);
 
+  useEffect(() => {
+    if (!client) {
+      return;
+    }
+    return client.on("dictation_stream_finish_accepted", (message) => {
+      if (!finishTimedOutRef.current) {
+        return;
+      }
+      if (message.payload.dictationId !== senderRef.current?.getDictationId()) {
+        return;
+      }
+      armFinishTimeout(message.payload.timeoutMs + DICTATION_FINISH_TIMEOUT_GRACE_MS);
+    });
+  }, [client, armFinishTimeout]);
+
   const handleDictationFailure = useCallback(
     (failure: unknown) => {
       const normalized = toError(failure);
@@ -210,11 +270,12 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
 
   const handleStreamingTranscriptionSuccess = useCallback(
     (text: string, requestId: string) => {
-      const transcriptText =
-        text.trim().length > 0 ? text.trim() : latestPartialTranscriptRef.current.trim();
+      const latestPartial = latestPartialTranscriptRef.current.trim();
+      const transcriptText = text.trim().length > 0 ? text.trim() : latestPartial;
 
-      // Nothing came back, so keep the buffered audio for the failure overlay's retry.
-      if (!transcriptText) {
+      // Nothing came back, or the final stops at a word boundary the daemon had
+      // already spoken past, so keep the buffered audio for the overlay's retry.
+      if (!transcriptText || latestPartial.startsWith(`${transcriptText} `)) {
         handleDictationFailure(new Error(t("common.errors.unexpectedDictationError")));
         return;
       }
@@ -317,6 +378,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     }
     actionGateRef.current.cancelling = true;
     stopDurationTracking();
+    clearFinishTimeout();
     setDuration(0);
     setError(null);
 
@@ -338,7 +400,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       clearStreamingState();
       actionGateRef.current.cancelling = false;
     }
-  }, [audio, clearStreamingState, reportError, stopDurationTracking]);
+  }, [audio, clearFinishTimeout, clearStreamingState, reportError, stopDurationTracking]);
 
   const confirmDictation = useCallback(async () => {
     if (actionGateRef.current.confirming) {
@@ -460,10 +522,11 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     return () => {
       attemptGuard.cancel();
       stopDurationTracking();
+      clearFinishTimeout();
       void audioStop.current().catch(() => undefined);
       senderRef.current?.dispose();
     };
-  }, [stopDurationTracking]);
+  }, [clearFinishTimeout, stopDurationTracking]);
 
   return {
     isRecording,

@@ -1,10 +1,15 @@
 /** @vitest-environment jsdom */
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { afterEach, describe, expect, it, vi, beforeEach } from "vitest";
 import type { SessionOutboundMessage } from "@getrambla/protocol/messages";
 import type { DictationStreamSender } from "@/dictation/dictation-stream-sender";
 import { i18n } from "@/i18n/i18next";
-import { useDictation, type UseDictationOptions } from "./use-dictation";
+import {
+  DICTATION_FINISH_ACCEPT_TIMEOUT_MS,
+  DICTATION_FINISH_TIMEOUT_GRACE_MS,
+  useDictation,
+  type UseDictationOptions,
+} from "./use-dictation";
 
 const audio = vi.hoisted(() => {
   const source = {
@@ -45,6 +50,8 @@ const capturedSender = (): DictationStreamSender | null =>
 class FakeDictationClient {
   isConnected = true;
   finishText = "hello";
+  /** False makes the daemon take the finish and never reply, the way a wedged stream does. */
+  answersFinish = true;
   cancels: string[] = [];
   private readonly rawListeners = new Set<(message: SessionOutboundMessage) => void>();
 
@@ -61,6 +68,9 @@ class FakeDictationClient {
   }
 
   async finishDictationStream(dictationId: string): Promise<{ dictationId: string; text: string }> {
+    if (!this.answersFinish) {
+      return new Promise<never>(() => {});
+    }
     return { dictationId, text: this.finishText };
   }
 
@@ -77,9 +87,40 @@ class FakeDictationClient {
     return () => {};
   }
 
-  on(): () => void {
-    return () => {};
+  on(type: string, handler: (message: SessionOutboundMessage) => void): () => void {
+    const listeners = this.typedListeners.get(type) ?? new Set();
+    listeners.add(handler);
+    this.typedListeners.set(type, listeners);
+    return () => listeners.delete(handler);
   }
+
+  /** Delivers a daemon message to whatever the hook subscribed to by type. */
+  emit(message: SessionOutboundMessage): void {
+    for (const listener of this.typedListeners.get(message.type) ?? []) {
+      listener(message);
+    }
+  }
+
+  private readonly typedListeners = new Map<
+    string,
+    Set<(message: SessionOutboundMessage) => void>
+  >();
+}
+
+/** The daemon taking the finish and naming how long it will take to answer it. */
+function finishAcceptedMessage(dictationId: string, timeoutMs: number): SessionOutboundMessage {
+  return {
+    type: "dictation_stream_finish_accepted",
+    payload: { dictationId, timeoutMs },
+  } as unknown as SessionOutboundMessage;
+}
+
+/** The partial the daemon reports mid-dictation, addressed to the open stream. */
+function partialMessage(dictationId: string, text: string): SessionOutboundMessage {
+  return {
+    type: "dictation_stream_partial",
+    payload: { dictationId, text },
+  } as unknown as SessionOutboundMessage;
 }
 
 const asClient = (client: FakeDictationClient): UseDictationOptions["client"] =>
@@ -92,6 +133,10 @@ describe("dictation loss", () => {
     audio.source.start.mockClear();
     audio.source.stop.mockClear();
     audio.source.stop.mockImplementation(async () => {});
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("reports a failure when the recording has no final sequence", async () => {
@@ -157,6 +202,119 @@ describe("dictation loss", () => {
     expect(result.current.status).toBe("failed");
     expect(result.current.canRetryFailedDictation).toBe(true);
     expect(onError).toHaveBeenCalled();
+  });
+
+  it("keeps the recording when the final drops an ending the daemon already reported", async () => {
+    const client = new FakeDictationClient();
+    client.finishText = "one two three four five";
+    const onTranscript = vi.fn();
+    const { result } = renderHook(() => useDictation({ client: asClient(client), onTranscript }));
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+    act(() => {
+      client.emit(
+        partialMessage(capturedSender()!.getDictationId()!, "one two three four five six seven"),
+      );
+    });
+    await act(async () => {
+      await result.current.confirmDictation();
+    });
+
+    expect(onTranscript).not.toHaveBeenCalled();
+    expect(capturedSender()?.hasSegments()).toBe(true);
+    expect(result.current.status).toBe("failed");
+    expect(result.current.canRetryFailedDictation).toBe(true);
+  });
+
+  it("accepts a final that rewords the partial rather than cutting it short", async () => {
+    const client = new FakeDictationClient();
+    client.finishText = "One, two, three.";
+    const onTranscript = vi.fn();
+    const { result } = renderHook(() => useDictation({ client: asClient(client), onTranscript }));
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+    act(() => {
+      client.emit(partialMessage(capturedSender()!.getDictationId()!, "one two three"));
+    });
+    await act(async () => {
+      await result.current.confirmDictation();
+    });
+
+    expect(onTranscript).toHaveBeenCalledWith("One, two, three.", expect.anything());
+    expect(result.current.status).toBe("idle");
+  });
+
+  it("reports a failure when the daemon never answers the finish", async () => {
+    const client = new FakeDictationClient();
+    client.answersFinish = false;
+    const onTranscript = vi.fn();
+    const { result } = renderHook(() => useDictation({ client: asClient(client), onTranscript }));
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+
+    vi.useFakeTimers();
+    await act(async () => {
+      const confirmed = result.current.confirmDictation();
+      await vi.advanceTimersByTimeAsync(DICTATION_FINISH_ACCEPT_TIMEOUT_MS + 1);
+      await confirmed;
+    });
+
+    expect(onTranscript).not.toHaveBeenCalled();
+    expect(capturedSender()?.hasSegments()).toBe(true);
+    expect(result.current.status).toBe("failed");
+    expect(result.current.canRetryFailedDictation).toBe(true);
+  });
+
+  it("waits out the deadline the daemon states when it takes the finish", async () => {
+    const daemonTimeoutMs = 60_000;
+    const client = new FakeDictationClient();
+    client.answersFinish = false;
+    const onTranscript = vi.fn();
+    const { result } = renderHook(() => useDictation({ client: asClient(client), onTranscript }));
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+
+    vi.useFakeTimers();
+    let confirmed!: Promise<void>;
+    await act(async () => {
+      confirmed = result.current.confirmDictation();
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    act(() => {
+      client.emit(finishAcceptedMessage(capturedSender()!.getDictationId()!, daemonTimeoutMs));
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(DICTATION_FINISH_ACCEPT_TIMEOUT_MS + 1);
+    });
+    expect(result.current.status).toBe("uploading");
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(daemonTimeoutMs + DICTATION_FINISH_TIMEOUT_GRACE_MS);
+      await confirmed;
+    });
+    expect(result.current.status).toBe("failed");
+    expect(result.current.canRetryFailedDictation).toBe(true);
   });
 
   it("cancels quietly when a submit follows the cancel the user asked for", async () => {

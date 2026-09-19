@@ -231,7 +231,7 @@ export class DictationStreamSender {
     void reason;
   }
 
-  async finish(finalSeq: number): Promise<DictationFinishResult> {
+  async finish(finalSeq: number, onFinishSent?: () => void): Promise<DictationFinishResult> {
     const client = this.client;
     if (!client) {
       throw new Error(i18n.t("common.errors.daemonClientUnavailable"));
@@ -254,6 +254,7 @@ export class DictationStreamSender {
 
     this.flush();
     await this.waitForFlushDrain(finalSeq);
+    onFinishSent?.();
     return client.finishDictationStream(dictationId, finalSeq);
   }
 
