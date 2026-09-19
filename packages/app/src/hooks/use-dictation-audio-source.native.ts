@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef } from "react";
 import { Buffer } from "buffer";
 import { useState } from "react";
 
-import { createAudioEngine } from "@/voice/audio-engine";
+import {
+  useVoiceAudioEngineOptional,
+  useVoiceCaptureClaimOptional,
+} from "@/contexts/voice-context";
+import type { AudioEngineCallbacks } from "@/voice/audio-engine-types";
 
 import type {
   DictationAudioSource,
@@ -14,29 +18,25 @@ export function useDictationAudioSource(config: DictationAudioSourceConfig): Dic
   const onErrorRef = useRef(config.onError);
   const onInterruptionRef = useRef(config.onInterruption);
   const [volume, setVolume] = useState(0);
-  const engineRef = useRef<ReturnType<typeof createAudioEngine> | null>(null);
+  const engine = useVoiceAudioEngineOptional();
+  const claim = useVoiceCaptureClaimOptional();
+  const holdsClaimRef = useRef(false);
 
-  const getOrCreateEngine = useCallback(() => {
-    if (engineRef.current) {
-      return engineRef.current;
-    }
-
-    engineRef.current = createAudioEngine({
-      onCaptureData: (pcm) => {
-        onPcmSegmentRef.current(Buffer.from(pcm).toString("base64"));
-      },
-      onVolumeLevel: (level) => {
-        setVolume(level);
-      },
-      onError: (error) => {
-        onErrorRef.current?.(error);
-      },
-      onInterruption: () => {
-        onInterruptionRef.current?.();
-      },
-    });
-    return engineRef.current;
-  }, []);
+  // The object's identity is the claim token, so it has to outlive every render.
+  const consumerRef = useRef<AudioEngineCallbacks>({
+    onCaptureData: (pcm) => {
+      onPcmSegmentRef.current(Buffer.from(pcm).toString("base64"));
+    },
+    onVolumeLevel: (level) => {
+      setVolume(level);
+    },
+    onError: (error) => {
+      onErrorRef.current?.(error);
+    },
+    onInterruption: () => {
+      onInterruptionRef.current?.();
+    },
+  });
 
   useEffect(() => {
     onPcmSegmentRef.current = config.onPcmSegment;
@@ -45,21 +45,35 @@ export function useDictationAudioSource(config: DictationAudioSourceConfig): Dic
   }, [config.onPcmSegment, config.onError, config.onInterruption]);
 
   const start = useCallback(async () => {
-    const engine = getOrCreateEngine();
+    if (!engine || !claim) {
+      throw new Error("The microphone is not available.");
+    }
+    if (!claim.claimCapture(consumerRef.current)) {
+      throw new Error("The microphone is in use by something else.");
+    }
+    holdsClaimRef.current = true;
     await engine.initialize();
     await engine.startCapture();
-  }, [getOrCreateEngine]);
+  }, [engine, claim]);
 
   const stop = useCallback(async () => {
-    await engineRef.current?.stopCapture();
+    if (holdsClaimRef.current) {
+      await engine?.stopCapture();
+      claim?.releaseCapture(consumerRef.current);
+      holdsClaimRef.current = false;
+    }
     setVolume(0);
-  }, []);
+  }, [engine, claim]);
+
+  const stopRef = useRef(stop);
+
+  useEffect(() => {
+    stopRef.current = stop;
+  }, [stop]);
 
   useEffect(() => {
     return () => {
-      const engine = engineRef.current;
-      engineRef.current = null;
-      void engine?.destroy().catch(() => undefined);
+      void stopRef.current().catch(() => undefined);
     };
   }, []);
 

@@ -13,6 +13,7 @@ interface QueuedAudio {
 
 interface AudioEngineTraceOptions {
   traceLabel?: string;
+  hasCaptureClaim?: () => boolean;
 }
 
 function parsePcmSampleRate(mimeType: string): number | null {
@@ -278,8 +279,6 @@ export function createAudioEngine(
 
       try {
         await ensureMicrophonePermission();
-        // Another wrapper's destroy() can have left this flag stale; initialize() is idempotent.
-        refs.initialized = false;
         await ensureInitialized();
         const isRecording = native.toggleRecording(true);
         if (!isRecording) {

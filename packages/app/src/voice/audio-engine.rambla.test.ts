@@ -86,20 +86,6 @@ describe("createAudioEngine (native)", () => {
     microphoneListeners.clear();
   });
 
-  it("starts capture after another wrapper tore down the shared native engine", async () => {
-    const dictation = createEngine();
-    const voice = createEngine();
-
-    await dictation.initialize();
-    await voice.initialize();
-
-    // The voice provider unmounting calls tearDown() on the singleton both wrappers share.
-    await voice.destroy();
-
-    await expect(dictation.startCapture()).resolves.toBeUndefined();
-    expect(nativeSingleton.recording).toBe(true);
-  });
-
   it("blames the audio engine, not Android audio focus, when capture fails", async () => {
     const errors: Error[] = [];
     const engine = createAudioEngine({

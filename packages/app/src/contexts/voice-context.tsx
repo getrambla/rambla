@@ -10,7 +10,7 @@ import {
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { useSessionStore } from "@/stores/session-store";
 import { createAudioEngine } from "@/voice/audio-engine";
-import type { AudioEngine } from "@/voice/audio-engine-types";
+import type { AudioEngine, AudioEngineCallbacks } from "@/voice/audio-engine-types";
 import {
   createVoiceRuntime,
   type VoiceRuntime,
@@ -40,8 +40,14 @@ const EMPTY_TELEMETRY: VoiceRuntimeTelemetrySnapshot = {
   segmentDuration: 0,
 };
 
+export interface VoiceCaptureClaim {
+  claimCapture(consumer: AudioEngineCallbacks): boolean;
+  releaseCapture(consumer: AudioEngineCallbacks): void;
+}
+
 const VoiceRuntimeContext = createContext<VoiceRuntime | null>(null);
 const VoiceAudioEngineContext = createContext<AudioEngine | null>(null);
+const VoiceCaptureClaimContext = createContext<VoiceCaptureClaim | null>(null);
 
 const noopSubscribe = () => () => {};
 const getEmptySnapshot = () => EMPTY_SNAPSHOT;
@@ -108,6 +114,10 @@ export function useVoiceAudioEngineOptional(): AudioEngine | null {
   return useContext(VoiceAudioEngineContext);
 }
 
+export function useVoiceCaptureClaimOptional(): VoiceCaptureClaim | null {
+  return useContext(VoiceCaptureClaimContext);
+}
+
 interface VoiceProviderProps {
   children: ReactNode;
 }
@@ -115,10 +125,12 @@ interface VoiceProviderProps {
 export function VoiceProvider({ children }: VoiceProviderProps) {
   const engineRef = useRef<AudioEngine | null>(null);
   const runtimeRef = useRef<VoiceRuntime | null>(null);
+  const claimRef = useRef<VoiceCaptureClaim | null>(null);
+  const captureConsumerRef = useRef<AudioEngineCallbacks | null>(null);
 
   if (!engineRef.current) {
     let runtime: VoiceRuntime | null = null;
-    const engine = createAudioEngine({
+    const runtimeConsumer: AudioEngineCallbacks = {
       onCaptureData: (pcm) => {
         runtime?.handleCapturePcm(pcm);
       },
@@ -133,10 +145,58 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
       onError: (error) => {
         console.error("[VoiceEngine] Capture error:", error);
       },
-    });
+    };
+
+    const claim: VoiceCaptureClaim = {
+      claimCapture(consumer) {
+        if (captureConsumerRef.current && captureConsumerRef.current !== consumer) {
+          return false;
+        }
+        captureConsumerRef.current = consumer;
+        return true;
+      },
+      releaseCapture(consumer) {
+        if (captureConsumerRef.current === consumer) {
+          captureConsumerRef.current = null;
+        }
+      },
+    };
+
+    const engine = createAudioEngine(
+      {
+        onCaptureData: (pcm) => {
+          (captureConsumerRef.current ?? runtimeConsumer).onCaptureData(pcm);
+        },
+        onVolumeLevel: (level) => {
+          (captureConsumerRef.current ?? runtimeConsumer).onVolumeLevel(level);
+        },
+        onInterruption: () => {
+          (captureConsumerRef.current ?? runtimeConsumer).onInterruption?.();
+        },
+        onError: (error) => {
+          (captureConsumerRef.current ?? runtimeConsumer).onError?.(error);
+        },
+      },
+      { hasCaptureClaim: () => captureConsumerRef.current !== null },
+    );
+
+    // Voice mode is one consumer among several, so it takes the claim through the same cell.
+    const claimedEngine: AudioEngine = {
+      ...engine,
+      async startCapture() {
+        if (!claim.claimCapture(runtimeConsumer)) {
+          throw new Error("The microphone is in use by something else.");
+        }
+        await engine.startCapture();
+      },
+      async stopCapture() {
+        await engine.stopCapture();
+        claim.releaseCapture(runtimeConsumer);
+      },
+    };
 
     runtime = createVoiceRuntime({
-      engine,
+      engine: claimedEngine,
       getServerInfo: (serverId) =>
         useSessionStore.getState().getSession(serverId)?.serverInfo ?? null,
       activateKeepAwake: async (tag) => {
@@ -149,10 +209,12 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
 
     engineRef.current = engine;
     runtimeRef.current = runtime;
+    claimRef.current = claim;
   }
 
   const engine = engineRef.current;
   const runtime = runtimeRef.current!;
+  const claim = claimRef.current!;
 
   useEffect(() => {
     return () => {
@@ -164,7 +226,9 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
 
   return (
     <VoiceAudioEngineContext.Provider value={engine}>
-      <VoiceRuntimeContext.Provider value={runtime}>{children}</VoiceRuntimeContext.Provider>
+      <VoiceCaptureClaimContext.Provider value={claim}>
+        <VoiceRuntimeContext.Provider value={runtime}>{children}</VoiceRuntimeContext.Provider>
+      </VoiceCaptureClaimContext.Provider>
     </VoiceAudioEngineContext.Provider>
   );
 }
