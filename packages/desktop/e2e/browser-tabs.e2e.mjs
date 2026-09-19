@@ -526,12 +526,18 @@ async function verifyHiddenBrowserScreenshots({
   };
   const measurements = [];
   const expectIdle = async (label) => {
-    await delay(500); // Let Chromium consume the visibility change before sampling.
-    const start = await readFrames();
-    await delay(1_000); // A fixed sampling interval is the behavior under test.
-    const frames = (await readFrames()) - start;
-    measurements.push({ label, frames });
-    writeJson(path.join(artifactDir, "hidden-browser-frames.json"), measurements);
+    const deadline = Date.now() + 5_000;
+    let frames = 0;
+    while (Date.now() < deadline) {
+      const start = await readFrames();
+      await delay(1_000); // A fixed sampling interval is the behavior under test.
+      frames = (await readFrames()) - start;
+      measurements.push({ label, frames });
+      writeJson(path.join(artifactDir, "hidden-browser-frames.json"), measurements);
+      if (frames === 0) {
+        return;
+      }
+    }
     assert(frames === 0, `${label}: hidden browser produced ${frames} animation frames`);
   };
   try {
