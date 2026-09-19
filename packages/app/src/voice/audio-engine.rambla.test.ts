@@ -183,6 +183,27 @@ describe("createAudioEngine (native)", () => {
     expect(captured).toHaveLength(1);
   });
 
+  it("does not re-arm capture when the system refused to give the microphone back", async () => {
+    const captured: Uint8Array[] = [];
+    const engine = createAudioEngine(
+      {
+        onCaptureData: (pcm) => captured.push(pcm),
+        onVolumeLevel: () => {},
+      },
+      { hasCaptureClaim: () => true },
+    );
+    await engine.initialize();
+    await engine.startCapture();
+
+    // A refused resume reaches JavaScript as "blocked", never "ended".
+    nativeSingleton.emitInterruption("began");
+    nativeSingleton.emitInterruption("blocked");
+    nativeSingleton.recording = true;
+    nativeSingleton.emitMicrophoneData(new Uint8Array([7, 8]));
+
+    expect(captured).toHaveLength(0);
+  });
+
   it("turns native recording off when the interruption ends and nobody holds the claim", async () => {
     const engine = createAudioEngine(
       {
