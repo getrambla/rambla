@@ -125,6 +125,7 @@ export function createAudioEngine(
           refs.captureActive = true;
         } else {
           native.toggleRecording(false);
+          releaseSessionIfIdle();
         }
         return;
       }

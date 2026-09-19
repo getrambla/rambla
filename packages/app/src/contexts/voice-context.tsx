@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
+import { useToast } from "@/contexts/toast-api-context";
 import { useSessionStore } from "@/stores/session-store";
 import { createAudioEngine } from "@/voice/audio-engine";
 import type { AudioEngine, AudioEngineCallbacks } from "@/voice/audio-engine-types";
@@ -127,6 +128,13 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
   const runtimeRef = useRef<VoiceRuntime | null>(null);
   const claimRef = useRef<VoiceCaptureClaim | null>(null);
   const captureConsumerRef = useRef<AudioEngineCallbacks | null>(null);
+  const toast = useToast();
+  // The callbacks below are built once, so they read the toast api through a ref that stays current.
+  const toastRef = useRef(toast);
+
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
 
   if (!engineRef.current) {
     let runtime: VoiceRuntime | null = null;
@@ -142,8 +150,13 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
           console.error("[VoiceEngine] Failed to stop after audio interruption:", error);
         });
       },
-      onError: (error) => {
-        console.error("[VoiceEngine] Capture error:", error);
+      // Named `captureError` so the lint rule against promises in node-style callbacks stays quiet.
+      onError: (captureError) => {
+        console.error("[VoiceEngine] Capture error:", captureError);
+        void runtime?.stopVoice().catch((stopError) => {
+          console.error("[VoiceEngine] Failed to stop after capture error:", stopError);
+        });
+        toastRef.current.error(captureError.message);
       },
     };
 
