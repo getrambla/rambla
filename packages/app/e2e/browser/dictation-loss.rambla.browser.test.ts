@@ -48,11 +48,22 @@ interface FinishTools {
   sendFinal(text: string): void;
 }
 
+/** One segment as a daemon with the segments capability reports it. */
+interface DictationSegmentRecord {
+  id: string;
+  index: number;
+  text: string;
+  isFinal: boolean;
+}
+
 interface DictationHarness {
   segments: SegmentRecord[];
+  /** Workspace creations the composer asked for, held back so the test creates nothing. */
+  submits: Record<string, unknown>[];
   waitForSegments(count: number): Promise<void>;
   waitForFinish(): Promise<void>;
   sendPartial(text: string): void;
+  sendSegment(segment: DictationSegmentRecord): void;
   dropConnection(): Promise<void>;
   waitForBlockedReconnect(): Promise<void>;
 }
@@ -149,6 +160,7 @@ async function installDictationHarness(
   options: { onFinish: (tools: FinishTools) => void },
 ): Promise<DictationHarness> {
   const segments: SegmentRecord[] = [];
+  const submits: Record<string, unknown>[] = [];
   const state: {
     socket: WebSocketRoute | null;
     dictationId: string | null;
@@ -178,6 +190,11 @@ async function installDictationHarness(
       const type = request?.type;
       const dictationId = typeof request?.dictationId === "string" ? request.dictationId : null;
 
+      // Once a dictation is open, a submit is the thing under test: record it and create nothing.
+      if (state.dictationId && typeof type === "string" && type.startsWith("workspace.create")) {
+        submits.push(request as Record<string, unknown>);
+        return;
+      }
       if (type === "dictation_stream_start" && dictationId) {
         state.dictationId = dictationId;
         sendSessionMessage(ws, {
@@ -228,6 +245,7 @@ async function installDictationHarness(
 
   return {
     segments,
+    submits,
     waitForSegments: async (count) => {
       await expect
         .poll(() => segments.length, {
@@ -244,6 +262,15 @@ async function installDictationHarness(
       sendSessionMessage(state.socket, {
         type: "dictation_stream_partial",
         payload: { dictationId: state.dictationId, text },
+      });
+    },
+    sendSegment: (segment) => {
+      if (!state.socket || !state.dictationId) {
+        throw new Error("No dictation stream is open on the intercepted socket");
+      }
+      sendSessionMessage(state.socket, {
+        type: "dictation_stream_partial",
+        payload: { dictationId: state.dictationId, text: "", segment },
       });
     },
     dropConnection: async () => {
@@ -514,6 +541,107 @@ test.describe("Dictation loss", () => {
         // A silent daemon costs 15 s waiting for the finish to be taken and 10 s more for
         // the text, so the error is up at ~25 s and this wait is not a boundary race.
       ).toBeVisible({ timeout: 30_000 });
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("lands the dictated words in the field while the user keeps typing", async ({ page }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-live-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal("one two three four");
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(2);
+
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two", isFinal: false });
+      await expect(
+        composer(page),
+        "The words the daemon reported never reached the field",
+      ).toHaveValue("one two");
+
+      // Typing before the region: the dictated words must shift, not swallow the typing.
+      await composer(page).click();
+      await page.keyboard.press("Home");
+      await page.keyboard.type("hey ");
+      await expect(composer(page)).toHaveValue("hey one two");
+
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two three", isFinal: false });
+      await expect(
+        composer(page),
+        "A partial that arrived after the user typed overwrote what they typed",
+      ).toHaveValue("hey one two three");
+
+      // Typing inside the region: what the user wrote there must survive the next partial.
+      await page.keyboard.press("End");
+      for (let index = 0; index < 6; index += 1) {
+        await page.keyboard.press("ArrowLeft");
+      }
+      await page.keyboard.type("!");
+      await expect(composer(page)).toHaveValue("hey one two! three");
+
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two three four", isFinal: true });
+      await expect(
+        composer(page),
+        "The engine's later words did not land after the text the user typed inside the region",
+      ).toHaveValue("hey one two! three four");
+
+      await insertButton(page).click();
+      await harness.waitForFinish();
+
+      await expect(
+        composer(page),
+        "The final repeated words the partials had already put in the field",
+      ).toHaveValue("hey one two! three four");
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("sends once, after the final, when the send is pressed mid-recording", async ({ page }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-send-" });
+    await installSyntheticMicrophone(page);
+    let held: FinishTools | null = null;
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        held = tools;
+        tools.acceptFinish(5_000);
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(2);
+
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two three", isFinal: false });
+      await expect(composer(page)).toHaveValue("one two three");
+
+      await page.getByTestId("message-input-root").getByRole("button", { name: "Create" }).click();
+      await harness.waitForFinish();
+
+      expect(
+        harness.submits,
+        "The press sent the message before the daemon returned the final, so the last words could not be in it",
+      ).toHaveLength(0);
+
+      held!.sendFinal("one two three");
+
+      await expect
+        .poll(() => harness.submits.length, {
+          timeout: 15_000,
+          message: "The final arrived but the message the press asked for was never sent",
+        })
+        .toBe(1);
+      expect(JSON.stringify(harness.submits[0])).toContain("one two three");
+
+      await page.waitForTimeout(1_000);
+      expect(harness.submits, "The press sent the message twice").toHaveLength(1);
     } finally {
       await seeded.cleanup();
     }
