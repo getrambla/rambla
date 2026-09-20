@@ -452,7 +452,7 @@ export class HubRelationshipHarness {
   private root = "";
   private ramblaHome = "";
   private host = "";
-  private readonly logs: string[] = [];
+  readonly logs: string[] = [];
   private readonly providerPrompts: AgentPromptInput[] = [];
   private readonly cliProcesses = new Set<Promise<unknown>>();
   private readonly claimedCliSockets = new Set<WebSocket>();

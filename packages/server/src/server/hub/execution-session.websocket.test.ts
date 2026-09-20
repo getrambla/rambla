@@ -68,7 +68,9 @@ test("ordinary Hub create and message retries do not duplicate agents or prompts
   const first = responses[0];
   expect(first).toMatchObject({ type: "status", payload: { status: "agent_created" } });
   if (first?.type !== "status" || first.payload.status !== "agent_created")
-    throw new Error("Agent was not created");
+    throw new Error(
+      `Agent was not created. Daemon log:\n${hub.logs.slice(-40).join("")}`,
+    );
   const agentId = first.payload.agentId;
   expect(responses[1]).toMatchObject({ type: "status", payload: { agentId } });
   expect(
