@@ -48,12 +48,29 @@ interface FinishTools {
   sendFinal(text: string): void;
 }
 
+/** One live segment as a daemon that reads the dictation_segments capability reports it. */
+interface DictationSegmentReport {
+  id: string;
+  index: number;
+  text: string;
+  isFinal: boolean;
+}
+
 interface DictationHarness {
   segments: SegmentRecord[];
+  /** What the daemon sent and what the app asked of it, in the order it happened. */
+  events: string[];
+  /** The prompt of every creation the app requested, so a duplicate send is visible. */
+  createPrompts: string[];
   waitForSegments(count: number): Promise<void>;
   waitForFinish(): Promise<void>;
   sendPartial(text: string): void;
+  sendSegment(segment: DictationSegmentReport): void;
+  /** The stream the app currently has open, so a test can tell a reconnected one apart. */
+  dictationId(): string | null;
   dropConnection(): Promise<void>;
+  /** Drops the socket and lets the app reconnect, which is what a reconnect restart needs. */
+  dropConnectionOnce(): Promise<void>;
   waitForBlockedReconnect(): Promise<void>;
 }
 
@@ -149,6 +166,8 @@ async function installDictationHarness(
   options: { onFinish: (tools: FinishTools) => void },
 ): Promise<DictationHarness> {
   const segments: SegmentRecord[] = [];
+  const events: string[] = [];
+  const createPrompts: string[] = [];
   const state: {
     socket: WebSocketRoute | null;
     dictationId: string | null;
@@ -211,12 +230,25 @@ async function installDictationHarness(
             });
           },
           sendFinal: (text) => {
+            events.push("dictation final");
             sendSessionMessage(ws, {
               type: "dictation_stream_final",
               payload: { dictationId, text },
             });
           },
         });
+        return;
+      }
+      // Recorded and dropped: these tests are about the send the composer made, not the
+      // workspace the daemon would build from it.
+      if (type === "workspace.create.request") {
+        const agent = request?.agent;
+        const prompt =
+          agent && typeof agent === "object"
+            ? (agent as { initialPrompt?: unknown }).initialPrompt
+            : undefined;
+        events.push("workspace create");
+        createPrompts.push(typeof prompt === "string" ? prompt : "");
         return;
       }
 
@@ -228,6 +260,8 @@ async function installDictationHarness(
 
   return {
     segments,
+    events,
+    createPrompts,
     waitForSegments: async (count) => {
       await expect
         .poll(() => segments.length, {
@@ -246,8 +280,22 @@ async function installDictationHarness(
         payload: { dictationId: state.dictationId, text },
       });
     },
+    sendSegment: (segment) => {
+      if (!state.socket || !state.dictationId) {
+        throw new Error("No dictation stream is open on the intercepted socket");
+      }
+      // A daemon that knows the cap sends the reporting segment alone and glues nothing.
+      sendSessionMessage(state.socket, {
+        type: "dictation_stream_partial",
+        payload: { dictationId: state.dictationId, text: "", segment },
+      });
+    },
+    dictationId: () => state.dictationId,
     dropConnection: async () => {
       state.dropped = true;
+      await state.socket?.close();
+    },
+    dropConnectionOnce: async () => {
       await state.socket?.close();
     },
     waitForBlockedReconnect: () => blockedReconnect,
@@ -279,6 +327,40 @@ function insertAndSendButton(page: Page) {
 
 function retryButton(page: Page) {
   return page.getByRole("button", { name: "Retry dictation" });
+}
+
+function createButton(page: Page) {
+  return page.getByTestId("message-input-root").getByRole("button", { name: "Create" });
+}
+
+function cancelButton(page: Page) {
+  return page.getByRole("button", { name: "Cancel dictation" });
+}
+
+function startButton(page: Page) {
+  return page.getByRole("button", { name: "Start dictation" });
+}
+
+/** An IME composition on the composer, which owns the field until it ends. */
+async function dispatchComposition(
+  page: Page,
+  type: "compositionstart" | "compositionend",
+): Promise<void> {
+  await page.evaluate((eventType) => {
+    const input = document.querySelector("textarea[data-composer-input]");
+    if (!input) {
+      throw new Error("The composer textarea is not mounted");
+    }
+    input.dispatchEvent(new CompositionEvent(eventType, { bubbles: true }));
+  }, type);
+}
+
+/** Moves the caret to an absolute offset with the keyboard, the way a user reaches it. */
+async function moveCaretTo(page: Page, offset: number, textLength: number): Promise<void> {
+  await page.keyboard.press("End");
+  for (let step = 0; step < textLength - offset; step += 1) {
+    await page.keyboard.press("ArrowLeft");
+  }
 }
 
 /** Blocks the page's main thread the way a long render or a long task does. */
@@ -514,6 +596,345 @@ test.describe("Dictation loss", () => {
         // A silent daemon costs 15 s waiting for the finish to be taken and 10 s more for
         // the text, so the error is up at ~25 s and this wait is not a boundary race.
       ).toBeVisible({ timeout: 30_000 });
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("lands dictated words in the field while the user types before and inside them", async ({
+    page,
+  }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-live-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal(SPOKEN);
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(1);
+
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two", isFinal: false });
+      await expect(
+        composer(page),
+        "A partial's words never reached the field, so nothing appears while the user speaks",
+      ).toHaveValue("one two");
+
+      await composer(page).click();
+      await page.keyboard.press("Home");
+      await page.keyboard.type("Hi ");
+      await expect(
+        composer(page),
+        "The field was not editable during dictation, or the typing was swallowed",
+      ).toHaveValue("Hi one two");
+
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two three", isFinal: false });
+      await expect(
+        composer(page),
+        "The next partial overwrote what the user typed before the dictated words",
+      ).toHaveValue("Hi one two three");
+
+      await moveCaretTo(page, 6, "Hi one two three".length);
+      await page.keyboard.type("!");
+      await expect(composer(page)).toHaveValue("Hi one! two three");
+
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two three four", isFinal: false });
+      await expect(
+        composer(page),
+        "A partial after an edit inside the dictated words must append past it and rewrite nothing before it",
+      ).toHaveValue("Hi one! two three four");
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("sends once, after the final, when send is pressed mid-recording", async ({ page }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-send-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal(SPOKEN);
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(1);
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two", isFinal: false });
+      await expect(composer(page)).toHaveValue("one two");
+
+      await createButton(page).click();
+      await harness.waitForFinish();
+
+      await expect
+        .poll(() => harness.events, {
+          timeout: 20_000,
+          message:
+            "Pressing send while recording must stop the dictation and send once the final has landed",
+        })
+        .toEqual(["dictation final", "workspace create"]);
+      expect(
+        harness.createPrompts,
+        "The final re-appended words the partials had already put in the field",
+      ).toEqual(["one two"]);
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("keeps the dictated words as they are when the recording is stopped", async ({ page }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-stop-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal(SPOKEN);
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(1);
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two", isFinal: false });
+      await expect(composer(page)).toHaveValue("one two");
+
+      await insertButton(page).click();
+      await harness.waitForFinish();
+
+      await expect(
+        startButton(page),
+        "The recording never stopped, so what the field holds afterwards is not settled",
+      ).toBeVisible({ timeout: 15_000 });
+      await expect(
+        composer(page),
+        `The final re-appended the whole transcript "${SPOKEN}" over words the partials had already placed`,
+      ).toHaveValue("one two");
+
+      // A second dictation starts its own region at the caret, which is wherever the user left it,
+      // and leaves the first one's words alone.
+      await composer(page).click();
+      await page.keyboard.press("End");
+      await page.keyboard.type(" ");
+      await startButton(page).click();
+      await harness.waitForSegments(harness.segments.length + 1);
+      harness.sendSegment({ id: "seg-2", index: 0, text: "three four", isFinal: false });
+      await expect(composer(page)).toHaveValue("one two three four");
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("deletes nothing when the recording is cancelled", async ({ page }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-cancel-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal(SPOKEN);
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(1);
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two", isFinal: false });
+      await expect(composer(page)).toHaveValue("one two");
+
+      await composer(page).click();
+      await page.keyboard.press("Home");
+      await page.keyboard.type("Hi ");
+      await expect(composer(page)).toHaveValue("Hi one two");
+
+      await cancelButton(page).click();
+
+      await expect(
+        startButton(page),
+        "Cancel did not stop the recording, so the field's contents afterwards prove nothing",
+      ).toBeVisible({ timeout: 15_000 });
+      await expect(
+        composer(page),
+        "Cancelling deleted text: the dictated words and the user's own typing must both survive",
+      ).toHaveValue("Hi one two");
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("keeps the pending words when the final is empty and when the failure is discarded", async ({
+    page,
+  }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-empty-pending-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal("");
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(1);
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two", isFinal: false });
+      await expect(composer(page)).toHaveValue("one two");
+
+      await insertButton(page).click();
+      await harness.waitForFinish();
+
+      await expect(retryButton(page)).toBeVisible({ timeout: 15_000 });
+      await expect(
+        composer(page),
+        "An empty final must leave the words the partials already placed in the field alone",
+      ).toHaveValue("one two");
+
+      await cancelButton(page).click();
+      await expect(
+        startButton(page),
+        "The failure was never discarded, so the field's contents afterwards prove nothing",
+      ).toBeVisible({ timeout: 15_000 });
+      await expect(
+        composer(page),
+        "Discarding a failed dictation deleted the words already in the field",
+      ).toHaveValue("one two");
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("rebuilds the dictated words from scratch when a failed dictation is retried", async ({
+    page,
+  }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-retry-" });
+    await installSyntheticMicrophone(page);
+    let finishes = 0;
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        finishes += 1;
+        tools.acceptFinish(5_000);
+        // The first finish fails the dictation so it can be retried; the retry's own finish is
+        // left open, so the rebuilt region is what the test observes.
+        if (finishes === 1) tools.sendFinal("");
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(1);
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two", isFinal: false });
+      await expect(composer(page)).toHaveValue("one two");
+
+      await composer(page).click();
+      await page.keyboard.press("Home");
+      await page.keyboard.type("Hi ");
+      await moveCaretTo(page, 6, "Hi one two".length);
+      await page.keyboard.type("!");
+      await expect(composer(page)).toHaveValue("Hi one! two");
+
+      await insertButton(page).click();
+      await expect(retryButton(page)).toBeVisible({ timeout: 15_000 });
+
+      await retryButton(page).click();
+      await expect(
+        composer(page),
+        "Retry re-sends the whole recording, so the dictated region must be spliced out while the text around it survives",
+      ).toHaveValue("Hi ");
+
+      harness.sendSegment({ id: "seg-9", index: 0, text: "one two three", isFinal: false });
+      await expect(
+        composer(page),
+        "The retried recording's words did not rebuild the region, or the edit made inside the old one came back",
+      ).toHaveValue("Hi one two three");
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("rebuilds the dictated words from scratch when the socket reconnects mid-recording", async ({
+    page,
+  }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-reconnect-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal(SPOKEN);
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(1);
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two", isFinal: false });
+      await expect(composer(page)).toHaveValue("one two");
+
+      await composer(page).click();
+      await page.keyboard.press("Home");
+      await page.keyboard.type("Hi ");
+      await expect(composer(page)).toHaveValue("Hi one two");
+
+      const droppedDictationId = harness.dictationId();
+      await harness.dropConnectionOnce();
+
+      await expect(
+        composer(page),
+        "A reconnect re-sends the whole recording, so the dictated region must be spliced out while the text around it survives",
+      ).toHaveValue("Hi ", { timeout: 30_000 });
+
+      await expect
+        .poll(() => harness.dictationId(), {
+          timeout: 30_000,
+          message: "The app never opened a new dictation stream after the reconnect",
+        })
+        .not.toBe(droppedDictationId);
+
+      harness.sendSegment({ id: "seg-7", index: 0, text: "one two three", isFinal: false });
+      await expect(
+        composer(page),
+        "The re-transcribed words did not rebuild the region after the reconnect",
+      ).toHaveValue("Hi one two three");
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("skips a dictation write during an IME composition and repairs it on the next partial", async ({
+    page,
+  }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-ime-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal(SPOKEN);
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(1);
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two", isFinal: false });
+      await expect(composer(page)).toHaveValue("one two");
+
+      await composer(page).click();
+      await dispatchComposition(page, "compositionstart");
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two three", isFinal: false });
+      // The composition owns the field, so this partial must not reach it.
+      await page.waitForTimeout(500);
+      await expect(
+        composer(page),
+        "A write landed during an IME composition, which discards what the user was composing",
+      ).toHaveValue("one two");
+
+      await dispatchComposition(page, "compositionend");
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two three four", isFinal: false });
+      await expect(
+        composer(page),
+        "The partial after the composition did not repair the write that was skipped",
+      ).toHaveValue("one two three four");
     } finally {
       await seeded.cleanup();
     }

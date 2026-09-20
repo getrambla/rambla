@@ -68,6 +68,8 @@ export const EditingTextInput = forwardRef<EditingTextInputHandle, EditingTextIn
         return nextText;
       },
       replaceText: (nextText, selection) => {
+        // An IME composition owns the field until it ends; a write here would drop it silently.
+        if (isComposingRef.current) return;
         textRef.current = nextText;
         const input = inputRef.current as WebTextInputElement | null;
         if (input && "value" in input) input.value = nextText;

@@ -92,6 +92,7 @@ export function DictationControls({
         <Pressable
           onPress={handleCancel}
           disabled={actionsDisabled && !isFailed}
+          accessibilityRole="button"
           accessibilityLabel={t("message.dictation.cancel")}
           style={cancelButtonStyle}
         >
@@ -105,6 +106,7 @@ export function DictationControls({
         {!actionsDisabled && isFailed ? (
           <Pressable
             onPress={onRetry}
+            accessibilityRole="button"
             accessibilityLabel={t("message.dictation.retry")}
             style={[styles.actionButton, styles.actionButtonConfirm]}
           >
@@ -115,6 +117,7 @@ export function DictationControls({
           <>
             <Pressable
               onPress={onAccept}
+              accessibilityRole="button"
               accessibilityLabel={t("message.dictation.insert")}
               style={[styles.actionButton, styles.actionButtonSecondary]}
             >
@@ -122,6 +125,7 @@ export function DictationControls({
             </Pressable>
             <Pressable
               onPress={onAcceptAndSend}
+              accessibilityRole="button"
               accessibilityLabel={t("message.dictation.insertAndSend")}
               style={[styles.actionButton, styles.actionButtonConfirm]}
             >

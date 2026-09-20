@@ -2,6 +2,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   View,
   Text,
+  Platform,
   useWindowDimensions,
   NativeSyntheticEvent,
   TextInputKeyPressEventData,
@@ -23,9 +24,10 @@ import { useTranslation } from "react-i18next";
 import { ICON_SIZE, type Theme } from "@/styles/theme";
 import { ArrowUp, Mic, MicOff, CornerDownLeft, Plus, Square } from "lucide-react-native";
 import { useDictation } from "@/hooks/use-dictation";
-import { DictationOverlay } from "@/components/dictation-controls";
+import { DictationControls, DictationOverlay } from "@/components/dictation-controls";
 import { RealtimeVoiceOverlay } from "@/components/realtime-voice-overlay";
 import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
+import type { DictationSegment } from "@getrambla/protocol/messages";
 import { useSessionStore } from "@/stores/session-store";
 import { useVoiceOptional } from "@/contexts/voice-context";
 import { useToast } from "@/contexts/toast-context";
@@ -74,6 +76,14 @@ import {
   resolveVoiceTooltipText,
 } from "./labels";
 import {
+  applySegment,
+  applyUserEdit,
+  beginDictation,
+  beginRestart,
+  type DictationTextResult,
+  type DictationTransactionState,
+} from "./dictation-transaction";
+import {
   applyDictationTranscript,
   computeCanStartDictation,
   resolveComposerSurfacePresentation,
@@ -84,6 +94,9 @@ import {
 } from "./state";
 
 const DEFAULT_SEND_KEYS: ShortcutKey[][] = [["Enter"]];
+// A write racing a keystroke is dropped by ReactEditText's event-count gate. Every partial
+// repairs the previous write, but the last one has no successor, so it is re-issued once.
+const ANDROID_LAST_WRITE_RETRY_MS = 150;
 const COMPOSER_INPUT_DATASET = { composerInput: "" } as const;
 
 export interface AttachmentMenuItem {
@@ -973,12 +986,13 @@ function computeIsRealtimeVoiceForAgent(
   return voice.isVoiceModeForAgent(voiceServerId, voiceAgentId);
 }
 
+// Recording keeps the field visible and editable, with its controls inline beside it. Only
+// processing and failure still cover the composer, since neither can be typed into.
 function computeShouldShowDictationOverlay(
-  isDictating: boolean,
   isDictationProcessing: boolean,
   dictationStatus: string,
 ): boolean {
-  return isDictating || isDictationProcessing || dictationStatus === "failed";
+  return isDictationProcessing || dictationStatus === "failed";
 }
 
 function computeIsDictationStartEnabled(
@@ -1284,6 +1298,12 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       getNativeElement: () => (isWeb ? getTextInputNativeElement(textInputRef.current) : null),
     }));
     const sendAfterTranscriptRef = useRef(false);
+    // Null while no dictation is in flight; the live region's anchor and segments while one is.
+    const dictationTransactionRef = useRef<DictationTransactionState | null>(null);
+    const dictationSegmentsSeenRef = useRef(false);
+    const lastDictationWriteRef = useRef<ComposerInputSnapshot | null>(null);
+    const lastWriteRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const sendAfterFinalRef = useRef<() => void>(() => {});
     const serverInfo = useSessionStore(
       useCallback(
         (state) => {
@@ -1315,10 +1335,76 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       };
     }, [onFocusChange]);
 
+    const readComposerSnapshot = useCallback(
+      (): ComposerInputSnapshot =>
+        getComposerInputSnapshot(textInputRef.current, valueRef.current, selectionRef.current),
+      [],
+    );
+
+    /** Rewrites the whole region from transaction state, so any single dropped write is repaired. */
+    const writeDictationRegion = useCallback(
+      (result: DictationTextResult) => {
+        dictationTransactionRef.current = result.state;
+        lastDictationWriteRef.current = { text: result.text, selection: result.selection };
+        replaceText(result.text, result.selection);
+      },
+      [replaceText],
+    );
+
+    const retryLastDictationWrite = useCallback(() => {
+      lastWriteRetryRef.current = null;
+      const pending = lastDictationWriteRef.current;
+      if (!pending) return;
+      if (readComposerSnapshot().text === pending.text) return;
+      replaceText(pending.text, pending.selection);
+    }, [readComposerSnapshot, replaceText]);
+
+    const handleDictationPartial = useCallback(
+      (_text: string, meta: { requestId: string; segment?: DictationSegment }) => {
+        const state = dictationTransactionRef.current;
+        // COMPAT(dictation_segments): no segment means a daemon that still glues the whole
+        // transcript, so the words arrive with the final instead. Remove after 2027-03-01.
+        if (!meta.segment || !state) return;
+        dictationSegmentsSeenRef.current = true;
+        const snapshot = readComposerSnapshot();
+        writeDictationRegion(
+          applySegment({
+            text: snapshot.text,
+            selection: snapshot.selection,
+            state,
+            segment: meta.segment,
+          }),
+        );
+        if (!meta.segment.isFinal || Platform.OS !== "android") return;
+        if (lastWriteRetryRef.current) clearTimeout(lastWriteRetryRef.current);
+        lastWriteRetryRef.current = setTimeout(
+          retryLastDictationWrite,
+          ANDROID_LAST_WRITE_RETRY_MS,
+        );
+      },
+      [readComposerSnapshot, retryLastDictationWrite, writeDictationRegion],
+    );
+
+    /** Retry and reconnect both re-send the whole recording, so the region is cleared (rule 8). */
+    const restartDictationRegion = useCallback(() => {
+      const state = dictationTransactionRef.current;
+      if (!state) return;
+      const snapshot = readComposerSnapshot();
+      dictationSegmentsSeenRef.current = false;
+      writeDictationRegion(
+        beginRestart({ text: snapshot.text, selection: snapshot.selection, state }),
+      );
+    }, [readComposerSnapshot, writeDictationRegion]);
+
     const handleDictationTranscript = useCallback(
       (text: string, _meta: { requestId: string }) => {
         const autoSend = sendAfterTranscriptRef.current;
         sendAfterTranscriptRef.current = false;
+        if (dictationSegmentsSeenRef.current) {
+          // Every word already reached the field as a partial, so the final writes nothing.
+          if (autoSend) sendAfterFinalRef.current();
+          return;
+        }
         applyDictationTranscript(text, {
           value: valueRef.current,
           defaultSendBehavior,
@@ -1370,7 +1456,6 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       isRecording: isDictating,
       isRecordingActive: isDictationActive,
       isProcessing: isDictationProcessing,
-      partialTranscript: _dictationPartialTranscript,
       volume: dictationVolume,
       duration: dictationDuration,
       error: dictationError,
@@ -1384,6 +1469,8 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     } = useDictation({
       client,
       onTranscript: handleDictationTranscript,
+      onPartialTranscript: handleDictationPartial,
+      dictationRestarted: restartDictationRegion,
       onError: handleDictationError,
       canStart: canStartDictation,
       canConfirm: canConfirmDictation,
@@ -1396,7 +1483,6 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       voiceAgentId,
     );
     const showDictationOverlay = computeShouldShowDictationOverlay(
-      isDictating,
       isDictationProcessing,
       dictationStatus,
     );
@@ -1411,16 +1497,33 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       sendAfterTranscriptRef.current = false;
     }, [dictationStatus, isDictating, isDictationProcessing]);
 
-    const startDictationIfAvailable = useCallback(
-      () =>
-        startDictationIfAvailableImpl({
-          dictationUnavailableMessage,
-          canStartDictation,
-          toast,
-          startDictation,
-        }),
-      [canStartDictation, dictationUnavailableMessage, startDictation, toast],
-    );
+    // Idle keeps whatever is in the field and forgets the region (rules 5, 6, 7); failed holds
+    // the state so a retry can clear the region it built (rule 8).
+    useEffect(() => {
+      if (dictationStatus !== "idle") return;
+      dictationTransactionRef.current = null;
+      dictationSegmentsSeenRef.current = false;
+      lastDictationWriteRef.current = null;
+    }, [dictationStatus]);
+
+    const startDictationIfAvailable = useCallback(() => {
+      // Anchored where the caret sits before the first partial can arrive (rule 1).
+      dictationTransactionRef.current = beginDictation(readComposerSnapshot().selection);
+      dictationSegmentsSeenRef.current = false;
+      lastDictationWriteRef.current = null;
+      return startDictationIfAvailableImpl({
+        dictationUnavailableMessage,
+        canStartDictation,
+        toast,
+        startDictation,
+      });
+    }, [
+      canStartDictation,
+      dictationUnavailableMessage,
+      readComposerSnapshot,
+      startDictation,
+      toast,
+    ]);
 
     const handleVoicePress = useCallback(
       () =>
@@ -1455,8 +1558,9 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     }, [confirmDictation]);
 
     const handleRetryFailedRecording = useCallback(() => {
+      restartDictationRegion();
       void retryFailedDictation();
-    }, [retryFailedDictation]);
+    }, [restartDictationRegion, retryFailedDictation]);
 
     const handleDiscardFailedRecording = useCallback(() => {
       discardFailedDictation();
@@ -1550,6 +1654,11 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     );
 
     const handleDefaultSendAction = useCallback(() => {
+      if (isDictating) {
+        // The final has to land in the field before it is sent (rule 10).
+        void handleAcceptAndSendRecording();
+        return;
+      }
       runDefaultSendAction({
         defaultSendBehavior,
         isAgentRunning,
@@ -1557,7 +1666,26 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         handleSendMessage,
         handleQueueMessage,
       });
-    }, [defaultSendBehavior, isAgentRunning, onQueue, handleQueueMessage, handleSendMessage]);
+    }, [
+      defaultSendBehavior,
+      handleAcceptAndSendRecording,
+      isAgentRunning,
+      isDictating,
+      onQueue,
+      handleQueueMessage,
+      handleSendMessage,
+    ]);
+
+    // Read by the transcript callback, which the dictation hook owns and cannot re-create per send.
+    sendAfterFinalRef.current = () => {
+      runDefaultSendAction({
+        defaultSendBehavior,
+        isAgentRunning,
+        onQueue,
+        handleSendMessage,
+        handleQueueMessage,
+      });
+    };
 
     const handleAlternateSendAction = useCallback(() => {
       runAlternateSendAction({
@@ -1675,6 +1803,16 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
 
     const handleInputChange = useCallback(
       (nextValue: string) => {
+        const state = dictationTransactionRef.current;
+        if (state) {
+          // The user's own edit: it freezes what it touched and shifts the region (rules 2, 3).
+          dictationTransactionRef.current = applyUserEdit({
+            previousText: valueRef.current,
+            nextText: nextValue,
+            state,
+          });
+          lastDictationWriteRef.current = null;
+        }
         updateComposerHeightForText?.(valueRef.current, nextValue);
         valueRef.current = nextValue;
         updateLiveTextPresence(nextValue);
@@ -1818,7 +1956,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
               onChangeText={handleInputChange}
               onFocus={handleInputFocus}
               onBlur={handleInputBlur}
-              editable={!isDictating && !isRealtimeVoiceForCurrentAgent && !disabled}
+              editable={!isRealtimeVoiceForCurrentAgent && !disabled}
               scrollEnabled={isComposerScrollEnabled}
               autoFocus={false}
               onKeyPress={shouldHandleWebKeyPress ? handleDesktopKeyPress : undefined}
@@ -1852,6 +1990,19 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
             {/* Right: voice button, contextual button (realtime/send/cancel) */}
             <View style={styles.rightButtonGroup}>
               {beforeVoiceContent}
+              {isDictating ? (
+                <DictationControls
+                  volume={dictationVolume}
+                  duration={dictationDuration}
+                  isRecording
+                  isProcessing={false}
+                  status={dictationStatus}
+                  onStart={startDictationIfAvailable}
+                  onCancel={handleCancelRecording}
+                  onAccept={handleAcceptRecording}
+                  onAcceptAndSend={handleAcceptAndSendRecording}
+                />
+              ) : null}
               <VoiceButtonTooltip
                 visible={mode.showVoice}
                 onVoicePress={handleVoicePress}
