@@ -68,6 +68,8 @@ export const EditingTextInput = forwardRef<EditingTextInputHandle, EditingTextIn
         return nextText;
       },
       replaceText: (nextText, selection) => {
+        // Writing into a live IME composition cancels it and loses the half-typed word.
+        if (isComposingRef.current) return;
         textRef.current = nextText;
         const input = inputRef.current as WebTextInputElement | null;
         if (input && "value" in input) input.value = nextText;
