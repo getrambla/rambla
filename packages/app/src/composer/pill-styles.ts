@@ -18,8 +18,7 @@ export function resolveComposerTrackTailClearance(isCompact: boolean): number {
 }
 
 export function resolveComposerTrackControlClearance(isCompact: boolean): number {
-  const clearance = resolveComposerPillClearance(isCompact);
-  return clearance + COMPOSER_PILL_MIN_HEIGHT + clearance;
+  return resolveComposerPillClearance(isCompact);
 }
 
 /** Shared visual contract for the compact pills immediately above the composer. */

@@ -109,6 +109,7 @@ import { useRetainedPanelActive } from "@/components/retained-panel";
 import { useStreamHistoryWindow } from "./use-stream-history-window";
 import { PluginTimelineItemView, useInstalledTimelineTransform } from "@/plugins/timeline";
 import { projectPluginTimelineItems } from "@/plugins/timeline/projection";
+import { COMPOSER_PILL_CLEARANCE, COMPOSER_PILL_MIN_HEIGHT } from "@/composer/pill-styles";
 
 function renderLiveAuxiliaryNode(input: {
   pendingPermissions: ReactNode;
@@ -323,7 +324,7 @@ const EMPTY_PENDING_MESSAGE_SUBMISSIONS: readonly PendingMessageSubmission[] = [
 const GROUPED_TOOL_CALL_DETAIL_MAX_HEIGHT = 200;
 
 function resolveBottomOverlayControlOffset(clearance: number | undefined): number {
-  return Math.max(16, clearance ?? 0);
+  return Math.max(COMPOSER_PILL_CLEARANCE.compact, clearance ?? 0);
 }
 
 const AgentStreamViewComponent = forwardRef<AgentStreamViewHandle, AgentStreamViewProps>(
@@ -1129,7 +1130,7 @@ const AgentStreamViewComponent = forwardRef<AgentStreamViewHandle, AgentStreamVi
                   accessibilityLabel={t("agentStream.scrollToBottom")}
                   testID="scroll-to-bottom-button"
                 >
-                  <ChevronDown size={24} color={stylesheet.scrollToBottomIcon.color} />
+                  <ChevronDown size={18} color={stylesheet.scrollToBottomIcon.color} />
                 </Pressable>
               </Animated.View>
             </View>
@@ -1664,17 +1665,18 @@ const stylesheet = StyleSheet.create((theme) => ({
   scrollToBottomContainer: {
     position: "absolute",
     left: 0,
-    right: 0,
-    alignItems: "center",
+    right: theme.spacing[3],
+    alignItems: "flex-end",
   },
   scrollToBottomButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: theme.colors.surface2,
+    minWidth: COMPOSER_PILL_MIN_HEIGHT,
+    minHeight: COMPOSER_PILL_MIN_HEIGHT,
+    borderRadius: theme.borderRadius["2xl"],
+    borderWidth: theme.borderWidth[1],
+    borderColor: theme.colors.borderAccent,
+    backgroundColor: theme.colors.surface1,
     alignItems: "center",
     justifyContent: "center",
-    ...theme.shadow.sm,
   },
   scrollToBottomIcon: {
     color: theme.colors.foreground,
