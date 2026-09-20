@@ -43,20 +43,8 @@ export const ru: TranslationResources = {
       daemonClientDisconnected: "Daemon клиента отключен",
       noFileFound: "Файл для {{token}} не найден",
       unexpectedDictationError: "При обработке диктовки произошла непредвиденная ошибка.",
-      dictationAborted: {
-        confirmInFlight:
-          "Лишняя отправка пропущена: диктовка уже отправляется (confirm-in-flight).",
-        cancelInFlight: "Отправка пропущена: вы отменили эту запись (cancel-in-flight).",
-        notRecording: "Диктовка не отправлена: запись уже была остановлена (not-recording).",
-        superseded: "Отправка остановлена: вы отменили или начали диктовку заново (superseded).",
-        noAudio: "Диктовка не отправлена: звук не был записан (no-audio).",
-        retryNoBufferedAudio: "Повтор невозможен: сохранённой записи нет (no-buffered-audio).",
-        retryInFlight: "Лишний повтор проигнорирован: эта диктовка уже отправляется повторно.",
-        retrySuperseded:
-          "Повтор остановлен: вы отменили или начали диктовку заново (retry-superseded).",
-      },
-      dictationTextDropped:
-        "Часть вашей диктовки отсутствует во вставленном тексте: «{{text}}». Продиктуйте эту часть ещё раз.",
+      dictationNotSent: "Диктовка не отправлена.",
+      dictationRetryNotPossible: "Нет записи для повторной отправки.",
     },
     connectionStatus: {
       online: "Онлайн",

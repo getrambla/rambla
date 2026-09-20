@@ -220,46 +220,55 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     [reportError, stopDurationTracking],
   );
 
-  // A submit that aborts silently is indistinguishable from a successful send for a blind user,
-  // so every abort names its own cause in the toast and in the log.
+  // reportError's console line already carries the specific reason via `context`, so the
+  // user-facing toast stays one plain message per situation and the log keeps the detail.
+  const reportDetailOnly = useCallback(
+    (detail: string, context: string) => {
+      console.error(`[useDictation] ${context}: ${detail}`);
+    },
+    [],
+  );
+
+  // A submit that aborts silently is indistinguishable from a successful send, so the abort
+  // is reported; the specific cause stays in the log and the toast names only the outcome.
   const reportConfirmAbort = useCallback(
-    (message: string, abortOptions?: { asFailure?: boolean }) => {
-      const abort = new Error(message);
+    (detail: string, abortOptions?: { asFailure?: boolean }) => {
       if (abortOptions?.asFailure) {
-        handleDictationFailure(abort);
+        handleDictationFailure(new Error(t("common.errors.dictationNotSent")));
+        reportDetailOnly(detail, "Dictation submit aborted");
         return;
       }
-      reportError(abort, "Dictation submit aborted");
+      reportDetailOnly(detail, "Dictation submit aborted");
+      reportError(new Error(t("common.errors.dictationNotSent")), "Dictation submit aborted");
     },
-    [handleDictationFailure, reportError],
+    [handleDictationFailure, reportDetailOnly, reportError, t],
   );
 
   const reportRetryAbort = useCallback(
-    (message: string) => {
-      reportError(new Error(message), "Dictation retry aborted");
+    (detail: string) => {
+      reportDetailOnly(detail, "Dictation retry aborted");
+      reportError(new Error(t("common.errors.dictationRetryNotPossible")), "Dictation retry aborted");
     },
-    [reportError],
+    [reportDetailOnly, reportError, t],
   );
 
-  // The daemon transcribed these words but could not place them in the text, and a blind user
-  // has no way to notice a sentence is short, so the loss is spoken rather than logged.
-  const reportDroppedTranscript = useCallback(
-    (droppedTranscript: string | undefined) => {
-      if (!droppedTranscript) {
-        return;
-      }
-      reportError(
-        new Error(t("common.errors.dictationTextDropped", { text: droppedTranscript })),
-        "Dictation text dropped by the daemon",
-      );
-    },
-    [reportError, t],
-  );
-
+  // The daemon transcribed these words but could not place them in `text`; appending them is
+  // the only recovery the daemon offers, since it no longer holds that audio as pending.
   const handleStreamingTranscriptionSuccess = useCallback(
-    (text: string, requestId: string) => {
+    (text: string, requestId: string, droppedTranscript?: string) => {
       const latestPartial = latestPartialTranscriptRef.current.trim();
-      const transcriptText = text.trim().length > 0 ? text.trim() : latestPartial;
+      const trimmedDropped = droppedTranscript?.trim();
+      const recovered = [text.trim(), trimmedDropped]
+        .filter((part) => part && part.length > 0)
+        .join(" ");
+      const transcriptText = recovered.length > 0 ? recovered : latestPartial;
+
+      if (trimmedDropped) {
+        console.warn(
+          "[useDictation] Appended transcript the daemon dropped from the final text:",
+          trimmedDropped,
+        );
+      }
 
       // Nothing came back, or the final stops at a word boundary the daemon had
       // already spoken past, so keep the buffered audio for the overlay's retry.
@@ -391,17 +400,17 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
 
   const confirmDictation = useCallback(async () => {
     if (actionGateRef.current.confirming) {
-      reportConfirmAbort(t("common.errors.dictationAborted.confirmInFlight"));
+      reportConfirmAbort("submit already in flight");
       return;
     }
     // A cancel already in flight is the user discarding this recording on purpose,
     // so the submit chasing it is refused rather than reported as a failure.
     if (actionGateRef.current.cancelling) {
-      reportConfirmAbort(t("common.errors.dictationAborted.cancelInFlight"));
+      reportConfirmAbort("cancel already in flight");
       return;
     }
     if (!isRecordingRef.current || isProcessingRef.current) {
-      reportConfirmAbort(t("common.errors.dictationAborted.notRecording"));
+      reportConfirmAbort("no recording in progress");
       return;
     }
     const confirmAllowed = canConfirm ? canConfirm() : true;
@@ -429,17 +438,20 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
 
       const finalSeq = senderRef.current?.getFinalSeq() ?? -1;
       if (finalSeq < 0) {
-        reportConfirmAbort(t("common.errors.dictationAborted.noAudio"), { asFailure: true });
+        reportConfirmAbort("no audio was captured", { asFailure: true });
         return;
       }
 
       const finalResult = await ensureFinalTranscript(finalSeq);
       attemptGuardRef.current.assertCurrent(attemptId);
-      handleStreamingTranscriptionSuccess(finalResult.text, generateMessageId());
-      reportDroppedTranscript(finalResult.droppedTranscript);
+      handleStreamingTranscriptionSuccess(
+        finalResult.text,
+        generateMessageId(),
+        finalResult.droppedTranscript,
+      );
     } catch (err) {
       if (err instanceof Error && err.name === "AttemptCancelledError") {
-        reportConfirmAbort(t("common.errors.dictationAborted.superseded"));
+        reportConfirmAbort("superseded by cancel or restart");
         return;
       }
       handleDictationFailure(err);
@@ -456,7 +468,6 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     handleDictationFailure,
     handleStreamingTranscriptionSuccess,
     reportConfirmAbort,
-    reportDroppedTranscript,
     stopDurationTracking,
     ensureFinalTranscript,
     t,
@@ -466,11 +477,11 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     // Without this gate the second tap resets the stream under the first, whose finish then
     // throws and reports a failure for a transcript the user already received.
     if (actionGateRef.current.retrying) {
-      reportRetryAbort(t("common.errors.dictationAborted.retryInFlight"));
+      reportRetryAbort("retry already in flight");
       return;
     }
     if (!senderRef.current?.hasSegments()) {
-      reportRetryAbort(t("common.errors.dictationAborted.retryNoBufferedAudio"));
+      reportRetryAbort("no buffered audio to resend");
       return;
     }
     actionGateRef.current.retrying = true;
@@ -486,11 +497,14 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       senderRef.current.resetStreamForReplay();
       const finalSeq = senderRef.current.getFinalSeq();
       const finalResult = await ensureFinalTranscript(finalSeq);
-      handleStreamingTranscriptionSuccess(finalResult.text, generateMessageId());
-      reportDroppedTranscript(finalResult.droppedTranscript);
+      handleStreamingTranscriptionSuccess(
+        finalResult.text,
+        generateMessageId(),
+        finalResult.droppedTranscript,
+      );
     } catch (err) {
       if (err instanceof Error && err.name === "AttemptCancelledError") {
-        reportRetryAbort(t("common.errors.dictationAborted.retrySuperseded"));
+        reportRetryAbort("superseded by cancel or restart");
         return;
       }
       handleDictationFailure(err);
@@ -506,7 +520,6 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     ensureFinalTranscript,
     handleDictationFailure,
     handleStreamingTranscriptionSuccess,
-    reportDroppedTranscript,
     reportRetryAbort,
     t,
   ]);

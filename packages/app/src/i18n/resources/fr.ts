@@ -44,21 +44,8 @@ export const fr: TranslationResources = {
       noFileFound: "Aucun fichier trouvé pour{{token}}",
       unexpectedDictationError:
         "Une erreur inattendue s'est produite lors du traitement de la dictée.",
-      dictationAborted: {
-        confirmInFlight:
-          "Envoi supplémentaire ignoré : votre dictée est déjà en cours d'envoi (confirm-in-flight).",
-        cancelInFlight: "Envoi ignoré : vous avez annulé cet enregistrement (cancel-in-flight).",
-        notRecording: "Dictée non envoyée : l'enregistrement était déjà arrêté (not-recording).",
-        superseded: "Envoi interrompu : vous avez annulé ou relancé cette dictée (superseded).",
-        noAudio: "Dictée non envoyée : aucun son n'a été capté (no-audio).",
-        retryNoBufferedAudio:
-          "Nouvelle tentative impossible : aucun enregistrement conservé (no-buffered-audio).",
-        retryInFlight: "Nouvelle tentative ignorée : cette dictée est déjà en cours de renvoi.",
-        retrySuperseded:
-          "Nouvelle tentative interrompue : vous avez annulé ou relancé cette dictée (retry-superseded).",
-      },
-      dictationTextDropped:
-        "Une partie de votre dictée est absente du texte inséré : « {{text}} ». Redictez cette partie.",
+      dictationNotSent: "Dictée non envoyée.",
+      dictationRetryNotPossible: "Aucun enregistrement à renvoyer.",
     },
     connectionStatus: {
       online: "En ligne",

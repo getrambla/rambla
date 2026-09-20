@@ -43,21 +43,8 @@ export const ko: TranslationResources = {
       daemonClientDisconnected: "데몬 클라이언트 연결이 끊어졌습니다",
       noFileFound: "{{token}}에 해당하는 파일을 찾을 수 없습니다",
       unexpectedDictationError: "받아쓰기를 처리하는 중 예기치 않은 오류가 발생했습니다.",
-      dictationAborted: {
-        confirmInFlight:
-          "추가 전송을 무시했습니다: 받아쓰기를 이미 보내는 중입니다 (confirm-in-flight).",
-        cancelInFlight: "전송을 무시했습니다: 이 녹음을 취소했습니다 (cancel-in-flight).",
-        notRecording: "받아쓰기를 보내지 않았습니다: 녹음이 이미 중지되었습니다 (not-recording).",
-        superseded: "전송을 중단했습니다: 이 받아쓰기를 취소하거나 다시 시작했습니다 (superseded).",
-        noAudio: "받아쓰기를 보내지 않았습니다: 오디오가 캡처되지 않았습니다 (no-audio).",
-        retryNoBufferedAudio:
-          "다시 시도할 수 없습니다: 보관된 녹음이 없습니다 (no-buffered-audio).",
-        retryInFlight: "추가 재시도를 무시했습니다: 이 받아쓰기는 이미 다시 전송 중입니다.",
-        retrySuperseded:
-          "다시 시도를 중단했습니다: 이 받아쓰기를 취소하거나 다시 시작했습니다 (retry-superseded).",
-      },
-      dictationTextDropped:
-        '삽입된 텍스트에 받아쓰기의 일부가 빠졌습니다: "{{text}}". 그 부분을 다시 말해 주세요.',
+      dictationNotSent: "받아쓰기를 보내지 않았습니다.",
+      dictationRetryNotPossible: "다시 보낼 녹음이 없습니다.",
     },
     connectionStatus: {
       online: "온라인",

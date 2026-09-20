@@ -240,10 +240,15 @@ describe("createAudioEngine (native)", () => {
     const stopped = engine.stopCapture();
     // The last words of a dictation reach JavaScript after toggleRecording(false) returned.
     nativeSingleton.emitQueuedMicrophoneData(new Uint8Array([1, 2]));
+    nativeSingleton.emitQueuedMicrophoneData(new Uint8Array([3, 4]));
     await vi.advanceTimersByTimeAsync(1_000);
     await stopped;
 
-    expect(captured).toHaveLength(1);
+    // Queued tail buffers are delivered, not dropped.
+    expect(captured.map((pcm) => Array.from(pcm))).toEqual([
+      [1, 2],
+      [3, 4],
+    ]);
   });
 
   it("warns that the end may be missing when the microphone never goes quiet", async () => {

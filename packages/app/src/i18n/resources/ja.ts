@@ -43,23 +43,8 @@ export const ja: TranslationResources = {
       daemonClientDisconnected: "デーモンクライアントが切断されています",
       noFileFound: "{{token}}のファイルが見つかりません",
       unexpectedDictationError: "音声入力処理中に予期しないエラーが発生しました。",
-      dictationAborted: {
-        confirmInFlight:
-          "重複した送信を無視しました: 音声入力はすでに送信中です (confirm-in-flight)。",
-        cancelInFlight: "送信を無視しました: この録音をキャンセルしました (cancel-in-flight)。",
-        notRecording:
-          "音声入力は送信されませんでした: 録音はすでに停止していました (not-recording)。",
-        superseded:
-          "送信を中止しました: この音声入力をキャンセルまたはやり直しました (superseded)。",
-        noAudio: "音声入力は送信されませんでした: 音声が取得されませんでした (no-audio)。",
-        retryNoBufferedAudio:
-          "再試行できません: 保持している録音がありません (no-buffered-audio)。",
-        retryInFlight: "追加の再試行は無視されました: この音声入力はすでに再送信中です。",
-        retrySuperseded:
-          "再試行を中止しました: この音声入力をキャンセルまたはやり直しました (retry-superseded)。",
-      },
-      dictationTextDropped:
-        "挿入されたテキストに音声入力の一部が含まれていません:「{{text}}」。その部分をもう一度話してください。",
+      dictationNotSent: "音声入力を送信できませんでした。",
+      dictationRetryNotPossible: "再送信できる録音がありません。",
     },
     connectionStatus: {
       online: "オンライン",

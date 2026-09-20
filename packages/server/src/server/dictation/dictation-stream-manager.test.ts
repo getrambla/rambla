@@ -509,7 +509,9 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
 
     const finishAccepted = emitted.find((msg) => msg.type === "dictation_stream_finish_accepted");
     expect(finishAccepted).toBeDefined();
-    expect((finishAccepted?.payload as { timeoutMs?: number } | undefined)?.timeoutMs).toBe(10_000);
+    // With the adaptive budget restored, the pending in-flight commit does extend the
+    // deadline; the abandoned transcript's audio is what the extension buys time for.
+    expect((finishAccepted?.payload as { timeoutMs?: number } | undefined)?.timeoutMs).toBe(20_000);
   });
 
   it("drops dangling uncommitted non-final transcripts when finishing after a silence tail", async () => {

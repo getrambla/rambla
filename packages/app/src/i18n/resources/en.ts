@@ -40,20 +40,8 @@ export const en = {
       daemonClientDisconnected: "Daemon client is disconnected",
       noFileFound: "No file found for {{token}}",
       unexpectedDictationError: "An unexpected error occurred while handling dictation.",
-      dictationAborted: {
-        confirmInFlight:
-          "Extra submit ignored: your dictation is already being sent (confirm-in-flight).",
-        cancelInFlight: "Submit ignored: you cancelled this recording (cancel-in-flight).",
-        notRecording: "Dictation not sent: the recording had already stopped (not-recording).",
-        superseded: "Submit stopped: you cancelled or restarted this dictation (superseded).",
-        noAudio: "Dictation not sent: no audio was captured (no-audio).",
-        retryNoBufferedAudio: "Retry not possible: no recording is held (no-buffered-audio).",
-        retryInFlight: "Extra retry ignored: this dictation is already being resent.",
-        retrySuperseded:
-          "Retry stopped: you cancelled or restarted this dictation (retry-superseded).",
-      },
-      dictationTextDropped:
-        'Part of your dictation is missing from the inserted text: "{{text}}". Dictate that part again.',
+      dictationNotSent: "Dictation not sent.",
+      dictationRetryNotPossible: "There is no recording to resend.",
     },
     connectionStatus: {
       online: "Online",

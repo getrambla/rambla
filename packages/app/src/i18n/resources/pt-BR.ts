@@ -43,21 +43,8 @@ export const ptBR: TranslationResources = {
       daemonClientDisconnected: "O cliente do daemon está desconectado",
       noFileFound: "Nenhum arquivo encontrado para {{token}}",
       unexpectedDictationError: "Ocorreu um erro inesperado ao processar o ditado.",
-      dictationAborted: {
-        confirmInFlight:
-          "Envio extra ignorado: seu ditado já está sendo enviado (confirm-in-flight).",
-        cancelInFlight: "Envio ignorado: você cancelou esta gravação (cancel-in-flight).",
-        notRecording: "Ditado não enviado: a gravação já havia parado (not-recording).",
-        superseded: "Envio interrompido: você cancelou ou reiniciou este ditado (superseded).",
-        noAudio: "Ditado não enviado: nenhum áudio foi capturado (no-audio).",
-        retryNoBufferedAudio:
-          "Não é possível tentar de novo: nenhuma gravação guardada (no-buffered-audio).",
-        retryInFlight: "Nova tentativa ignorada: este ditado já está sendo reenviado.",
-        retrySuperseded:
-          "Nova tentativa interrompida: você cancelou ou reiniciou este ditado (retry-superseded).",
-      },
-      dictationTextDropped:
-        'Falta parte do seu ditado no texto inserido: "{{text}}". Dite essa parte novamente.',
+      dictationNotSent: "Ditado não enviado.",
+      dictationRetryNotPossible: "Não há gravação para reenviar.",
     },
     connectionStatus: {
       online: "Online",

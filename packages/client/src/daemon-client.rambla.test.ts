@@ -3,8 +3,6 @@ import { DaemonClient, type DaemonTransport } from "./daemon-client";
 
 /** 15 s waiting for the finish to be taken plus 10 s for the text, inside the 30 s a person waits. */
 const SILENT_DAEMON_FAILURE_MS = 25_000;
-/** The second phase, which a daemon-stated deadline is clamped into rather than added to. */
-const CLAMPED_DEADLINE_MS = 10_000;
 
 /** Minimal logger the client is happy with. */
 function createMockLogger() {
@@ -132,7 +130,7 @@ test("gives up on a silent daemon inside the 30 second dictation ceiling", async
   await expect(outcome).resolves.toBeInstanceOf(Error);
 });
 
-test("clamps a daemon deadline that asks for longer than the ceiling", async () => {
+test("honors a daemon deadline that asks for longer than the fallback", async () => {
   const { client, mock } = await connectClient();
 
   const finishPromise = client.finishDictationStream("dict-greedy", 0);
@@ -148,15 +146,16 @@ test("clamps a daemon deadline that asks for longer than the ceiling", async () 
     },
   );
 
+  const statedDeadlineMs = 5 * 60 * 1000;
   mock.triggerMessage(
     wrapSessionMessage({
       type: "dictation_stream_finish_accepted",
-      payload: { dictationId: "dict-greedy", timeoutMs: 5 * 60 * 1000 },
+      payload: { dictationId: "dict-greedy", timeoutMs: statedDeadlineMs },
     }),
   );
 
-  // A daemon asking for five minutes gets the second phase and not a second longer.
-  await vi.advanceTimersByTimeAsync(CLAMPED_DEADLINE_MS - 1);
+  // The daemon measured the work; its stated deadline plus grace is what the client waits.
+  await vi.advanceTimersByTimeAsync(statedDeadlineMs + 5_000 - 1);
   expect(settled).toBe(false);
 
   await vi.advanceTimersByTimeAsync(1);

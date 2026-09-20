@@ -969,9 +969,8 @@ const LIVENESS_FAILURE_RECONNECT_THRESHOLD = 2;
 
 /** Default timeout for waiting for connection before sending queued messages */
 const DEFAULT_SEND_QUEUE_TIMEOUT_MS = DEFAULT_SESSION_RPC_TIMEOUT_MS;
-// Nothing in the finish path plausibly takes minutes, and a person waiting on their own
-// words will not sit through it: 15 s to take the finish, 10 s for the text, then say so.
-// The grace below comes out of that 10 s rather than extending it, so the worst case is 25 s.
+// A daemon that takes the finish states its own deadline and the client honors it; these
+// bounds cover only a daemon that says nothing: 15 s to take the finish, 10 s for the text.
 const DEFAULT_DICTATION_FINISH_ACCEPT_TIMEOUT_MS = 15_000;
 const DEFAULT_DICTATION_FINISH_FALLBACK_TIMEOUT_MS = 10_000;
 const DEFAULT_DICTATION_FINISH_TIMEOUT_GRACE_MS = 5000;
@@ -3864,10 +3863,7 @@ export class DaemonClient {
 
       if (firstOutcome.kind === "accepted") {
         return await waitForFinalResult(
-          Math.min(
-            firstOutcome.payload.timeoutMs + DEFAULT_DICTATION_FINISH_TIMEOUT_GRACE_MS,
-            DEFAULT_DICTATION_FINISH_FALLBACK_TIMEOUT_MS,
-          ),
+          firstOutcome.payload.timeoutMs + DEFAULT_DICTATION_FINISH_TIMEOUT_GRACE_MS,
         );
       }
 

@@ -18,8 +18,9 @@ const PCM_CHANNELS = 1;
 const PCM_BITS_PER_SAMPLE = 16;
 const DEFAULT_DICTATION_FINAL_TIMEOUT_MS = 10000;
 const DEFAULT_DICTATION_AUTO_COMMIT_SECONDS = 15;
-// Never ask for more than the client's second phase allows for the text.
-const DICTATION_FINAL_TIMEOUT_MAX_MS = 10_000;
+// The adaptive budget answers "how long can this transcription legitimately take?" for a
+// stream the daemon measured itself; the client separately bounds a silent daemon.
+const DICTATION_FINAL_TIMEOUT_MAX_MS = 5 * 60 * 1000;
 const DICTATION_FINAL_TIMEOUT_PER_PENDING_SEGMENT_MS = 15 * 1000;
 const DICTATION_FINAL_TIMEOUT_PER_PENDING_AUDIO_SECOND_MS = 1500;
 const DICTATION_FINAL_TIMEOUT_PER_MISSING_SEQ_MS = 250;

@@ -90,6 +90,8 @@ export function createAudioEngine(
       settled: boolean;
     } | null;
     onCaptureDataWhileDraining: (() => void) | null;
+    /** Mic buffers still crossing the bridge after stop; delivered once stop settles. */
+    postStopCaptureQueue: Uint8Array[];
     destroyed: boolean;
   } = {
     initialized: false,
@@ -100,13 +102,22 @@ export function createAudioEngine(
     playbackTimeout: null,
     activePlayback: null,
     onCaptureDataWhileDraining: null,
+    postStopCaptureQueue: [],
     destroyed: false,
   };
 
   const microphoneSubscription = native.addExpoTwoWayAudioEventListener(
     "onMicrophoneData",
     (event: { data: Uint8Array }) => {
-      if (!refs.captureActive || refs.muted) {
+      if (!refs.captureActive) {
+        // The stop path queues these and delivers them once the bridge drains, so the
+        // recording tail is not dropped. Muted audio is still dropped, as before.
+        if (refs.postStopCaptureQueue.length < 64) {
+          refs.postStopCaptureQueue.push(event.data);
+        }
+        return;
+      }
+      if (refs.muted) {
         return;
       }
       const pcm = event.data;
@@ -344,16 +355,29 @@ export function createAudioEngine(
 
     async stopCapture() {
       if (refs.captureActive) {
+        refs.postStopCaptureQueue.length = 0;
         native.toggleRecording(false);
-        // The tap has already dispatched the tail of the recording across the bridge, and
-        // the guard above drops whatever lands after captureActive goes false.
-        if (!(await waitForCaptureDrain())) {
+        // The tap has already dispatched the tail of the recording across the bridge; the
+        // buffers that land after captureActive goes false are queued above and delivered
+        // once the bridge goes quiet, so the end of the recording rides along instead of
+        // being dropped.
+        const drained = await waitForCaptureDrain();
+        refs.captureActive = false;
+        refs.muted = false;
+        for (const pcm of refs.postStopCaptureQueue) {
+          callbacks.onCaptureData(pcm);
+        }
+        refs.postStopCaptureQueue.length = 0;
+        if (!drained) {
           callbacks.onError?.(
             new Error(
               `Microphone capture did not settle within ${CAPTURE_FLUSH_TIMEOUT_MS} ms, so the end of the recording may be missing.`,
             ),
           );
         }
+        callbacks.onVolumeLevel(0);
+        releaseSessionIfIdle();
+        return;
       }
       refs.captureActive = false;
       refs.muted = false;

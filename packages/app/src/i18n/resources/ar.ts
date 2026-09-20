@@ -43,19 +43,8 @@ export const ar: TranslationResources = {
       daemonClientDisconnected: "تم قطع اتصال عميل Daemon",
       noFileFound: "لم يتم العثور على ملف لـ{{token}}",
       unexpectedDictationError: "حدث خطأ غير متوقع أثناء معالجة الإملاء.",
-      dictationAborted: {
-        confirmInFlight: "تم تجاهل إرسال إضافي: يجري إرسال الإملاء بالفعل (confirm-in-flight).",
-        cancelInFlight: "تم تجاهل الإرسال: لقد ألغيت هذا التسجيل (cancel-in-flight).",
-        notRecording: "لم يتم إرسال الإملاء: التسجيل كان قد توقف بالفعل (not-recording).",
-        superseded: "توقف الإرسال: لقد ألغيت هذا الإملاء أو أعدت بدأه (superseded).",
-        noAudio: "لم يتم إرسال الإملاء: لم يتم التقاط أي صوت (no-audio).",
-        retryNoBufferedAudio: "تعذرت إعادة المحاولة: لا يوجد تسجيل محفوظ (no-buffered-audio).",
-        retryInFlight: "تم تجاهل إعادة المحاولة الإضافية: يجري بالفعل إعادة إرسال هذا الإملاء.",
-        retrySuperseded:
-          "توقفت إعادة المحاولة: لقد ألغيت هذا الإملاء أو أعدت بدأه (retry-superseded).",
-      },
-      dictationTextDropped:
-        'جزء من إملائك غير موجود في النص المُدرج: "{{text}}". أعد إملاء هذا الجزء.',
+      dictationNotSent: "لم يتم إرسال الإملاء.",
+      dictationRetryNotPossible: "لا يوجد تسجيل لإعادة إرساله.",
     },
     connectionStatus: {
       online: "متصل",

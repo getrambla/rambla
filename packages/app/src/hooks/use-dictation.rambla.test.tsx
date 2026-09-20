@@ -132,10 +132,16 @@ const loggedLines = (): string[] =>
     call.map((part) => String(part)).join(" "),
   );
 
-/** A blind user can only tell these five aborts apart if each names itself in the toast and log. */
-function expectAbortAnnounced(onError: ReturnType<typeof vi.fn>, message: string): void {
-  expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message }));
-  expect(loggedLines().some((line) => line.includes(message))).toBe(true);
+/** The user sees one plain outcome message; the specific reason stays in the log only. */
+function expectAbortAnnounced(
+  onError: ReturnType<typeof vi.fn>,
+  detail: string,
+  options?: { userMessage?: string },
+): void {
+  expect(onError).toHaveBeenCalledWith(
+    expect.objectContaining({ message: options?.userMessage ?? "Dictation not sent." }),
+  );
+  expect(loggedLines().some((line) => line.includes(detail))).toBe(true);
 }
 
 describe("dictation loss", () => {
@@ -169,7 +175,7 @@ describe("dictation loss", () => {
     expect(result.current.status).toBe("failed");
     // Nothing was captured, so there is nothing a retry could send.
     expect(result.current.canRetryFailedDictation).toBe(false);
-    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.noAudio"));
+    expectAbortAnnounced(onError, "no audio was captured");
   });
 
   it("reports a failure when confirming is not allowed", async () => {
@@ -319,7 +325,7 @@ describe("dictation loss", () => {
 
     expect(onTranscript).not.toHaveBeenCalled();
     expect(result.current.status).toBe("idle");
-    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.cancelInFlight"));
+    expectAbortAnnounced(onError, "cancel already in flight");
   });
 
   it("names the abort when a submit is already in flight", async () => {
@@ -352,7 +358,7 @@ describe("dictation loss", () => {
     });
 
     expect(onTranscript).toHaveBeenCalledWith("hello", expect.anything());
-    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.confirmInFlight"));
+    expectAbortAnnounced(onError, "submit already in flight");
   });
 
   it("names the abort when there is no recording to submit", async () => {
@@ -365,7 +371,7 @@ describe("dictation loss", () => {
     });
 
     expect(onTranscript).not.toHaveBeenCalled();
-    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.notRecording"));
+    expectAbortAnnounced(onError, "no recording in progress");
   });
 
   it("names the abort when a newer attempt supersedes the submit", async () => {
@@ -398,7 +404,7 @@ describe("dictation loss", () => {
     });
 
     expect(onTranscript).not.toHaveBeenCalled();
-    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.superseded"));
+    expectAbortAnnounced(onError, "superseded by cancel or restart");
   });
 
   it("says nothing when the hook unmounts mid-submit", async () => {
@@ -432,9 +438,7 @@ describe("dictation loss", () => {
     // Navigating away is not an abort the user needs told about.
     expect(onError).not.toHaveBeenCalled();
     expect(
-      loggedLines().some((line) =>
-        line.includes(i18n.t("common.errors.dictationAborted.superseded")),
-      ),
+      loggedLines().some((line) => line.includes("superseded by cancel or restart")),
     ).toBe(false);
   });
 
@@ -503,10 +507,10 @@ describe("dictation loss", () => {
     });
 
     expect(onTranscript).not.toHaveBeenCalled();
-    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.superseded"));
+    expectAbortAnnounced(onError, "superseded by cancel or restart");
   });
 
-  it("tells the user when the daemon could not place part of the dictation", async () => {
+  it("appends the words the daemon could not place into the delivered transcript", async () => {
     const client = new FakeDictationClient();
     client.droppedTranscript = "about the kittens";
     const onTranscript = vi.fn();
@@ -525,12 +529,9 @@ describe("dictation loss", () => {
       await result.current.confirmDictation();
     });
 
-    // The text still arrives: half a transcript beats none, as long as the loss is spoken.
-    expect(onTranscript).toHaveBeenCalledWith("hello", expect.anything());
-    expectAbortAnnounced(
-      onError,
-      i18n.t("common.errors.dictationTextDropped", { text: "about the kittens" }),
-    );
+    // The lost words ride along with the delivered text instead of being announced as a loss.
+    expect(onTranscript).toHaveBeenCalledWith("hello about the kittens", expect.anything());
+    expect(onError).not.toHaveBeenCalled();
   });
 
   it("delivers the transcript when the hook unmounts mid-retry", async () => {
@@ -624,7 +625,7 @@ describe("dictation loss", () => {
     // The second tap must not race the first into a failure toast for a delivered transcript.
     expect(onTranscript).toHaveBeenCalledTimes(1);
     expect(client.finishes).toBe(2);
-    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.retryInFlight"));
+    expectAbortAnnounced(onError, "retry already in flight", { userMessage: "There is no recording to resend." });
   });
 
   it("names the abort when a retry has no recording held", async () => {
@@ -639,7 +640,7 @@ describe("dictation loss", () => {
       await result.current.retryFailedDictation();
     });
 
-    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.retryNoBufferedAudio"));
+    expectAbortAnnounced(onError, "no buffered audio to resend", { userMessage: "There is no recording to resend." });
   });
 
   it("names the abort when a newer attempt supersedes the retry", async () => {
@@ -674,6 +675,6 @@ describe("dictation loss", () => {
     });
 
     expect(onTranscript).not.toHaveBeenCalled();
-    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.retrySuperseded"));
+    expectAbortAnnounced(onError, "superseded by cancel or restart", { userMessage: "There is no recording to resend." });
   });
 });
