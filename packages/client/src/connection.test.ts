@@ -141,12 +141,7 @@ test("a plain client advertises every protocol capability and no browser host", 
     const ready = h.client.connect();
     h.open();
     await ready;
-    // dictationSegments is app-only: other clients cannot read segment partials.
-    const {
-      browserHost: _browser,
-      dictationSegments: _dictationSegments,
-      ...protocolCapabilities
-    } = CLIENT_CAPS;
+    const { browserHost: _browser, ...protocolCapabilities } = CLIENT_CAPS;
     // Every new capability needs a deliberate default or a host-owned exception.
     expect(h.sent).toHaveLength(1);
     expect(h.sent[0].capabilities).toEqual(
