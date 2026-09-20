@@ -17,7 +17,11 @@ export interface DictationFieldSnapshot {
 export interface UseDictationFieldOptions {
   /** Reads the field the user sees, so a write and the next read cannot disagree. */
   getSnapshot: () => DictationFieldSnapshot;
-  writeText: (text: string, selection: DictationSelection) => void;
+  writeText: (
+    text: string,
+    selection: DictationSelection,
+    options?: { skipWhileComposing?: boolean },
+  ) => void;
 }
 
 export interface UseDictationFieldResult {
@@ -30,8 +34,8 @@ export interface UseDictationFieldResult {
     meta: { requestId: string; segment?: DictationSegment },
   ) => void;
   onUserEdit: (previousText: string, nextText: string) => void;
-  /** The text and base the final's append path should use, once the words are in the field. */
-  resolveFinal: (text: string, value: string) => { text: string; value: string };
+  /** Repairs a dropped last write and reports whether the words are already in the field. */
+  finishSegments: () => boolean;
 }
 
 /** Owns the dictation transaction and every write the composer field takes from it. */
@@ -50,7 +54,7 @@ export function useDictationField(options: UseDictationFieldOptions): UseDictati
     const write = (before: string, after: string, selection: DictationSelection) => {
       if (after === before) return;
       lastWriteRef.current = { before, after, selection };
-      optionsRef.current.writeText(after, selection);
+      optionsRef.current.writeText(after, selection, { skipWhileComposing: true });
     };
 
     const beginDictation = () => {
@@ -90,15 +94,15 @@ export function useDictationField(options: UseDictationFieldOptions): UseDictati
         if (!state) return;
         stateRef.current = applyUserEdit({ previousText, nextText, state });
       },
-      resolveFinal: (text, value) => {
-        if (!sawSegmentRef.current) return { text, value };
+      finishSegments: () => {
+        if (!sawSegmentRef.current) return false;
         // The last partial's write has no successor to repair it, so re-issue it if the
         // field still shows what it held before.
         const dropped = lastWriteRef.current;
         if (dropped && optionsRef.current.getSnapshot().text === dropped.before) {
           optionsRef.current.writeText(dropped.after, dropped.selection);
         }
-        return { text: optionsRef.current.getSnapshot().text, value: "" };
+        return true;
       },
     };
   }, []);
