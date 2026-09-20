@@ -16,6 +16,11 @@ interface AudioEngineTraceOptions {
   hasCaptureClaim?: () => boolean;
 }
 
+/** How long a stop waits for the native bridge to hand over the buffers it already dispatched. */
+const CAPTURE_FLUSH_TIMEOUT_MS = 500;
+/** A gap this long with no microphone buffer is the bridge confirming it has drained. */
+const CAPTURE_FLUSH_QUIET_MS = 50;
+
 function parsePcmSampleRate(mimeType: string): number | null {
   const match = /rate=(\d+)/i.exec(mimeType);
   if (!match) {
@@ -84,6 +89,7 @@ export function createAudioEngine(
       reject: (error: Error) => void;
       settled: boolean;
     } | null;
+    onCaptureDataWhileDraining: (() => void) | null;
     destroyed: boolean;
   } = {
     initialized: false,
@@ -93,6 +99,7 @@ export function createAudioEngine(
     processingQueue: false,
     playbackTimeout: null,
     activePlayback: null,
+    onCaptureDataWhileDraining: null,
     destroyed: false,
   };
 
@@ -104,6 +111,7 @@ export function createAudioEngine(
       }
       const pcm = event.data;
       callbacks.onCaptureData(pcm);
+      refs.onCaptureDataWhileDraining?.();
     },
   );
   const volumeSubscription = native.addExpoTwoWayAudioEventListener(
@@ -180,6 +188,36 @@ export function createAudioEngine(
         "Microphone permission is required to capture audio. Please enable microphone access in system settings.",
       );
     }
+  }
+
+  /** Resolves false when the bridge is still handing over buffers at the deadline. */
+  async function waitForCaptureDrain(): Promise<boolean> {
+    let quietTimer: ReturnType<typeof setTimeout> | null = null;
+    let capTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const drained = new Promise<boolean>((resolve) => {
+      const armQuietTimer = () => {
+        if (quietTimer) {
+          clearTimeout(quietTimer);
+        }
+        quietTimer = setTimeout(() => resolve(true), CAPTURE_FLUSH_QUIET_MS);
+      };
+      refs.onCaptureDataWhileDraining = armQuietTimer;
+      armQuietTimer();
+    });
+    const timedOut = new Promise<boolean>((resolve) => {
+      capTimer = setTimeout(() => resolve(false), CAPTURE_FLUSH_TIMEOUT_MS);
+    });
+
+    return await Promise.race([drained, timedOut]).finally(() => {
+      if (quietTimer) {
+        clearTimeout(quietTimer);
+      }
+      if (capTimer) {
+        clearTimeout(capTimer);
+      }
+      refs.onCaptureDataWhileDraining = null;
+    });
   }
 
   function clearPlaybackTimeout(): void {
@@ -307,6 +345,15 @@ export function createAudioEngine(
     async stopCapture() {
       if (refs.captureActive) {
         native.toggleRecording(false);
+        // The tap has already dispatched the tail of the recording across the bridge, and
+        // the guard above drops whatever lands after captureActive goes false.
+        if (!(await waitForCaptureDrain())) {
+          callbacks.onError?.(
+            new Error(
+              `Microphone capture did not settle within ${CAPTURE_FLUSH_TIMEOUT_MS} ms, so the end of the recording may be missing.`,
+            ),
+          );
+        }
       }
       refs.captureActive = false;
       refs.muted = false;

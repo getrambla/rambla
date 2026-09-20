@@ -20,7 +20,7 @@ export interface DictationStreamClient {
   finishDictationStream(
     dictationId: string,
     finalSeq: number,
-  ): Promise<{ dictationId: string; text: string }>;
+  ): Promise<{ dictationId: string; text: string; droppedTranscript?: string }>;
   cancelDictationStream(dictationId: string): void;
   subscribeRawMessages(handler: (message: SessionOutboundMessage) => void): () => void;
 }
@@ -34,6 +34,8 @@ export interface DictationStreamSenderParams {
 interface DictationFinishResult {
   dictationId: string;
   text: string;
+  /** Words the daemon transcribed but could not place in `text`. */
+  droppedTranscript?: string;
 }
 
 /**
@@ -231,7 +233,7 @@ export class DictationStreamSender {
     void reason;
   }
 
-  async finish(finalSeq: number, onFinishSent?: () => void): Promise<DictationFinishResult> {
+  async finish(finalSeq: number): Promise<DictationFinishResult> {
     const client = this.client;
     if (!client) {
       throw new Error(i18n.t("common.errors.daemonClientUnavailable"));
@@ -254,7 +256,6 @@ export class DictationStreamSender {
 
     this.flush();
     await this.waitForFlushDrain(finalSeq);
-    onFinishSent?.();
     return client.finishDictationStream(dictationId, finalSeq);
   }
 

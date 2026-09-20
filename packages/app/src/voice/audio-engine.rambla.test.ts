@@ -20,6 +20,10 @@ const nativeSingleton = {
     if (!nativeSingleton.engineAlive || !nativeSingleton.recording) {
       return;
     }
+    nativeSingleton.emitQueuedMicrophoneData(data);
+  },
+  /** A buffer the tap dispatched before recording stopped, still crossing the bridge to JavaScript. */
+  emitQueuedMicrophoneData(data: Uint8Array) {
     for (const listener of microphoneListeners) {
       listener({ data });
     }
@@ -95,6 +99,7 @@ function createEngine() {
 
 describe("createAudioEngine (native)", () => {
   beforeEach(() => {
+    vi.useRealTimers();
     nativeSingleton.engineAlive = false;
     nativeSingleton.recording = false;
     nativeSingleton.sessionActive = false;
@@ -220,6 +225,49 @@ describe("createAudioEngine (native)", () => {
 
     expect(nativeSingleton.recording).toBe(false);
     expect(nativeSingleton.sessionActive).toBe(false);
+  });
+
+  it("keeps the buffers the native bridge had already queued when capture stops", async () => {
+    vi.useFakeTimers();
+    const captured: Uint8Array[] = [];
+    const engine = createAudioEngine({
+      onCaptureData: (pcm) => captured.push(pcm),
+      onVolumeLevel: () => {},
+    });
+    await engine.initialize();
+    await engine.startCapture();
+
+    const stopped = engine.stopCapture();
+    // The last words of a dictation reach JavaScript after toggleRecording(false) returned.
+    nativeSingleton.emitQueuedMicrophoneData(new Uint8Array([1, 2]));
+    await vi.advanceTimersByTimeAsync(1_000);
+    await stopped;
+
+    expect(captured).toHaveLength(1);
+  });
+
+  it("warns that the end may be missing when the microphone never goes quiet", async () => {
+    vi.useFakeTimers();
+    const errors: Error[] = [];
+    const engine = createAudioEngine({
+      onCaptureData: () => {},
+      onVolumeLevel: () => {},
+      onError: (error) => errors.push(error),
+    });
+    await engine.initialize();
+    await engine.startCapture();
+
+    const stopped = engine.stopCapture();
+    // A bridge that keeps handing over buffers never confirms the end of the recording.
+    for (let elapsed = 0; elapsed < 2_000; elapsed += 10) {
+      nativeSingleton.emitQueuedMicrophoneData(new Uint8Array([1, 2]));
+      await vi.advanceTimersByTimeAsync(10);
+    }
+    await stopped;
+
+    expect(errors.map((error) => error.message)).toEqual([
+      expect.stringContaining("the end of the recording may be missing"),
+    ]);
   });
 
   it("hands the audio session back when the capturing wrapper is destroyed", async () => {

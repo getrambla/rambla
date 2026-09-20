@@ -306,17 +306,12 @@ describe("DictationStreamSender", () => {
     sender.enqueueSegment("seg1");
     await tick();
 
-    // Records how many finishes had gone out when the callback fired, so a
-    // caller arming a reply deadline on it cannot start counting during upload.
-    const finishesWhenSent: number[] = [];
-    const finish = sender.finish(1, () => finishesWhenSent.push(client.finishes.length));
+    const finish = sender.finish(1);
     await tick();
     expect(client.finishes).toEqual([]);
-    expect(finishesWhenSent).toEqual([]);
 
     client.emitAck("d1", 1);
     await expect(finish).resolves.toEqual({ dictationId: "d1", text: "ok" });
-    expect(finishesWhenSent).toEqual([0]);
   });
 
   it("does not replay long buffered native dictation in one synchronous burst", async () => {

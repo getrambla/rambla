@@ -3438,6 +3438,8 @@ export const DictationStreamFinalMessageSchema = z.object({
   payload: z.object({
     dictationId: z.string(),
     text: z.string(),
+    /** Words the daemon transcribed but could not place in `text`; absent when nothing was lost. */
+    droppedTranscript: z.string().optional(),
     debugRecordingPath: z.string().optional(),
   }),
 });

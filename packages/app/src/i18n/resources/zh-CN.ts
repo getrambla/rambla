@@ -43,6 +43,17 @@ export const zhCN: TranslationResources = {
       daemonClientDisconnected: "Daemon client 已断开连接",
       noFileFound: "未找到 {{token}} 对应的文件",
       unexpectedDictationError: "处理听写时发生意外错误。",
+      dictationAborted: {
+        confirmInFlight: "已忽略重复提交：听写正在发送中 (confirm-in-flight)。",
+        cancelInFlight: "已忽略提交：你取消了这次录音 (cancel-in-flight)。",
+        notRecording: "听写未发送：录音已经停止 (not-recording)。",
+        superseded: "提交已停止：你取消或重新开始了这次听写 (superseded)。",
+        noAudio: "听写未发送：未采集到音频 (no-audio)。",
+        retryNoBufferedAudio: "无法重试：没有保留任何录音 (no-buffered-audio)。",
+        retryInFlight: "已忽略多余的重试：这次听写正在重新发送。",
+        retrySuperseded: "重试已停止：你取消或重新开始了这次听写 (retry-superseded)。",
+      },
+      dictationTextDropped: "插入的文本缺少你听写的一部分：“{{text}}”。请重新口述这部分。",
     },
     connectionStatus: {
       online: "在线",

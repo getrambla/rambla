@@ -511,6 +511,8 @@ test.describe("Dictation loss", () => {
       await expect(
         retryButton(page),
         "A daemon that never answers the finish must surface a timeout or an error, not leave the dictation processing with every control disabled",
+        // A silent daemon costs 15 s waiting for the finish to be taken and 10 s more for
+        // the text, so the error is up at ~25 s and this wait is not a boundary race.
       ).toBeVisible({ timeout: 30_000 });
     } finally {
       await seeded.cleanup();

@@ -18,7 +18,8 @@ const PCM_CHANNELS = 1;
 const PCM_BITS_PER_SAMPLE = 16;
 const DEFAULT_DICTATION_FINAL_TIMEOUT_MS = 10000;
 const DEFAULT_DICTATION_AUTO_COMMIT_SECONDS = 15;
-const DICTATION_FINAL_TIMEOUT_MAX_MS = 5 * 60 * 1000;
+// Never ask for more than the client's second phase allows for the text.
+const DICTATION_FINAL_TIMEOUT_MAX_MS = 10_000;
 const DICTATION_FINAL_TIMEOUT_PER_PENDING_SEGMENT_MS = 15 * 1000;
 const DICTATION_FINAL_TIMEOUT_PER_PENDING_AUDIO_SECOND_MS = 1500;
 const DICTATION_FINAL_TIMEOUT_PER_MISSING_SEQ_MS = 250;
@@ -103,6 +104,8 @@ interface DictationStreamState {
   committedSegmentIds: string[];
   transcriptsBySegmentId: Map<string, string>;
   finalTranscriptSegmentIds: Set<string>;
+  /** Dropped across every finalization pass, since the pass that drops rarely emits. */
+  droppedTranscriptTexts: string[];
   inFlightCommitCount: number;
   awaitingFinalCommit: boolean;
   finishRequested: boolean;
@@ -355,6 +358,7 @@ export class DictationStreamManager {
       committedSegmentIds: [],
       transcriptsBySegmentId: new Map(),
       finalTranscriptSegmentIds: new Set(),
+      droppedTranscriptTexts: [],
       inFlightCommitCount: 0,
       awaitingFinalCommit: false,
       finishRequested: false,
@@ -634,6 +638,32 @@ export class DictationStreamManager {
     return path;
   }
 
+  /**
+   * Starts the debug recording write and announces it when it lands. The write is never awaited
+   * by the finalize path, so enabling the debug flag cannot delay or reorder the user's transcript.
+   * Call this before cleanup: the synchronous part of the write captures the stream state.
+   */
+  private persistDictationStreamAudioInBackground(dictationId: string): void {
+    void (async () => {
+      try {
+        const debugRecordingPath = await this.maybePersistDictationStreamAudio(dictationId);
+        if (!debugRecordingPath) return;
+        this.emit({
+          type: "activity_log",
+          payload: {
+            id: uuidv4(),
+            timestamp: new Date(),
+            type: "system",
+            content: `Saved dictation audio: ${debugRecordingPath}`,
+            metadata: { recordingPath: debugRecordingPath, dictationId },
+          },
+        });
+      } catch (err) {
+        this.logger.warn({ dictationId, err }, "Failed to persist dictation debug audio");
+      }
+    })();
+  }
+
   private failDictationStream(dictationId: string, error: string, retryable: boolean): void {
     this.emit({
       type: "dictation_stream_error",
@@ -805,9 +835,9 @@ export class DictationStreamManager {
     state.finishSealed = true;
   }
 
-  private dropUncommittedNonFinalTranscripts(state: DictationStreamState): number {
+  private dropUncommittedNonFinalTranscripts(state: DictationStreamState): string[] {
     const committedSet = new Set(state.committedSegmentIds);
-    let droppedCount = 0;
+    const droppedTexts: string[] = [];
     for (const segmentId of state.transcriptsBySegmentId.keys()) {
       if (committedSet.has(segmentId)) {
         continue;
@@ -815,10 +845,31 @@ export class DictationStreamManager {
       if (state.finalTranscriptSegmentIds.has(segmentId)) {
         continue;
       }
+      const droppedText = state.transcriptsBySegmentId.get(segmentId) ?? "";
+      droppedTexts.push(droppedText);
+      state.droppedTranscriptTexts.push(droppedText);
       state.transcriptsBySegmentId.delete(segmentId);
-      droppedCount += 1;
     }
-    return droppedCount;
+    return droppedTexts;
+  }
+
+  /** Words as they compare once spacing and punctuation stop mattering. */
+  private comparableTranscript(text: string): string {
+    return text.toLowerCase().replaceAll(/[^a-z0-9]+/g, "");
+  }
+
+  /**
+   * Of the transcripts dropped at finalization, the ones whose words reach the user nowhere
+   * else. A provider abandons a partial when it re-cuts the same audio under a new segment id,
+   * and those words are already in the final text; anything left over is loss the user must
+   * hear about, because the daemon no longer holds that audio to transcribe again.
+   */
+  private transcriptsMissingFrom(droppedTexts: string[], finalText: string): string[] {
+    const delivered = this.comparableTranscript(finalText);
+    return droppedTexts.filter((text) => {
+      const dropped = this.comparableTranscript(text);
+      return dropped.length > 0 && !delivered.includes(dropped);
+    });
   }
 
   /** Fails the stream instead of shipping empty text when the recording held audible speech. */
@@ -859,10 +910,10 @@ export class DictationStreamManager {
       return;
     }
 
-    const droppedSegments = this.dropUncommittedNonFinalTranscripts(state);
-    if (droppedSegments > 0) {
+    const droppedTexts = this.dropUncommittedNonFinalTranscripts(state);
+    if (droppedTexts.length > 0) {
       this.logger.warn(
-        { dictationId, droppedSegments },
+        { dictationId, droppedSegments: droppedTexts.length },
         "Dropped abandoned non-final dictation transcript segments before finalization",
       );
     }
@@ -883,31 +934,17 @@ export class DictationStreamManager {
         { dictationId, receivedSeconds: receivedSeconds(state) },
         "Dictation finalized with an empty transcript",
       );
-      void (async () => {
-        const debugRecordingPath = await this.maybePersistDictationStreamAudio(dictationId);
-        if (this.streams.get(dictationId) !== state) return;
-        this.emit({
-          type: "dictation_stream_final",
-          payload: {
-            dictationId,
-            text: "",
-            ...(debugRecordingPath ? { debugRecordingPath } : {}),
-          },
-        });
-        if (debugRecordingPath) {
-          this.emit({
-            type: "activity_log",
-            payload: {
-              id: uuidv4(),
-              timestamp: new Date(),
-              type: "system",
-              content: `Saved dictation audio: ${debugRecordingPath}`,
-              metadata: { recordingPath: debugRecordingPath, dictationId },
-            },
-          });
-        }
-        this.cleanupDictationStream(dictationId);
-      })();
+      const emptyLostTexts = this.transcriptsMissingFrom(state.droppedTranscriptTexts, "");
+      this.emit({
+        type: "dictation_stream_final",
+        payload: {
+          dictationId,
+          text: "",
+          ...(emptyLostTexts.length > 0 ? { droppedTranscript: emptyLostTexts.join(" ") } : {}),
+        },
+      });
+      this.persistDictationStreamAudioInBackground(dictationId);
+      this.cleanupDictationStream(dictationId);
       return;
     }
 
@@ -936,31 +973,18 @@ export class DictationStreamManager {
       );
     }
 
-    void (async () => {
-      const debugRecordingPath = await this.maybePersistDictationStreamAudio(dictationId);
-      if (this.streams.get(dictationId) !== state) return;
-      this.emit({
-        type: "dictation_stream_final",
-        payload: {
-          dictationId,
-          text: orderedText,
-          ...(debugRecordingPath ? { debugRecordingPath } : {}),
-        },
-      });
-      if (debugRecordingPath) {
-        this.emit({
-          type: "activity_log",
-          payload: {
-            id: uuidv4(),
-            timestamp: new Date(),
-            type: "system",
-            content: `Saved dictation audio: ${debugRecordingPath}`,
-            metadata: { recordingPath: debugRecordingPath, dictationId },
-          },
-        });
-      }
-      this.cleanupDictationStream(dictationId);
-    })();
+    const lostTexts = this.transcriptsMissingFrom(state.droppedTranscriptTexts, orderedText);
+
+    this.emit({
+      type: "dictation_stream_final",
+      payload: {
+        dictationId,
+        text: orderedText,
+        ...(lostTexts.length > 0 ? { droppedTranscript: lostTexts.join(" ") } : {}),
+      },
+    });
+    this.persistDictationStreamAudioInBackground(dictationId);
+    this.cleanupDictationStream(dictationId);
   }
 }
 

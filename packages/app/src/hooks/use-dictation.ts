@@ -14,11 +14,6 @@ import {
   type UseDictationResult,
 } from "./use-dictation.shared";
 
-/** How long a sent finish waits for the daemon to take it before the recording is failed. */
-export const DICTATION_FINISH_ACCEPT_TIMEOUT_MS = 10_000;
-/** Margin added to the deadline the daemon states when it takes the finish. */
-export const DICTATION_FINISH_TIMEOUT_GRACE_MS = 5_000;
-
 export function useDictation(options: UseDictationOptions): UseDictationResult {
   const { t } = useTranslation();
   const {
@@ -75,13 +70,20 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
   // duration is used for UI only; no need to mirror into a ref.
 
   const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const finishTimedOutRef = useRef<((error: Error) => void) | null>(null);
   const attemptGuardRef = useRef(new AttemptGuard());
-  const actionGateRef = useRef<{ starting: boolean; confirming: boolean; cancelling: boolean }>({
+  // Teardown cancels the attempt guard the same way a supersede does, so the two are
+  // told apart here; navigating away is not an abort the user needs told about.
+  const isTearingDownRef = useRef(false);
+  const actionGateRef = useRef<{
+    starting: boolean;
+    confirming: boolean;
+    cancelling: boolean;
+    retrying: boolean;
+  }>({
     starting: false,
     confirming: false,
     cancelling: false,
+    retrying: false,
   });
 
   const senderRef = useRef<DictationStreamSender | null>(null);
@@ -149,47 +151,12 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     await senderRef.current?.restartStream(reason);
   }, []);
 
-  const clearFinishTimeout = useCallback(() => {
-    if (finishTimerRef.current) {
-      clearTimeout(finishTimerRef.current);
-      finishTimerRef.current = null;
-    }
-    finishTimedOutRef.current = null;
-  }, []);
-
-  const armFinishTimeout = useCallback(
-    (timeoutMs: number) => {
-      if (finishTimerRef.current) {
-        clearTimeout(finishTimerRef.current);
-      }
-      finishTimerRef.current = setTimeout(() => {
-        finishTimerRef.current = null;
-        finishTimedOutRef.current?.(new Error(t("common.errors.unexpectedDictationError")));
-      }, timeoutMs);
-    },
-    [t],
-  );
-
-  // A daemon that answers neither the finish nor its own stated deadline would
-  // otherwise leave the dictation processing forever with every control disabled.
   const ensureFinalTranscript = useCallback(
-    async (finalSeq: number): Promise<string> => {
-      const timedOut = new Promise<never>((_, reject) => {
-        finishTimedOutRef.current = reject;
-      });
-      try {
-        const result = await Promise.race([
-          senderRef.current!.finish(finalSeq, () =>
-            armFinishTimeout(DICTATION_FINISH_ACCEPT_TIMEOUT_MS),
-          ),
-          timedOut,
-        ]);
-        return result.text;
-      } finally {
-        clearFinishTimeout();
-      }
+    async (finalSeq: number): Promise<{ text: string; droppedTranscript?: string }> => {
+      const result = await senderRef.current!.finish(finalSeq);
+      return { text: result.text, droppedTranscript: result.droppedTranscript };
     },
-    [armFinishTimeout, clearFinishTimeout],
+    [],
   );
 
   useEffect(() => {
@@ -231,21 +198,6 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     });
   }, [client]);
 
-  useEffect(() => {
-    if (!client) {
-      return;
-    }
-    return client.on("dictation_stream_finish_accepted", (message) => {
-      if (!finishTimedOutRef.current) {
-        return;
-      }
-      if (message.payload.dictationId !== senderRef.current?.getDictationId()) {
-        return;
-      }
-      armFinishTimeout(message.payload.timeoutMs + DICTATION_FINISH_TIMEOUT_GRACE_MS);
-    });
-  }, [client, armFinishTimeout]);
-
   const handleDictationFailure = useCallback(
     (failure: unknown) => {
       const normalized = toError(failure);
@@ -266,6 +218,42 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       reportError(normalized, "Failed to complete dictation");
     },
     [reportError, stopDurationTracking],
+  );
+
+  // A submit that aborts silently is indistinguishable from a successful send for a blind user,
+  // so every abort names its own cause in the toast and in the log.
+  const reportConfirmAbort = useCallback(
+    (message: string, abortOptions?: { asFailure?: boolean }) => {
+      const abort = new Error(message);
+      if (abortOptions?.asFailure) {
+        handleDictationFailure(abort);
+        return;
+      }
+      reportError(abort, "Dictation submit aborted");
+    },
+    [handleDictationFailure, reportError],
+  );
+
+  const reportRetryAbort = useCallback(
+    (message: string) => {
+      reportError(new Error(message), "Dictation retry aborted");
+    },
+    [reportError],
+  );
+
+  // The daemon transcribed these words but could not place them in the text, and a blind user
+  // has no way to notice a sentence is short, so the loss is spoken rather than logged.
+  const reportDroppedTranscript = useCallback(
+    (droppedTranscript: string | undefined) => {
+      if (!droppedTranscript) {
+        return;
+      }
+      reportError(
+        new Error(t("common.errors.dictationTextDropped", { text: droppedTranscript })),
+        "Dictation text dropped by the daemon",
+      );
+    },
+    [reportError, t],
   );
 
   const handleStreamingTranscriptionSuccess = useCallback(
@@ -378,7 +366,6 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     }
     actionGateRef.current.cancelling = true;
     stopDurationTracking();
-    clearFinishTimeout();
     setDuration(0);
     setError(null);
 
@@ -400,18 +387,21 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       clearStreamingState();
       actionGateRef.current.cancelling = false;
     }
-  }, [audio, clearFinishTimeout, clearStreamingState, reportError, stopDurationTracking]);
+  }, [audio, clearStreamingState, reportError, stopDurationTracking]);
 
   const confirmDictation = useCallback(async () => {
     if (actionGateRef.current.confirming) {
+      reportConfirmAbort(t("common.errors.dictationAborted.confirmInFlight"));
       return;
     }
     // A cancel already in flight is the user discarding this recording on purpose,
     // so the submit chasing it is refused rather than reported as a failure.
     if (actionGateRef.current.cancelling) {
+      reportConfirmAbort(t("common.errors.dictationAborted.cancelInFlight"));
       return;
     }
     if (!isRecordingRef.current || isProcessingRef.current) {
+      reportConfirmAbort(t("common.errors.dictationAborted.notRecording"));
       return;
     }
     const confirmAllowed = canConfirm ? canConfirm() : true;
@@ -439,35 +429,51 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
 
       const finalSeq = senderRef.current?.getFinalSeq() ?? -1;
       if (finalSeq < 0) {
-        handleStreamingTranscriptionSuccess("", generateMessageId());
+        reportConfirmAbort(t("common.errors.dictationAborted.noAudio"), { asFailure: true });
         return;
       }
 
-      const transcriptText = await ensureFinalTranscript(finalSeq);
+      const finalResult = await ensureFinalTranscript(finalSeq);
       attemptGuardRef.current.assertCurrent(attemptId);
-      handleStreamingTranscriptionSuccess(transcriptText, generateMessageId());
+      handleStreamingTranscriptionSuccess(finalResult.text, generateMessageId());
+      reportDroppedTranscript(finalResult.droppedTranscript);
     } catch (err) {
       if (err instanceof Error && err.name === "AttemptCancelledError") {
+        reportConfirmAbort(t("common.errors.dictationAborted.superseded"));
         return;
       }
       handleDictationFailure(err);
     } finally {
       actionGateRef.current.confirming = false;
+      if (isTearingDownRef.current) {
+        attemptGuardRef.current.cancel();
+        senderRef.current?.dispose();
+      }
     }
   }, [
     audio,
     canConfirm,
     handleDictationFailure,
     handleStreamingTranscriptionSuccess,
+    reportConfirmAbort,
+    reportDroppedTranscript,
     stopDurationTracking,
     ensureFinalTranscript,
     t,
   ]);
 
   const retryFailedDictation = useCallback(async () => {
-    if (!senderRef.current?.hasSegments()) {
+    // Without this gate the second tap resets the stream under the first, whose finish then
+    // throws and reports a failure for a transcript the user already received.
+    if (actionGateRef.current.retrying) {
+      reportRetryAbort(t("common.errors.dictationAborted.retryInFlight"));
       return;
     }
+    if (!senderRef.current?.hasSegments()) {
+      reportRetryAbort(t("common.errors.dictationAborted.retryNoBufferedAudio"));
+      return;
+    }
+    actionGateRef.current.retrying = true;
     setError(null);
     setStatus("uploading");
     setIsProcessing(true);
@@ -479,19 +485,29 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       }
       senderRef.current.resetStreamForReplay();
       const finalSeq = senderRef.current.getFinalSeq();
-      const text = await ensureFinalTranscript(finalSeq);
-      handleStreamingTranscriptionSuccess(text, generateMessageId());
+      const finalResult = await ensureFinalTranscript(finalSeq);
+      handleStreamingTranscriptionSuccess(finalResult.text, generateMessageId());
+      reportDroppedTranscript(finalResult.droppedTranscript);
     } catch (err) {
       if (err instanceof Error && err.name === "AttemptCancelledError") {
+        reportRetryAbort(t("common.errors.dictationAborted.retrySuperseded"));
         return;
       }
       handleDictationFailure(err);
+    } finally {
+      actionGateRef.current.retrying = false;
+      if (isTearingDownRef.current) {
+        attemptGuardRef.current.cancel();
+        senderRef.current?.dispose();
+      }
     }
   }, [
     client,
     ensureFinalTranscript,
     handleDictationFailure,
     handleStreamingTranscriptionSuccess,
+    reportDroppedTranscript,
+    reportRetryAbort,
     t,
   ]);
 
@@ -518,15 +534,22 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
 
   useEffect(() => {
     const attemptGuard = attemptGuardRef.current;
+    const actionGate = actionGateRef.current;
     const audioStop = audioStopRef;
     return () => {
-      attemptGuard.cancel();
+      isTearingDownRef.current = true;
       stopDurationTracking();
-      clearFinishTimeout();
       void audioStop.current().catch(() => undefined);
+      // A submit or retry already waiting on the daemon owns the transcript: cancelling or
+      // disposing it here drops words the user spoke, so it runs to delivery and cleans up
+      // after itself.
+      if (actionGate.confirming || actionGate.retrying) {
+        return;
+      }
+      attemptGuard.cancel();
       senderRef.current?.dispose();
     };
-  }, [clearFinishTimeout, stopDurationTracking]);
+  }, [stopDurationTracking]);
 
   return {
     isRecording,

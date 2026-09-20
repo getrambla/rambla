@@ -2,14 +2,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi, beforeEach } from "vitest";
 import type { SessionOutboundMessage } from "@getrambla/protocol/messages";
-import type { DictationStreamSender } from "@/dictation/dictation-stream-sender";
+import { type DictationStreamSender } from "@/dictation/dictation-stream-sender";
 import { i18n } from "@/i18n/i18next";
-import {
-  DICTATION_FINISH_ACCEPT_TIMEOUT_MS,
-  DICTATION_FINISH_TIMEOUT_GRACE_MS,
-  useDictation,
-  type UseDictationOptions,
-} from "./use-dictation";
+import { useDictation, type UseDictationOptions } from "./use-dictation";
 
 const audio = vi.hoisted(() => {
   const source = {
@@ -50,9 +45,12 @@ const capturedSender = (): DictationStreamSender | null =>
 class FakeDictationClient {
   isConnected = true;
   finishText = "hello";
-  /** False makes the daemon take the finish and never reply, the way a wedged stream does. */
+  /** Words the daemon transcribed but could not place in the final text. */
+  droppedTranscript: string | undefined = undefined;
+  /** False makes the finish time out inside the daemon client, the way a wedged stream does. */
   answersFinish = true;
   cancels: string[] = [];
+  finishes = 0;
   private readonly rawListeners = new Set<(message: SessionOutboundMessage) => void>();
 
   async startDictationStream(): Promise<void> {}
@@ -67,11 +65,19 @@ class FakeDictationClient {
     }
   }
 
-  async finishDictationStream(dictationId: string): Promise<{ dictationId: string; text: string }> {
+  async finishDictationStream(
+    dictationId: string,
+    _finalSeq: number,
+  ): Promise<{ dictationId: string; text: string; droppedTranscript?: string }> {
+    this.finishes += 1;
     if (!this.answersFinish) {
-      return new Promise<never>(() => {});
+      throw new Error("Timeout waiting for dictation finalization");
     }
-    return { dictationId, text: this.finishText };
+    return {
+      dictationId,
+      text: this.finishText,
+      ...(this.droppedTranscript ? { droppedTranscript: this.droppedTranscript } : {}),
+    };
   }
 
   cancelDictationStream(dictationId: string): void {
@@ -107,14 +113,6 @@ class FakeDictationClient {
   >();
 }
 
-/** The daemon taking the finish and naming how long it will take to answer it. */
-function finishAcceptedMessage(dictationId: string, timeoutMs: number): SessionOutboundMessage {
-  return {
-    type: "dictation_stream_finish_accepted",
-    payload: { dictationId, timeoutMs },
-  } as unknown as SessionOutboundMessage;
-}
-
 /** The partial the daemon reports mid-dictation, addressed to the open stream. */
 function partialMessage(dictationId: string, text: string): SessionOutboundMessage {
   return {
@@ -126,6 +124,20 @@ function partialMessage(dictationId: string, text: string): SessionOutboundMessa
 const asClient = (client: FakeDictationClient): UseDictationOptions["client"] =>
   client as unknown as UseDictationOptions["client"];
 
+let consoleError: ReturnType<typeof vi.spyOn>;
+
+/** Every console.error argument list flattened to one line, so a message can be searched for. */
+const loggedLines = (): string[] =>
+  (consoleError.mock.calls as unknown[][]).map((call) =>
+    call.map((part) => String(part)).join(" "),
+  );
+
+/** A blind user can only tell these five aborts apart if each names itself in the toast and log. */
+function expectAbortAnnounced(onError: ReturnType<typeof vi.fn>, message: string): void {
+  expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message }));
+  expect(loggedLines().some((line) => line.includes(message))).toBe(true);
+}
+
 describe("dictation loss", () => {
   beforeEach(() => {
     captured.sender = null;
@@ -133,15 +145,18 @@ describe("dictation loss", () => {
     audio.source.start.mockClear();
     audio.source.stop.mockClear();
     audio.source.stop.mockImplementation(async () => {});
+    consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
+    consoleError.mockRestore();
     vi.useRealTimers();
   });
 
   it("reports a failure when the recording has no final sequence", async () => {
     const onTranscript = vi.fn();
-    const { result } = renderHook(() => useDictation({ client: null, onTranscript }));
+    const onError = vi.fn();
+    const { result } = renderHook(() => useDictation({ client: null, onTranscript, onError }));
 
     await act(async () => {
       await result.current.startDictation();
@@ -154,6 +169,7 @@ describe("dictation loss", () => {
     expect(result.current.status).toBe("failed");
     // Nothing was captured, so there is nothing a retry could send.
     expect(result.current.canRetryFailedDictation).toBe(false);
+    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.noAudio"));
   });
 
   it("reports a failure when confirming is not allowed", async () => {
@@ -267,11 +283,8 @@ describe("dictation loss", () => {
       audio.emitPcmSegment?.("AAAAAAAA");
     });
 
-    vi.useFakeTimers();
     await act(async () => {
-      const confirmed = result.current.confirmDictation();
-      await vi.advanceTimersByTimeAsync(DICTATION_FINISH_ACCEPT_TIMEOUT_MS + 1);
-      await confirmed;
+      await result.current.confirmDictation();
     });
 
     expect(onTranscript).not.toHaveBeenCalled();
@@ -280,44 +293,7 @@ describe("dictation loss", () => {
     expect(result.current.canRetryFailedDictation).toBe(true);
   });
 
-  it("waits out the deadline the daemon states when it takes the finish", async () => {
-    const daemonTimeoutMs = 60_000;
-    const client = new FakeDictationClient();
-    client.answersFinish = false;
-    const onTranscript = vi.fn();
-    const { result } = renderHook(() => useDictation({ client: asClient(client), onTranscript }));
-
-    await act(async () => {
-      await result.current.startDictation();
-    });
-    await act(async () => {
-      audio.emitPcmSegment?.("AAAAAAAA");
-    });
-
-    vi.useFakeTimers();
-    let confirmed!: Promise<void>;
-    await act(async () => {
-      confirmed = result.current.confirmDictation();
-      await vi.advanceTimersByTimeAsync(1);
-    });
-    act(() => {
-      client.emit(finishAcceptedMessage(capturedSender()!.getDictationId()!, daemonTimeoutMs));
-    });
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(DICTATION_FINISH_ACCEPT_TIMEOUT_MS + 1);
-    });
-    expect(result.current.status).toBe("uploading");
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(daemonTimeoutMs + DICTATION_FINISH_TIMEOUT_GRACE_MS);
-      await confirmed;
-    });
-    expect(result.current.status).toBe("failed");
-    expect(result.current.canRetryFailedDictation).toBe(true);
-  });
-
-  it("cancels quietly when a submit follows the cancel the user asked for", async () => {
+  it("names the abort when a submit follows the cancel the user asked for", async () => {
     let releaseStop = () => {};
     const stopped = new Promise<void>((resolve) => {
       releaseStop = resolve;
@@ -342,9 +318,362 @@ describe("dictation loss", () => {
     });
 
     expect(onTranscript).not.toHaveBeenCalled();
-    // The user asked for the cancel, so it is not an error and not a failure.
-    expect(onError).not.toHaveBeenCalled();
-    expect(result.current.error).toBeNull();
     expect(result.current.status).toBe("idle");
+    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.cancelInFlight"));
+  });
+
+  it("names the abort when a submit is already in flight", async () => {
+    let releaseStop = () => {};
+    const stopped = new Promise<void>((resolve) => {
+      releaseStop = resolve;
+    });
+    audio.source.stop.mockImplementation(() => stopped);
+
+    const client = new FakeDictationClient();
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    const { result } = renderHook(() =>
+      useDictation({ client: asClient(client), onTranscript, onError }),
+    );
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+
+    await act(async () => {
+      const first = result.current.confirmDictation();
+      const second = result.current.confirmDictation();
+      releaseStop();
+      await first;
+      await second;
+    });
+
+    expect(onTranscript).toHaveBeenCalledWith("hello", expect.anything());
+    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.confirmInFlight"));
+  });
+
+  it("names the abort when there is no recording to submit", async () => {
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    const { result } = renderHook(() => useDictation({ client: null, onTranscript, onError }));
+
+    await act(async () => {
+      await result.current.confirmDictation();
+    });
+
+    expect(onTranscript).not.toHaveBeenCalled();
+    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.notRecording"));
+  });
+
+  it("names the abort when a newer attempt supersedes the submit", async () => {
+    let releaseStop = () => {};
+    const stopped = new Promise<void>((resolve) => {
+      releaseStop = resolve;
+    });
+
+    const client = new FakeDictationClient();
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    const { result } = renderHook(() =>
+      useDictation({ client: asClient(client), onTranscript, onError }),
+    );
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+
+    audio.source.stop.mockImplementation(() => stopped);
+    await act(async () => {
+      const confirmed = result.current.confirmDictation();
+      const cancelled = result.current.cancelDictation();
+      releaseStop();
+      await confirmed;
+      await cancelled;
+    });
+
+    expect(onTranscript).not.toHaveBeenCalled();
+    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.superseded"));
+  });
+
+  it("says nothing when the hook unmounts mid-submit", async () => {
+    let releaseStop = () => {};
+    const stopped = new Promise<void>((resolve) => {
+      releaseStop = resolve;
+    });
+
+    const client = new FakeDictationClient();
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    const { result, unmount } = renderHook(() =>
+      useDictation({ client: asClient(client), onTranscript, onError }),
+    );
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+
+    audio.source.stop.mockImplementation(() => stopped);
+    await act(async () => {
+      const confirmed = result.current.confirmDictation();
+      unmount();
+      releaseStop();
+      await confirmed;
+    });
+
+    // Navigating away is not an abort the user needs told about.
+    expect(onError).not.toHaveBeenCalled();
+    expect(
+      loggedLines().some((line) =>
+        line.includes(i18n.t("common.errors.dictationAborted.superseded")),
+      ),
+    ).toBe(false);
+  });
+
+  it("delivers the transcript when the hook unmounts mid-submit", async () => {
+    let releaseStop = () => {};
+    const stopped = new Promise<void>((resolve) => {
+      releaseStop = resolve;
+    });
+
+    const client = new FakeDictationClient();
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    const { result, unmount } = renderHook(() =>
+      useDictation({ client: asClient(client), onTranscript, onError }),
+    );
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+
+    audio.source.stop.mockImplementation(() => stopped);
+    await act(async () => {
+      const confirmed = result.current.confirmDictation();
+      unmount();
+      releaseStop();
+      await confirmed;
+    });
+
+    // The words were already spoken and the daemon still answers, so unmounting the
+    // overlay is no reason to throw the transcript away.
+    expect(onTranscript).toHaveBeenCalledWith("hello", expect.anything());
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("names the abort when a cancel supersedes a submit the hook is unmounting", async () => {
+    let releaseStop = () => {};
+    const stopped = new Promise<void>((resolve) => {
+      releaseStop = resolve;
+    });
+
+    const client = new FakeDictationClient();
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    const { result, unmount } = renderHook(() =>
+      useDictation({ client: asClient(client), onTranscript, onError }),
+    );
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+
+    audio.source.stop.mockImplementation(() => stopped);
+    await act(async () => {
+      const confirmed = result.current.confirmDictation();
+      const cancelled = result.current.cancelDictation();
+      unmount();
+      releaseStop();
+      await confirmed;
+      await cancelled;
+    });
+
+    expect(onTranscript).not.toHaveBeenCalled();
+    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.superseded"));
+  });
+
+  it("tells the user when the daemon could not place part of the dictation", async () => {
+    const client = new FakeDictationClient();
+    client.droppedTranscript = "about the kittens";
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    const { result } = renderHook(() =>
+      useDictation({ client: asClient(client), onTranscript, onError }),
+    );
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+    await act(async () => {
+      await result.current.confirmDictation();
+    });
+
+    // The text still arrives: half a transcript beats none, as long as the loss is spoken.
+    expect(onTranscript).toHaveBeenCalledWith("hello", expect.anything());
+    expectAbortAnnounced(
+      onError,
+      i18n.t("common.errors.dictationTextDropped", { text: "about the kittens" }),
+    );
+  });
+
+  it("delivers the transcript when the hook unmounts mid-retry", async () => {
+    let releaseFinish = () => {};
+    const finished = new Promise<void>((resolve) => {
+      releaseFinish = resolve;
+    });
+
+    const client = new FakeDictationClient();
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    const { result, unmount } = renderHook(() =>
+      useDictation({ client: asClient(client), onTranscript, onError }),
+    );
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+
+    client.answersFinish = false;
+    await act(async () => {
+      await result.current.confirmDictation();
+    });
+    onError.mockClear();
+    consoleError.mockClear();
+
+    client.answersFinish = true;
+    const slowFinish = client.finishDictationStream.bind(client);
+    client.finishDictationStream = async (dictationId: string, finalSeq: number) => {
+      await finished;
+      return await slowFinish(dictationId, finalSeq);
+    };
+
+    await act(async () => {
+      const retried = result.current.retryFailedDictation();
+      unmount();
+      releaseFinish();
+      await retried;
+    });
+
+    // Navigating away mid-retry must not throw away the words the daemon already has.
+    expect(onTranscript).toHaveBeenCalledWith("hello", expect.anything());
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("names the abort when a retry is already in flight", async () => {
+    let releaseFinish = () => {};
+    const finished = new Promise<void>((resolve) => {
+      releaseFinish = resolve;
+    });
+
+    const client = new FakeDictationClient();
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    const { result } = renderHook(() =>
+      useDictation({ client: asClient(client), onTranscript, onError }),
+    );
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+
+    client.answersFinish = false;
+    await act(async () => {
+      await result.current.confirmDictation();
+    });
+    onError.mockClear();
+    consoleError.mockClear();
+
+    client.answersFinish = true;
+    const slowFinish = client.finishDictationStream.bind(client);
+    client.finishDictationStream = async (dictationId: string, finalSeq: number) => {
+      await finished;
+      return await slowFinish(dictationId, finalSeq);
+    };
+
+    await act(async () => {
+      const first = result.current.retryFailedDictation();
+      const second = result.current.retryFailedDictation();
+      releaseFinish();
+      await first;
+      await second;
+    });
+
+    // The second tap must not race the first into a failure toast for a delivered transcript.
+    expect(onTranscript).toHaveBeenCalledTimes(1);
+    expect(client.finishes).toBe(2);
+    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.retryInFlight"));
+  });
+
+  it("names the abort when a retry has no recording held", async () => {
+    const client = new FakeDictationClient();
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    const { result } = renderHook(() =>
+      useDictation({ client: asClient(client), onTranscript, onError }),
+    );
+
+    await act(async () => {
+      await result.current.retryFailedDictation();
+    });
+
+    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.retryNoBufferedAudio"));
+  });
+
+  it("names the abort when a newer attempt supersedes the retry", async () => {
+    const client = new FakeDictationClient();
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    const { result } = renderHook(() =>
+      useDictation({ client: asClient(client), onTranscript, onError }),
+    );
+
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+
+    client.finishDictationStream = async () => {
+      const cancelled = new Error("Attempt cancelled");
+      cancelled.name = "AttemptCancelledError";
+      throw cancelled;
+    };
+
+    await act(async () => {
+      await result.current.confirmDictation();
+    });
+    onError.mockClear();
+    consoleError.mockClear();
+
+    await act(async () => {
+      await result.current.retryFailedDictation();
+    });
+
+    expect(onTranscript).not.toHaveBeenCalled();
+    expectAbortAnnounced(onError, i18n.t("common.errors.dictationAborted.retrySuperseded"));
   });
 });

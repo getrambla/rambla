@@ -1,5 +1,8 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { EventEmitter } from "node:events";
+import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import pino from "pino";
 
 import { DictationStreamManager } from "./dictation-stream-manager.js";
@@ -74,32 +77,68 @@ const buildPcmBase64 = (
   return Buffer.from(samples.buffer).toString("base64");
 };
 
-const tick = async (): Promise<void> => {
-  await Promise.resolve();
-  await Promise.resolve();
+interface EmittedMessage {
+  type: string;
+  payload: unknown;
+}
+
+interface EmitCollector {
+  emitted: EmittedMessage[];
+  emit: (message: EmittedMessage) => void;
+  waitFor: (type: string) => Promise<EmittedMessage>;
+}
+
+/** Collects emitted messages so a test can await one by type instead of flushing microtasks. */
+const createEmitCollector = (): EmitCollector => {
+  const emitted: EmittedMessage[] = [];
+  const waiters = new Map<string, Array<(message: EmittedMessage) => void>>();
+  return {
+    emitted,
+    emit: (message) => {
+      emitted.push(message);
+      const pending = waiters.get(message.type);
+      if (!pending) return;
+      waiters.delete(message.type);
+      for (const resolve of pending) resolve(message);
+    },
+    waitFor: (type) => {
+      const existing = emitted.find((message) => message.type === type);
+      if (existing) return Promise.resolve(existing);
+      return new Promise<EmittedMessage>((resolve) => {
+        waiters.set(type, [...(waiters.get(type) ?? []), resolve]);
+      });
+    },
+  };
 };
 
-describe("DictationStreamManager (finish buffer-too-small tolerance)", () => {
-  const env = {
-    dictationDebug: process.env.RAMBLA_DICTATION_DEBUG,
-  };
+const textOf = (message: EmittedMessage | undefined): string | undefined =>
+  (message?.payload as { text?: string } | undefined)?.text;
 
+// The debug flag decides whether the daemon writes recordings to disk, so it is
+// pinned for the whole file: no block may inherit a developer's shell.
+beforeEach(() => {
+  vi.stubEnv("RAMBLA_DICTATION_DEBUG", "false");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe("DictationStreamManager (finish buffer-too-small tolerance)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    process.env.RAMBLA_DICTATION_DEBUG = "false";
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    process.env.RAMBLA_DICTATION_DEBUG = env.dictationDebug;
   });
 
   it("treats buffer-too-small as benign and finalizes with existing transcripts", async () => {
     const session = new FakeRealtimeSession();
-    const emitted: Array<{ type: string; payload: unknown }> = [];
+    const collector = createEmitCollector();
     const manager = new DictationStreamManager({
       logger: pino({ level: "silent" }),
-      emit: (msg) => emitted.push(msg),
+      emit: collector.emit,
       sessionId: "s1",
       stt: new FakeSttProvider(session),
       finalTimeoutMs: 5000,
@@ -116,17 +155,15 @@ describe("DictationStreamManager (finish buffer-too-small tolerance)", () => {
     session.emitTranscript("seg-1", "hello world", true);
 
     await manager.handleFinish("d1", 0);
-    await tick();
 
     session.emitError(
       "Error committing input audio buffer: buffer too small. Expected at least 100ms of audio, but buffer only has 0.00ms of audio.",
     );
-    await tick();
 
-    const final = emitted.find((msg) => msg.type === "dictation_stream_final");
-    const error = emitted.find((msg) => msg.type === "dictation_stream_error");
+    const final = await collector.waitFor("dictation_stream_final");
+    const error = collector.emitted.find((msg) => msg.type === "dictation_stream_error");
     expect(error).toBeUndefined();
-    expect((final?.payload as { text?: string } | undefined)?.text).toBe("hello world");
+    expect(textOf(final)).toBe("hello world");
     expect(session.closed).toBe(true);
   });
 });
@@ -251,64 +288,51 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
   });
 
   it("auto-commits while streaming and assembles final transcript in segment order", async () => {
-    const originalDebug = process.env.RAMBLA_DICTATION_DEBUG;
-    process.env.RAMBLA_DICTATION_DEBUG = "false";
+    const session = new FakeRealtimeSession();
+    const collector = createEmitCollector();
+    const manager = new DictationStreamManager({
+      logger: pino({ level: "silent" }),
+      emit: collector.emit,
+      sessionId: "s1",
+      stt: new FakeSttProvider(session),
+      autoCommitSeconds: 1,
+    });
 
-    try {
-      const session = new FakeRealtimeSession();
-      const emitted: Array<{ type: string; payload: unknown }> = [];
-      const manager = new DictationStreamManager({
-        logger: pino({ level: "silent" }),
-        emit: (msg) => emitted.push(msg),
-        sessionId: "s1",
-        stt: new FakeSttProvider(session),
-        autoCommitSeconds: 1,
-      });
+    await manager.handleStart("d-segmented", "audio/pcm;rate=24000;bits=16");
 
-      await manager.handleStart("d-segmented", "audio/pcm;rate=24000;bits=16");
+    await manager.handleChunk({
+      dictationId: "d-segmented",
+      seq: 0,
+      audioBase64: buildPcmBase64(2000, 24000, 7200),
+      format: "audio/pcm;rate=24000;bits=16",
+    });
+    expect(session.commitCalls).toBe(1);
 
-      await manager.handleChunk({
-        dictationId: "d-segmented",
-        seq: 0,
-        audioBase64: buildPcmBase64(2000, 24000, 7200),
-        format: "audio/pcm;rate=24000;bits=16",
-      });
-      expect(session.commitCalls).toBe(1);
+    session.emitCommitted("seg-1");
+    session.emitTranscript("seg-1", "hello", true);
 
-      session.emitCommitted("seg-1");
-      session.emitTranscript("seg-1", "hello", true);
+    await manager.handleChunk({
+      dictationId: "d-segmented",
+      seq: 1,
+      audioBase64: buildPcmBase64(2000, 12000),
+      format: "audio/pcm;rate=24000;bits=16",
+    });
 
-      await manager.handleChunk({
-        dictationId: "d-segmented",
-        seq: 1,
-        audioBase64: buildPcmBase64(2000, 12000),
-        format: "audio/pcm;rate=24000;bits=16",
-      });
+    await manager.handleFinish("d-segmented", 1);
+    expect(session.commitCalls).toBe(2);
 
-      await manager.handleFinish("d-segmented", 1);
-      expect(session.commitCalls).toBe(2);
+    session.emitCommitted("seg-2");
+    session.emitTranscript("seg-2", "world", true);
 
-      session.emitCommitted("seg-2");
-      session.emitTranscript("seg-2", "world", true);
-      await tick();
-
-      const final = emitted.find((msg) => msg.type === "dictation_stream_final");
-      expect((final?.payload as { text?: string } | undefined)?.text).toBe("hello world");
-    } finally {
-      if (originalDebug === undefined) {
-        delete process.env.RAMBLA_DICTATION_DEBUG;
-      } else {
-        process.env.RAMBLA_DICTATION_DEBUG = originalDebug;
-      }
-    }
+    expect(textOf(await collector.waitFor("dictation_stream_final"))).toBe("hello world");
   });
 
   it("waits for an in-flight auto-commit before finalizing", async () => {
     const session = new FakeRealtimeSession();
-    const emitted: Array<{ type: string; payload: unknown }> = [];
+    const collector = createEmitCollector();
     const manager = new DictationStreamManager({
       logger: pino({ level: "silent" }),
-      emit: (message) => emitted.push(message),
+      emit: collector.emit,
       sessionId: "s1",
       stt: new FakeSttProvider(session),
       autoCommitSeconds: 1,
@@ -324,9 +348,10 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     expect(session.commitCalls).toBe(1);
 
     await manager.handleFinish("d-delayed-auto-commit", 0);
-    await tick();
 
-    expect(emitted.find((message) => message.type === "dictation_stream_final")).toBeUndefined();
+    expect(
+      collector.emitted.find((message) => message.type === "dictation_stream_final"),
+    ).toBeUndefined();
     expect(session.closed).toBe(false);
 
     session.emitCommitted("seg-tail");
@@ -334,19 +359,17 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     // The silence after the pause is committed too, and transcribes to nothing.
     session.emitCommitted("seg-silent-tail");
     session.emitTranscript("seg-silent-tail", "", true);
-    await tick();
 
-    const final = emitted.find((message) => message.type === "dictation_stream_final");
-    expect((final?.payload as { text?: string } | undefined)?.text).toBe("the final words");
+    expect(textOf(await collector.waitFor("dictation_stream_final"))).toBe("the final words");
     expect(session.closed).toBe(true);
   });
 
   it("commits tail audio appended while an auto-commit is in flight", async () => {
     const session = new FakeRealtimeSession();
-    const emitted: Array<{ type: string; payload: unknown }> = [];
+    const collector = createEmitCollector();
     const manager = new DictationStreamManager({
       logger: pino({ level: "silent" }),
-      emit: (message) => emitted.push(message),
+      emit: collector.emit,
       sessionId: "s1",
       stt: new FakeSttProvider(session),
       autoCommitSeconds: 1,
@@ -374,20 +397,18 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
 
     session.emitCommitted("seg-tail");
     session.emitTranscript("seg-tail", "the final words", true);
-    await tick();
 
-    const final = emitted.find((message) => message.type === "dictation_stream_final");
-    expect((final?.payload as { text?: string } | undefined)?.text).toBe(
+    expect(textOf(await collector.waitFor("dictation_stream_final"))).toBe(
       "the beginning the final words",
     );
   });
 
   it("does not wait for an abandoned partial after committing mid-stream silence", async () => {
     const session = new FakeRealtimeSession();
-    const emitted: Array<{ type: string; payload: unknown }> = [];
+    const collector = createEmitCollector();
     const manager = new DictationStreamManager({
       logger: pino({ level: "silent" }),
-      emit: (message) => emitted.push(message),
+      emit: collector.emit,
       sessionId: "s1",
       stt: new FakeSttProvider(session),
       autoCommitSeconds: 1,
@@ -423,10 +444,8 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     await manager.handleFinish("d-cleared-partial", 2);
     session.emitCommitted("seg-final");
     session.emitTranscript("seg-final", "the final words", true);
-    await tick();
 
-    const final = emitted.find((message) => message.type === "dictation_stream_final");
-    expect((final?.payload as { text?: string } | undefined)?.text).toBe(
+    expect(textOf(await collector.waitFor("dictation_stream_final"))).toBe(
       "the beginning the final words",
     );
     expect(session.closed).toBe(true);
@@ -490,19 +509,17 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
 
     const finishAccepted = emitted.find((msg) => msg.type === "dictation_stream_finish_accepted");
     expect(finishAccepted).toBeDefined();
-    expect((finishAccepted?.payload as { timeoutMs?: number } | undefined)?.timeoutMs).toBe(20_000);
+    expect((finishAccepted?.payload as { timeoutMs?: number } | undefined)?.timeoutMs).toBe(10_000);
   });
 
   it("drops dangling uncommitted non-final transcripts when finishing after a silence tail", async () => {
     vi.useFakeTimers();
-    const previousDebug = process.env.RAMBLA_DICTATION_DEBUG;
-    process.env.RAMBLA_DICTATION_DEBUG = "false";
     try {
       const session = new FakeRealtimeSession();
-      const emitted: Array<{ type: string; payload: unknown }> = [];
+      const collector = createEmitCollector();
       const manager = new DictationStreamManager({
         logger: pino({ level: "silent" }),
-        emit: (msg) => emitted.push(msg),
+        emit: collector.emit,
         sessionId: "s1",
         stt: new FakeSttProvider(session),
         finalTimeoutMs: 5000,
@@ -531,17 +548,16 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
       await manager.handleFinish("d-clear-tail", 1);
       session.emitCommitted("seg-silent-tail");
       session.emitTranscript("seg-silent-tail", "", true);
-      await tick();
-      await vi.advanceTimersByTimeAsync(5_100);
-      await tick();
 
-      const final = emitted.find((msg) => msg.type === "dictation_stream_final");
-      const error = emitted.find((msg) => msg.type === "dictation_stream_error");
+      const final = await collector.waitFor("dictation_stream_final");
+      // Past the finish deadline the stream is gone, so no late timeout error follows.
+      await vi.advanceTimersByTimeAsync(5_100);
+
+      const error = collector.emitted.find((msg) => msg.type === "dictation_stream_error");
       expect(session.clearCalls).toBe(0);
       expect(error).toBeUndefined();
-      expect((final?.payload as { text?: string } | undefined)?.text).toBe("hello");
+      expect(textOf(final)).toBe("hello");
     } finally {
-      process.env.RAMBLA_DICTATION_DEBUG = previousDebug;
       vi.useRealTimers();
     }
   });
@@ -623,10 +639,10 @@ describe("DictationStreamManager (commit during in-flight decode)", () => {
     session.on("transcript", (payload: { transcript: string; isFinal: boolean }) => {
       if (payload.isFinal) committedTranscripts.push(payload.transcript);
     });
-    const emitted: Array<{ type: string; payload: unknown }> = [];
+    const collector = createEmitCollector();
     const manager = new DictationStreamManager({
       logger: pino({ level: "silent" }),
-      emit: (msg) => emitted.push(msg),
+      emit: collector.emit,
       sessionId: "s1",
       stt: { id: "fake-parakeet", createSession: () => session },
       autoCommitSeconds: 1,
@@ -657,12 +673,9 @@ describe("DictationStreamManager (commit during in-flight decode)", () => {
     expect(committedTranscripts).toEqual(["hello there"]);
 
     await manager.handleFinish("d-commit-in-flight", 1);
-    await tick();
-    await tick();
 
-    const final = emitted.find((msg) => msg.type === "dictation_stream_final");
-    expect((final?.payload as { text?: string } | undefined)?.text).toBe("hello there");
-    expect(emitted.find((msg) => msg.type === "dictation_stream_error")).toBeUndefined();
+    expect(textOf(await collector.waitFor("dictation_stream_final"))).toBe("hello there");
+    expect(collector.emitted.find((msg) => msg.type === "dictation_stream_error")).toBeUndefined();
     expect(session).toBeDefined();
   });
 
@@ -673,10 +686,10 @@ describe("DictationStreamManager (commit during in-flight decode)", () => {
     session.on("transcript", (payload: { transcript: string; isFinal: boolean }) => {
       if (payload.isFinal) committedTranscripts.push(payload.transcript);
     });
-    const emitted: Array<{ type: string; payload: unknown }> = [];
+    const collector = createEmitCollector();
     const manager = new DictationStreamManager({
       logger: pino({ level: "silent" }),
-      emit: (msg) => emitted.push(msg),
+      emit: collector.emit,
       sessionId: "s1",
       stt: { id: "fake-parakeet", createSession: () => session },
       autoCommitSeconds: 1,
@@ -703,18 +716,63 @@ describe("DictationStreamManager (commit during in-flight decode)", () => {
     expect(committedTranscripts).toEqual(["hello there"]);
 
     await manager.handleFinish("d-no-discard", 1);
-    await tick();
-    await tick();
 
-    const final = emitted.find((msg) => msg.type === "dictation_stream_final");
-    expect(final).toBeDefined();
+    const final = await collector.waitFor("dictation_stream_final");
     // The tail audio's words must survive into the committed final transcript,
     // not just into a partial that later gets dropped as abandoned.
-    expect((final?.payload as { text?: string } | undefined)?.text).toBe("hello there");
+    expect(textOf(final)).toBe("hello there");
     // The decode that produced the committed final must have covered every
     // appended sample (24000 + 2400) — nothing cleared before being decoded.
     const fullCoverage = engine.streams.some((stream) => stream.samples.length >= 26_400);
     expect(fullCoverage).toBe(true);
+  });
+});
+
+describe("DictationStreamManager (debug recording enabled)", () => {
+  let debugDir: string;
+
+  beforeEach(async () => {
+    debugDir = await mkdtemp(join(tmpdir(), "rambla-dictation-debug-"));
+    vi.stubEnv("RAMBLA_DICTATION_DEBUG", "1");
+    vi.stubEnv("DICTATION_DEBUG_AUDIO_DIR", debugDir);
+  });
+
+  afterEach(async () => {
+    await rm(debugDir, { recursive: true, force: true });
+  });
+
+  it("delivers the final transcript without waiting for the debug recording write", async () => {
+    const session = new FakeRealtimeSession();
+    const collector = createEmitCollector();
+    const manager = new DictationStreamManager({
+      logger: pino({ level: "silent" }),
+      emit: collector.emit,
+      sessionId: "s-debug",
+      stt: new FakeSttProvider(session),
+    });
+
+    await manager.handleStart("d-debug", "audio/pcm;rate=24000;bits=16");
+    await manager.handleChunk({
+      dictationId: "d-debug",
+      seq: 0,
+      audioBase64: buildPcmBase64(2000, 2400),
+      format: "audio/pcm;rate=24000;bits=16",
+    });
+    session.emitTranscript("seg-1", "hello world", true);
+    await manager.handleFinish("d-debug", 0);
+    session.emitCommitted("seg-1");
+
+    // Nothing is awaited between the last provider event and this assertion, so
+    // a debug disk write on the finalize path would push the final past it.
+    expect(textOf(collector.emitted.find((msg) => msg.type === "dictation_stream_final"))).toBe(
+      "hello world",
+    );
+
+    // The flag still does its job: the artifact lands and is announced.
+    const activity = await collector.waitFor("activity_log");
+    expect((activity.payload as { content: string }).content).toMatch(/^Saved dictation audio: /);
+    const sessionDirs = await readdir(debugDir);
+    expect(sessionDirs).toEqual(["s-debug"]);
   });
 });
 
