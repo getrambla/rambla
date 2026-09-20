@@ -205,7 +205,14 @@ export type DictationStreamOutboundMessage =
       type: "dictation_stream_finish_accepted";
       payload: { dictationId: string; timeoutMs: number };
     }
-  | { type: "dictation_stream_partial"; payload: { dictationId: string; text: string } }
+  | {
+      type: "dictation_stream_partial";
+      payload: {
+        dictationId: string;
+        text: string;
+        segment?: { id: string; index: number; text: string; isFinal: boolean };
+      };
+    }
   | {
       type: "dictation_stream_final";
       payload: { dictationId: string; text: string; debugRecordingPath?: string };
@@ -239,6 +246,7 @@ export class DictationStreamManager {
   private readonly finalTimeoutMs: number;
   private readonly autoCommitSeconds: number;
   private readonly onIdle: (() => void) | undefined;
+  private readonly supportsSegments: () => boolean;
   private readonly streams = new Map<string, DictationStreamState>();
 
   constructor(params: {
@@ -250,8 +258,11 @@ export class DictationStreamManager {
     finalTimeoutMs?: number;
     autoCommitSeconds?: number;
     onIdle?: () => void;
+    // COMPAT(dictationSegments): added in v0.8.1, remove with the glued-text path after 2027-03-20.
+    supportsSegments?: () => boolean;
   }) {
     this.onIdle = params.onIdle;
+    this.supportsSegments = params.supportsSegments ?? (() => false);
     this.logger = params.logger.child({ component: "dictation-stream-manager" });
     this.emit = params.emit;
     this.sessionId = params.sessionId;
@@ -385,7 +396,7 @@ export class DictationStreamManager {
       this.maybeFinalizeDictationStream(dictationId);
     });
 
-    stt.on("transcript", ({ segmentId, transcript, isFinal }) => {
+    stt.on("transcript", ({ segmentId, transcript, isFinal, segmentIndex }) => {
       const state = this.streams.get(dictationId);
       if (state?.stt !== stt) {
         return;
@@ -399,15 +410,29 @@ export class DictationStreamManager {
         state.awaitingFinalCommit = false;
       }
 
-      const orderedIds = state.committedSegmentIds.includes(segmentId)
-        ? state.committedSegmentIds
-        : [...state.committedSegmentIds, segmentId];
-      const partialText = orderedIds
-        .map((id) => state.transcriptsBySegmentId.get(id) ?? "")
-        .filter((text) => text.length > 0)
-        .join(" ")
-        .trim();
-      this.emitDictationPartial(dictationId, partialText);
+      // COMPAT(dictationSegments): added in v0.8.1. A capable client places the words
+      // itself, so it gets the reporting segment alone and nothing already settled;
+      // everyone else gets the whole transcript glued together. Remove after 2027-03-20.
+      if (segmentIndex !== undefined && this.supportsSegments()) {
+        this.emit({
+          type: "dictation_stream_partial",
+          payload: {
+            dictationId,
+            text: "",
+            segment: { id: segmentId, index: segmentIndex, text: transcript, isFinal },
+          },
+        });
+      } else {
+        const orderedIds = state.committedSegmentIds.includes(segmentId)
+          ? state.committedSegmentIds
+          : [...state.committedSegmentIds, segmentId];
+        const partialText = orderedIds
+          .map((id) => state.transcriptsBySegmentId.get(id) ?? "")
+          .filter((text) => text.length > 0)
+          .join(" ")
+          .trim();
+        this.emitDictationPartial(dictationId, partialText);
+      }
 
       this.maybeSealDictationStreamFinish(dictationId);
       this.maybeFinalizeDictationStream(dictationId);

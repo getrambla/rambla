@@ -1180,7 +1180,11 @@ export class Session {
         stt,
         voice,
         voiceBridge,
-        dictation,
+        // COMPAT(dictationSegments): added in v0.8.1, remove with the glued-text path after 2027-03-20.
+        dictation: {
+          ...dictation,
+          supportsSegments: () => this.supports(CLIENT_CAPS.dictationSegments),
+        },
       },
       this.delivery,
       () => this.refreshObservationProducers(),

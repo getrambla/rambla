@@ -153,6 +153,8 @@ export interface VoiceSessionOptions {
     stt?: Resolvable<SpeechToTextProvider | null>;
     sttLanguage?: string;
     getSpeechReadiness?: () => SpeechReadinessSnapshot;
+    // COMPAT(dictationSegments): added in v0.8.1, remove with the glued-text path after 2027-03-20.
+    supportsSegments?: () => boolean;
   };
 }
 
@@ -239,6 +241,7 @@ export class VoiceSession {
       language: dictation?.sttLanguage,
       finalTimeoutMs: dictation?.finalTimeoutMs,
       onIdle: this.onIdle,
+      supportsSegments: dictation?.supportsSegments,
     });
   }
 

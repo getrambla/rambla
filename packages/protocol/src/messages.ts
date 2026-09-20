@@ -3425,11 +3425,23 @@ export const DictationStreamFinishAcceptedMessageSchema = z.object({
   }),
 });
 
+/** One transcription segment as the daemon cut it; `index` is the daemon's order, not arrival order. */
+export const DictationSegmentSchema = z.object({
+  id: z.string(),
+  index: z.number().int(),
+  text: z.string(),
+  isFinal: z.boolean(),
+});
+
 export const DictationStreamPartialMessageSchema = z.object({
   type: z.literal("dictation_stream_partial"),
   payload: z.object({
     dictationId: z.string(),
+    /** Empty when `segment` is present: a client reading segments glues the text itself. */
     text: z.string(),
+    // COMPAT(dictationSegments): added in v0.8.1, remove after 2027-03-20 once the
+    // client floor reads segments and the glued `text` above can go.
+    segment: DictationSegmentSchema.optional(),
   }),
 });
 
@@ -7070,6 +7082,7 @@ export type DictationStreamStartMessage = z.infer<typeof DictationStreamStartMes
 export type DictationStreamChunkMessage = z.infer<typeof DictationStreamChunkMessageSchema>;
 export type DictationStreamFinishMessage = z.infer<typeof DictationStreamFinishMessageSchema>;
 export type DictationStreamCancelMessage = z.infer<typeof DictationStreamCancelMessageSchema>;
+export type DictationSegment = z.infer<typeof DictationSegmentSchema>;
 export type CreateAgentRequestMessage = z.infer<typeof CreateAgentRequestMessageSchema>;
 export type AgentAttachment = z.infer<typeof AgentAttachmentSchema>;
 export type ForgeChangeRequestAttachment = z.infer<typeof ForgeChangeRequestAttachmentSchema>;

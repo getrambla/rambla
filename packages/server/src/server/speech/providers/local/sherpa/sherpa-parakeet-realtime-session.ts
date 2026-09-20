@@ -15,6 +15,9 @@ export class SherpaParakeetRealtimeTranscriptionSession
   public readonly requiredSampleRate: number;
   private currentSegmentId: string | null = null;
   private previousSegmentId: string | null = null;
+  // The cut is synchronous, so the number is assigned at the cut. Arrival order cannot
+  // supply it: a segment's final decode can land after the next segment's first partial.
+  private currentSegmentIndex = 0;
   private lastPartialText = "";
 
   private pcm16: Buffer = Buffer.alloc(0);
@@ -35,6 +38,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
       return;
     }
     this.currentSegmentId = uuidv4();
+    this.currentSegmentIndex = 0;
     this.connected = true;
   }
 
@@ -62,10 +66,12 @@ export class SherpaParakeetRealtimeTranscriptionSession
     // the same tick or later — belongs to the next segment, so a decode that
     // resolves afterwards cannot pull it into this transcript.
     const segmentId = this.currentSegmentId;
+    const segmentIndex = this.currentSegmentIndex;
     const previousSegmentId = this.previousSegmentId;
     const audio = this.pcm16;
     this.previousSegmentId = segmentId;
     this.currentSegmentId = uuidv4();
+    this.currentSegmentIndex += 1;
     this.lastPartialText = "";
     this.pcm16 = Buffer.alloc(0);
 
@@ -76,7 +82,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
         const finalText = await this.decodePcm16(audio);
 
         this.emit("committed", { segmentId, previousSegmentId });
-        this.emit("transcript", { segmentId, transcript: finalText, isFinal: true });
+        this.emit("transcript", { segmentId, segmentIndex, transcript: finalText, isFinal: true });
       } catch (err) {
         this.emit("error", err instanceof Error ? err : new Error(String(err)));
       }
@@ -89,6 +95,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
     }
     this.pcm16 = Buffer.alloc(0);
     this.currentSegmentId = uuidv4();
+    this.currentSegmentIndex += 1;
     this.lastPartialText = "";
   }
 
@@ -128,6 +135,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
         this.lastPartialText = text;
         this.emit("transcript", {
           segmentId: this.currentSegmentId,
+          segmentIndex: this.currentSegmentIndex,
           transcript: text,
           isFinal: false,
         });

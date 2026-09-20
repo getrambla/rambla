@@ -25,6 +25,8 @@ export interface StreamingTranscriptionEvent {
   segmentId: string;
   transcript: string;
   isFinal: boolean;
+  /** The segment's place in the session's own cut order; absent from providers that emit no partials. */
+  segmentIndex?: number;
   language?: string;
   logprobs?: LogprobToken[];
   avgLogprob?: number;
