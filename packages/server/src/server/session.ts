@@ -1181,6 +1181,7 @@ export class Session {
         voice,
         voiceBridge,
         dictation,
+        supportsDictationSegments: () => this.supports(CLIENT_CAPS.dictationSegments),
       },
       this.delivery,
       () => this.refreshObservationProducers(),

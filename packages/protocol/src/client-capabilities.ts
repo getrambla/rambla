@@ -45,6 +45,10 @@ export const CLIENT_CAPS = {
   // COMPAT(workspaceSetupBlocked): added in v0.8.0, remove after 2027-03-07 once client floor >= v0.8.0.
   workspaceSetupBlocked: "workspace_setup_blocked",
   browserHost: "browser_host",
+  // COMPAT(dictationSegments): added in v0.8.0. Capable clients receive one dictation
+  // segment per partial and glue the text themselves; everyone else keeps getting the
+  // daemon's glued transcript. Remove after 2027-03-20 once the client floor >= v0.8.0.
+  dictationSegments: "dictation_segments",
 } as const;
 
 export type ClientCapability = (typeof CLIENT_CAPS)[keyof typeof CLIENT_CAPS];

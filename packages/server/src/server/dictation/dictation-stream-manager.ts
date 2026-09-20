@@ -13,6 +13,8 @@ import type {
 } from "../speech/speech-provider.js";
 import { toResolver, type Resolvable } from "../speech/provider-resolver.js";
 import { parsePcmRateFromFormat, pcm16lePeakAbs } from "../speech/audio.js";
+import type { DictationSegment } from "@getrambla/protocol/dictation-segment.rambla";
+import { emitDictationPartial } from "./dictation-segment-partial.rambla.js";
 
 const PCM_CHANNELS = 1;
 const PCM_BITS_PER_SAMPLE = 16;
@@ -205,7 +207,10 @@ export type DictationStreamOutboundMessage =
       type: "dictation_stream_finish_accepted";
       payload: { dictationId: string; timeoutMs: number };
     }
-  | { type: "dictation_stream_partial"; payload: { dictationId: string; text: string } }
+  | {
+      type: "dictation_stream_partial";
+      payload: { dictationId: string; text: string; segment?: DictationSegment };
+    }
   | {
       type: "dictation_stream_final";
       payload: { dictationId: string; text: string; debugRecordingPath?: string };
@@ -240,6 +245,7 @@ export class DictationStreamManager {
   private readonly autoCommitSeconds: number;
   private readonly onIdle: (() => void) | undefined;
   private readonly streams = new Map<string, DictationStreamState>();
+  private readonly supportsSegments: () => boolean;
 
   constructor(params: {
     logger: pino.Logger;
@@ -250,7 +256,9 @@ export class DictationStreamManager {
     finalTimeoutMs?: number;
     autoCommitSeconds?: number;
     onIdle?: () => void;
+    supportsSegments?: () => boolean;
   }) {
+    this.supportsSegments = params.supportsSegments ?? (() => false);
     this.onIdle = params.onIdle;
     this.logger = params.logger.child({ component: "dictation-stream-manager" });
     this.emit = params.emit;
@@ -385,7 +393,7 @@ export class DictationStreamManager {
       this.maybeFinalizeDictationStream(dictationId);
     });
 
-    stt.on("transcript", ({ segmentId, transcript, isFinal }) => {
+    stt.on("transcript", ({ segmentId, transcript, isFinal, index }) => {
       const state = this.streams.get(dictationId);
       if (state?.stt !== stt) {
         return;
@@ -407,7 +415,13 @@ export class DictationStreamManager {
         .filter((text) => text.length > 0)
         .join(" ")
         .trim();
-      this.emitDictationPartial(dictationId, partialText);
+      emitDictationPartial({
+        emit: this.emit,
+        dictationId,
+        gluedText: partialText,
+        segment: index === undefined ? null : { id: segmentId, index, text: transcript, isFinal },
+        clientSupportsSegments: this.supportsSegments(),
+      });
 
       this.maybeSealDictationStreamFinish(dictationId);
       this.maybeFinalizeDictationStream(dictationId);
@@ -600,10 +614,6 @@ export class DictationStreamManager {
 
   private emitDictationAck(dictationId: string, ackSeq: number): void {
     this.emit({ type: "dictation_stream_ack", payload: { dictationId, ackSeq } });
-  }
-
-  private emitDictationPartial(dictationId: string, text: string): void {
-    this.emit({ type: "dictation_stream_partial", payload: { dictationId, text } });
   }
 
   private async maybePersistDictationStreamAudio(dictationId: string): Promise<string | null> {

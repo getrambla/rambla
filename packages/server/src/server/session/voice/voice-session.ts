@@ -154,6 +154,8 @@ export interface VoiceSessionOptions {
     sttLanguage?: string;
     getSpeechReadiness?: () => SpeechReadinessSnapshot;
   };
+  /** Whether the client asked for one dictation segment per partial instead of glued text. */
+  supportsDictationSegments?: () => boolean;
 }
 
 /**
@@ -239,6 +241,7 @@ export class VoiceSession {
       language: dictation?.sttLanguage,
       finalTimeoutMs: dictation?.finalTimeoutMs,
       onIdle: this.onIdle,
+      supportsSegments: options.supportsDictationSegments,
     });
   }
 
