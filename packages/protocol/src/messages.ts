@@ -77,6 +77,7 @@ import {
   type RamblaScriptEntryRaw,
   type ProjectConfigRpcError,
 } from "./rambla-config-schema.js";
+import { DictationSegmentSchema } from "./dictation-segment.rambla.js";
 export {
   RamblaConfigRawSchema,
   RamblaLifecycleCommandRawSchema,
@@ -3430,6 +3431,10 @@ export const DictationStreamPartialMessageSchema = z.object({
   payload: z.object({
     dictationId: z.string(),
     text: z.string(),
+    // COMPAT(dictationSegments): added in v0.8.0. Sent only to clients advertising
+    // "dictation_segments"; those partials carry an empty `text`. Remove the empty-text
+    // branch after 2027-03-20 once every client reads segments.
+    segment: DictationSegmentSchema.optional(),
   }),
 });
 
@@ -7359,6 +7364,8 @@ export const WSHelloMessageSchema = z.object({
       [CLIENT_CAPS.timelineReplacementInvalidation]: z.boolean().optional(),
       [CLIENT_CAPS.timelineNotifications]: z.boolean().optional(),
       [CLIENT_CAPS.browserHost]: BrowserAutomationHostCapabilitySchema.optional(),
+      // COMPAT(dictationSegments): added in v0.8.0, remove after 2027-03-20.
+      [CLIENT_CAPS.dictationSegments]: z.boolean().optional(),
     })
     .passthrough()
     .optional(),
