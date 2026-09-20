@@ -1,3 +1,5 @@
+import type { DictationSegment } from "@getrambla/protocol/messages";
+
 import { i18n } from "@/i18n/i18next";
 
 export type DictationStatus = "idle" | "recording" | "uploading" | "failed";
@@ -5,7 +7,12 @@ export type DictationStatus = "idle" | "recording" | "uploading" | "failed";
 export interface UseDictationOptions {
   client: import("@getrambla/client/internal/daemon-client").DaemonClient | null;
   onTranscript: (text: string, meta: { requestId: string }) => void;
-  onPartialTranscript?: (text: string, meta: { requestId: string }) => void;
+  onPartialTranscript?: (
+    text: string,
+    meta: { requestId: string; segment?: DictationSegment },
+  ) => void;
+  /** A reconnect re-sends the whole recording, so the dictated region has to be rebuilt. */
+  dictationRestarted?: () => void;
   onError?: (error: Error) => void;
   onPermanentFailure?: (error: Error, context: { requestId: string }) => void;
   canStart?: () => boolean;

@@ -20,6 +20,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     client,
     onTranscript,
     onPartialTranscript,
+    dictationRestarted,
     onError,
     onPermanentFailure,
     canStart,
@@ -45,6 +46,11 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
   useEffect(() => {
     onPartialTranscriptRef.current = onPartialTranscript;
   }, [onPartialTranscript]);
+
+  const dictationRestartedRef = useRef(dictationRestarted);
+  useEffect(() => {
+    dictationRestartedRef.current = dictationRestarted;
+  }, [dictationRestarted]);
 
   const onErrorRef = useRef(onError);
   useEffect(() => {
@@ -170,6 +176,8 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       if (!isRecordingRef.current) {
         return;
       }
+      // Fired before the restart so no partial from the new stream can precede it.
+      dictationRestartedRef.current?.();
       void startNewStream("reconnect").catch((err) => {
         reportError(err, "Failed to restart dictation stream after reconnect");
       });
@@ -194,7 +202,10 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       const next = message.payload.text ?? "";
       latestPartialTranscriptRef.current = next;
       setPartialTranscript(next);
-      onPartialTranscriptRef.current?.(next, { requestId: generateMessageId() });
+      onPartialTranscriptRef.current?.(next, {
+        requestId: generateMessageId(),
+        ...(message.payload.segment ? { segment: message.payload.segment } : {}),
+      });
     });
   }, [client]);
 
