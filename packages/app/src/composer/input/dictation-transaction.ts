@@ -94,7 +94,7 @@ export function applyUserEdit({
   const inserted = nextText.slice(span.start, span.insertedEnd);
   const delta = nextText.length - previousText.length;
   const anchor = span.removedEnd <= state.anchor ? state.anchor + delta : state.anchor;
-  const ranges = segmentRanges(state);
+  const ranges = segmentRanges(state, previousText);
 
   const segments = state.segments.map((segment) => {
     const range = ranges.get(segment.id);
@@ -144,6 +144,15 @@ function renderRegion(segments: DictationSegmentState[]): string {
     .join(" ");
 }
 
+/**
+ * The separator dictation starting mid-word needs, derived from the character before the anchor
+ * rather than stored, so a restart splices it out with the region and no state can go stale.
+ */
+function regionPad(text: string, anchor: number): string {
+  const preceding = text.slice(Math.max(0, anchor - 1), anchor);
+  return preceding.length > 0 && !/\s/.test(preceding) ? " " : "";
+}
+
 /** Replaces the old region with the new one and shifts carets at or after the region end. */
 function writeRegion({
   text,
@@ -158,11 +167,14 @@ function writeRegion({
   previousRegion: string;
   nextRegion: string;
 }): { text: string; selection: DictationSelection } {
-  const regionEnd = anchor + previousRegion.length;
-  const delta = nextRegion.length - previousRegion.length;
+  const pad = regionPad(text, anchor);
+  const previous = previousRegion.length > 0 ? pad + previousRegion : "";
+  const next = nextRegion.length > 0 ? pad + nextRegion : "";
+  const regionEnd = anchor + previous.length;
+  const delta = next.length - previous.length;
   const shift = (caret: number) => (caret >= regionEnd ? caret + delta : caret);
   return {
-    text: text.slice(0, anchor) + nextRegion + text.slice(regionEnd),
+    text: text.slice(0, anchor) + next + text.slice(regionEnd),
     selection: { start: shift(selection.start), end: shift(selection.end) },
   };
 }
@@ -208,9 +220,11 @@ function insertByIndex(
 /** Where each non-empty segment sits in the text, separators included. */
 function segmentRanges(
   state: DictationTransactionState,
+  text: string,
 ): Map<string, { start: number; end: number }> {
   const ranges = new Map<string, { start: number; end: number }>();
-  let offset = state.anchor;
+  const pad = renderRegion(state.segments).length > 0 ? regionPad(text, state.anchor) : "";
+  let offset = state.anchor + pad.length;
   for (const segment of state.segments) {
     if (segment.text.length === 0) {
       continue;

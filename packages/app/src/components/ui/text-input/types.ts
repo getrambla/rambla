@@ -7,6 +7,8 @@ export interface EditingTextInputHandle {
   isFocused(): boolean;
   getText(): string;
   replaceText(text: string, selection?: { start: number; end: number }): void;
+  /** Web only: an IME composition owns the field, so a programmatic write has to wait for it. */
+  isComposing?(): boolean;
   /** Clear the editor and reset its intrinsic layout, preserving focus intent. */
   reset(): void;
   getNativeRef(): unknown;

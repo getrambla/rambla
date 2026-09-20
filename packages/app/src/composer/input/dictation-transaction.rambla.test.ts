@@ -83,7 +83,7 @@ describe("dictation transaction", () => {
       state: started,
       segment: { id: "a", index: 0, text: "hi", isFinal: false },
     });
-    expect(dictated.text).toBe("Noteshi");
+    expect(dictated.text).toBe("Notes hi");
     expect(dictated.selection).toEqual({ start: 0, end: 0 });
     expect(dictated.state.anchor).toBe(5);
   });
@@ -123,6 +123,106 @@ describe("dictation transaction", () => {
     expect(dictated.text).toBe("Note one");
     // Cancel is the caller dropping the transaction; only beginRestart takes text out.
     expect(beginDictation(dictated.selection)).toEqual({ anchor: 8, segments: [] });
+  });
+
+  it("pads one space when dictation starts right after a word", () => {
+    const started = beginDictation({ start: 4, end: 4 });
+    const dictated = applySegment({
+      text: "Note",
+      selection: { start: 4, end: 4 },
+      state: started,
+      segment: { id: "a", index: 0, text: "one", isFinal: false },
+    });
+    expect(dictated.text).toBe("Note one");
+    expect(dictated.selection).toEqual({ start: 8, end: 8 });
+
+    const second = applySegment({
+      text: dictated.text,
+      selection: dictated.selection,
+      state: dictated.state,
+      segment: { id: "a", index: 0, text: "one two", isFinal: false },
+    });
+    expect(second.text).toBe("Note one two");
+  });
+
+  it("pads nothing when the field is empty", () => {
+    const started = beginDictation({ start: 0, end: 0 });
+    const dictated = applySegment({
+      text: "",
+      selection: { start: 0, end: 0 },
+      state: started,
+      segment: { id: "a", index: 0, text: "one", isFinal: false },
+    });
+    expect(dictated.text).toBe("one");
+  });
+
+  it("pads nothing when the caret already follows a space or a newline", () => {
+    const afterSpace = applySegment({
+      text: "Note ",
+      selection: { start: 5, end: 5 },
+      state: beginDictation({ start: 5, end: 5 }),
+      segment: { id: "a", index: 0, text: "one", isFinal: false },
+    });
+    expect(afterSpace.text).toBe("Note one");
+
+    const afterNewline = applySegment({
+      text: "Note\n",
+      selection: { start: 5, end: 5 },
+      state: beginDictation({ start: 5, end: 5 }),
+      segment: { id: "a", index: 0, text: "one", isFinal: false },
+    });
+    expect(afterNewline.text).toBe("Note\none");
+  });
+
+  it("splices the pad out with the region on a restart", () => {
+    const started = beginDictation({ start: 4, end: 4 });
+    const first = applySegment({
+      text: "Note",
+      selection: { start: 4, end: 4 },
+      state: started,
+      segment: { id: "a", index: 0, text: "one", isFinal: false },
+    });
+    const second = applySegment({
+      text: first.text,
+      selection: first.selection,
+      state: first.state,
+      segment: { id: "b", index: 1, text: "two", isFinal: false },
+    });
+    expect(second.text).toBe("Note one two");
+
+    const restarted = beginRestart({
+      text: second.text,
+      selection: second.selection,
+      state: second.state,
+    });
+    expect(restarted.text).toBe("Note");
+    expect(restarted.selection).toEqual({ start: 4, end: 4 });
+  });
+
+  it("locates an edit inside a padded region and appends the engine's later words after it", () => {
+    const started = beginDictation({ start: 4, end: 4 });
+    const first = applySegment({
+      text: "Note",
+      selection: { start: 4, end: 4 },
+      state: started,
+      segment: { id: "a", index: 0, text: "one two", isFinal: false },
+    });
+    expect(first.text).toBe("Note one two");
+
+    const edited = applyUserEdit({
+      previousText: "Note one two",
+      nextText: "Note one! two",
+      state: first.state,
+    });
+    expect(edited.segments[0]?.frozenPrefix).toBe("one!");
+
+    const second = applySegment({
+      text: "Note one! two",
+      selection: { start: 9, end: 9 },
+      state: edited,
+      segment: { id: "a", index: 0, text: "one two three", isFinal: false },
+    });
+    expect(second.text).toBe("Note one! two three");
   });
 
   it("clears the whole region on a restart, frozen segments included", () => {

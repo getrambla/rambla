@@ -355,6 +355,23 @@ async function dispatchComposition(
   }, type);
 }
 
+/**
+ * What an IME does mid-composition: the field's value already carries the characters being
+ * composed, and no React change event has fired for them yet.
+ */
+async function composeIntoField(page: Page, composed: string): Promise<void> {
+  await page.evaluate((text) => {
+    const input = document.querySelector("textarea[data-composer-input]");
+    if (!(input instanceof HTMLTextAreaElement)) {
+      throw new Error("The composer textarea is not mounted");
+    }
+    const at = input.selectionStart ?? input.value.length;
+    input.value = input.value.slice(0, at) + text + input.value.slice(at);
+    input.setSelectionRange(at + text.length, at + text.length);
+    input.dispatchEvent(new CompositionEvent("compositionupdate", { data: text, bubbles: true }));
+  }, composed);
+}
+
 /** Moves the caret to an absolute offset with the keyboard, the way a user reaches it. */
 async function moveCaretTo(page: Page, offset: number, textLength: number): Promise<void> {
   await page.keyboard.press("End");
@@ -714,11 +731,8 @@ test.describe("Dictation loss", () => {
         `The final re-appended the whole transcript "${SPOKEN}" over words the partials had already placed`,
       ).toHaveValue("one two");
 
-      // A second dictation starts its own region at the caret, which is wherever the user left it,
-      // and leaves the first one's words alone.
-      await composer(page).click();
-      await page.keyboard.press("End");
-      await page.keyboard.type(" ");
+      // A second dictation starts its own region at the caret, pads itself off the word already
+      // there, and leaves the first one's words alone.
       await startButton(page).click();
       await harness.waitForSegments(harness.segments.length + 1);
       harness.sendSegment({ id: "seg-2", index: 0, text: "three four", isFinal: false });
@@ -920,21 +934,99 @@ test.describe("Dictation loss", () => {
       await expect(composer(page)).toHaveValue("one two");
 
       await composer(page).click();
+      await page.keyboard.press("Home");
       await dispatchComposition(page, "compositionstart");
+      await composeIntoField(page, "ABC");
       harness.sendSegment({ id: "seg-1", index: 0, text: "one two three", isFinal: false });
       // The composition owns the field, so this partial must not reach it.
       await page.waitForTimeout(500);
       await expect(
         composer(page),
         "A write landed during an IME composition, which discards what the user was composing",
-      ).toHaveValue("one two");
+      ).toHaveValue("ABCone two");
 
       await dispatchComposition(page, "compositionend");
       harness.sendSegment({ id: "seg-1", index: 0, text: "one two three four", isFinal: false });
       await expect(
         composer(page),
-        "The partial after the composition did not repair the write that was skipped",
-      ).toHaveValue("one two three four");
+        "The composed characters or the dictated words were lost: the field must hold both",
+      ).toHaveValue("ABC one two three four");
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("lands the final segment in the field when an IME composition was open for it", async ({
+    page,
+  }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-ime-final-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal(SPOKEN);
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(1);
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two", isFinal: false });
+      await expect(composer(page)).toHaveValue("one two");
+
+      await composer(page).click();
+      await page.keyboard.press("Home");
+      await dispatchComposition(page, "compositionstart");
+      await composeIntoField(page, "ABC");
+      // The last segment has no partial after it to repair its write.
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two three", isFinal: true });
+      await page.waitForTimeout(500);
+      await expect(composer(page)).toHaveValue("ABCone two");
+
+      await dispatchComposition(page, "compositionend");
+      await expect(
+        composer(page),
+        "The field must hold the characters the user composed and the final's dictated words: neither may be discarded",
+      ).toHaveValue("ABC one two three");
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("keeps the composed characters when a dictation write is blocked by a composition", async ({
+    page,
+  }) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-ime-keep-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal(SPOKEN);
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(1);
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two", isFinal: false });
+      await expect(composer(page)).toHaveValue("one two");
+
+      // Composed at the end of the dictated words, where a lost write is hardest to notice.
+      await composer(page).click();
+      await page.keyboard.press("End");
+      await dispatchComposition(page, "compositionstart");
+      await composeIntoField(page, "XY");
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two three", isFinal: true });
+      // Without this the segment can arrive after the composition ends, which tests nothing.
+      await page.waitForTimeout(500);
+      await expect(composer(page)).toHaveValue("one twoXY");
+
+      await dispatchComposition(page, "compositionend");
+
+      await expect(
+        composer(page),
+        "A character the user composed was discarded, or the final's dictated words never landed",
+      ).toHaveValue("one two threeXY");
     } finally {
       await seeded.cleanup();
     }

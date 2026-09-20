@@ -891,6 +891,8 @@ interface StartDictationContext {
   canStartDictation: () => boolean;
   toast: { error: (msg: string) => void };
   startDictation: () => Promise<void>;
+  /** Runs only once the gates are passed, so a bail leaves no dictation state behind. */
+  onStarting: () => void;
 }
 
 async function startDictationIfAvailableImpl(ctx: StartDictationContext): Promise<void> {
@@ -901,6 +903,7 @@ async function startDictationIfAvailableImpl(ctx: StartDictationContext): Promis
   if (!ctx.canStartDictation()) {
     return;
   }
+  ctx.onStarting();
   await ctx.startDictation();
 }
 
@@ -1302,6 +1305,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const dictationTransactionRef = useRef<DictationTransactionState | null>(null);
     const dictationSegmentsSeenRef = useRef(false);
     const lastDictationWriteRef = useRef<ComposerInputSnapshot | null>(null);
+    const pendingDictationSegmentsRef = useRef<DictationSegment[]>([]);
     const lastWriteRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const sendAfterFinalRef = useRef<() => void>(() => {});
     const serverInfo = useSessionStore(
@@ -1351,6 +1355,12 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       [replaceText],
     );
 
+    useEffect(() => {
+      return () => {
+        if (lastWriteRetryRef.current) clearTimeout(lastWriteRetryRef.current);
+      };
+    }, []);
+
     const retryLastDictationWrite = useCallback(() => {
       lastWriteRetryRef.current = null;
       const pending = lastDictationWriteRef.current;
@@ -1359,23 +1369,20 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       replaceText(pending.text, pending.selection);
     }, [readComposerSnapshot, replaceText]);
 
-    const handleDictationPartial = useCallback(
-      (_text: string, meta: { requestId: string; segment?: DictationSegment }) => {
+    const applyDictationSegment = useCallback(
+      (segment: DictationSegment) => {
         const state = dictationTransactionRef.current;
-        // COMPAT(dictation_segments): no segment means a daemon that still glues the whole
-        // transcript, so the words arrive with the final instead. Remove after 2027-03-01.
-        if (!meta.segment || !state) return;
-        dictationSegmentsSeenRef.current = true;
+        if (!state) return;
         const snapshot = readComposerSnapshot();
         writeDictationRegion(
           applySegment({
             text: snapshot.text,
             selection: snapshot.selection,
             state,
-            segment: meta.segment,
+            segment,
           }),
         );
-        if (!meta.segment.isFinal || Platform.OS !== "android") return;
+        if (!segment.isFinal || Platform.OS !== "android") return;
         if (lastWriteRetryRef.current) clearTimeout(lastWriteRetryRef.current);
         lastWriteRetryRef.current = setTimeout(
           retryLastDictationWrite,
@@ -1385,12 +1392,31 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       [readComposerSnapshot, retryLastDictationWrite, writeDictationRegion],
     );
 
+    const handleDictationPartial = useCallback(
+      (_text: string, meta: { requestId: string; segment?: DictationSegment }) => {
+        const state = dictationTransactionRef.current;
+        // COMPAT(dictation_segments): no segment means a daemon that still glues the whole
+        // transcript, so the words arrive with the final instead. Remove after 2027-03-01.
+        if (!meta.segment || !state) return;
+        dictationSegmentsSeenRef.current = true;
+        // A composition owns the field, so the segment waits and the transaction stays in step
+        // with what the field actually holds. It is re-applied when the composition ends.
+        if (textInputRef.current?.isComposing?.()) {
+          pendingDictationSegmentsRef.current.push(meta.segment);
+          return;
+        }
+        applyDictationSegment(meta.segment);
+      },
+      [applyDictationSegment],
+    );
+
     /** Retry and reconnect both re-send the whole recording, so the region is cleared (rule 8). */
     const restartDictationRegion = useCallback(() => {
       const state = dictationTransactionRef.current;
       if (!state) return;
       const snapshot = readComposerSnapshot();
       dictationSegmentsSeenRef.current = false;
+      pendingDictationSegmentsRef.current = [];
       writeDictationRegion(
         beginRestart({ text: snapshot.text, selection: snapshot.selection, state }),
       );
@@ -1504,18 +1530,22 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       dictationTransactionRef.current = null;
       dictationSegmentsSeenRef.current = false;
       lastDictationWriteRef.current = null;
+      pendingDictationSegmentsRef.current = [];
     }, [dictationStatus]);
 
     const startDictationIfAvailable = useCallback(() => {
-      // Anchored where the caret sits before the first partial can arrive (rule 1).
-      dictationTransactionRef.current = beginDictation(readComposerSnapshot().selection);
-      dictationSegmentsSeenRef.current = false;
-      lastDictationWriteRef.current = null;
       return startDictationIfAvailableImpl({
         dictationUnavailableMessage,
         canStartDictation,
         toast,
         startDictation,
+        onStarting: () => {
+          // Anchored where the caret sits before the first partial can arrive (rule 1).
+          dictationTransactionRef.current = beginDictation(readComposerSnapshot().selection);
+          dictationSegmentsSeenRef.current = false;
+          lastDictationWriteRef.current = null;
+          pendingDictationSegmentsRef.current = [];
+        },
       });
     }, [
       canStartDictation,
@@ -1677,15 +1707,17 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     ]);
 
     // Read by the transcript callback, which the dictation hook owns and cannot re-create per send.
-    sendAfterFinalRef.current = () => {
-      runDefaultSendAction({
-        defaultSendBehavior,
-        isAgentRunning,
-        onQueue,
-        handleSendMessage,
-        handleQueueMessage,
-      });
-    };
+    useEffect(() => {
+      sendAfterFinalRef.current = () => {
+        runDefaultSendAction({
+          defaultSendBehavior,
+          isAgentRunning,
+          onQueue,
+          handleSendMessage,
+          handleQueueMessage,
+        });
+      };
+    }, [defaultSendBehavior, handleQueueMessage, handleSendMessage, isAgentRunning, onQueue]);
 
     const handleAlternateSendAction = useCallback(() => {
       runAlternateSendAction({
@@ -1820,6 +1852,43 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       },
       [onChangeText, updateComposerHeightForText, updateLiveTextPresence],
     );
+
+    // Where a dictation write blocked by a composition is re-derived from transaction state, once
+    // the composition has released the field. Without this the last segment has no repair.
+    useEffect(() => {
+      if (!isWeb) return;
+      const textarea = getWebTextArea() as
+        | (TextAreaHandle & {
+            addEventListener?: (type: string, listener: (event: Event) => void) => void;
+            removeEventListener?: (type: string, listener: (event: Event) => void) => void;
+          })
+        | null;
+      if (
+        !textarea ||
+        typeof textarea.addEventListener !== "function" ||
+        typeof textarea.removeEventListener !== "function"
+      ) {
+        return;
+      }
+
+      const handleCompositionEnd = () => {
+        const pending = pendingDictationSegmentsRef.current;
+        if (pending.length === 0) return;
+        pendingDictationSegmentsRef.current = [];
+        // The composed characters are an ordinary user edit. Recording them before the re-issue
+        // keeps the region's anchor right whichever listener the DOM runs first.
+        const liveText = textInputRef.current?.getText() ?? valueRef.current;
+        if (liveText !== valueRef.current) handleInputChange(liveText);
+        for (const segment of pending) {
+          applyDictationSegment(segment);
+        }
+      };
+
+      textarea.addEventListener("compositionend", handleCompositionEnd);
+      return () => {
+        textarea.removeEventListener?.("compositionend", handleCompositionEnd);
+      };
+    }, [applyDictationSegment, getWebTextArea, handleInputChange]);
 
     const handleInputFocus = useCallback(() => {
       isInputFocusedRef.current = true;
