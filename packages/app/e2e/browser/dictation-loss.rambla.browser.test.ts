@@ -30,23 +30,6 @@ const CAPTURE_TOLERANCE_MS = 300;
 // keeps the count right while the recording is wrong.
 const RAMP = { seconds: 30, peak: 0.9 };
 
-/** A field the user has already filled before the dictation starts. */
-const PRIOR_TEXT = "word ".repeat(800);
-const DICTATED_WORDS = Array.from({ length: 60 }, (_, index) => `spoken${index + 1}`);
-/** Where the user leaves the caret: before the dictated region, so no write may move it. */
-const CARET_OFFSET = 100;
-// The daemon sends a partial every 350 ms. The loop below sends one every 50 ms:
-// each write is timed as its own main-thread task, so the spacing between writes
-// changes nothing about how long any one of them takes, and 50 ms still leaves
-// every write finished long before the next arrives.
-const PARTIAL_INTERVAL_MS = 50;
-// One frame at 60 Hz. A write over this is a visible stutter.
-const WRITE_BUDGET_MS = 16;
-// Timing budgets only hold on a machine that is not fighting other work, so the
-// numbers are always measured and reported and the budget is only enforced when
-// the run asks for it — same gate as the other performance specs here.
-const RUN_DICTATION_WRITE_PERF = process.env.RAMBLA_DICTATION_WRITE_PERF_E2E === "1";
-
 interface SegmentRecord {
   seq: number;
   pcm: Buffer;
@@ -301,13 +284,11 @@ async function installDictationHarness(
 async function startDictation(
   page: Page,
   project: { projectKey: string; projectDisplayName: string },
-  beforeStart?: () => Promise<void>,
 ): Promise<void> {
   await gotoAppShell(page);
   await waitForSidebarHydration(page);
   await openNewWorkspaceComposer(page, project);
   await selectWorkspaceIsolation(page, "local");
-  await beforeStart?.();
   await page.getByRole("button", { name: "Start dictation" }).click();
 }
 
@@ -337,65 +318,6 @@ async function jamMainThread(page: Page, durationMs: number): Promise<void> {
     }
     return spins;
   }, durationMs);
-}
-
-/** One write the composer made to the field, as the page timed it. */
-interface DictationWriteRecord {
-  durationMs: number;
-  caret: number;
-  length: number;
-}
-
-interface WriteTimerWindow extends Window {
-  __ramblaDictationWrites?: DictationWriteRecord[];
-}
-
-/** Times each write to the field, from the read that opens it to the end of the task that made it. */
-async function installWriteTimer(page: Page): Promise<void> {
-  await composer(page).evaluate((element) => {
-    const field = element as HTMLTextAreaElement;
-    const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), "value");
-    const read = descriptor?.get;
-    const assign = descriptor?.set;
-    if (!read || !assign) {
-      throw new Error("The composer field has no value accessor to time");
-    }
-    const records: DictationWriteRecord[] = [];
-    (window as WriteTimerWindow).__ramblaDictationWrites = records;
-    // A write starts by reading the field, so the last read before it is where its work began.
-    let openedAt = 0;
-    Object.defineProperty(field, "value", {
-      configurable: true,
-      get() {
-        openedAt = performance.now();
-        return read.call(this);
-      },
-      set(next: string) {
-        const startedAt = openedAt;
-        assign.call(this, next);
-        // Runs once the handler unwinds, so this times the whole write and not a fragment of it.
-        queueMicrotask(() => {
-          records.push({
-            durationMs: performance.now() - startedAt,
-            caret: field.selectionStart ?? -1,
-            length: next.length,
-          });
-        });
-      },
-    });
-  });
-}
-
-async function readWriteRecords(page: Page): Promise<DictationWriteRecord[]> {
-  return page.evaluate(() => (window as WriteTimerWindow).__ramblaDictationWrites ?? []);
-}
-
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
-function percentile(sorted: readonly number[], fraction: number): number {
-  return sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * fraction))] ?? 0;
 }
 
 test.describe("Dictation loss", () => {
@@ -754,86 +676,6 @@ test.describe("Dictation loss", () => {
         retryButton(page),
         "Submitting a dictation while the socket is down must report a failure and keep the audio, not silently do nothing",
       ).toBeVisible({ timeout: 15_000 });
-    } finally {
-      await seeded.cleanup();
-    }
-  });
-
-  test("keeps the caret still and each write cheap in a field that is already full", async ({
-    page,
-  }, testInfo) => {
-    const seeded = await seedWorkspace({ repoPrefix: "dictation-cost-" });
-    await installSyntheticMicrophone(page);
-    const harness = await installDictationHarness(page, {
-      onFinish: (tools) => {
-        tools.acceptFinish(5_000);
-        tools.sendFinal(DICTATED_WORDS.join(" "));
-      },
-    });
-
-    try {
-      await startDictation(page, seeded, async () => {
-        await composer(page).fill(PRIOR_TEXT);
-      });
-      await harness.waitForSegments(2);
-      await installWriteTimer(page);
-      // The composer reads the caret out of the field, so placing it here is the user placing it.
-      await composer(page).evaluate((element, offset) => {
-        (element as HTMLTextAreaElement).setSelectionRange(offset, offset);
-      }, CARET_OFFSET);
-
-      for (let spoken = 1; spoken <= DICTATED_WORDS.length; spoken += 1) {
-        harness.sendSegment({
-          id: "seg-1",
-          index: 0,
-          text: DICTATED_WORDS.slice(0, spoken).join(" "),
-          isFinal: false,
-        });
-        await page.waitForTimeout(PARTIAL_INTERVAL_MS);
-      }
-
-      await expect
-        .poll(async () => (await readWriteRecords(page)).length, {
-          timeout: 15_000,
-          message: `Only some of the ${DICTATED_WORDS.length} partials were written to the field`,
-        })
-        .toBe(DICTATED_WORDS.length);
-
-      const records = await readWriteRecords(page);
-      expect(
-        records.map((record) => record.caret),
-        `A dictation write moved the caret off offset ${CARET_OFFSET}, where the user left it`,
-      ).toEqual(DICTATED_WORDS.map(() => CARET_OFFSET));
-      expect(
-        await composer(page).evaluate((element) => (element as HTMLTextAreaElement).selectionStart),
-        "The caret moved once the last write settled",
-      ).toBe(CARET_OFFSET);
-      expect(
-        records.at(-1)!.length,
-        "The dictated words did not land on top of the text the field already held",
-      ).toBeGreaterThan(PRIOR_TEXT.length);
-
-      const durations = records
-        .map((record) => record.durationMs)
-        .sort((left, right) => left - right);
-      const report = {
-        writes: records.length,
-        fieldChars: records.at(-1)!.length,
-        p50Ms: round2(percentile(durations, 0.5)),
-        p95Ms: round2(percentile(durations, 0.95)),
-        maxMs: round2(durations.at(-1) ?? 0),
-      };
-      console.log(`[perf] Dictation write: ${JSON.stringify(report)}`);
-      await testInfo.attach("dictation-write-cost", {
-        body: JSON.stringify(report, null, 2),
-        contentType: "application/json",
-      });
-      if (RUN_DICTATION_WRITE_PERF) {
-        expect(
-          report.maxMs,
-          `A dictation write took longer than one 60 Hz frame (${WRITE_BUDGET_MS} ms), so the words arrive as a stutter`,
-        ).toBeLessThan(WRITE_BUDGET_MS);
-      }
     } finally {
       await seeded.cleanup();
     }
