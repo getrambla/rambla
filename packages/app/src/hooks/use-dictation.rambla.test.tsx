@@ -5,6 +5,7 @@ import type { SessionOutboundMessage } from "@getrambla/protocol/messages";
 import { type DictationStreamSender } from "@/dictation/dictation-stream-sender";
 import { i18n } from "@/i18n/i18next";
 import { useDictation, type UseDictationOptions } from "./use-dictation";
+import type { DictationSegment } from "@getrambla/protocol/dictation-segment.rambla";
 
 const audio = vi.hoisted(() => {
   const source = {
@@ -89,9 +90,17 @@ class FakeDictationClient {
     return () => this.rawListeners.delete(handler);
   }
 
-  subscribeConnectionStatus(): () => void {
-    return () => {};
+  subscribeConnectionStatus(handler: (next: { status: string }) => void): () => void {
+    this.connectionListeners.add(handler);
+    return () => this.connectionListeners.delete(handler);
   }
+  /** Reports a connection status change, the way a reconnect reaches the hook. */
+  emitConnectionStatus(status: string): void {
+    for (const listener of this.connectionListeners) {
+      listener({ status });
+    }
+  }
+  private readonly connectionListeners = new Set<(next: { status: string }) => void>();
 
   on(type: string, handler: (message: SessionOutboundMessage) => void): () => void {
     const listeners = this.typedListeners.get(type) ?? new Set();
@@ -121,6 +130,16 @@ function partialMessage(dictationId: string, text: string): SessionOutboundMessa
   } as unknown as SessionOutboundMessage;
 }
 
+/** The same partial, carrying one segment the way a daemon with the segments cap sends it. */
+function segmentPartialMessage(
+  dictationId: string,
+  segment: DictationSegment,
+): SessionOutboundMessage {
+  return {
+    type: "dictation_stream_partial",
+    payload: { dictationId, text: "", segment },
+  } as unknown as SessionOutboundMessage;
+}
 const asClient = (client: FakeDictationClient): UseDictationOptions["client"] =>
   client as unknown as UseDictationOptions["client"];
 
@@ -682,5 +701,148 @@ describe("dictation loss", () => {
     expectAbortAnnounced(onError, "superseded by cancel or restart", {
       userMessage: "There is no recording to resend.",
     });
+  });
+});
+
+describe("dictation segments", () => {
+  beforeEach(() => {
+    captured.sender = null;
+    audio.emitPcmSegment = null;
+    audio.source.start.mockClear();
+    audio.source.stop.mockClear();
+    audio.source.stop.mockImplementation(async () => {});
+    consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    consoleError.mockRestore();
+    vi.useRealTimers();
+  });
+  const segment = (
+    id: string,
+    index: number,
+    text: string,
+    isFinal: boolean,
+  ): DictationSegment => ({ id, index, text, isFinal });
+
+  /** Starts a recording against a connected daemon and returns the hook result. */
+  async function startRecording(
+    client: FakeDictationClient,
+    options: Partial<UseDictationOptions>,
+  ) {
+    const { result } = renderHook(() =>
+      useDictation({ client: asClient(client), onTranscript: vi.fn(), ...options }),
+    );
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+    return result;
+  }
+
+  it("hands the segment a partial carries to the partial callback", async () => {
+    const client = new FakeDictationClient();
+    const onPartialTranscript = vi.fn();
+    await startRecording(client, { onPartialTranscript });
+
+    act(() => {
+      client.emit(
+        segmentPartialMessage(
+          capturedSender()!.getDictationId()!,
+          segment("seg-1", 0, "hello there", false),
+        ),
+      );
+    });
+
+    expect(onPartialTranscript).toHaveBeenCalledWith(
+      "",
+      expect.objectContaining({ segment: segment("seg-1", 0, "hello there", false) }),
+    );
+  });
+
+  it("hands a final segment to the partial callback with its final flag", async () => {
+    const client = new FakeDictationClient();
+    const onPartialTranscript = vi.fn();
+    await startRecording(client, { onPartialTranscript });
+
+    act(() => {
+      client.emit(
+        segmentPartialMessage(
+          capturedSender()!.getDictationId()!,
+          segment("seg-1", 0, "hello there", true),
+        ),
+      );
+    });
+
+    expect(onPartialTranscript.mock.calls.at(-1)?.[1].segment).toEqual(
+      segment("seg-1", 0, "hello there", true),
+    );
+  });
+
+  it("leaves the meta without a segment when the daemon sends none", async () => {
+    const client = new FakeDictationClient();
+    const onPartialTranscript = vi.fn();
+    await startRecording(client, { onPartialTranscript });
+
+    act(() => {
+      client.emit(partialMessage(capturedSender()!.getDictationId()!, "hello there"));
+    });
+
+    expect(onPartialTranscript).toHaveBeenCalledWith(
+      "hello there",
+      expect.objectContaining({ requestId: expect.any(String) }),
+    );
+    expect(onPartialTranscript.mock.calls.at(-1)?.[1].segment).toBeUndefined();
+  });
+
+  it("announces the restart before the reconnected stream's first partial", async () => {
+    const client = new FakeDictationClient();
+    const events: string[] = [];
+    await startRecording(client, {
+      onPartialTranscript: () => events.push("partial"),
+      onDictationRestarted: () => events.push("restarted"),
+    });
+
+    act(() => {
+      client.emit(
+        segmentPartialMessage(
+          capturedSender()!.getDictationId()!,
+          segment("seg-1", 0, "one", false),
+        ),
+      );
+    });
+    await act(async () => {
+      client.emitConnectionStatus("connected");
+    });
+    act(() => {
+      client.emit(
+        segmentPartialMessage(
+          capturedSender()!.getDictationId()!,
+          segment("seg-2", 0, "two", false),
+        ),
+      );
+    });
+
+    expect(events).toEqual(["partial", "restarted", "partial"]);
+  });
+
+  it("announces the restart before a retry resends the recording", async () => {
+    const client = new FakeDictationClient();
+    const onDictationRestarted = vi.fn();
+    client.answersFinish = false;
+    const result = await startRecording(client, { onDictationRestarted });
+
+    await act(async () => {
+      await result.current.confirmDictation();
+    });
+    expect(onDictationRestarted).not.toHaveBeenCalled();
+
+    client.answersFinish = true;
+    await act(async () => {
+      await result.current.retryFailedDictation();
+    });
+
+    expect(onDictationRestarted).toHaveBeenCalledTimes(1);
   });
 });
