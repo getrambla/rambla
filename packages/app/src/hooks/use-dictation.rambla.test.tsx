@@ -56,7 +56,10 @@ class FakeDictationClient {
 
   async startDictationStream(): Promise<void> {}
 
+  /** Ordering log shared with the restart callback, so "before the resend" can be asserted. */
+  log: string[] = [];
   sendDictationStreamChunk(dictationId: string, seq: number): void {
+    this.log.push("chunk");
     const ack = {
       type: "dictation_stream_ack",
       payload: { dictationId, ackSeq: seq },
@@ -796,53 +799,97 @@ describe("dictation segments", () => {
     expect(onPartialTranscript.mock.calls.at(-1)?.[1].segment).toBeUndefined();
   });
 
-  it("announces the restart before the reconnected stream's first partial", async () => {
+  it("announces the restart before the reconnect resends the recording", async () => {
     const client = new FakeDictationClient();
-    const events: string[] = [];
-    await startRecording(client, {
-      onPartialTranscript: () => events.push("partial"),
-      onDictationRestarted: () => events.push("restarted"),
-    });
+    const events = client.log;
+    await startRecording(client, { onDictationRestarted: () => events.push("restarted") });
 
-    act(() => {
-      client.emit(
-        segmentPartialMessage(
-          capturedSender()!.getDictationId()!,
-          segment("seg-1", 0, "one", false),
-        ),
-      );
-    });
+    events.length = 0;
     await act(async () => {
       client.emitConnectionStatus("connected");
     });
-    act(() => {
-      client.emit(
-        segmentPartialMessage(
-          capturedSender()!.getDictationId()!,
-          segment("seg-2", 0, "two", false),
-        ),
-      );
+
+    // The resend is the chunk going back out; announcing it afterwards would be too late.
+    expect(events).toEqual(["restarted", "chunk"]);
+  });
+
+  it("announces the restart before an enqueue resends the recording", async () => {
+    const client = new FakeDictationClient();
+    const events = client.log;
+    client.isConnected = false;
+    const { result } = renderHook(() =>
+      useDictation({
+        client: asClient(client),
+        onTranscript: vi.fn(),
+        onDictationRestarted: () => events.push("restarted"),
+      }),
+    );
+    await act(async () => {
+      await result.current.startDictation();
     });
 
-    expect(events).toEqual(["partial", "restarted", "partial"]);
+    // The daemon comes back with audio already buffered, so the next chunk opens a new stream.
+    client.isConnected = true;
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+
+    expect(events).toEqual(["restarted", "chunk"]);
+  });
+
+  it("announces the restart before the finish resends the recording", async () => {
+    const client = new FakeDictationClient();
+    const events = client.log;
+    client.isConnected = false;
+    const { result } = renderHook(() =>
+      useDictation({
+        client: asClient(client),
+        onTranscript: vi.fn(),
+        onDictationRestarted: () => events.push("restarted"),
+      }),
+    );
+    await act(async () => {
+      await result.current.startDictation();
+    });
+    await act(async () => {
+      audio.emitPcmSegment?.("AAAAAAAA");
+    });
+
+    // Nothing was ever streamed, so the finish is what opens the stream and sends it all.
+    client.isConnected = true;
+    await act(async () => {
+      await result.current.confirmDictation();
+    });
+
+    expect(events).toEqual(["restarted", "chunk"]);
+  });
+
+  it("stays quiet when the first start opens the stream", async () => {
+    const client = new FakeDictationClient();
+    const onDictationRestarted = vi.fn();
+    await startRecording(client, { onDictationRestarted });
+
+    expect(onDictationRestarted).not.toHaveBeenCalled();
   });
 
   it("announces the restart before a retry resends the recording", async () => {
     const client = new FakeDictationClient();
-    const onDictationRestarted = vi.fn();
+    const events = client.log;
     client.answersFinish = false;
-    const result = await startRecording(client, { onDictationRestarted });
+    const result = await startRecording(client, {
+      onDictationRestarted: () => events.push("restarted"),
+    });
 
     await act(async () => {
       await result.current.confirmDictation();
     });
-    expect(onDictationRestarted).not.toHaveBeenCalled();
 
     client.answersFinish = true;
+    events.length = 0;
     await act(async () => {
       await result.current.retryFailedDictation();
     });
 
-    expect(onDictationRestarted).toHaveBeenCalledTimes(1);
+    expect(events).toEqual(["restarted", "chunk"]);
   });
 });

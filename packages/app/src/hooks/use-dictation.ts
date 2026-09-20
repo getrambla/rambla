@@ -98,6 +98,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       client,
       format: PCM_DICTATION_FORMAT,
       createDictationId: generateMessageId,
+      onRestart: () => onDictationRestartedRef.current?.(),
     });
   }
   useEffect(() => {
@@ -176,9 +177,6 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       if (!isRecordingRef.current) {
         return;
       }
-      // The reconnect re-sends the whole recording, so the field must drop what it holds
-      // before the new stream's first partial arrives under new segment ids.
-      onDictationRestartedRef.current?.();
       void startNewStream("reconnect").catch((err) => {
         reportError(err, "Failed to restart dictation stream after reconnect");
       });
@@ -506,8 +504,6 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       if (!client?.isConnected) {
         throw new Error(t("common.errors.daemonClientDisconnected"));
       }
-      // Same deal as the reconnect: the daemon re-transcribes everything under new ids.
-      onDictationRestartedRef.current?.();
       senderRef.current.resetStreamForReplay();
       const finalSeq = senderRef.current.getFinalSeq();
       const finalResult = await ensureFinalTranscript(finalSeq);

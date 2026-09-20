@@ -29,6 +29,8 @@ export interface DictationStreamSenderParams {
   client: DictationStreamClient | null;
   format: string;
   createDictationId?: () => string;
+  /** Called before a restart re-sends the whole recording under a new dictation id. */
+  onRestart?: () => void;
 }
 
 interface DictationFinishResult {
@@ -54,6 +56,7 @@ export class DictationStreamSender {
   private client: DictationStreamClient | null = null;
   private readonly format: string;
   private readonly createDictationId: () => string;
+  private readonly onRestart: (() => void) | undefined;
 
   private dictationId: string | null = null;
   private sendSeq = 0;
@@ -70,6 +73,7 @@ export class DictationStreamSender {
   constructor(params: DictationStreamSenderParams) {
     this.format = params.format;
     this.createDictationId = params.createDictationId ?? generateMessageId;
+    this.onRestart = params.onRestart;
     this.setClient(params.client);
   }
 
@@ -189,6 +193,12 @@ export class DictationStreamSender {
     const client = this.client;
     if (!client?.isConnected) {
       return;
+    }
+
+    // Every reason but the first start resends chunks the daemon already transcribed, so the
+    // listener is told to drop what it holds before those words come back under new ids.
+    if (reason !== "start") {
+      this.onRestart?.();
     }
 
     this.startGeneration += 1;
