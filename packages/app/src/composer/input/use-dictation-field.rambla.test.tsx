@@ -75,7 +75,7 @@ describe("useDictationField", () => {
     expect(field.text).toBe("draft ");
   });
 
-  it("hands the final the append path's own arguments when no segment arrived", () => {
+  it("reports no landed segments when the daemon sent none, so the final still appends", () => {
     const field = createField("draft ");
     const result = renderField(field);
 
@@ -84,10 +84,7 @@ describe("useDictationField", () => {
       result.current.onPartialTranscript("hello there", { requestId: "r1" });
     });
 
-    expect(result.current.resolveFinal("hello there", "draft ")).toEqual({
-      text: "hello there",
-      value: "draft ",
-    });
+    expect(result.current.finishSegments()).toBe(false);
   });
 
   it("lands each partial's words in the field at the caret", () => {
@@ -142,7 +139,7 @@ describe("useDictationField", () => {
     expect(field.text).toBe("draft ");
   });
 
-  it("hands the final what the field already shows once segments landed", () => {
+  it("writes nothing on the final once segments landed, and leaves the caret alone", () => {
     const field = createField("draft ");
     const result = renderField(field);
 
@@ -153,12 +150,13 @@ describe("useDictationField", () => {
         segment: segment("a", 0, "one two", true),
       });
     });
+    field.caretTo(2);
+    const writes = field.writes.length;
 
-    // The words are in the field already, so the append path has nothing to append them to.
-    expect(result.current.resolveFinal("one two", "draft ")).toEqual({
-      text: "draft one two",
-      value: "",
-    });
+    expect(result.current.finishSegments()).toBe(true);
+    expect(field.writes).toHaveLength(writes);
+    expect(field.selection).toEqual({ start: 2, end: 2 });
+    expect(field.text).toBe("draft one two");
   });
 
   it("re-issues a dictation write the field dropped", () => {
@@ -177,7 +175,7 @@ describe("useDictationField", () => {
     expect(field.text).toBe("draft one");
 
     act(() => {
-      result.current.resolveFinal("one two", "draft ");
+      result.current.finishSegments();
     });
 
     expect(field.text).toBe("draft one two");
@@ -193,9 +191,6 @@ describe("useDictationField", () => {
       result.current.beginRestart();
     });
 
-    expect(result.current.resolveFinal("one two", "draft ")).toEqual({
-      text: "one two",
-      value: "draft ",
-    });
+    expect(result.current.finishSegments()).toBe(false);
   });
 });

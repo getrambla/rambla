@@ -22,6 +22,7 @@ interface DictationControlsProps {
   onRetry?: () => void;
   onDiscard?: () => void;
   disabled?: boolean;
+  errorText?: string | null;
 }
 
 function formatDuration(seconds: number): string {
@@ -43,6 +44,7 @@ export function DictationControls({
   onRetry,
   onDiscard,
   disabled = false,
+  errorText,
 }: DictationControlsProps) {
   const { theme } = useUnistyles();
   const { t } = useTranslation();
@@ -88,6 +90,13 @@ export function DictationControls({
         <VolumeMeter volume={volume} isMuted={false} isSpeaking={false} orientation="horizontal" />
       </View>
       <Text style={timerTextStyle}>{formatDuration(duration)}</Text>
+      {isFailed ? (
+        <Text numberOfLines={2} style={styles.failureText}>
+          {errorText
+            ? t("message.dictation.failed", { error: errorText })
+            : t("message.dictation.failedRetry")}
+        </Text>
+      ) : null}
       <View style={styles.actionGroup}>
         <Pressable
           onPress={handleCancel}
@@ -103,7 +112,7 @@ export function DictationControls({
             <LoadingSpinner size="small" color={theme.colors.foreground} />
           </View>
         ) : null}
-        {!actionsDisabled && isFailed ? (
+        {!actionsDisabled && isFailed && onRetry ? (
           <Pressable
             onPress={onRetry}
             accessibilityRole="button"
@@ -154,7 +163,9 @@ export function DictationOverlay({
   onAcceptAndSend,
   onRetry,
   onDiscard,
-}: Omit<DictationControlsProps, "onStart" | "disabled" | "transcript"> & { errorText?: string }) {
+}: Omit<DictationControlsProps, "onStart" | "disabled" | "transcript" | "errorText"> & {
+  errorText?: string;
+}) {
   const { theme } = useUnistyles();
   const { t } = useTranslation();
   const isFailed = status === "failed";
@@ -299,6 +310,11 @@ const styles = StyleSheet.create((theme) => ({
   actionGroup: {
     flexDirection: "row",
     gap: theme.spacing[2],
+  },
+  failureText: {
+    flexShrink: 1,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.foregroundMuted,
   },
   actionButton: {
     width: BUTTON_SIZE,

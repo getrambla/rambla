@@ -1243,7 +1243,11 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     }, []);
 
     const replaceText = useCallback(
-      (nextText: string, selection?: { start: number; end: number }) => {
+      (
+        nextText: string,
+        selection?: { start: number; end: number },
+        options?: { skipWhileComposing?: boolean },
+      ) => {
         updateComposerHeightForText?.(valueRef.current, nextText);
         valueRef.current = nextText;
         updateLiveTextPresence(nextText);
@@ -1251,7 +1255,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         if (nextText === "") {
           textInputRef.current?.reset();
         } else {
-          textInputRef.current?.replaceText(nextText, selection);
+          textInputRef.current?.replaceText(nextText, selection, options);
         }
         onChangeText(nextText);
       },
@@ -1292,6 +1296,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       getNativeElement: () => (isWeb ? getTextInputNativeElement(textInputRef.current) : null),
     }));
     const sendAfterTranscriptRef = useRef(false);
+    const sendDictatedMessageRef = useRef<() => void>(() => {});
     const serverInfo = useSessionStore(
       useCallback(
         (state) => {
@@ -1327,9 +1332,13 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       (text: string, _meta: { requestId: string }) => {
         const autoSend = sendAfterTranscriptRef.current;
         sendAfterTranscriptRef.current = false;
-        const final = dictationField.resolveFinal(text, valueRef.current);
-        applyDictationTranscript(final.text, {
-          value: final.value,
+        // The words are in the field already, so the final only decides whether to send them.
+        if (dictationField.finishSegments()) {
+          if (autoSend) sendDictatedMessageRef.current();
+          return;
+        }
+        applyDictationTranscript(text, {
+          value: valueRef.current,
           defaultSendBehavior,
           isAgentRunning,
           onQueue,
@@ -1579,6 +1588,11 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         void handleAcceptAndSendRecording();
         return;
       }
+      // The final is already on its way; sending now would send a second message ahead of it.
+      if (isDictationProcessing) {
+        sendAfterTranscriptRef.current = true;
+        return;
+      }
       runDefaultSendAction({
         defaultSendBehavior,
         isAgentRunning,
@@ -1593,8 +1607,19 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       handleQueueMessage,
       handleSendMessage,
       isDictating,
+      isDictationProcessing,
       handleAcceptAndSendRecording,
     ]);
+
+    // The final has landed by the time this runs, so it must not re-enter the guard above.
+    sendDictatedMessageRef.current = () =>
+      runDefaultSendAction({
+        defaultSendBehavior,
+        isAgentRunning,
+        onQueue,
+        handleSendMessage,
+        handleQueueMessage,
+      });
 
     const handleAlternateSendAction = useCallback(() => {
       runAlternateSendAction({
@@ -1878,6 +1903,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
               isRecording={isDictating}
               isProcessing={isDictationProcessing}
               status={dictationStatus}
+              errorText={dictationError}
               onStart={startDictationIfAvailable}
               onCancel={handleCancelRecording}
               onAccept={handleAcceptRecording}
