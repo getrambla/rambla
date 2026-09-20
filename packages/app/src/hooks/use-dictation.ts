@@ -222,12 +222,9 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
 
   // reportError's console line already carries the specific reason via `context`, so the
   // user-facing toast stays one plain message per situation and the log keeps the detail.
-  const reportDetailOnly = useCallback(
-    (detail: string, context: string) => {
-      console.error(`[useDictation] ${context}: ${detail}`);
-    },
-    [],
-  );
+  const reportDetailOnly = useCallback((detail: string, context: string) => {
+    console.error(`[useDictation] ${context}: ${detail}`);
+  }, []);
 
   // A submit that aborts silently is indistinguishable from a successful send, so the abort
   // is reported; the specific cause stays in the log and the toast names only the outcome.
@@ -247,7 +244,10 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
   const reportRetryAbort = useCallback(
     (detail: string) => {
       reportDetailOnly(detail, "Dictation retry aborted");
-      reportError(new Error(t("common.errors.dictationRetryNotPossible")), "Dictation retry aborted");
+      reportError(
+        new Error(t("common.errors.dictationRetryNotPossible")),
+        "Dictation retry aborted",
+      );
     },
     [reportDetailOnly, reportError, t],
   );

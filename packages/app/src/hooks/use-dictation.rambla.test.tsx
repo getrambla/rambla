@@ -437,9 +437,9 @@ describe("dictation loss", () => {
 
     // Navigating away is not an abort the user needs told about.
     expect(onError).not.toHaveBeenCalled();
-    expect(
-      loggedLines().some((line) => line.includes("superseded by cancel or restart")),
-    ).toBe(false);
+    expect(loggedLines().some((line) => line.includes("superseded by cancel or restart"))).toBe(
+      false,
+    );
   });
 
   it("delivers the transcript when the hook unmounts mid-submit", async () => {
@@ -625,7 +625,9 @@ describe("dictation loss", () => {
     // The second tap must not race the first into a failure toast for a delivered transcript.
     expect(onTranscript).toHaveBeenCalledTimes(1);
     expect(client.finishes).toBe(2);
-    expectAbortAnnounced(onError, "retry already in flight", { userMessage: "There is no recording to resend." });
+    expectAbortAnnounced(onError, "retry already in flight", {
+      userMessage: "There is no recording to resend.",
+    });
   });
 
   it("names the abort when a retry has no recording held", async () => {
@@ -640,7 +642,9 @@ describe("dictation loss", () => {
       await result.current.retryFailedDictation();
     });
 
-    expectAbortAnnounced(onError, "no buffered audio to resend", { userMessage: "There is no recording to resend." });
+    expectAbortAnnounced(onError, "no buffered audio to resend", {
+      userMessage: "There is no recording to resend.",
+    });
   });
 
   it("names the abort when a newer attempt supersedes the retry", async () => {
@@ -675,6 +679,8 @@ describe("dictation loss", () => {
     });
 
     expect(onTranscript).not.toHaveBeenCalled();
-    expectAbortAnnounced(onError, "superseded by cancel or restart", { userMessage: "There is no recording to resend." });
+    expectAbortAnnounced(onError, "superseded by cancel or restart", {
+      userMessage: "There is no recording to resend.",
+    });
   });
 });
