@@ -24,7 +24,11 @@ vi.mock("react-native-unistyles", () => ({
 }));
 
 vi.mock("lucide-react-native", () => {
-  const createIcon = (name: string) => () => React.createElement("span", { "data-icon": name });
+  const createIcon = (name: string) => {
+    const Icon = () => React.createElement("span", { "data-icon": name });
+    Icon.displayName = name;
+    return Icon;
+  };
   return {
     X: createIcon("X"),
     ArrowUp: createIcon("ArrowUp"),
