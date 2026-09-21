@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 
 import { DictationStreamSender } from "@/dictation/dictation-stream-sender";
 import { useDictationAudioSource } from "@/hooks/use-dictation-audio-source";
 import { generateMessageId } from "@/types/stream";
 import { AttemptGuard } from "@/utils/attempt-guard";
 import {
+  DICTATION_KEEP_AWAKE_TAG,
   DURATION_TICK_MS,
   PCM_DICTATION_FORMAT,
   toError,
@@ -112,6 +114,14 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     }
   }, []);
 
+  const releaseKeepAwake = useCallback(() => {
+    void deactivateKeepAwake(DICTATION_KEEP_AWAKE_TAG).catch(() => undefined);
+  }, []);
+
+  const acquireKeepAwake = useCallback(() => {
+    void activateKeepAwakeAsync(DICTATION_KEEP_AWAKE_TAG).catch(() => undefined);
+  }, []);
+
   const startDurationTracking = useCallback(() => {
     if (!enableDuration) {
       return;
@@ -213,6 +223,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       const normalized = toError(failure);
       const failureId = generateMessageId();
       stopDurationTracking();
+      releaseKeepAwake();
       setIsProcessing(false);
       isProcessingRef.current = false;
       isRecordingRef.current = false;
@@ -227,7 +238,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
 
       reportError(normalized, "Failed to complete dictation");
     },
-    [reportError, stopDurationTracking],
+    [releaseKeepAwake, reportError, stopDurationTracking],
   );
 
   // reportError's console line already carries the specific reason via `context`, so the
@@ -344,6 +355,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     clearStreamingState();
 
     try {
+      acquireKeepAwake();
       await audio.start();
       isRecordingRef.current = true;
       setIsRecording(true);
@@ -354,6 +366,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
         await startNewStream("start");
       }
     } catch (err) {
+      releaseKeepAwake();
       await audio.stop().catch(() => undefined);
       stopDurationTracking();
       isRecordingRef.current = false;
@@ -364,11 +377,13 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       actionGateRef.current.starting = false;
     }
   }, [
+    acquireKeepAwake,
     audio,
     canStart,
     clearStreamingState,
     client,
     enableDuration,
+    releaseKeepAwake,
     reportError,
     startDurationTracking,
     startNewStream,
@@ -385,6 +400,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     }
     actionGateRef.current.cancelling = true;
     stopDurationTracking();
+    releaseKeepAwake();
     setDuration(0);
     setError(null);
 
@@ -406,7 +422,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       clearStreamingState();
       actionGateRef.current.cancelling = false;
     }
-  }, [audio, clearStreamingState, reportError, stopDurationTracking]);
+  }, [audio, clearStreamingState, releaseKeepAwake, reportError, stopDurationTracking]);
 
   const confirmDictation = useCallback(async () => {
     if (actionGateRef.current.confirming) {
@@ -433,6 +449,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     actionGateRef.current.confirming = true;
     setError(null);
     stopDurationTracking();
+    releaseKeepAwake();
     setIsProcessing(true);
     isProcessingRef.current = true;
 
@@ -480,6 +497,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     reportConfirmAbort,
     stopDurationTracking,
     ensureFinalTranscript,
+    releaseKeepAwake,
     t,
   ]);
 
@@ -499,6 +517,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     setStatus("uploading");
     setIsProcessing(true);
     isProcessingRef.current = true;
+    releaseKeepAwake();
 
     try {
       if (!client?.isConnected) {
@@ -530,6 +549,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     ensureFinalTranscript,
     handleDictationFailure,
     handleStreamingTranscriptionSuccess,
+    releaseKeepAwake,
     reportRetryAbort,
     t,
   ]);
@@ -549,11 +569,12 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     setIsProcessing(false);
     isProcessingRef.current = false;
     stopDurationTracking();
+    releaseKeepAwake();
     setDuration(0);
     setError(null);
     setStatus("idle");
     clearStreamingState();
-  }, [clearStreamingState, stopDurationTracking]);
+  }, [clearStreamingState, releaseKeepAwake, stopDurationTracking]);
 
   useEffect(() => {
     const attemptGuard = attemptGuardRef.current;
@@ -562,6 +583,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     return () => {
       isTearingDownRef.current = true;
       stopDurationTracking();
+      releaseKeepAwake();
       void audioStop.current().catch(() => undefined);
       // A submit or retry already waiting on the daemon owns the transcript: cancelling or
       // disposing it here drops words the user spoke, so it runs to delivery and cleans up
@@ -572,7 +594,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       attemptGuard.cancel();
       senderRef.current?.dispose();
     };
-  }, [stopDurationTracking]);
+  }, [releaseKeepAwake, stopDurationTracking]);
 
   return {
     isRecording,

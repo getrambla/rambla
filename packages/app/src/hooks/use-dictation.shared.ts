@@ -37,6 +37,7 @@ export interface UseDictationResult {
 
 export const DURATION_TICK_MS = 1000;
 export const PCM_DICTATION_FORMAT = "audio/pcm;rate=16000;bits=16";
+export const DICTATION_KEEP_AWAKE_TAG = "rambla:dictation";
 
 export const toError = (error: unknown): Error => {
   if (error instanceof Error) {
