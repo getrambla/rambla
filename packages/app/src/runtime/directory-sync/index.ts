@@ -42,6 +42,7 @@ const PAGE_LIMIT = 200;
 const AGENT_SORT: NonNullable<FetchAgentsOptions["sort"]> = [
   { key: "updated_at", direction: "desc" },
 ];
+const DEMAND_RETRY_INTERVAL_MS = 2_000;
 
 function resolveAgentNextPage(pageInfo: AgentPageInfo): {
   hasMore: boolean;
@@ -226,6 +227,10 @@ export class DirectorySync {
     this.releaseSubscriptions();
     this.fullDemandSources.clear();
     this.routeDemandIds.clear();
+    if (this.demandRetryTimer) {
+      clearTimeout(this.demandRetryTimer);
+      this.demandRetryTimer = null;
+    }
     workspaceLabels.disconnect(this.serverId);
   }
 
@@ -313,6 +318,17 @@ export class DirectorySync {
         this.satisfiedDemandSource = source;
         return undefined;
       })
+      .catch((error) => {
+        // A failed refresh used to be swallowed here, leaving the directory
+        // stale for the rest of the connection. Keep retrying on this
+        // connection until it succeeds.
+        console.error("[DirectorySync] directory refresh failed; retrying", {
+          serverId: this.serverId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        this.scheduleDemandRetry(source);
+        throw error;
+      })
       .finally(() => {
         this.demandRefresh = null;
         const current = this.connection.source;
@@ -325,6 +341,30 @@ export class DirectorySync {
         }
       });
     return this.demandRefresh;
+  }
+
+  private demandRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private scheduleDemandRetry(source: DirectorySourceToken): void {
+    if (this.demandRetryTimer) return;
+    this.demandRetryTimer = setTimeout(() => {
+      this.demandRetryTimer = null;
+      const current = this.connection.source;
+      if (
+        !this.hasDemand() ||
+        current.clientGeneration !== source.clientGeneration ||
+        current.connectionEpoch !== source.connectionEpoch ||
+        !this.getOnlineConnection()
+      ) {
+        return;
+      }
+      void this.requestDemandRefresh().catch((error: unknown) => {
+        console.error("[DirectorySync] demand retry failed", {
+          serverId: this.serverId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
+    }, DEMAND_RETRY_INTERVAL_MS);
   }
 
   refreshDemand(): Promise<void> {
