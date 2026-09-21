@@ -53,7 +53,7 @@ import {
   type AttachmentMenuItem,
   type ComposerKeyPressEvent,
   type MessageInputRef,
-} from "./input/input";
+} from "./input/input.rambla";
 import type { ImageAttachment, MessagePayload, TextReplacement } from "./types";
 import { ICON_SIZE, type Theme } from "@/styles/theme";
 import type { DraftCommandConfig } from "@/hooks/use-agent-commands-query";
