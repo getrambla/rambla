@@ -11,6 +11,8 @@ Rules for this fork. These override everything below.
 
 - **NEVER add `--foreground` to `rambla daemon run` or `rambla daemon start` — it crashes the daemon.** Upstream removed the flag; the CLI hard-errors on it (`REMOVED_LAUNCH_FLAGS` in `packages/cli/src/commands/daemon/local-daemon.ts`) and the systemd unit never starts. `daemon run` is already foreground by definition. This exact mistake happened once (commit 44e4eb7ad) and the user had to fix it by hand from their phone. Do not re-add it, do not "make it explicit", do not add any other launch flag to the justfile's ExecStart. If you ever edit that line, run `just install-daemon` and verify the daemon starts before you claim success.
 
+- **Before fixing or modifying any file that exists upstream, diff it against `upstream/main` first** (`git diff HEAD upstream/main -- <path>`). If upstream already fixed it, port their fix verbatim — do not invent a parallel solution. Invented fixes create merge conflicts and drift; this happened with the terminal SDK e2e EBUSY fix (2026-09-21), where a proposed helper file would have conflicted with upstream's one-line `maxRetries` fix.
+
 Rambla is a mobile app for monitoring and controlling your local AI coding agents from anywhere. Your dev environment, in your pocket. Connects directly to your actual development environment — your code stays on your machine.
 
 **Supported agents:** Claude Code, Codex, GitHub Copilot, OpenCode, and Pi.
