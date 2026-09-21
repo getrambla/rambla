@@ -1,13 +1,13 @@
 import { confirm, isCancel, log } from "@clack/prompts";
 import { Command } from "commander";
 import chalk from "chalk";
+import { generateLocalPairingOffer } from "@getrambla/server/pairing";
+import { readDaemonInstance } from "@getrambla/server/daemon-control";
 import {
-  generateLocalPairingOffer,
-  readDaemonInstance,
   readPersistedConfig,
   editPersistedConfig,
   resolveConfigFromPersisted,
-} from "@getrambla/server";
+} from "@getrambla/server/configuration";
 import { connectToDaemon } from "../../utils/client.js";
 import type { DaemonTarget } from "../../utils/daemon-target.js";
 import { addJsonAndDaemonHostOptions, withGlobalOptions } from "../../utils/command-options.js";

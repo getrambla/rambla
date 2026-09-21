@@ -7,7 +7,7 @@ import {
 } from "../../utils/timeline.js";
 import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
 import type { AgentTimelineItem } from "@getrambla/protocol/agent-types";
-import { curateAgentActivity } from "@getrambla/server";
+import { curateAgentActivity } from "@getrambla/server/agent-activity";
 
 export function addLogsOptions(cmd: Command): Command {
   return cmd

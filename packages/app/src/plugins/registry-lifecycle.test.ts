@@ -1,3 +1,4 @@
+import { createPluginHosts } from "./hosts";
 import { expect, test } from "vitest";
 import { createRamblaApi } from "@getrambla/client";
 import { DaemonClient } from "@getrambla/client/internal/daemon-client";
@@ -11,6 +12,15 @@ function registry() {
     createRuntime: (installation) => {
       const api = createRamblaApi(client);
       return {
+        hosts: createPluginHosts(
+          {
+            getHosts: () => [],
+            getSnapshot: () => null,
+            subscribeAll: () => () => {},
+            subscribeHostList: () => () => {},
+          },
+          installation.lifetime.signal,
+        ),
         rambla: {
           ...api,
           dispose: async () => {

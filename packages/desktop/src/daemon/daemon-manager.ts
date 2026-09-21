@@ -10,7 +10,7 @@ import {
   readDaemonInstance,
   isSameDaemonInstance,
   type DaemonInstance,
-} from "@getrambla/server";
+} from "@getrambla/server/daemon-control";
 import {
   copyAttachmentFileToManagedStorage,
   deleteManagedAttachmentFile,

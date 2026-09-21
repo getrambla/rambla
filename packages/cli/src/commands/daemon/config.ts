@@ -1,11 +1,11 @@
 import { addLocalDaemonOptions } from "../../utils/command-options.js";
 import { Command } from "commander";
+import { readDaemonInstance } from "@getrambla/server/daemon-control";
 import {
-  readDaemonInstance,
   readPersistedConfig,
   getPersistedConfigValue,
   editPersistedConfig,
-} from "@getrambla/server";
+} from "@getrambla/server/configuration";
 import { connectToDaemon } from "../../utils/client.js";
 import { withOutput, type CommandOptions } from "../../output/index.js";
 

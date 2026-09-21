@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { stopDaemonInstance, type DaemonInstance } from "@getrambla/server";
+import { stopDaemonInstance, type DaemonInstance } from "@getrambla/server/daemon-control";
 import { connectToDaemon } from "../../utils/client.js";
 import { withOutput, type CommandOptions } from "../../output/index.js";
 import { addJsonAndDaemonHostOptions } from "../../utils/command-options.js";

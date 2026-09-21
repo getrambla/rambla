@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
   spawnProcess: vi.fn(),
 }));
 
-vi.mock("@getrambla/server", () => ({
+vi.mock("@getrambla/server/process", () => ({
   spawnProcess: mocks.spawnProcess,
 }));
 

@@ -1,5 +1,8 @@
 import { Command, Option } from "commander";
-import { getStructuredAgentResponse, StructuredAgentResponseError } from "@getrambla/server";
+import {
+  getStructuredAgentResponse,
+  StructuredAgentResponseError,
+} from "@getrambla/server/agent-response";
 import type { AgentSnapshotPayload } from "@getrambla/protocol/messages";
 import { connectToDaemon } from "../../utils/client.js";
 import type {
