@@ -1,27 +1,40 @@
 #!/usr/bin/env bash
-# Sync upstream's newest stable release into this fork. Runs the same way
-# locally and in CI.
+# Merge the rebranded upstream into main. This is the unsafe half of the
+# upstream sync — it stages a merge into the checked-out branch and leaves it
+# uncommitted, so the caller decides whether the result builds before
+# committing. fork/sync-upstream-rebrand.sh is the safe half: advancing and
+# rebranding the upstream-rebrand branch, safe to run anytime.
 #
-# The fork renames Paseo to Rambla everywhere, so upstream's text and the
-# fork's text disagree on almost every line that mentions the brand. Merging
-# upstream directly means fighting that on every sync.
+# Two modes, exactly one required:
 #
-# upstream-rebrand is a standing branch holding upstream's tree with the rename
-# applied. Because it is an ancestor of main, the merge base between them is
-# always a rebranded commit, so the fork's side of a brand-only file matches
-# that base and git simply takes upstream's change. Recreating this branch from
-# scratch would put the merge base back on unrenamed upstream and every brand
-# conflict would return. It must persist.
+#   --release  merge upstream's newest stable release. First advances
+#       upstream-rebrand to that tag (same mechanics as the sync script).
+#       Release tags were green across every workflow; arbitrary main commits
+#       fail CI about a quarter of the time, which is why automation merges
+#       releases, not main. Bails out quietly (exit 0) when no new release
+#       exists.
 #
-# Leaves the merge staged and uncommitted. The caller decides whether the
-# result builds before committing it.
+#   --main     merge upstream's current main as it stands right now, for
+#       expediting upstream between releases. Checks that upstream-rebrand is
+#       current first and runs the sync if it is not.
 #
-# Usage: fork/merge-upstream.sh
+# Both modes exit 1 listing the conflicted files if the merge conflicts.
+#
+# Usage: fork/merge-upstream.sh --release | --main
 
 set -euo pipefail
 
 UPSTREAM_URL="https://github.com/getpaseo/paseo.git"
 BRANCH="upstream-rebrand"
+
+case "${1:-}" in
+	--release) MODE=release ;;
+	--main) MODE=main ;;
+	*)
+		echo "usage: fork/merge-upstream.sh --release | --main" >&2
+		exit 1
+		;;
+esac
 
 REPO="$(git rev-parse --show-toplevel)"
 HERE="$REPO/fork"
@@ -35,64 +48,74 @@ git -C "$REPO" fetch origin "$BRANCH" --quiet 2>/dev/null || true
 git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH" ||
 	git -C "$REPO" branch "$BRANCH" "origin/$BRANCH"
 
-# Sync from upstream's newest stable release, not from main. Release tags were
-# green across every workflow; arbitrary main commits fail CI about a quarter of
-# the time, almost entirely in end-to-end and Windows test jobs. Betas and the
-# one release candidate carry a hyphen and are skipped.
-TIP=$(git -C "$REPO" ls-remote --tags --refs upstream 'refs/tags/v*' |
-	awk -F'refs/tags/' '$2 !~ /-/ {print $2}' | sort -V | tail -1)
-[ -n "$TIP" ] || {
-	echo "no stable upstream release tag found" >&2
-	exit 1
-}
-TARGET=$(git -C "$REPO" ls-remote upstream "refs/tags/$TIP" | awk '{print $1}')
+if [ "$MODE" = release ]; then
+	# Sync from upstream's newest stable release, not from main. Release tags were
+	# green across every workflow; arbitrary main commits fail CI about a quarter of
+	# the time, almost entirely in end-to-end and Windows test jobs. Betas and the
+	# one release candidate carry a hyphen and are skipped.
+	TIP=$(git -C "$REPO" ls-remote --tags --refs upstream 'refs/tags/v*' |
+		awk -F'refs/tags/' '$2 !~ /-/ {print $2}' | sort -V | tail -1)
+	[ -n "$TIP" ] || {
+		echo "no stable upstream release tag found" >&2
+		exit 1
+	}
+	TARGET=$(git -C "$REPO" ls-remote upstream "refs/tags/$TIP" | awk '{print $1}')
 
-# A tag can be cut from a side branch that never landed; 0.7.0-beta.2 was. Those
-# commits are not what upstream shipped on main, so refuse rather than merge one.
-git -C "$REPO" merge-base --is-ancestor "$TARGET" upstream/main || {
-	echo "$TIP is not reachable from upstream/main" >&2
-	exit 1
-}
+	# A tag can be cut from a side branch that never landed; 0.7.0-beta.2 was. Those
+	# commits are not what upstream shipped on main, so refuse rather than merge one.
+	git -C "$REPO" merge-base --is-ancestor "$TARGET" upstream/main || {
+		echo "$TIP is not reachable from upstream/main" >&2
+		exit 1
+	}
 
-# Upstream commits daily but releases every few days, so most runs stop here.
-if git -C "$REPO" merge-base --is-ancestor "$TARGET" "$BRANCH"; then
-	echo "already current with upstream $TIP"
-	exit 0
+	# Upstream commits daily but releases every few days, so most runs stop here.
+	# The signal is main, not the branch: the daily sync keeps the branch ahead
+	# of releases on purpose, so the branch always contains them. Main contains
+	# the release commit only if the release was actually merged.
+	if git -C "$REPO" merge-base --is-ancestor "$TARGET" main; then
+		echo "already current with upstream $TIP"
+		exit 0
+	fi
+
+	# One implementation of the advance, in the sync script. The daily sync
+	# usually has the branch sitting at or past the tag already, in which case
+	# this is a no-op.
+	bash "$HERE/sync-upstream-rebrand.sh" "$TARGET"
+
+	# Merge the release, not the branch tip. The daily sync keeps the tip at
+	# upstream's main, so merging it would ship whatever main held today and
+	# throw away the reason for waiting on a tag. The release is carried by the
+	# oldest rebrand commit that contains the tag — upstream's own commits are
+	# on the branch too, via the `ours` merges, but their trees are unrebranded,
+	# so `--not upstream/main` drops them and leaves only this fork's.
+	MERGE_REF=$(git -C "$REPO" rev-list --first-parent "$BRANCH" --not upstream/main |
+		while read -r c; do
+			git -C "$REPO" merge-base --is-ancestor "$TARGET" "$c" && echo "$c"
+		done | tail -1)
+	[ -n "$MERGE_REF" ] || {
+		echo "no rebrand commit on $BRANCH contains $TIP" >&2
+		exit 1
+	}
+else
+	# The merge is only as good as the rebrand branch is current; bring it up to
+	# upstream's main first. The sync is a no-op when the branch is current.
+	bash "$HERE/sync-upstream-rebrand.sh"
+
+	TARGET=$(git -C "$REPO" rev-parse upstream/main)
+	TIP=$(git -C "$REPO" rev-parse --short "$TARGET")
+
+	# The question is whether main has the commit, not whether the branch has
+	# it. The sync above just put it on the branch, so testing the branch would
+	# always say yes and the merge below would never run.
+	if git -C "$REPO" merge-base --is-ancestor "$TARGET" main; then
+		echo "already current with upstream $TIP; nothing to merge"
+		exit 0
+	fi
+	# Expediting main is the whole point of this mode, so take the tip.
+	MERGE_REF="$BRANCH"
 fi
 
-# A worktree keeps the rebrand branch off the main checkout, so a half-finished
-# sync never leaves the working tree in a strange state.
-WT=$(mktemp -d)
-trap 'git -C "$REPO" worktree remove --force "$WT" 2>/dev/null || true' EXIT
-git -C "$REPO" worktree add --quiet "$WT" "$BRANCH"
-
-# Record that upstream has been absorbed, then throw away everything that merge
-# decided about file contents and take upstream's tree outright. The `ours`
-# strategy never looks at the other side, so it cannot conflict.
-git -C "$WT" merge -s ours --no-commit "$TARGET" >/dev/null
-git -C "$WT" read-tree -u --reset "$TARGET"
-# Upstream's tree carries upstream's npm dependency hash, main carries the
-# fork's, and both differ from the base every sync, so the merge conflicts on
-# that one line every single time. Put main's value on this side so the two
-# agree and git has nothing to resolve. The value is right either way: the Nix
-# Update Hash workflow recomputes it on push.
-git -C "$REPO" show HEAD:nix/npm-deps.hash >"$WT/nix/npm-deps.hash"
-
-(cd "$WT" && bash "$HERE/rebrand.sh")
-# Same trick as the dependency hash above, for artwork. Upstream owns the paths
-# every icon lives at, so redraw ours onto this side of the merge. Both sides
-# then hold identical bytes and git has nothing to resolve — no conflict on a
-# binary file nobody can diff, and no chance of Paseo's mark shipping.
-node "$HERE/brand/generate.mjs" --out "$WT"
-"$REPO/node_modules/.bin/oxfmt" "$WT" >/dev/null
-
-git -C "$WT" add -A
-# Most days upstream has not moved and there is nothing new to rebrand.
-if git -C "$WT" rev-parse -q --verify MERGE_HEAD >/dev/null; then
-	LEFTHOOK=0 git -C "$WT" commit -q -m "rebrand upstream through $TIP"
-fi
-
-if ! git -C "$REPO" merge "$BRANCH" --no-commit --no-ff; then
+if ! git -C "$REPO" merge "$MERGE_REF" --no-commit --no-ff; then
 	# A merge can fail for reasons other than conflicts. Those leave the repo
 	# mid-merge with nothing to resolve, so undo them rather than hand the
 	# caller a half-finished state it cannot interpret. Conflicts are left in

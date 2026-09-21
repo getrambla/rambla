@@ -49,14 +49,19 @@ jobs:
       # oxfmt comes from node_modules; the build gate needs the deps anyway.
       - run: npm ci
 
-      - name: Sync
-        id: sync
+      - name: Sync upstream-rebrand to upstream main
+        id: sync-rebrand
         run: |
           git config user.name "rambla-merge-bot"
           git config user.email "rambla-merge-bot@users.noreply.github.com"
-          fork/merge-upstream.sh
-          # Absent on the days upstream has released nothing new, which is most
-          # of them. Skips a full server build that would gate nothing.
+          fork/sync-upstream-rebrand.sh
+
+      - name: Merge (release mode)
+        id: sync
+        run: |
+          # Bails out quietly (exit 0) when no new stable release exists; the
+          # branch was still advanced to upstream main by the step above.
+          fork/merge-upstream.sh --release
           if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
             echo "merged=true" >> "$GITHUB_OUTPUT"
           else
@@ -80,4 +85,7 @@ jobs:
           if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
             git commit --no-edit
           fi
-          git push origin main upstream-rebrand
+          # upstream-rebrand was already pushed by the sync step. Gating its
+          # push on a release would throw away every non-release day's advance
+          # and leave origin behind whatever this machine holds.
+          git push origin main
