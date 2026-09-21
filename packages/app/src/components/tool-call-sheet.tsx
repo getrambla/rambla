@@ -169,6 +169,14 @@ function ToolCallSheetContent({ data, onClose }: ToolCallSheetContentProps) {
     onOpenFile,
   } = data;
 
+  // Close before opening: navigation swaps the underlying route, but this sheet is
+  // portal-hosted above the whole navigator and would otherwise keep occluding the
+  // newly opened file. Same close-then-act ordering as menu selectItem.
+  const handleOpenFilePress = useCallback(() => {
+    onClose();
+    onOpenFile?.();
+  }, [onClose, onOpenFile]);
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -192,7 +200,7 @@ function ToolCallSheetContent({ data, onClose }: ToolCallSheetContentProps) {
 
       {filePath && onOpenFile ? (
         <Pressable
-          onPress={onOpenFile}
+          onPress={handleOpenFilePress}
           style={styles.filePathRow}
           accessibilityRole="link"
           accessibilityLabel={t("message.actions.openFile")}
