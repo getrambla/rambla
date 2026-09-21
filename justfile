@@ -303,7 +303,11 @@ install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-ser
     Environment="RAMBLA_LOG_LEVEL={{log_level}}"
     Environment="PATH=$HOME/.local/bin:$PATH"
     TimeoutStopSec=$TIMEOUT_STOP_SEC
-    ExecStart={{stable_repo}}/packages/cli/bin/rambla daemon run --foreground
+    ExecStart={{stable_repo}}/packages/cli/bin/rambla daemon run
+    # NEVER add --foreground (or any other removed launch flag) here: the CLI
+    # hard-errors on removed flags (REMOVED_LAUNCH_FLAGS in
+    # packages/cli/src/commands/daemon/local-daemon.ts) and systemd gives up.
+    # `daemon run` is already foreground — do not "make it explicit".
     Restart=always
     RestartSec=5
 
