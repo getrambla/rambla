@@ -746,6 +746,7 @@ test("advertises client capabilities in hello", async () => {
       timeline_notifications: true,
       plugin_timeline_items: true,
       workspace_setup_blocked: true,
+      dictation_segments: true,
       browser_host: {
         supportedCommands: ["list_tabs"],
         hostKind: "desktop app",
