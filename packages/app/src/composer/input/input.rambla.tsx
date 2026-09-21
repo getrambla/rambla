@@ -1,4 +1,6 @@
-// Forked from upstream input.tsx; see PATCHES.md #23 for the baseline SHA and port ritual.
+// Forked 2026-09-21 from getpaseo/paseo packages/app/src/composer/input/input.tsx
+// at upstream 77c5c8f17e1f (getpaseo/paseo main, synced via origin/upstream-rebrand@18198cf8f).
+// Port ritual: PATCHES.md #23.
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   View,
