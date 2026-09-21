@@ -82,7 +82,7 @@ import {
   runMessageInputKeyboardAction,
   stopRealtimeVoice,
 } from "./state";
-import { DictationControls } from "@/components/dictation-controls";
+import { DictationRecordingControls } from "./dictation-recording-controls.rambla";
 import { useDictationField } from "./use-dictation-field.rambla";
 
 const DEFAULT_SEND_KEYS: ShortcutKey[][] = [["Enter"]];
@@ -1243,11 +1243,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     }, []);
 
     const replaceText = useCallback(
-      (
-        nextText: string,
-        selection?: { start: number; end: number },
-        options?: { skipWhileComposing?: boolean },
-      ) => {
+      (nextText: string, selection?: { start: number; end: number }) => {
         updateComposerHeightForText?.(valueRef.current, nextText);
         valueRef.current = nextText;
         updateLiveTextPresence(nextText);
@@ -1255,7 +1251,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         if (nextText === "") {
           textInputRef.current?.reset();
         } else {
-          textInputRef.current?.replaceText(nextText, selection, options);
+          textInputRef.current?.replaceText(nextText, selection);
         }
         onChangeText(nextText);
       },
@@ -1266,7 +1262,12 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       getSnapshot: () =>
         getComposerInputSnapshot(textInputRef.current, valueRef.current, selectionRef.current),
       writeText: replaceText,
+      isDictating: () => isDictating,
+      acceptAndSend: () => void handleAcceptAndSendRecording(),
+      startDictation: () => startDictation(),
     });
+    // Reached through a ref so upstream's callback dependency arrays stay untouched.
+    const dictationFieldRef = useRef(dictationField);
 
     useImperativeHandle(ref, () => ({
       focus: () => {
@@ -1296,7 +1297,6 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       getNativeElement: () => (isWeb ? getTextInputNativeElement(textInputRef.current) : null),
     }));
     const sendAfterTranscriptRef = useRef(false);
-    const sendDictatedMessageRef = useRef<() => void>(() => {});
     const serverInfo = useSessionStore(
       useCallback(
         (state) => {
@@ -1332,13 +1332,9 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       (text: string, _meta: { requestId: string }) => {
         const autoSend = sendAfterTranscriptRef.current;
         sendAfterTranscriptRef.current = false;
-        // The words are in the field already, so the final only decides whether to send them.
-        if (dictationField.finishSegments()) {
-          if (autoSend) sendDictatedMessageRef.current();
-          return;
-        }
-        applyDictationTranscript(text, {
-          value: valueRef.current,
+        const final = dictationFieldRef.current.resolveFinal(text, valueRef.current);
+        applyDictationTranscript(final.text, {
+          value: final.value,
           defaultSendBehavior,
           isAgentRunning,
           onQueue,
@@ -1349,16 +1345,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
           autoSend,
         });
       },
-      [
-        replaceText,
-        onSubmit,
-        onQueue,
-        attachments,
-        cwd,
-        isAgentRunning,
-        defaultSendBehavior,
-        dictationField,
-      ],
+      [replaceText, onSubmit, onQueue, attachments, cwd, isAgentRunning, defaultSendBehavior],
     );
 
     const handleDictationError = useCallback(
@@ -1435,6 +1422,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const surfacePresentation = resolveComposerSurfacePresentation(showOverlay);
 
     useEffect(() => {
+      dictationFieldRef.current.onDictationStatus(dictationStatus);
       if (isDictating || isDictationProcessing) {
         return;
       }
@@ -1447,12 +1435,9 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
           dictationUnavailableMessage,
           canStartDictation,
           toast,
-          startDictation: async () => {
-            dictationField.beginDictation();
-            await startDictation();
-          },
+          startDictation: dictationFieldRef.current.startDictation,
         }),
-      [canStartDictation, dictationUnavailableMessage, startDictation, toast, dictationField],
+      [canStartDictation, dictationUnavailableMessage, toast],
     );
 
     const handleVoicePress = useCallback(
@@ -1583,16 +1568,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     );
 
     const handleDefaultSendAction = useCallback(() => {
-      // Sending mid-recording waits for the final, so the last words reach the message.
-      if (isDictating) {
-        void handleAcceptAndSendRecording();
-        return;
-      }
-      // The final is already on its way; sending now would send a second message ahead of it.
-      if (isDictationProcessing) {
-        sendAfterTranscriptRef.current = true;
-        return;
-      }
+      if (dictationFieldRef.current.takeSendPress()) return;
       runDefaultSendAction({
         defaultSendBehavior,
         isAgentRunning,
@@ -1600,28 +1576,10 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         handleSendMessage,
         handleQueueMessage,
       });
-    }, [
-      defaultSendBehavior,
-      isAgentRunning,
-      onQueue,
-      handleQueueMessage,
-      handleSendMessage,
-      isDictating,
-      isDictationProcessing,
-      handleAcceptAndSendRecording,
-    ]);
-
-    // The final has landed by the time this runs, so it must not re-enter the guard above.
-    sendDictatedMessageRef.current = () =>
-      runDefaultSendAction({
-        defaultSendBehavior,
-        isAgentRunning,
-        onQueue,
-        handleSendMessage,
-        handleQueueMessage,
-      });
+    }, [defaultSendBehavior, isAgentRunning, onQueue, handleQueueMessage, handleSendMessage]);
 
     const handleAlternateSendAction = useCallback(() => {
+      if (dictationFieldRef.current.takeSendPress()) return;
       runAlternateSendAction({
         defaultSendBehavior,
         isAgentRunning,
@@ -1737,13 +1695,13 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
 
     const handleInputChange = useCallback(
       (nextValue: string) => {
-        dictationField.onUserEdit(valueRef.current, nextValue);
+        dictationFieldRef.current.onUserEdit(valueRef.current, nextValue);
         updateComposerHeightForText?.(valueRef.current, nextValue);
         valueRef.current = nextValue;
         updateLiveTextPresence(nextValue);
         onChangeText(nextValue);
       },
-      [onChangeText, updateComposerHeightForText, updateLiveTextPresence, dictationField],
+      [onChangeText, updateComposerHeightForText, updateLiveTextPresence],
     );
 
     const handleInputFocus = useCallback(() => {
@@ -1896,22 +1854,21 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
             />
           </RenderProfile>
 
-          {showDictationOverlay ? (
-            <DictationControls
-              volume={dictationVolume}
-              duration={dictationDuration}
-              isRecording={isDictating}
-              isProcessing={isDictationProcessing}
-              status={dictationStatus}
-              errorText={dictationError}
-              onStart={startDictationIfAvailable}
-              onCancel={handleCancelRecording}
-              onAccept={handleAcceptRecording}
-              onAcceptAndSend={handleAcceptAndSendRecording}
-              onRetry={canRetryFailedDictation ? handleRetryFailedRecording : undefined}
-              onDiscard={handleDiscardFailedRecording}
-            />
-          ) : null}
+          <DictationRecordingControls
+            show={showDictationOverlay}
+            volume={dictationVolume}
+            duration={dictationDuration}
+            isRecording={isDictating}
+            isProcessing={isDictationProcessing}
+            status={dictationStatus}
+            canRetry={canRetryFailedDictation}
+            onStart={startDictationIfAvailable}
+            onCancel={handleCancelRecording}
+            onAccept={handleAcceptRecording}
+            onAcceptAndSend={handleAcceptAndSendRecording}
+            onRetry={handleRetryFailedRecording}
+            onDiscard={handleDiscardFailedRecording}
+          />
 
           {/* Button row */}
           <View style={styles.buttonRow}>

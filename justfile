@@ -17,18 +17,12 @@ logos svg="":
     npm run format:files -- packages/app/src/components/icons/rambla-logo.tsx packages/app/src/components/icons/rambla-logo-mask.ts
 
 # Dispatch an iOS TestFlight build and follow it. Ctrl-C stops watching, not
-# the build. Pass any second argument (`just testflight "" quiet`) to dispatch
-# and exit. The first argument is the branch or tag to build; empty builds the
-# repo's default branch.
+# the build. Pass any argument (`just testflight quiet`) to dispatch and exit.
 [script]
-testflight ref="" quiet="":
+testflight quiet="":
     set -eu
     before="$(gh run list --workflow="iOS TestFlight" --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
-    if [ -n "{{ ref }}" ]; then
-        gh workflow run "iOS TestFlight" --ref "{{ ref }}"
-    else
-        gh workflow run "iOS TestFlight"
-    fi
+    gh workflow run "iOS TestFlight"
 
     # `gh workflow run` does not report the run it created, so wait for one
     # that is not the run that was already there.

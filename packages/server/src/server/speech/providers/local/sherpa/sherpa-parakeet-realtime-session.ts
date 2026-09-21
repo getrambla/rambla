@@ -64,7 +64,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
     // the same tick or later — belongs to the next segment, so a decode that
     // resolves afterwards cannot pull it into this transcript.
     const segmentId = this.currentSegmentId;
-    const segmentIndex = this.currentSegmentIndex;
+    const index = this.currentSegmentIndex;
     const previousSegmentId = this.previousSegmentId;
     const audio = this.pcm16;
     this.previousSegmentId = segmentId;
@@ -80,12 +80,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
         const finalText = await this.decodePcm16(audio);
 
         this.emit("committed", { segmentId, previousSegmentId });
-        this.emit("transcript", {
-          segmentId,
-          index: segmentIndex,
-          transcript: finalText,
-          isFinal: true,
-        });
+        this.emit("transcript", { segmentId, index, transcript: finalText, isFinal: true });
       } catch (err) {
         this.emit("error", err instanceof Error ? err : new Error(String(err)));
       }

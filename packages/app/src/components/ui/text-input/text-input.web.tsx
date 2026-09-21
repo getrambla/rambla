@@ -67,10 +67,9 @@ export const EditingTextInput = forwardRef<EditingTextInputHandle, EditingTextIn
         textRef.current = nextText;
         return nextText;
       },
-      replaceText: (nextText, selection, options) => {
-        // A dictation write into a live IME composition cancels it and loses the half-typed
-        // word. Only writes that can be skipped ask for this; the next partial repairs them.
-        if (options?.skipWhileComposing && isComposingRef.current) return;
+      replaceText: (nextText, selection) => {
+        // Writing into a live IME composition cancels it and loses the half-typed word.
+        if (isComposingRef.current) return;
         textRef.current = nextText;
         const input = inputRef.current as WebTextInputElement | null;
         if (input && "value" in input) input.value = nextText;

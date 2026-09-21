@@ -6,11 +6,7 @@ export interface EditingTextInputHandle {
   blur(): void;
   isFocused(): boolean;
   getText(): string;
-  replaceText(
-    text: string,
-    selection?: { start: number; end: number },
-    options?: { skipWhileComposing?: boolean },
-  ): void;
+  replaceText(text: string, selection?: { start: number; end: number }): void;
   /** Clear the editor and reset its intrinsic layout, preserving focus intent. */
   reset(): void;
   getNativeRef(): unknown;

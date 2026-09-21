@@ -13,8 +13,11 @@ import type {
 } from "../speech/speech-provider.js";
 import { toResolver, type Resolvable } from "../speech/provider-resolver.js";
 import { parsePcmRateFromFormat, pcm16lePeakAbs } from "../speech/audio.js";
-import type { DictationSegment } from "@getrambla/protocol/dictation-segment.rambla";
-import { emitDictationPartial } from "./dictation-segment-partial.rambla.js";
+import {
+  toPartialMessage,
+  type DictationStreamPartialMessage,
+  type TranscriptEvent,
+} from "./dictation-segment-partial.rambla.js";
 
 const PCM_CHANNELS = 1;
 const PCM_BITS_PER_SAMPLE = 16;
@@ -207,10 +210,7 @@ export type DictationStreamOutboundMessage =
       type: "dictation_stream_finish_accepted";
       payload: { dictationId: string; timeoutMs: number };
     }
-  | {
-      type: "dictation_stream_partial";
-      payload: { dictationId: string; text: string; segment?: DictationSegment };
-    }
+  | DictationStreamPartialMessage
   | {
       type: "dictation_stream_final";
       payload: { dictationId: string; text: string; debugRecordingPath?: string };
@@ -415,13 +415,8 @@ export class DictationStreamManager {
         .filter((text) => text.length > 0)
         .join(" ")
         .trim();
-      emitDictationPartial({
-        emit: this.emit,
-        dictationId,
-        gluedText: partialText,
-        segment: index === undefined ? null : { id: segmentId, index, text: transcript, isFinal },
-        clientSupportsSegments: this.supportsSegments(),
-      });
+      const event = { segmentId, transcript, isFinal, index };
+      this.emitDictationPartial(dictationId, partialText, event);
 
       this.maybeSealDictationStreamFinish(dictationId);
       this.maybeFinalizeDictationStream(dictationId);
@@ -614,6 +609,10 @@ export class DictationStreamManager {
 
   private emitDictationAck(dictationId: string, ackSeq: number): void {
     this.emit({ type: "dictation_stream_ack", payload: { dictationId, ackSeq } });
+  }
+
+  private emitDictationPartial(dictationId: string, text: string, event?: TranscriptEvent): void {
+    this.emit(toPartialMessage({ dictationId, text, event, segments: this.supportsSegments() }));
   }
 
   private async maybePersistDictationStreamAudio(dictationId: string): Promise<string | null> {
