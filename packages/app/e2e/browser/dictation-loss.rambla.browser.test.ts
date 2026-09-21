@@ -3,6 +3,7 @@ import { expect, test, type Page } from "../support/fixtures";
 import { gotoAppShell } from "../support/helpers/app";
 import { installAddModuleCounter, readAddModuleCounter } from "../support/helpers/audio-worklet";
 import { daemonWsRoutePattern } from "../support/helpers/daemon-port";
+import { openAgentRoute, seedRunningMockAgentWorkspace } from "../support/helpers/mock-agent";
 import {
   openNewWorkspaceComposer,
   selectWorkspaceIsolation,
@@ -29,6 +30,17 @@ const CAPTURE_TOLERANCE_MS = 300;
 // Counting samples would not: dropping a span and then replaying stale buffers
 // keeps the count right while the recording is wrong.
 const RAMP = { seconds: 30, peak: 0.9 };
+
+/** What the user had already written before the dictation started: 4000 characters. */
+const PRIOR_TEXT = "word ".repeat(800);
+/** What the user types at the top of that text, which is also where they leave the caret. */
+const TYPED_BEFORE_REGION = "hey ";
+const CARET_OFFSET = TYPED_BEFORE_REGION.length;
+const DICTATED_WORDS = Array.from({ length: 60 }, (_, index) => `spoken${index + 1}`);
+// The daemon reports a partial every 350 ms, so each write is its own main-thread task.
+const PARTIAL_INTERVAL_MS = 350;
+// One frame at 60 Hz. A write over this is a visible stutter at that cadence.
+const WRITE_BUDGET_MS = 16;
 
 interface SegmentRecord {
   seq: number;
@@ -318,6 +330,65 @@ async function jamMainThread(page: Page, durationMs: number): Promise<void> {
     }
     return spins;
   }, durationMs);
+}
+
+/** One write the composer made to the field, as the page timed it. */
+interface DictationWriteRecord {
+  durationMs: number;
+  caret: number;
+  length: number;
+}
+
+interface WriteTimerWindow extends Window {
+  __ramblaDictationWrites?: DictationWriteRecord[];
+}
+
+/** Times every write to the field, from the read that opens it to the end of the task that made it. */
+async function installWriteTimer(page: Page): Promise<void> {
+  await composer(page).evaluate((element) => {
+    const field = element as HTMLTextAreaElement;
+    const native = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), "value");
+    const read = native?.get;
+    const assign = native?.set;
+    if (!read || !assign) {
+      throw new Error("The composer field has no value accessor to time");
+    }
+    const records: DictationWriteRecord[] = [];
+    (window as WriteTimerWindow).__ramblaDictationWrites = records;
+    // A write opens by reading the field, so the last read before it is where its work began.
+    let openedAt = 0;
+    Object.defineProperty(field, "value", {
+      configurable: true,
+      get() {
+        openedAt = performance.now();
+        return read.call(this);
+      },
+      set(next: string) {
+        const startedAt = openedAt;
+        assign.call(this, next);
+        // Closes when the stack unwinds: times the synchronous write, not the re-render or paint.
+        queueMicrotask(() => {
+          records.push({
+            durationMs: performance.now() - startedAt,
+            caret: field.selectionStart ?? -1,
+            length: next.length,
+          });
+        });
+      },
+    });
+  });
+}
+
+async function readWriteRecords(page: Page): Promise<DictationWriteRecord[]> {
+  return page.evaluate(() => (window as WriteTimerWindow).__ramblaDictationWrites ?? []);
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function percentile(sorted: readonly number[], fraction: number): number {
+  return sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * fraction))] ?? 0;
 }
 
 test.describe("Dictation loss", () => {
@@ -647,6 +718,55 @@ test.describe("Dictation loss", () => {
     }
   });
 
+  test("holds the alternate send until the final, when it is pressed mid-recording", async ({
+    page,
+  }) => {
+    const agent = await seedRunningMockAgentWorkspace({
+      repoPrefix: "dictation-alt-send-",
+      title: "Dictation alternate send",
+      model: "five-minute-stream",
+      initialPrompt: "Stay running while the alternate send is pressed.",
+    });
+    await installSyntheticMicrophone(page);
+    let held: FinishTools | null = null;
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        held = tools;
+        tools.acceptFinish(5_000);
+      },
+    });
+
+    try {
+      await openAgentRoute(page, agent);
+      await page.getByRole("button", { name: "Start dictation" }).click();
+      await harness.waitForSegments(2);
+
+      harness.sendSegment({ id: "seg-1", index: 0, text: "one two three", isFinal: false });
+      await expect(composer(page)).toHaveValue("one two three");
+
+      // Ctrl/Cmd+Enter is the alternate send, and it only routes there while an agent is running.
+      await composer(page).press("ControlOrMeta+Enter");
+
+      // A press that queued straight away empties the field, and the words still to come could
+      // never have reached the message.
+      await expect(
+        composer(page),
+        "The alternate send took the field immediately instead of waiting for the final",
+      ).toHaveValue("one two three", { timeout: 5_000 });
+
+      await harness.waitForFinish();
+
+      held!.sendFinal("one two three");
+
+      await expect(
+        composer(page),
+        "The final arrived but the message the alternate send asked for was never sent",
+      ).toHaveValue("", { timeout: 15_000 });
+    } finally {
+      await agent.cleanup();
+    }
+  });
+
   test("reports a submit made while the socket is down instead of doing nothing", async ({
     page,
   }) => {
@@ -676,6 +796,91 @@ test.describe("Dictation loss", () => {
         retryButton(page),
         "Submitting a dictation while the socket is down must report a failure and keep the audio, not silently do nothing",
       ).toBeVisible({ timeout: 15_000 });
+    } finally {
+      await seeded.cleanup();
+    }
+  });
+
+  test("writes each partial into an already full field within a frame, without moving the caret", async ({
+    page,
+  }, testInfo) => {
+    const seeded = await seedWorkspace({ repoPrefix: "dictation-cost-" });
+    await installSyntheticMicrophone(page);
+    const harness = await installDictationHarness(page, {
+      onFinish: (tools) => {
+        tools.acceptFinish(5_000);
+        tools.sendFinal(DICTATED_WORDS.join(" "));
+      },
+    });
+
+    try {
+      await startDictation(page, seeded);
+      await harness.waitForSegments(2);
+
+      await composer(page).fill(PRIOR_TEXT);
+      // The user clicks back to the top of what they wrote and types there.
+      await composer(page).evaluate((element) => {
+        (element as HTMLTextAreaElement).setSelectionRange(0, 0);
+      });
+      await page.keyboard.type(TYPED_BEFORE_REGION);
+      await expect(composer(page)).toHaveValue(TYPED_BEFORE_REGION + PRIOR_TEXT);
+
+      await installWriteTimer(page);
+
+      for (let spoken = 1; spoken <= DICTATED_WORDS.length; spoken += 1) {
+        harness.sendSegment({
+          id: "seg-1",
+          index: 0,
+          text: DICTATED_WORDS.slice(0, spoken).join(" "),
+          isFinal: false,
+        });
+        await page.waitForTimeout(PARTIAL_INTERVAL_MS);
+      }
+
+      await expect
+        .poll(async () => (await readWriteRecords(page)).length, {
+          timeout: 15_000,
+          message: `The field took a write for each of the ${DICTATED_WORDS.length} partials`,
+        })
+        .toBe(DICTATED_WORDS.length);
+      const records = await readWriteRecords(page);
+
+      await expect(
+        composer(page),
+        "The dictated words did not land after the text the field already held",
+      ).toHaveValue(TYPED_BEFORE_REGION + PRIOR_TEXT + DICTATED_WORDS.join(" "));
+
+      expect(
+        records.map((record) => record.caret),
+        `A write moved the caret off offset ${CARET_OFFSET}, where the user left it`,
+      ).toEqual(DICTATED_WORDS.map(() => CARET_OFFSET));
+
+      const durations = records
+        .map((record) => record.durationMs)
+        .sort((left, right) => left - right);
+      const report = {
+        writes: records.length,
+        fieldChars: records[records.length - 1].length,
+        p50Ms: round2(percentile(durations, 0.5)),
+        p95Ms: round2(percentile(durations, 0.95)),
+        maxMs: round2(durations[durations.length - 1]),
+      };
+      const series = records.map((record) => round2(record.durationMs));
+      console.log(`[perf] Dictation write: ${JSON.stringify(report)}`);
+      // The decision this measurement feeds is whether writes need coalescing, so the
+      // run prints every write and not only the summary.
+      console.log(`[perf] Dictation write ms per partial: ${series.join(", ")}`);
+      await testInfo.attach("dictation-write-cost", {
+        body: JSON.stringify({ ...report, msPerWrite: series }, null, 2),
+        contentType: "application/json",
+      });
+
+      expect(
+        records
+          .map((record, index) => ({ write: index + 1, ms: round2(record.durationMs) }))
+          .filter((record) => record.ms >= WRITE_BUDGET_MS),
+        `Writing a partial into a field of ${report.fieldChars} characters costs more than one 60 Hz frame (${WRITE_BUDGET_MS} ms), so the user sees a stutter while dictating. Measured p50 ${report.p50Ms} ms, p95 ${report.p95Ms} ms, max ${report.maxMs} ms`,
+      ).toEqual([]);
     } finally {
       await seeded.cleanup();
     }

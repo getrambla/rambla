@@ -537,23 +537,45 @@ describe("finals and restart", () => {
     expect(empty.selection).toEqual(dictated.selection);
   });
 
-  it("keeps pending text when dictation stops (rule 5)", () => {
+  it("leaves a stopped recording's words alone when the next one starts (rule 5)", () => {
     const pending = applySegment({ ...started, segment: partial("a", 0, "half a thought") });
-
-    // Stopping drops the transaction, and a new one carries no text, so the field keeps what it has.
     expect(pending.text).toBe("typed half a thought");
-    expect(beginDictation(caret(20))).toEqual({ anchor: 20, segments: [] });
+
+    // Stopping drops the transaction. The next recording anchors at the caret and adds to the
+    // field; nothing in the module reaches back into what the stopped one left behind.
+    const next = applySegment({
+      text: pending.text,
+      selection: caret(pending.text.length),
+      state: beginDictation(caret(pending.text.length)),
+      segment: partial("b", 0, "and more"),
+    });
+
+    expect(next.text).toBe("typed half a thoughtand more");
   });
 
-  it("deletes nothing when the user cancels or discards (rule 7)", () => {
+  it("takes text back out of the field only on a restart, never on a cancel (rule 7)", () => {
     const dictated = applySegment({ ...started, segment: partial("a", 0, "hello") });
-
-    // Cancelling drops the transaction state; only beginRestart takes text back out of the field.
     expect(dictated.text).toBe("typed hello");
-    expect(beginDictation(caret(11)).segments).toEqual([]);
+
+    // A restart splices the region out. Cancel and discard drop the transaction instead, and a
+    // transaction that no longer holds the segment cannot remove its words.
+    const restarted = beginRestart({
+      text: dictated.text,
+      selection: dictated.selection,
+      state: dictated.state,
+    });
+    const afterCancel = applySegment({
+      text: dictated.text,
+      selection: caret(dictated.text.length),
+      state: beginDictation(caret(dictated.text.length)),
+      segment: final("a", 0, ""),
+    });
+
+    expect(restarted.text).toBe("typed ");
+    expect(afterCancel.text).toBe("typed hello");
   });
 
-  it("holds every dictated word once the final lands, ready to send (rule 10)", () => {
+  it("replaces a segment's words in place when its final corrects them", () => {
     const pending = applySegment({ ...started, segment: partial("a", 0, "hello wor") });
     const finished = applySegment({ ...pending, segment: final("a", 0, "hello world") });
 

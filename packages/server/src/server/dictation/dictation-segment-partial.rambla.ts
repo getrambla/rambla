@@ -1,27 +1,39 @@
 import type { DictationSegment } from "@getrambla/protocol/dictation-segment.rambla";
-import type { DictationStreamOutboundMessage } from "./dictation-stream-manager.js";
+
+/** What a transcript event reports; `index` is absent when the provider does not number segments. */
+export interface TranscriptEvent {
+  segmentId: string;
+  transcript: string;
+  isFinal: boolean;
+  index?: number;
+}
+
+/** Named here so the manager's union member stays the one line upstream wrote. */
+export interface DictationStreamPartialMessage {
+  type: "dictation_stream_partial";
+  payload: { dictationId: string; text: string; segment?: DictationSegment };
+}
 
 /**
- * Sends the one segment that just reported to a client that asked for segments, and today's
- * glued transcript to everyone else. A capable client glues the text itself, so the glued
- * copy would only resend words it already placed.
+ * The one segment that just reported, for a client that asked for segments; today's glued
+ * transcript for everyone else. A capable client glues the text itself, so the glued copy
+ * would only resend words it already placed.
  */
-export function emitDictationPartial(params: {
-  emit: (message: DictationStreamOutboundMessage) => void;
+export function toPartialMessage(params: {
   dictationId: string;
-  gluedText: string;
-  segment: DictationSegment | null;
-  clientSupportsSegments: boolean;
-}): void {
-  if (params.clientSupportsSegments && params.segment) {
-    params.emit({
-      type: "dictation_stream_partial",
-      payload: { dictationId: params.dictationId, text: "", segment: params.segment },
-    });
-    return;
+  text: string;
+  event: TranscriptEvent | undefined;
+  segments: boolean;
+}): DictationStreamPartialMessage {
+  const { dictationId, text, event, segments } = params;
+  if (segments && event?.index !== undefined) {
+    const segment = {
+      id: event.segmentId,
+      index: event.index,
+      text: event.transcript,
+      isFinal: event.isFinal,
+    };
+    return { type: "dictation_stream_partial", payload: { dictationId, text: "", segment } };
   }
-  params.emit({
-    type: "dictation_stream_partial",
-    payload: { dictationId: params.dictationId, text: params.gluedText },
-  });
+  return { type: "dictation_stream_partial", payload: { dictationId, text } };
 }

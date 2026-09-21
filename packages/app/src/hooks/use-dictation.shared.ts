@@ -1,15 +1,12 @@
 import { i18n } from "@/i18n/i18next";
-import type { DictationSegment } from "@getrambla/protocol/dictation-segment.rambla";
+import type { DictationPartialMeta } from "@getrambla/protocol/dictation-segment.rambla";
 
 export type DictationStatus = "idle" | "recording" | "uploading" | "failed";
 
 export interface UseDictationOptions {
   client: import("@getrambla/client/internal/daemon-client").DaemonClient | null;
   onTranscript: (text: string, meta: { requestId: string }) => void;
-  onPartialTranscript?: (
-    text: string,
-    meta: { requestId: string; segment?: DictationSegment },
-  ) => void;
+  onPartialTranscript?: (text: string, meta: DictationPartialMeta) => void;
   /** Fires before a reconnect or retry re-sends the recording, so the field can clear what it holds. */
   onDictationRestarted?: () => void;
   onError?: (error: Error) => void;
