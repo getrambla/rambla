@@ -2970,7 +2970,7 @@ export const ExpandableBadge = memo(function ExpandableBadge({
             onLabelRowLayout={handleLabelRowLayout}
             onLabelLayout={handleLabelLayout}
             onSecondaryLayout={handleSecondaryLayout}
-            showOpenFileButton={Boolean(onOpenFile && isHovered)}
+            showOpenFileButton={Boolean(onOpenFile && (isHovered || isNative))}
             isOpenFileHovered={isOpenFileHovered}
             onOpenFilePress={handleOpenFilePress}
             onOpenFileHoverIn={handleOpenFileHoverIn}
@@ -3099,6 +3099,14 @@ export const ToolCall = memo(function ToolCall({
         errorText: presentation.errorText,
         icon: presentation.icon,
         showLoadingSkeleton: presentation.isLoadingDetails,
+        filePath:
+          effectiveDetail &&
+          (effectiveDetail.type === "read" ||
+            effectiveDetail.type === "edit" ||
+            effectiveDetail.type === "write")
+            ? presentation.summary
+            : undefined,
+        onOpenFile: handleOpenFile,
       });
     } else {
       setIsExpanded((prev) => !prev);
@@ -3113,6 +3121,7 @@ export const ToolCall = memo(function ToolCall({
     presentation.icon,
     presentation.isLoadingDetails,
     effectiveDetail,
+    handleOpenFile,
   ]);
 
   useEffect(() => {
