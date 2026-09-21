@@ -87,6 +87,37 @@ describe("useDictationField", () => {
     expect(result.current.resolveFinal("hello there", "draft ")).toEqual({
       text: "hello there",
       value: "draft ",
+      selection: { start: 6, end: 6 },
+    });
+  });
+
+  it("hands the final the field's selection when no segment arrived and the caret moved", () => {
+    const field = createField("hello world");
+    const result = renderField(field);
+
+    act(() => {
+      result.current.beginDictation();
+      field.caretTo(5);
+    });
+
+    expect(result.current.resolveFinal("DICT", "hello world")).toEqual({
+      text: "DICT",
+      value: "hello world",
+      selection: { start: 5, end: 5 },
+    });
+  });
+
+  it("withholds the selection when the field text no longer matches the base value", () => {
+    const field = createField("draft ");
+    const result = renderField(field);
+
+    act(() => {
+      result.current.beginDictation();
+    });
+
+    expect(result.current.resolveFinal("hello there", "stale value")).toEqual({
+      text: "hello there",
+      value: "stale value",
     });
   });
 
@@ -196,6 +227,7 @@ describe("useDictationField", () => {
     expect(result.current.resolveFinal("one two", "draft ")).toEqual({
       text: "one two",
       value: "draft ",
+      selection: { start: 6, end: 6 },
     });
   });
 });

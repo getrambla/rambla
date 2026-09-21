@@ -40,7 +40,15 @@ export interface UseDictationFieldResult {
   ) => void;
   onUserEdit: (previousText: string, nextText: string) => void;
   /** The text and base the final's append path should use, once the words are in the field. */
-  resolveFinal: (text: string, value: string) => { text: string; value: string };
+  resolveFinal: (
+    text: string,
+    value: string,
+  ) => {
+    text: string;
+    value: string;
+    /** The field's live selection, when it indexes `value` and the caller may insert at the caret. */
+    selection?: DictationSelection;
+  };
   /** Where the recording went. `idle` drops the transaction; `failed` keeps it for the retry. */
   onDictationStatus: (status: DictationStatus) => void;
   /** Whether the send press was taken by the recording; false leaves it to the composer. */
@@ -108,7 +116,13 @@ export function useDictationField(options: UseDictationFieldOptions): UseDictati
         stateRef.current = applyUserEdit({ previousText, nextText, state });
       },
       resolveFinal: (text, value) => {
-        if (!sawSegmentRef.current) return { text, value };
+        if (!sawSegmentRef.current) {
+          const snapshot = optionsRef.current.getSnapshot();
+          // The caret may only place the words when it indexes the base value; drifted
+          // text (web DOM ahead of the published value) falls back to the append.
+          const selection = snapshot.text === value ? snapshot.selection : undefined;
+          return selection ? { text, value, selection } : { text, value };
+        }
         // The last partial's write has no successor to repair it, so re-issue it if the
         // field still shows what it held before.
         const dropped = lastWriteRef.current;

@@ -87,6 +87,7 @@ import {
   stopRealtimeVoice,
 } from "./state";
 import { DictationRecordingControls } from "./dictation-recording-controls.rambla";
+import { insertDictationAtSelection } from "./dictation-insert.rambla";
 import { useDictationField } from "./use-dictation-field.rambla";
 
 const DEFAULT_SEND_KEYS: ShortcutKey[][] = [["Enter"]];
@@ -1337,6 +1338,29 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         const autoSend = sendAfterTranscriptRef.current;
         sendAfterTranscriptRef.current = false;
         const final = dictationFieldRef.current.resolveFinal(text, valueRef.current);
+        if (final.selection) {
+          // Old no-segment path with a usable caret: splice the words in at the caret
+          // and reuse the append path's send logic over the spliced value.
+          const inserted = insertDictationAtSelection(final.text, final.value, {
+            selection: final.selection,
+          });
+          applyDictationTranscript(inserted.value, {
+            value: "",
+            defaultSendBehavior,
+            isAgentRunning,
+            onQueue,
+            onSubmit,
+            replaceText: (next) =>
+              replaceText(
+                next,
+                next === "" ? undefined : { start: inserted.caret, end: inserted.caret },
+              ),
+            attachments,
+            cwd,
+            autoSend,
+          });
+          return;
+        }
         applyDictationTranscript(final.text, {
           value: final.value,
           defaultSendBehavior,
