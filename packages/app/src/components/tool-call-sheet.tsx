@@ -24,6 +24,8 @@ export interface ToolCallSheetData {
   errorText?: string;
   icon: ToolCallIconComponent;
   showLoadingSkeleton?: boolean;
+  filePath?: string;
+  onOpenFile?: () => void;
 }
 
 interface ToolCallSheetContextValue {
@@ -163,6 +165,8 @@ function ToolCallSheetContent({ data, onClose }: ToolCallSheetContentProps) {
     errorText,
     icon: IconComponent,
     showLoadingSkeleton,
+    filePath,
+    onOpenFile,
   } = data;
 
   return (
@@ -185,6 +189,25 @@ function ToolCallSheetContent({ data, onClose }: ToolCallSheetContentProps) {
           <ThemedCloseIcon size={20} />
         </Pressable>
       </View>
+
+      {filePath && onOpenFile ? (
+        <Pressable
+          onPress={onOpenFile}
+          style={styles.filePathRow}
+          accessibilityRole="link"
+          accessibilityLabel={t("message.actions.openFile")}
+          testID="tool-call-sheet-file-path"
+        >
+          <Text style={styles.filePathLink}>{filePath}</Text>
+        </Pressable>
+      ) : null}
+      {filePath && !onOpenFile ? (
+        <View style={styles.filePathRow}>
+          <Text style={styles.filePathLink} testID="tool-call-sheet-file-path">
+            {filePath}
+          </Text>
+        </View>
+      ) : null}
 
       {/* Content */}
       <BottomSheetScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
@@ -230,6 +253,16 @@ const styles = StyleSheet.create((theme) => ({
   },
   closeButton: {
     padding: theme.spacing[2],
+  },
+  filePathRow: {
+    paddingHorizontal: theme.spacing[4],
+    paddingVertical: theme.spacing[2],
+  },
+  filePathLink: {
+    fontFamily: theme.fontFamily.mono,
+    fontSize: theme.fontSize.code,
+    color: theme.colors.accentBright,
+    overflowWrap: "anywhere",
   },
   content: {
     flex: 1,
