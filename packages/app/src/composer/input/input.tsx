@@ -1868,6 +1868,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
             onAcceptAndSend={handleAcceptAndSendRecording}
             onRetry={handleRetryFailedRecording}
             onDiscard={handleDiscardFailedRecording}
+            errorText={dictationStatus === "failed" ? (dictationError ?? undefined) : undefined}
           />
 
           {/* Button row */}
