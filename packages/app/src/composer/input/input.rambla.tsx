@@ -1,6 +1,7 @@
 // Forked 2026-09-21 from getpaseo/paseo packages/app/src/composer/input/input.tsx
-// at upstream 77c5c8f17e1f (getpaseo/paseo main, synced via origin/upstream-rebrand@18198cf8f).
-// Port ritual: PATCHES.md #23.
+//   at upstream 77c5c8f17e1f (getpaseo/paseo main, at our last upstream sync).
+//   rebrand baseline: origin/upstream-rebrand 18198cf8f.
+// Port ritual: PATCHES.md #23 — review upstream diffs before accepting; selective porting is expected.
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   View,
