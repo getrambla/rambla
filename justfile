@@ -1,6 +1,16 @@
 unit := home_dir() / ".config/systemd/user/rambla.service"
 desktop := home_dir() / ".local/share/applications/rambla.desktop"
 
+# Stable install root: `just install-*` builds into this tree, so the daemon
+# service and desktop app survive `just clean` and repo work. Dev builds never
+# write here, and stable builds never read this checkout's dist/.
+stable_dir := home_dir() / ".local" / "rambla"
+# Dedicated clone the stable daemon is built+run from (same shape as
+# deploy/remote-deploy.sh): the stable build compiles from git, never from
+# this checkout's build state. A real clone, not a git worktree — a worktree
+# would share the dev tree's object store and reintroduce dev/stable coupling.
+stable_repo := stable_dir / "repo"
+
 # List recipes.
 @list:
     just --list
@@ -209,26 +219,91 @@ restart:
 status:
     systemctl --user status rambla
 
-install: install-app install-daemon
+# Reinstall the stable daemon and desktop app under stable_dir.
+install: install-daemon install-app
 
+# Build the daemon from the dedicated stable clone and reinstall+restart the
+# systemd user unit running from there. The stable daemon never reads this
+# checkout's dist/ — it is built from git, same shape as deploy/remote-deploy.sh.
+# ref: "" (default) installs the dev checkout's current branch tip (must be
+#      pushed — the clone fetches from origin); a SHA/branch/tag installs
+#      exactly that ref, e.g. `just install-daemon main` or `just install-daemon "" info immediate`.
+# mode: "soft" (default) waits for running agent turns to finish before
+#       restarting (popups are auto-denied); "immediate" restarts right away.
+# fresh: pass fresh=true to wipe node_modules and npm ci from scratch (slow;
+#       escape hatch if the incremental install ever drifts).
+# The daemon's data directory (~/.rambla) is untouched — no migration.
 [script]
-install-daemon: && install-service
-    eval "$(mise env -s bash)"
-    npm install
+install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-service
+    set -euo pipefail
+    command -v mise >/dev/null 2>&1 || { echo "missing mise" >&2; exit 1; }
+
+    if [ "{{mode}}" != "soft" ] && [ "{{mode}}" != "immediate" ]; then
+        echo "unknown mode '{{mode}}' (use soft or immediate)" >&2
+        exit 1
+    fi
+
+    # Dedicated build clone (clone into a sibling, rename only on success, so
+    # stable_repo is never a half-finished checkout). origin is the dev repo
+    # itself, so unpushed local commits are installable; uncommitted work is not.
+    mkdir -p "{{stable_dir}}"
+    if [ ! -d "{{stable_repo}}" ]; then
+        rm -rf "{{stable_repo}}.incoming"
+        git clone --no-hardlinks "$(git rev-parse --show-toplevel)" "{{stable_repo}}.incoming"
+        mv "{{stable_repo}}.incoming" "{{stable_repo}}"
+    fi
+
+    # mise env from the dev checkout: running mise inside the clone would try
+    # to install the repo's rust/java/android toolchain pins.
+    eval "$(mise env -C "{{justfile_dir()}}" -s bash)"
+
+    # Build BEFORE touching the unit, so a failed build aborts here instead of
+    # restarting the daemon on stale code. Empty ref = the dev checkout's
+    # current branch tip (must be pushed); otherwise install exactly that
+    # SHA/branch/tag. FETCH_HEAD keeps one code path for all cases.
+    ref='{{ref}}'
+    if [ -z "$ref" ]; then
+        ref="$(git -C "{{justfile_dir()}}" rev-parse --abbrev-ref HEAD)"
+    fi
+    cd "{{stable_repo}}"
+    git fetch origin "$ref"
+    git checkout --quiet --force FETCH_HEAD
+    if [ "{{fresh}}" = "true" ] || [ ! -d node_modules ]; then
+        npm ci
+    else
+        # Incremental: with warm node_modules this only installs the delta.
+        npm install
+    fi
     npm run build:server
 
-[script]
-install-service: systemctl-reload && restart
+    if [ "{{mode}}" = "soft" ]; then
+        # The worker drains gracefully on SIGTERM (finishes running agent
+        # turns, auto-denying popups) — give it room before systemd SIGKILLs.
+        TIMEOUT_STOP_SEC=2400
+    else
+        TIMEOUT_STOP_SEC=90
+    fi
+
+    # The daemon runs from the clone it was built in (like remote-deploy.sh);
+    # the packages keep their installed node_modules alongside dist/.
+    # Render to a temp file then rename, so a failed render never leaves a
+    # truncated unit.
     mkdir -p "$(dirname "{{unit}}")"
-    echo "installing unit to: {{unit}}"
-    cat > {{unit}} <<EOF
+    tmp_unit="$(mktemp "{{unit}}.XXXXXX")"
+
+    # The user manager starts this unit before the session PATH is imported,
+    # so bake this shell's PATH (with mise's node) into the unit.
+    cat > "$tmp_unit" <<EOF
     [Unit]
     Description=Rambla daemon
 
     [Service]
     Type=simple
-    WorkingDirectory={{justfile_dir()}}
-    ExecStart={{justfile_dir()}}/packages/cli/bin/rambla daemon run
+    WorkingDirectory={{stable_repo}}/packages/server
+    Environment="RAMBLA_LOG_LEVEL={{log_level}}"
+    Environment="PATH=$HOME/.local/bin:$PATH"
+    TimeoutStopSec=$TIMEOUT_STOP_SEC
+    ExecStart={{stable_repo}}/packages/cli/bin/rambla daemon run --foreground
     Restart=always
     RestartSec=5
 
@@ -236,48 +311,66 @@ install-service: systemctl-reload && restart
     WantedBy=graphical-session.target
     EOF
 
+    # Disable (reads the OLD unit's [Install]) before the mv, or the old
+    # symlink is orphaned.
+    systemctl --user disable rambla >/dev/null 2>&1 || true
+    mv "$tmp_unit" "{{unit}}"
 
-# # Incremental - Broken - Install dependencies, build, install rambla service unit.
-# [script]
-# install:
-#     set -euo pipefail
-#     if ! command -v mise >/dev/null 2>&1; then
-#         echo "error: 'mise' is required (it pins the Node version this repo builds with)."
-#         echo "  install: https://mise.jdx.dev/installing-mise.html  (then: mise install)"
-#         exit 1
-#     fi
-#     eval "$(mise env -s bash)"
+    echo "installed daemon to {{stable_dir}}/daemon"
 
-#     npm install
-#     ./tsconfig/build.sh
+# Reload systemd and enable+restart the unit (kept as its own recipe because
+# install-daemon's script attribute would otherwise eat the dependencies).
+install-service: systemctl-reload && restart
 
-#     if [ "$have_systemd" != "yes" ]; then
-#         echo "[install] done (build only — no service installed on this platform)"
-#         exit 0
-#     fi
-
-#     systemctl --user restart rambla
-#     sleep 2
-#     if systemctl --user is-active --quiet rambla; then
-#         echo "[install] rambla.service installed and running."
-#         echo "  logs:      just log"
-#         echo "  rebuild:   just restart"
-#     else
-#         echo "error: rambla.service did not come up. Check:" >&2
-#         echo "  journalctl --user -u rambla -n 50 --no-pager" >&2
-#         exit 1
-#     fi
-
-# Build the desktop app.
+# Build the desktop app from the stable clone directly into stable_dir/app —
+# electron-builder --dir with its output directory redirected via config
+# override, so the dev tree's release/ folder is never involved.
+# ref/fresh: same meaning as install-daemon.
 [script]
-install-app: && install-desktop
+install-app ref="" fresh="false": && install-desktop
     set -euo pipefail
-    eval "$(mise env -s bash)"
-    # npm ci
-    # SKIP linux packages with -- --dir
-    npm run build:desktop -- --dir
+    command -v mise >/dev/null 2>&1 || { echo "missing mise" >&2; exit 1; }
 
-# Write the desktop launcher (XDG .desktop entry).
+    # Same dedicated clone as install-daemon; created here too so install-app
+    # works standalone.
+    mkdir -p "{{stable_dir}}"
+    if [ ! -d "{{stable_repo}}" ]; then
+        rm -rf "{{stable_repo}}.incoming"
+        git clone --no-hardlinks "$(git rev-parse --show-toplevel)" "{{stable_repo}}.incoming"
+        mv "{{stable_repo}}.incoming" "{{stable_repo}}"
+    fi
+
+    eval "$(mise env -C "{{justfile_dir()}}" -s bash)"
+
+    ref='{{ref}}'
+    if [ -z "$ref" ]; then
+        ref="$(git -C "{{justfile_dir()}}" rev-parse --abbrev-ref HEAD)"
+    fi
+    cd "{{stable_repo}}"
+    git fetch origin "$ref"
+    git checkout --quiet --force FETCH_HEAD
+    if [ "{{fresh}}" = "true" ] || [ ! -d node_modules ]; then
+        npm ci
+    else
+        # Incremental: with warm node_modules this only installs the delta.
+        npm install
+    fi
+
+    # desktop's own build script compiles its workspace deps first, then
+    # electron-builder packs. --dir skips installers; -c directories.output
+    # redirects output straight into stable_dir — no dev-tree release/.
+    npm run build:desktop -- --dir -c directories.output="{{stable_dir}}/app-build"
+
+    # --dir output lands in <output>/linux-unpacked; flatten to stable_dir/app
+    # with a swap so the launcher target is never half-replaced.
+    rm -rf "{{stable_dir}}/app.old"
+    [ -d "{{stable_dir}}/app" ] && mv "{{stable_dir}}/app" "{{stable_dir}}/app.old"
+    mv "{{stable_dir}}/app-build/linux-unpacked" "{{stable_dir}}/app"
+    rm -rf "{{stable_dir}}/app-build" "{{stable_dir}}/app.old"
+
+    echo "installed desktop app to {{stable_dir}}/app"
+
+# Write the XDG desktop entry pointing into stable_dir/app.
 [script]
 install-desktop:
     set -euo pipefail
@@ -286,8 +379,8 @@ install-desktop:
     [Desktop Entry]
     Type=Application
     Name=Rambla
-    Exec={{justfile_dir()}}/packages/desktop/release/linux-unpacked/Rambla
-    Icon={{justfile_dir()}}/packages/desktop/assets/icon.png
+    Exec={{stable_dir}}/app/Rambla
+    Icon={{stable_repo}}/packages/desktop/assets/icon.png
     Categories=Development;
     Terminal=false
     EOF
