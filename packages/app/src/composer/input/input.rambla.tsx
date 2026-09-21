@@ -1421,7 +1421,8 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       dictationStatus,
     );
     const showRealtimeOverlay = isRealtimeVoiceForCurrentAgent;
-    // Recording controls sit inline beside the field now, so only realtime voice covers it.
+    // The recording strip renders in flow between the text surface and the button row,
+    // so only realtime voice covers the input.
     const showOverlay = showRealtimeOverlay;
     const surfacePresentation = resolveComposerSurfacePresentation(showOverlay);
 
