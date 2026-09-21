@@ -82,8 +82,6 @@ import {
   runMessageInputKeyboardAction,
   stopRealtimeVoice,
 } from "./state";
-import { DictationRecordingControls } from "./dictation-recording-controls.rambla";
-import { useDictationField } from "./use-dictation-field.rambla";
 
 const DEFAULT_SEND_KEYS: ShortcutKey[][] = [["Enter"]];
 const COMPOSER_INPUT_DATASET = { composerInput: "" } as const;
@@ -549,7 +547,6 @@ function MessageInputOverlay({
   isDictationProcessing,
   dictationStatus,
   dictationError,
-  canRetryFailedDictation,
   onCancelRecording,
   onAcceptRecording,
   onAcceptAndSendRecording,
@@ -573,7 +570,6 @@ function MessageInputOverlay({
   isDictationProcessing: boolean;
   dictationStatus: React.ComponentProps<typeof DictationOverlay>["status"];
   dictationError: string | null;
-  canRetryFailedDictation: boolean;
   onCancelRecording: () => Promise<void>;
   onAcceptRecording: () => Promise<void>;
   onAcceptAndSendRecording: () => Promise<void>;
@@ -593,11 +589,7 @@ function MessageInputOverlay({
         onCancel={onCancelRecording}
         onAccept={onAcceptRecording}
         onAcceptAndSend={onAcceptAndSendRecording}
-        onRetry={
-          dictationStatus === "failed" && canRetryFailedDictation
-            ? onRetryFailedRecording
-            : undefined
-        }
+        onRetry={dictationStatus === "failed" ? onRetryFailedRecording : undefined}
         onDiscard={dictationStatus === "failed" ? onDiscardFailedRecording : undefined}
       />
     );
@@ -1258,17 +1250,6 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       [onChangeText, updateComposerHeightForText, updateLiveTextPresence],
     );
 
-    const dictationField = useDictationField({
-      getSnapshot: () =>
-        getComposerInputSnapshot(textInputRef.current, valueRef.current, selectionRef.current),
-      writeText: replaceText,
-      isDictating: () => isDictating,
-      acceptAndSend: () => void handleAcceptAndSendRecording(),
-      startDictation: () => startDictation(),
-    });
-    // Reached through a ref so upstream's callback dependency arrays stay untouched.
-    const dictationFieldRef = useRef(dictationField);
-
     useImperativeHandle(ref, () => ({
       focus: () => {
         textInputRef.current?.focus();
@@ -1332,9 +1313,8 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       (text: string, _meta: { requestId: string }) => {
         const autoSend = sendAfterTranscriptRef.current;
         sendAfterTranscriptRef.current = false;
-        const final = dictationFieldRef.current.resolveFinal(text, valueRef.current);
-        applyDictationTranscript(final.text, {
-          value: final.value,
+        applyDictationTranscript(text, {
+          value: valueRef.current,
           defaultSendBehavior,
           isAgentRunning,
           onQueue,
@@ -1389,7 +1369,6 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       duration: dictationDuration,
       error: dictationError,
       status: dictationStatus,
-      canRetryFailedDictation,
       startDictation,
       cancelDictation,
       confirmDictation,
@@ -1398,8 +1377,6 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     } = useDictation({
       client,
       onTranscript: handleDictationTranscript,
-      onPartialTranscript: dictationField.onPartialTranscript,
-      onDictationRestarted: dictationField.beginRestart,
       onError: handleDictationError,
       canStart: canStartDictation,
       canConfirm: canConfirmDictation,
@@ -1417,12 +1394,10 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       dictationStatus,
     );
     const showRealtimeOverlay = isRealtimeVoiceForCurrentAgent;
-    // Recording controls sit inline beside the field now, so only realtime voice covers it.
-    const showOverlay = showRealtimeOverlay;
+    const showOverlay = showDictationOverlay || showRealtimeOverlay;
     const surfacePresentation = resolveComposerSurfacePresentation(showOverlay);
 
     useEffect(() => {
-      dictationFieldRef.current.onDictationStatus(dictationStatus);
       if (isDictating || isDictationProcessing) {
         return;
       }
@@ -1435,9 +1410,9 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
           dictationUnavailableMessage,
           canStartDictation,
           toast,
-          startDictation: dictationFieldRef.current.startDictation,
+          startDictation,
         }),
-      [canStartDictation, dictationUnavailableMessage, toast],
+      [canStartDictation, dictationUnavailableMessage, startDictation, toast],
     );
 
     const handleVoicePress = useCallback(
@@ -1568,7 +1543,6 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     );
 
     const handleDefaultSendAction = useCallback(() => {
-      if (dictationFieldRef.current.takeSendPress()) return;
       runDefaultSendAction({
         defaultSendBehavior,
         isAgentRunning,
@@ -1579,7 +1553,6 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     }, [defaultSendBehavior, isAgentRunning, onQueue, handleQueueMessage, handleSendMessage]);
 
     const handleAlternateSendAction = useCallback(() => {
-      if (dictationFieldRef.current.takeSendPress()) return;
       runAlternateSendAction({
         defaultSendBehavior,
         isAgentRunning,
@@ -1695,7 +1668,6 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
 
     const handleInputChange = useCallback(
       (nextValue: string) => {
-        dictationFieldRef.current.onUserEdit(valueRef.current, nextValue);
         updateComposerHeightForText?.(valueRef.current, nextValue);
         valueRef.current = nextValue;
         updateLiveTextPresence(nextValue);
@@ -1839,7 +1811,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
               onChangeText={handleInputChange}
               onFocus={handleInputFocus}
               onBlur={handleInputBlur}
-              editable={!isRealtimeVoiceForCurrentAgent && !disabled}
+              editable={!isDictating && !isRealtimeVoiceForCurrentAgent && !disabled}
               scrollEnabled={isComposerScrollEnabled}
               autoFocus={false}
               onKeyPress={shouldHandleWebKeyPress ? handleDesktopKeyPress : undefined}
@@ -1853,23 +1825,6 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
               })}
             />
           </RenderProfile>
-
-          <DictationRecordingControls
-            show={showDictationOverlay}
-            volume={dictationVolume}
-            duration={dictationDuration}
-            isRecording={isDictating}
-            isProcessing={isDictationProcessing}
-            status={dictationStatus}
-            canRetry={canRetryFailedDictation}
-            onStart={startDictationIfAvailable}
-            onCancel={handleCancelRecording}
-            onAccept={handleAcceptRecording}
-            onAcceptAndSend={handleAcceptAndSendRecording}
-            onRetry={handleRetryFailedRecording}
-            onDiscard={handleDiscardFailedRecording}
-            errorText={dictationStatus === "failed" ? (dictationError ?? undefined) : undefined}
-          />
 
           {/* Button row */}
           <View style={styles.buttonRow}>
@@ -1930,7 +1885,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
           pointerEvents={surfacePresentation.overlay.pointerEvents}
         >
           <MessageInputOverlay
-            showDictationOverlay={false}
+            showDictationOverlay={showDictationOverlay}
             showRealtimeOverlay={showRealtimeOverlay}
             voice={voice}
             dictationVolume={dictationVolume}
@@ -1939,7 +1894,6 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
             isDictationProcessing={isDictationProcessing}
             dictationStatus={dictationStatus}
             dictationError={dictationError}
-            canRetryFailedDictation={canRetryFailedDictation}
             onCancelRecording={handleCancelRecording}
             onAcceptRecording={handleAcceptRecording}
             onAcceptAndSendRecording={handleAcceptAndSendRecording}
