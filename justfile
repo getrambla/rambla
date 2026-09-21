@@ -293,6 +293,10 @@ install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-ser
 
     # The user manager starts this unit before the session PATH is imported,
     # so bake this shell's PATH (with mise's node) into the unit.
+    # NEVER pass --foreground (or any other removed launch flag) on ExecStart:
+    # the CLI hard-errors on removed flags (REMOVED_LAUNCH_FLAGS in
+    # packages/cli/src/commands/daemon/local-daemon.ts) and the daemon never
+    # starts. `daemon run` is already foreground — do not "make it explicit".
     cat > "$tmp_unit" <<EOF
     [Unit]
     Description=Rambla daemon
@@ -304,10 +308,6 @@ install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-ser
     Environment="PATH=$HOME/.local/bin:$PATH"
     TimeoutStopSec=$TIMEOUT_STOP_SEC
     ExecStart={{stable_repo}}/packages/cli/bin/rambla daemon run
-    # NEVER add --foreground (or any other removed launch flag) here: the CLI
-    # hard-errors on removed flags (REMOVED_LAUNCH_FLAGS in
-    # packages/cli/src/commands/daemon/local-daemon.ts) and systemd gives up.
-    # `daemon run` is already foreground — do not "make it explicit".
     Restart=always
     RestartSec=5
 
