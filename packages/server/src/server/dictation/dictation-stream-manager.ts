@@ -1,11 +1,11 @@
 import type pino from "pino";
 import { v4 as uuidv4 } from "uuid";
+import { isRamblaDictationDebugEnabled } from "../agent/recordings-debug.js";
 import {
   createDictationDebugChunkWriter,
   maybePersistDictationDebugAudio,
   type DictationDebugChunkWriter,
 } from "../agent/dictation-debug.js";
-import { isRamblaDictationDebugEnabled } from "../agent/recordings-debug.js";
 import { Pcm16MonoResampler } from "../agent/pcm16-resampler.js";
 import type {
   SpeechToTextProvider,
@@ -13,6 +13,8 @@ import type {
 } from "../speech/speech-provider.js";
 import { toResolver, type Resolvable } from "../speech/provider-resolver.js";
 import { parsePcmRateFromFormat, pcm16lePeakAbs } from "../speech/audio.js";
+
+// RAMBLA-FORK: feature: live dictation — adaptive commit windows, discard logging, shared VAD owner (PATCHES.md #10–28).
 import {
   toPartialMessage,
   type DictationStreamPartialMessage,

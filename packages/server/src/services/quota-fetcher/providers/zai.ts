@@ -92,6 +92,7 @@ interface ZaiQuotaProviderOptions {
 }
 
 export class ZaiQuotaProvider implements ProviderUsageFetcher {
+  // RAMBLA-FORK: feature: real Z.ai 5-hour/weekly quota windows (see PATCHES.md #4).
   readonly providerId = "glm-acp-agent";
   readonly displayName = "Z.ai";
 

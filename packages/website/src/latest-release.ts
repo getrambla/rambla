@@ -123,7 +123,7 @@ export function selectReleaseChannels(releases: GitHubRelease[]): ReleaseChannel
     .filter((release) => !release.prerelease)
     .map(toReleaseInfo)
     .find((release) => release !== null);
-  // Fork patch (revert once a Rambla release exists): placeholder instead of a 500.
+  // RAMBLA-FORK: release: no published package yet; placeholder instead of a 500. Drop when we ship a release.
   if (!stable)
     return {
       stable: {

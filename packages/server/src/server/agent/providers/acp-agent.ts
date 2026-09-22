@@ -3086,6 +3086,7 @@ export class ACPAgentSession implements AgentSession, ACPClient {
     }
   }
 
+  // RAMBLA-FORK: feature: forward ACP usage_update to the UI; upstream discards it (see PATCHES.md #3).
   private handleUsageUpdate(update: UsageUpdate): void {
     const usage: AgentUsage = {
       contextWindowUsedTokens: update.used,

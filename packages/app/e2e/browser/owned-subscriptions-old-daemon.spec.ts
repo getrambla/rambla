@@ -18,6 +18,7 @@ import {
   scrollThroughOlderHistoryPages,
 } from "../support/helpers/timeline-pagination";
 
+// RAMBLA-FORK: skip-test: no @getrambla/server on npm. Restore when we ship a release.
 test.skip("does not repeat an assistant block when the current app paginates a published 0.2.5 daemon", async ({
   page,
 }) => {

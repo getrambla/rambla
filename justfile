@@ -95,6 +95,11 @@ ci branch="main" *args="":
     sha="$(git rev-parse "{{branch}}")"
     echo "Branch {{branch}} — commit ${sha:0:9} — $(git log -1 --pretty=%s "$sha")"
 
+    if [[ " {{args}} " == *" --watch "* ]]; then
+        gh run list -R getrambla/rambla --commit "$sha" --limit 20 --json databaseId,status --jq '.[] | select(.status != "completed") | .databaseId' | while read -r run; do gh run watch "$run" -R getrambla/rambla --compact --exit-status --interval 3; done
+        watched=1
+    fi
+
     runs="$(gh run list -R getrambla/rambla --commit "$sha" --limit 20 --json databaseId --jq '.[].databaseId')"
     if [ -z "$runs" ]; then
         echo "${YEL}No workflow runs for this commit yet.${OFF}"
@@ -164,15 +169,17 @@ ci branch="main" *args="":
 
     if [ "$failed" -gt 0 ]; then
         echo
-        echo "Error lines:"
-        for job in $failed_jobs; do
-            # gh refuses logs containing terminal escapes; strip colour codes before grep.
-            gh api "repos/getrambla/rambla/actions/jobs/$job/logs" \
-                --allow-escape-sequences 2>/dev/null \
-                | sed 's/\x1b\[[0-9;]*m//g; s/^[0-9T:.Z-]*Z //' \
-                | grep -E 'FAIL |AssertionError|Expected:|Received:|error TS|npm error code|fatal:|^ *[0-9]+\) \[|^ *Error: ' \
-                | sort -u | head -15 || true
-        done
+        [ -z "${watched:-}" ] && {
+            echo "Error lines:"
+            for job in $failed_jobs; do
+                # gh refuses logs containing terminal escapes; strip colour codes before grep.
+                gh api "repos/getrambla/rambla/actions/jobs/$job/logs" \
+                    --allow-escape-sequences 2>/dev/null \
+                    | sed 's/\x1b\[[0-9;]*m//g; s/^[0-9T:.Z-]*Z //' \
+                    | grep -E 'FAIL |AssertionError|Expected:|Received:|error TS|npm error code|fatal:|^ *[0-9]+\) \[|^ *Error: ' \
+                    | sort -u | head -15 || true
+            done
+        }
         exit 1
     fi
 

@@ -54,6 +54,8 @@ for (const version of ["0.2.5", "0.7.2", "0.8.0"]) {
     },
   });
   test.describe(`published daemon ${version}`, () => {
+    // RAMBLA-FORK: skip-test: @getrambla/server not on npm. Restore when we ship a release.
+    test.skip(true, "no published @getrambla/server on npm");
     test.beforeAll(async () => {
       test.setTimeout(120_000);
       daemon = await startIsolatedHostDaemon(`srv_creation_${randomUUID()}`, {

@@ -1,3 +1,5 @@
+// RAMBLA-FORK: feature: live dictation — web capture reworked as the shared dictation/voice engine (PATCHES.md #10–28).
+
 /**
  * Microphone capture for the web, running its per-sample work on the audio
  * thread. Dictation and voice chat share it: `segmentFrames` is a number rather

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 
 import { DictationStreamSender } from "@/dictation/dictation-stream-sender";
 import { useDictationAudioSource } from "@/hooks/use-dictation-audio-source";
@@ -16,6 +15,9 @@ import {
   type UseDictationResult,
 } from "./use-dictation.shared";
 
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
+
+// RAMBLA-FORK: feature: live dictation — loss-proof streaming, loud discard logging, keep-awake (PATCHES.md #10–28).
 export function useDictation(options: UseDictationOptions): UseDictationResult {
   const { t } = useTranslation();
   const {

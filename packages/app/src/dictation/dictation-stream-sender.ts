@@ -2,6 +2,7 @@ import { generateMessageId } from "@/types/stream";
 import type { SessionOutboundMessage } from "@getrambla/protocol/messages";
 import { i18n } from "@/i18n/i18next";
 
+// RAMBLA-FORK: feature: live dictation — dropped-transcript recovery, finish ack, restart resend (PATCHES.md #22).
 const MAX_CHUNKS_PER_FLUSH_TURN = 128;
 const DICTATION_DRAIN_IDLE_TIMEOUT_MS = 30_000;
 
