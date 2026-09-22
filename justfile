@@ -366,7 +366,7 @@ install-app ref="" fresh="false": && install-desktop
     # desktop's own build script compiles its workspace deps first, then
     # electron-builder packs. --dir skips installers; -c directories.output
     # redirects output straight into stable_dir — no dev-tree release/.
-    npm run build:desktop -- --dir -c directories.output="{{stable_dir}}/app-build"
+    npm run build:desktop -- --dir -c.directories.output="{{stable_dir}}/app-build"
 
     # --dir output lands in <output>/linux-unpacked; flatten to stable_dir/app
     # with a swap so the launcher target is never half-replaced.
