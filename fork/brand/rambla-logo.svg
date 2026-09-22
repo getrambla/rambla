@@ -5,7 +5,10 @@
        The body is the bowl of the R and the tail is its leg. The folded wing is
        three identical feathers cut out of the body; they are one shape repeated,
        so keep them congruent if you move them. See
-       research/logo/rambla-logo-history.md for the derivation. -->
+       research/logo/rambla-logo-history.md for the derivation.
+       Stem and leg weight: version 2. Earlier and heavier variants are kept
+       beside this file's history as design/logo/rambla-logo-v1.svg (the
+       original thinner stem and leg) and design/logo/rambla-logo-v3.svg. -->
   <mask id="rambla-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="700">
     <rect width="700" height="700" fill="#fff"/>
     <circle cx="256" cy="204" r="13" fill="#000"/>
@@ -27,7 +30,7 @@
          small. -->
     <path d="M198 600 L198 268
              C198 202 240 166 300 166
-             L320 180 L306 434 L262 434 L262 600 Z"/>
+             L320 180 L306 434 L274 434 L274 600 Z"/>
     <!-- beak -->
     <path d="M204 206 L136 220 L206 248 Z"/>
     <!-- body: the bowl of the R -->
@@ -35,6 +38,6 @@
              C512 390 430 436 300 436 Z"/>
     <!-- tail: the leg of the R -->
     <path d="M320 402 C412 434 508 500 574 578
-             L530 616 C456 538 376 486 294 456 Z"/>
+             L522 622 C448 545 368 493 286 462 Z"/>
   </g>
 </svg>
