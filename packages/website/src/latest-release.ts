@@ -123,7 +123,17 @@ export function selectReleaseChannels(releases: GitHubRelease[]): ReleaseChannel
     .filter((release) => !release.prerelease)
     .map(toReleaseInfo)
     .find((release) => release !== null);
-  if (!stable) throw new Error("no ready GitHub release found");
+  // Fork patch (revert once a Rambla release exists): placeholder instead of a 500.
+  if (!stable)
+    return {
+      stable: {
+        version: "",
+        linuxAppImageAsset: "",
+        windowsX64Asset: null,
+        windowsArm64Asset: null,
+      },
+      beta: null,
+    };
 
   const beta = releases
     .filter((release) => release.prerelease)
