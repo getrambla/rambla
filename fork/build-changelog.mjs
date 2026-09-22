@@ -199,7 +199,7 @@ export function syncChangelog(argv = process.argv.slice(2), deps = {}) {
   if (check) {
     if (existing !== generated) {
       throw new Error(
-        `${OUTPUT_FILE} is out of date with ${FORK_FILE} and ${UPSTREAM_FILE}. Run "npm run changelog".`,
+        `${OUTPUT_FILE} is out of date with ${FORK_FILE} and ${UPSTREAM_FILE}; regenerate it.`,
       );
     }
     console.log(`${OUTPUT_FILE} is up to date.`);

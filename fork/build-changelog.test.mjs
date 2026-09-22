@@ -117,6 +117,6 @@ test("the committed CHANGELOG.md matches its two sources", () => {
   assert.equal(
     readFileSync(path.join(rootDir, "CHANGELOG.md"), "utf8"),
     generated,
-    'CHANGELOG.md is out of date. Run "npm run changelog".',
+    "CHANGELOG.md is out of date with its two sources; regenerate it.",
   );
 });
