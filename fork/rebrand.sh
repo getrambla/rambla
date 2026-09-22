@@ -8,13 +8,15 @@
 
 set -euo pipefail
 
-# *.paseo.test.ts keeps its upstream name, and so does every mention of it.
+# *.paseo.ts and *.paseo.test.ts keeps their upstream names, and so does every mention of them.
 sub() {
-	sed -e 's/\.paseo\.test\./@@SKIP-REBRAND@@/g' \
+	sed -e 's/\.paseo\.test\./@@SKIP-PASEO-TEST@@/g' \
+		-e 's/\.paseo\.ts\./@@SKIP-PASEO-TS@@/g' \
 		-e 's/PASEO/RAMBLA/g' \
 		-e 's/Paseo/Rambla/g' \
 		-e 's/paseo/rambla/g' \
-		-e 's/@@SKIP-REBRAND@@/.paseo.test./g'
+		-e 's/@@SKIP-PASEO-TS@@/.paseo.ts./g' \
+		-e 's/@@SKIP-PASEO-TEST@@/.paseo.test./g'
 }
 
 # Give them the prefix here, not on main. Git records no rename: it re-derives one at
@@ -28,7 +30,7 @@ done
 
 # Root-level files the fork keeps as upstream wrote them, under a PASEO-
 # prefix. Byte-identical on both sides of a merge means they never conflict.
-SKIP='^(PASEO-|fork/|\.github/workflows/merge-upstream\.yml)|\.paseo\.test\.ts$'
+SKIP='^(PASEO-|fork/|\.github/workflows/merge-upstream\.yml)|\.paseo(\.test)?\.ts$'
 
 # Paths first, deepest first so a renamed parent never invalidates a queued child.
 git ls-files -z | grep -zi paseo | grep -zEv "$SKIP" | sort -zr | while IFS= read -r -d '' old; do
