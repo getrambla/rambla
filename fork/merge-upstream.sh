@@ -7,7 +7,7 @@
 #
 # Two modes, exactly one required:
 #
-#   --release  merge upstream's newest stable release. First advances
+#   --release  merge upstream's newest release tag, beta or stable. First advances
 #       upstream-rebrand to that tag (same mechanics as the sync script).
 #       Release tags were green across every workflow; arbitrary main commits
 #       fail CI about a quarter of the time, which is why automation merges
@@ -49,14 +49,18 @@ git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH" ||
 	git -C "$REPO" branch "$BRANCH" "origin/$BRANCH"
 
 if [ "$MODE" = release ]; then
-	# Sync from upstream's newest stable release, not from main. Release tags were
+	# Sync from upstream's newest release tag, not from main. Release tags were
 	# green across every workflow; arbitrary main commits fail CI about a quarter of
-	# the time, almost entirely in end-to-end and Windows test jobs. Betas and the
-	# one release candidate carry a hyphen and are skipped.
+	# the time, almost entirely in end-to-end and Windows test jobs. Betas count as
+	# releases here: upstream goes weeks between stable tags, and waiting that long
+	# makes every merge bigger than the one before it. The tilde swap is there
+	# because `sort -V` alone orders v0.9.0 ahead of v0.9.0-beta.2; `~` sorts below
+	# everything, which restores semver order. Tags cut from side branches that
+	# never landed are caught by the ancestry check below.
 	TIP=$(git -C "$REPO" ls-remote --tags --refs upstream 'refs/tags/v*' |
-		awk -F'refs/tags/' '$2 !~ /-/ {print $2}' | sort -V | tail -1)
+		awk -F'refs/tags/' '{print $2}' | sed 's/-/~/' | sort -V | tail -1 | sed 's/~/-/')
 	[ -n "$TIP" ] || {
-		echo "no stable upstream release tag found" >&2
+		echo "no upstream release tag found" >&2
 		exit 1
 	}
 	TARGET=$(git -C "$REPO" ls-remote upstream "refs/tags/$TIP" | awk '{print $1}')
