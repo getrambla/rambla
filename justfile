@@ -1,14 +1,9 @@
 unit := home_dir() / ".config/systemd/user/rambla.service"
 desktop := home_dir() / ".local/share/applications/rambla.desktop"
 
-# Stable install root: `just install-*` builds into this tree, so the daemon
-# service and desktop app survive `just clean` and repo work. Dev builds never
-# write here, and stable builds never read this checkout's dist/.
+# Stable install root: `just install-*` builds into this tree; dev builds never write here.
 stable_dir := home_dir() / ".local" / "rambla"
-# Dedicated clone the stable daemon is built+run from (same shape as
-# deploy/remote-deploy.sh): the stable build compiles from git, never from
-# this checkout's build state. A real clone, not a git worktree — a worktree
-# would share the dev tree's object store and reintroduce dev/stable coupling.
+# Dedicated clone the stable daemon is built+run from (same shape as deploy/remote-deploy.sh); a real clone, not a worktree.
 stable_repo := stable_dir / "repo"
 
 # List recipes.
@@ -20,16 +15,12 @@ format:
 
 alias fmt := format
 
-# Redraw every brand asset — app, store, desktop, web, favicons, in-app mark.
-# Pass an SVG to adopt a new design; pass nothing to redraw from the stored one.
+# Redraw every brand asset; pass an SVG to adopt a new design, nothing to redraw from the stored one.
 logos svg="":
     node fork/brand/generate.mjs {{svg}}
     npm run format:files -- packages/app/src/components/icons/rambla-logo.tsx packages/app/src/components/icons/rambla-logo-mask.ts
 
-# Dispatch an iOS TestFlight build and follow it. Ctrl-C stops watching, not
-# the build. Pass any second argument (`just testflight "" quiet`) to dispatch
-# and exit. The first argument is the branch or tag to build; empty builds the
-# repo's default branch.
+# Dispatch an iOS TestFlight build and follow it; first arg is the branch/tag to build, empty builds the default branch.
 [script]
 testflight ref="" quiet="":
     set -eu
@@ -40,8 +31,7 @@ testflight ref="" quiet="":
         gh workflow run "iOS TestFlight"
     fi
 
-    # `gh workflow run` does not report the run it created, so wait for one
-    # that is not the run that was already there.
+    # `gh workflow run` does not report the run it created; wait for a new one.
     run_id=""
     for _ in $(seq 1 30); do
         now="$(gh run list --workflow="iOS TestFlight" --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
@@ -114,8 +104,7 @@ ci branch="main" *args="":
     failed=0 running=0 passed=0 failed_jobs=""
     now=$(date +%s)
 
-    # Wall time between two ISO stamps. An empty end stamp means the job is still
-    # going, so measure against now; no start stamp at all means it is queued.
+    # Wall time between two ISO stamps; empty end = still going (measure vs now), no start = queued.
     duration() {
         started="$1"
         ended="$2"
@@ -177,8 +166,7 @@ ci branch="main" *args="":
         echo
         echo "Error lines:"
         for job in $failed_jobs; do
-            # gh refuses logs containing terminal escapes unless asked, and the
-            # colour codes have to come off before grep can match anything.
+            # gh refuses logs containing terminal escapes; strip colour codes before grep.
             gh api "repos/getrambla/rambla/actions/jobs/$job/logs" \
                 --allow-escape-sequences 2>/dev/null \
                 | sed 's/\x1b\[[0-9;]*m//g; s/^[0-9T:.Z-]*Z //' \
@@ -222,17 +210,7 @@ status:
 # Reinstall the stable daemon and desktop app under stable_dir.
 install: install-daemon install-app
 
-# Build the daemon from the dedicated stable clone and reinstall+restart the
-# systemd user unit running from there. The stable daemon never reads this
-# checkout's dist/ — it is built from git, same shape as deploy/remote-deploy.sh.
-# ref: "" (default) installs the dev checkout's current branch tip (must be
-#      pushed — the clone fetches from origin); a SHA/branch/tag installs
-#      exactly that ref, e.g. `just install-daemon main` or `just install-daemon "" info immediate`.
-# mode: "soft" (default) waits for running agent turns to finish before
-#       restarting (popups are auto-denied); "immediate" restarts right away.
-# fresh: pass fresh=true to wipe node_modules and npm ci from scratch (slow;
-#       escape hatch if the incremental install ever drifts).
-# The daemon's data directory (~/.rambla) is untouched — no migration.
+# Build the daemon from the dedicated stable clone and reinstall+restart the systemd user unit. ref: "" = current branch tip (must be pushed), or a SHA/branch/tag. mode: "soft" (default) waits for running turns, "immediate" restarts now. fresh=true wipes node_modules.
 [script]
 install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-service
     set -euo pipefail
@@ -243,9 +221,7 @@ install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-ser
         exit 1
     fi
 
-    # Dedicated build clone (clone into a sibling, rename only on success, so
-    # stable_repo is never a half-finished checkout). origin is the dev repo
-    # itself, so unpushed local commits are installable; uncommitted work is not.
+    # Dedicated build clone (clone into a sibling, rename only on success); origin is the dev repo itself.
     mkdir -p "{{stable_dir}}"
     if [ ! -d "{{stable_repo}}" ]; then
         rm -rf "{{stable_repo}}.incoming"
@@ -253,14 +229,10 @@ install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-ser
         mv "{{stable_repo}}.incoming" "{{stable_repo}}"
     fi
 
-    # mise env from the dev checkout: running mise inside the clone would try
-    # to install the repo's rust/java/android toolchain pins.
+    # mise env from the dev checkout; running mise inside the clone would install the repo's toolchain pins.
     eval "$(mise env -C "{{justfile_dir()}}" -s bash)"
 
-    # Build BEFORE touching the unit, so a failed build aborts here instead of
-    # restarting the daemon on stale code. Empty ref = the dev checkout's
-    # current branch tip (must be pushed); otherwise install exactly that
-    # SHA/branch/tag. FETCH_HEAD keeps one code path for all cases.
+    # Build BEFORE touching the unit, so a failed build aborts before restarting the daemon. FETCH_HEAD keeps one code path.
     ref='{{ref}}'
     if [ -z "$ref" ]; then
         ref="$(git -C "{{justfile_dir()}}" rev-parse --abbrev-ref HEAD)"
@@ -277,29 +249,20 @@ install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-ser
     npm run build:server
 
     if [ "{{mode}}" = "soft" ]; then
-        # The worker drains gracefully on SIGTERM (finishes running agent
-        # turns, auto-denying popups) — give it room before systemd SIGKILLs.
+        # Worker drains gracefully on SIGTERM (finishes turns) — give it room before systemd SIGKILLs.
         TIMEOUT_STOP_SEC=2400
     else
         TIMEOUT_STOP_SEC=90
     fi
 
-    # The daemon runs from the clone it was built in (like remote-deploy.sh);
-    # the packages keep their installed node_modules alongside dist/.
-    # Render to a temp file then rename, so a failed render never leaves a
-    # truncated unit.
+    # The daemon runs from the clone it was built in (like remote-deploy.sh); packages keep node_modules alongside dist/.
+    # Render to a temp file then rename, so a failed render never leaves a truncated unit.
     mkdir -p "$(dirname "{{unit}}")"
     tmp_unit="$(mktemp "{{unit}}.XXXXXX")"
 
-    # The user manager starts this unit before the session PATH is imported,
-    # so bake this shell's PATH (with mise's node) into the unit.
-    # AGENTS: ExecStart MUST be exactly `rambla daemon run` with NO FLAGS.
-    # Do NOT add --foreground. Do NOT "make it explicit". It will crash the
-    # daemon at startup (removed flag; REMOVED_LAUNCH_FLAGS in
-    # packages/cli/src/commands/daemon/local-daemon.ts) and systemd gives up.
-    # An agent added it once and the user had to fix it from their phone.
-    # NEVER AGAIN. If you touch this line, run `just install-daemon` to prove
-    # the daemon starts.
+    # The user manager starts this unit before the session PATH is imported, so bake PATH (with mise's node) into the unit.
+
+    # AGENTS: ExecStart MUST be exactly `rambla daemon run` with NO FLAGS. Do NOT add --foreground; it crashes the daemon (removed flag; REMOVED_LAUNCH_FLAGS in packages/cli/src/commands/daemon/local-daemon.ts). If you touch this line, run `just install-daemon` to prove the daemon starts.
     cat > "$tmp_unit" <<EOF
     [Unit]
     Description=Rambla daemon
@@ -318,28 +281,22 @@ install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-ser
     WantedBy=graphical-session.target
     EOF
 
-    # Disable (reads the OLD unit's [Install]) before the mv, or the old
-    # symlink is orphaned.
+    # Disable (reads the OLD unit's [Install]) before the mv, or the old symlink is orphaned.
     systemctl --user disable rambla >/dev/null 2>&1 || true
     mv "$tmp_unit" "{{unit}}"
 
     echo "installed daemon to {{stable_dir}}/daemon"
 
-# Reload systemd and enable+restart the unit (kept as its own recipe because
-# install-daemon's script attribute would otherwise eat the dependencies).
+# Reload systemd and enable+restart the unit (own recipe because install-daemon's script attribute eats dependencies).
 install-service: systemctl-reload && restart
 
-# Build the desktop app from the stable clone directly into stable_dir/app —
-# electron-builder --dir with its output directory redirected via config
-# override, so the dev tree's release/ folder is never involved.
-# ref/fresh: same meaning as install-daemon.
+# Build the desktop app from the stable clone into stable_dir/app; --dir with output redirected so the dev tree's release/ is never involved.
 [script]
 install-app ref="" fresh="false": && install-desktop
     set -euo pipefail
     command -v mise >/dev/null 2>&1 || { echo "missing mise" >&2; exit 1; }
 
-    # Same dedicated clone as install-daemon; created here too so install-app
-    # works standalone.
+    # Same dedicated clone as install-daemon; created here too so install-app works standalone.
     mkdir -p "{{stable_dir}}"
     if [ ! -d "{{stable_repo}}" ]; then
         rm -rf "{{stable_repo}}.incoming"
@@ -363,13 +320,10 @@ install-app ref="" fresh="false": && install-desktop
         npm install
     fi
 
-    # desktop's own build script compiles its workspace deps first, then
-    # electron-builder packs. --dir skips installers; -c directories.output
-    # redirects output straight into stable_dir — no dev-tree release/.
+    # desktop's own build script compiles its workspace deps first, then electron-builder packs; --dir skips installers.
     npm run build:desktop -- --dir -c.directories.output="{{stable_dir}}/app-build"
 
-    # --dir output lands in <output>/linux-unpacked; flatten to stable_dir/app
-    # with a swap so the launcher target is never half-replaced.
+    # --dir output lands in <output>/linux-unpacked; flatten to stable_dir/app with a swap so the target is never half-replaced.
     rm -rf "{{stable_dir}}/app.old"
     [ -d "{{stable_dir}}/app" ] && mv "{{stable_dir}}/app" "{{stable_dir}}/app.old"
     mv "{{stable_dir}}/app-build/linux-unpacked" "{{stable_dir}}/app"
@@ -398,3 +352,54 @@ daemon-log lines="40":
 
 logs lines="40":
     journalctl --user -n {{lines}} -u rambla
+
+# Merge the rebranded upstream into main; --release is upstream's newest stable tag (what CI runs), --main expedites current main. Never merge upstream/main directly.
+[script]
+merge-upstream mode="--release":
+    bash fork/merge-upstream.sh {{mode}}
+
+# Advance the standing upstream-rebrand branch to upstream's current main and rebrand it; main is never touched. Safe to run as often as wanted.
+[script]
+sync-upstream-rebrand:
+    bash fork/sync-upstream-rebrand.sh
+
+# Trial merge: rehearse the next upstream merge in a throwaway worktree; auto-syncs the rebrand branch first.
+[script]
+trial-merge action="":
+    set -euo pipefail
+    trial="{{justfile_dir()}}/.trial-merge"
+
+    if [ "{{action}}" = "drop" ]; then
+        if git worktree list --porcelain | grep -q "^worktree $trial$"; then
+            git worktree remove --force "$trial"
+            echo "removed $trial"
+        else
+            echo "no trial worktree at $trial"
+        fi
+        exit 0
+    fi
+    [ -z "{{action}}" ] || { echo "unknown action '{{action}}' (no argument, or 'drop')" >&2; exit 1; }
+
+    # Only the sync; merging for real in the main checkout is exactly what this must not do.
+    bash fork/sync-upstream-rebrand.sh
+
+    base="$(git rev-parse --abbrev-ref HEAD)"
+    echo "trial-merging upstream-rebrand into $base at $trial"
+    if [ -d "$trial" ]; then
+        # Reuse: reset to $base by name, not to the worktree's own detached HEAD.
+        git -C "$trial" merge --abort 2>/dev/null || true
+        git -C "$trial" checkout -q --detach "$base"
+        git -C "$trial" reset --hard -q "$base"
+    else
+        git worktree add --detach "$trial" "$base"
+    fi
+
+    if git -C "$trial" merge upstream-rebrand --no-edit; then
+        echo "trial merge clean — no conflicts with upstream's current main"
+    else
+        conflicts="$(git -C "$trial" diff --name-only --diff-filter=U)"
+        echo "" >&2
+        echo "CONFLICTS — resolve in $trial, or refactor $base to avoid them:" >&2
+        echo "$conflicts" >&2
+        exit 1
+    fi
