@@ -291,6 +291,21 @@ Conflict mitigation: <the approach in 25 words or less>
 Code findings always have a location, so every rejected item carries a link —
 see "File links".
 
+## Numbers are digits when they are data
+
+A number that is **data** — a count, a measurement, a limit, a version, a
+date — is a digit. `5 sites`, `3 files`, `2 of 7 items`. Never `five sites`.
+This holds at 1 as well: `1 upstream file`, not `one upstream file`.
+
+The test: **would the user want to spot it at a glance?** They read with a
+screen reader; a digit is findable, a spelled-out number has to be read
+through.
+
+A number that is part of an English phrase rather than a quantity stays a
+word: "one at a time", "one another", "no one", "one of them".
+
+Applies in chat, in commit messages, in `PATCHES.md` and in code comments.
+
 ## File links
 
 **Never write a bare path.** Every file reference, everywhere, is a markdown

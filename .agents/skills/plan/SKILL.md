@@ -151,6 +151,23 @@ future work on that file at all.
 This does not apply to genuinely new code with no upstream counterpart —
 that goes in a new file without asking.
 
+## Numbers are digits when they are data
+
+A number that is **data** — a count, a measurement, a limit, a version, a
+date — is a digit. `5 sites`, `3 files`, `25 words`, `2 of 7 items`. Never
+`five sites`. This holds at 1 as well: `1 upstream file`, not `one upstream
+file`.
+
+The test: **would the user want to spot it at a glance?** They read with a
+screen reader; a digit is findable, a spelled-out number has to be read
+through.
+
+A number that is part of an English phrase rather than a quantity stays a
+word: "one at a time", "one another", "no one", "one of them", "on the one
+hand". Nothing is being counted there.
+
+Applies in the plan, in chat, and in commit messages.
+
 ## File links
 
 **Never write a bare path.** Every file reference, everywhere, is a markdown
@@ -246,8 +263,24 @@ What counts as unchecked:
 No plan reaches the user unreviewed. Every time, no exceptions, however small
 the change.
 
-Hand the finished plan to a separate reviewer along with the user's request
-**verbatim, as the user wrote it** — never your summary.
+**Before sending it, run the style checker and fix whatever it reports:**
+
+```bash
+node fork/check-plan.mjs plans/YYYY-MM-DD-fix-slug.md
+```
+
+It checks section shape and order, the title, link form, bare paths, digits,
+and whether Provenance still matches main. Fix silently — none of it is worth
+the user's attention, and none of it is a reviewer's job.
+
+The reviewer gets exactly 3 things: **the user's request verbatim as the user
+wrote it** (never your summary), the plan file, and the codebase.
+
+**Never give the reviewer this skill.** A reviewer holding a style guide
+audits conformance to it, because those checks are easy, unambiguous and
+always yield a finding — while judging a design is hard, ambiguous, and
+yields nothing when the design is fine. It will drift to the checklist every
+time. Style is not its job and it must not be able to see the rules.
 
 **The reviewer judges the design first.** Attack the shape of the solution,
 not the accuracy of its claims. Two questions, before anything else: is this
@@ -259,11 +292,26 @@ a design that shouldn't exist is a failed review, not a passed one — volume
 of verified detail is not evidence of a good plan, and it reads like one.
 
 Only once the approach survives that does the reviewer check the plan against
-the code, claim by claim: follow each citation,
-does that file exist, does that function do what the plan says it does, does
-that component render where the plan says, are the line counts real, does the
-mitigation table match what the edit actually requires. Any claim without a
-citation is a finding on its own.
+the code.
+
+**It opens every file in the mitigation table.** Not just the lines the
+citations point at — the whole surrounding function. For each described edit:
+do the names it introduces already exist in that scope, do the signatures
+match, is what it needs already imported, does the thing it says it will
+change actually sit where it says. A plan that reads correctly and won't
+compile is the failure this catches, and following citations alone will never
+find it — every citation can be accurate while the edit still collides with a
+name 4 lines up.
+
+Then the claims: does that function do what the plan says, does that
+component render where the plan says, does the mitigation table match what
+the edit actually requires.
+
+**The reviewer reports only what would make the work wrong.** Never a link
+format, a spelled-out number, a section heading, a wording mismatch. Those
+are caught by `fork/check-plan.mjs` and fixed without ever being announced.
+A numbered list the user reads should never contain a compile error and a
+formatting nit as items 1 and 6.
 
 It reports what's wrong. Fix and re-review.
 
@@ -333,10 +381,24 @@ raw output.
 
 Use these exactly. They are the only thing the user gets between rounds.
 
+**Link the plan file in exactly 3 places, and nowhere else:** when you send
+it for review, when the reviewer rejects, and when the reviewer accepts. The
+user cannot watch a subagent edit the file, and a review takes long enough
+that they lose their place in the chat. Linking it anywhere else is clutter.
+
+The link is chat, so the target starts with `rambla/`, and the link text is
+the filename:
+
+```markdown
+Sent [2026-09-22-feat-os-notification-toggle.md](rambla/plans/2026-09-22-feat-os-notification-toggle.md) for review.
+```
+
 **Reviewer rejected:**
 
 ```markdown
-The reviewer accepted 6 of 7 items. Rejected:
+The reviewer rejected [2026-09-22-feat-os-notification-toggle.md](rambla/plans/2026-09-22-feat-os-notification-toggle.md).
+
+Accepted 6 of 7 items. Rejected:
 
 1. <the specific thing, and briefly why — 25 words maximum>
 2. ...
@@ -349,7 +411,7 @@ Don't say what happens next — going back for a fix is understood.
 **Reviewer accepted:**
 
 ```markdown
-The reviewer accepted all 7 items:
+The reviewer accepted [2026-09-22-feat-os-notification-toggle.md](rambla/plans/2026-09-22-feat-os-notification-toggle.md), all 7 items:
 
 1. <what the item is — 25 words maximum>
 2. ...

@@ -326,6 +326,21 @@ Nothing to run. Just resolve, and it remembers.
 - **Numbered lists for conflicts**, so the user can answer by number.
 - **File references are markdown links** — see "File links".
 
+## Numbers are digits when they are data
+
+A number that is **data** — a count, a measurement, a limit, a version, a
+date — is a digit. `5 conflicts`, `3 files`, `6 of 7 items`. Never `five
+conflicts`. This holds at 1 as well: `1 conflict`, not `one conflict`.
+
+The test: **would the user want to spot it at a glance?** They read with a
+screen reader; a digit is findable, a spelled-out number has to be read
+through.
+
+A number that is part of an English phrase rather than a quantity stays a
+word: "one at a time", "one another", "no one", "one of them".
+
+Applies in chat, in commit messages and in `PATCHES.md`.
+
 ## File links
 
 **Never write a bare path.** Every file reference, everywhere, is a markdown
