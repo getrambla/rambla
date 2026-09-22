@@ -2,12 +2,11 @@ import { Command } from "commander";
 import { DaemonConnectionError } from "@getrambla/client/internal/daemon-client";
 import {
   readDaemonInstance,
-  readPersistedConfig,
-  resolveConfigFromPersisted,
   daemonLogPath,
   isSameDaemonInstance,
   DaemonInstanceError,
-} from "@getrambla/server";
+} from "@getrambla/server/daemon-control";
+import { readPersistedConfig, resolveConfigFromPersisted } from "@getrambla/server/configuration";
 import { connectToDaemon, buildDaemonConnectionCommandError } from "../../utils/client.js";
 import { withOutput, toCommandError, type CommandOptions } from "../../output/index.js";
 import { addJsonAndDaemonHostOptions } from "../../utils/command-options.js";

@@ -9,13 +9,9 @@ import {
 } from "./agent/provider-launch-config.js";
 import type { AgentProviderRuntimeSettingsMap } from "./agent/provider-launch-config.js";
 import { ensurePrivateFile, writePrivateFileAtomicSync } from "./private-files.js";
-import {
-  AgentProfileSchema,
-  AgentSkillSelectionSchema,
-  PluginIdSchema,
-  PluginSourceSchema,
-  TerminalProfileSchema,
-} from "@getrambla/protocol/messages";
+import { AgentProfileSchema, AgentSkillSelectionSchema } from "@getrambla/protocol/agent-profile";
+import { PluginIdSchema, PluginSourceSchema } from "@getrambla/protocol/plugin-config";
+import { TerminalProfileSchema } from "@getrambla/protocol/terminal-profile";
 import { RamblaServicePortAllocationSchema } from "@getrambla/protocol/rambla-config-schema";
 
 export const LogLevelSchema = z.enum(["trace", "debug", "info", "warn", "error", "fatal"]);

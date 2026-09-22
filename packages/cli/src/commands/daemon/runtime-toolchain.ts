@@ -1,5 +1,5 @@
 import { platform } from "node:os";
-import { execCommand } from "@getrambla/server";
+import { execCommand } from "@getrambla/server/process";
 
 export interface NodePathFromPidResult {
   nodePath: string | null;

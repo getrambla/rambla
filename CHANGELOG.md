@@ -1,5 +1,92 @@
 # Changelog
 
+## 0.9.0-beta.2 - 2026-09-18
+
+### Fixed
+
+- Fixed every workspace showing the restart time as its last activity after relaunching ([#5040](https://github.com/getpaseo/paseo/pull/5040))
+- Fixed finished chats dropping out of Ready to review after a restart ([#5040](https://github.com/getpaseo/paseo/pull/5040))
+- Fixed launch resuming a provider session for every chat ever opened on the host ([#5040](https://github.com/getpaseo/paseo/pull/5040))
+
+## 0.9.0-beta.1 - 2026-09-17
+
+### Added
+
+- Added Cmd/Ctrl+F Find to file panes, with replacement in editable files ([#4589](https://github.com/getpaseo/paseo/pull/4589))
+- Added Cmd/Ctrl+F Find to terminal scrollback ([#4650](https://github.com/getpaseo/paseo/pull/4650))
+- Added Cmd/Ctrl+F Find to chat, including messages outside the loaded history window ([#4765](https://github.com/getpaseo/paseo/pull/4765))
+- Added Jump to file to mobile Changes, opening the changed-files tree in a sheet ([#4861](https://github.com/getpaseo/paseo/pull/4861))
+- Added automatic Pull request tab opening once per workspace when a PR is detected ([#4956](https://github.com/getpaseo/paseo/pull/4956))
+- Added expandable plan cards, with rejected plans collapsed by default ([#4756](https://github.com/getpaseo/paseo/pull/4756))
+- Added an attachment placeholder with a spinner while a selected file uploads ([#4958](https://github.com/getpaseo/paseo/pull/4958))
+- Added match highlighting to the workspace, agent, project, and branch fields in History search ([#4945](https://github.com/getpaseo/paseo/pull/4945))
+
+### Plugins
+
+- Added plugin installation from npm, including scoped packages, versions, tags, and ranges ([#4975](https://github.com/getpaseo/paseo/pull/4975))
+- Added `paseo plugin update` with `--all`, `--check`, and `--yes`, showing the current and proposed revision before approval ([#4975](https://github.com/getpaseo/paseo/pull/4975))
+- Added each plugin's description, source, and installed revision to Settings → Plugins ([#4975](https://github.com/getpaseo/paseo/pull/4975))
+- Added an optional `serverId` to `navigation.openAgent()` and `navigation.openWorkspace()` ([#4942](https://github.com/getpaseo/paseo/pull/4942))
+- Added host discovery through `useHosts()` and host-targeted SDK clients through `getPaseoClient(serverId)` ([#4971](https://github.com/getpaseo/paseo/pull/4971))
+- Added `openExternalUrl()` and `<ExternalLink>` for opening a URL outside Paseo ([#4972](https://github.com/getpaseo/paseo/pull/4972))
+- Added `navigation.openBrowser()` for opening a URL in a workspace browser on desktop ([#4972](https://github.com/getpaseo/paseo/pull/4972))
+- Added a server settings handle returned by `registerSettings()` with `read()` and `subscribe()` ([#4674](https://github.com/getpaseo/paseo/pull/4674) by [@mcowger](https://github.com/mcowger))
+- Changed `assistant_message` transformers to receive the whole accumulated message on each update ([#4675](https://github.com/getpaseo/paseo/pull/4675) by [@mcowger](https://github.com/mcowger), [@jegork](https://github.com/jegork))
+- Changed `tool_call` transformers to receive every original call before Overview groups them ([#4675](https://github.com/getpaseo/paseo/pull/4675))
+- Fixed a plugin session losing its host API permanently after its heartbeat lease expired ([#4912](https://github.com/getpaseo/paseo/pull/4912) by [@gpambrozio](https://github.com/gpambrozio))
+- Fixed plugin build commands failing with `spawn npm ENOENT` on Windows ([#4776](https://github.com/getpaseo/paseo/pull/4776) by [@ABorakati](https://github.com/ABorakati))
+- Fixed ACP text chunks without a `messageId` splitting one reply into a message per chunk ([#4701](https://github.com/getpaseo/paseo/pull/4701) by [@L4XB](https://github.com/L4XB))
+- Fixed nested provider subagents appearing as direct children of the root agent ([#4970](https://github.com/getpaseo/paseo/pull/4970))
+
+### Changed
+
+- Changed History search to keep results chronological in date buckets instead of reordering by relevance ([#4945](https://github.com/getpaseo/paseo/pull/4945))
+- Changed workspace Restore to keep the archived agent selected, with its own Unarchive action ([#4736](https://github.com/getpaseo/paseo/pull/4736))
+- Changed the workspace error screen's Retry to Reload, which reopens at the project picker ([#4598](https://github.com/getpaseo/paseo/pull/4598))
+- Changed closing the last content tab to leave the New launcher instead of an unusable pane ([#4844](https://github.com/getpaseo/paseo/pull/4844))
+- Changed `paseo daemon start` to read persistent configuration; removed configuration flags fail with migration instructions ([#4575](https://github.com/getpaseo/paseo/pull/4575))
+
+### Improved
+
+- Bold, italics, strikethrough, inline code, and link labels stay formatted while a reply streams ([#4742](https://github.com/getpaseo/paseo/pull/4742))
+- Reduced time to first voice audio from 4.80s to 0.95s on a three-sentence reply ([#4927](https://github.com/getpaseo/paseo/pull/4927))
+- Reduced cold diff generation from 11.45s to 2.65s on a 213-file workspace ([#4676](https://github.com/getpaseo/paseo/pull/4676))
+- Reduced desktop memory use, from 290.5 MiB to 152.1 MiB RSS in the Electron main process after loading daemon management ([#5007](https://github.com/getpaseo/paseo/pull/5007))
+- Kept open chats subscribed across view eviction, app backgrounding, and reconnect ([#4863](https://github.com/getpaseo/paseo/pull/4863))
+- Added reconnection and Updating messages status to the chat toast ([#4863](https://github.com/getpaseo/paseo/pull/4863))
+- Kept the app responsive during large uploads by yielding between 128 KiB chunks ([#4958](https://github.com/getpaseo/paseo/pull/4958))
+- Let resident browser pages idle between screenshots while the desktop window is hidden ([#4646](https://github.com/getpaseo/paseo/pull/4646))
+
+### Fixed
+
+- Fixed the daemon exhausting its heap in long conversations with cumulative tool output ([#4838](https://github.com/getpaseo/paseo/pull/4838))
+- Fixed repeated submissions creating several workspaces or agents for one intent ([#4442](https://github.com/getpaseo/paseo/pull/4442))
+- Fixed a crash loop after closing the last content tab in a workspace ([#4844](https://github.com/getpaseo/paseo/pull/4844))
+- Fixed New Agent crashing when an enabled provider published duplicate model IDs ([#4839](https://github.com/getpaseo/paseo/pull/4839))
+- Fixed long drafts growing behind the chat header on Android and iOS ([#4824](https://github.com/getpaseo/paseo/pull/4824))
+- Fixed the Android composer growing taller when the keyboard closed ([#4902](https://github.com/getpaseo/paseo/pull/4902))
+- Fixed the Android composer keeping its height after hold-to-delete emptied a draft ([#4946](https://github.com/getpaseo/paseo/pull/4946))
+- Fixed New workspace setup content not moving up as the composer grows ([#4973](https://github.com/getpaseo/paseo/pull/4973))
+- Fixed the Android timeline scrolling away when tapping or selecting text in a chat ([#5013](https://github.com/getpaseo/paseo/pull/5013))
+- Fixed Paste image failing before an attachment reached the composer on Android ([#4758](https://github.com/getpaseo/paseo/pull/4758))
+- Fixed provider and model pickers not responding on Android tablets ([#4845](https://github.com/getpaseo/paseo/pull/4845) by [@cjcrjc](https://github.com/cjcrjc), [@mkuhl](https://github.com/mkuhl))
+- Fixed Linux desktop packages launching without the Chromium sandbox ([#4447](https://github.com/getpaseo/paseo/pull/4447))
+- Fixed `paseo daemon stop` shutting down a daemon other than the selected one ([#4575](https://github.com/getpaseo/paseo/pull/4575))
+- Fixed restored archived workspaces showing empty Changes and Commits ([#4926](https://github.com/getpaseo/paseo/pull/4926))
+- Fixed a rejected plan appearing below the follow-up message that rejected it ([#4756](https://github.com/getpaseo/paseo/pull/4756))
+- Fixed Cmd/Ctrl+F not opening chat Find while the composer had focus ([#4991](https://github.com/getpaseo/paseo/pull/4991))
+- Fixed the linked pull request going undetected when a branch remote is a repository URL ([#4862](https://github.com/getpaseo/paseo/pull/4862))
+- Fixed a plugin's filtered agent list replacing the app's own directory subscription ([#4596](https://github.com/getpaseo/paseo/pull/4596))
+- Fixed an updated app rejecting daemons that lack independent subscriptions ([#4737](https://github.com/getpaseo/paseo/pull/4737))
+- Fixed workspace and agent creation failing or leaving agent titles at "Loading…" on 0.8.0 and older daemons ([#4895](https://github.com/getpaseo/paseo/pull/4895))
+- Fixed Cursor models showing another model's thinking options ([#4180](https://github.com/getpaseo/paseo/pull/4180) by [@fidelix](https://github.com/fidelix))
+- Fixed voice-chat user messages showing the internal prompt wrapper instead of the transcript ([#4927](https://github.com/getpaseo/paseo/pull/4927))
+- Fixed History and Command Center search matching a query assembled from letters in separate words ([#4945](https://github.com/getpaseo/paseo/pull/4945))
+- Fixed workspace titles truncating early on touch layouts behind hidden diff stats ([#4698](https://github.com/getpaseo/paseo/pull/4698))
+- Fixed the Explorer showing `+0 -0` and "No changes" while being dragged open ([#4861](https://github.com/getpaseo/paseo/pull/4861))
+- Fixed the reconnect toast restarting its entrance animation when opening a saved chat ([#4925](https://github.com/getpaseo/paseo/pull/4925))
+- Fixed raised shadows around Android file rows in the changed-files sheet ([#4898](https://github.com/getpaseo/paseo/pull/4898))
+
 ## 0.8.1 - 2026-09-15
 
 ### Added
@@ -28,7 +115,7 @@
 
 **Before upgrading:** the macOS desktop app now requires macOS 13 or newer; Linux and Windows support is unchanged. Plugins written for 0.7 need the [0.8 migration guide](https://paseo.sh/docs/plugins/v0.8/migration), including separate client/server entries and the revised composer pill API.
 
-### Added in Paseo 0.8.0
+### Added
 
 - Added answer forms for Codex questions asked while the agent continues working ([#4587](https://github.com/getpaseo/paseo/pull/4587))
 - Added Mark as unread to finished workspaces in the sidebar menu ([#3603](https://github.com/getpaseo/paseo/pull/3603) by [@edihasaj](https://github.com/edihasaj))
@@ -45,7 +132,7 @@
 - Added Hub follow-ups to existing agents, including archived workspace recovery ([#4354](https://github.com/getpaseo/paseo/pull/4354))
 - Added provider catalog discovery to Hub executions ([#4242](https://github.com/getpaseo/paseo/pull/4242))
 
-### Plugins in Paseo 0.8.0
+### Plugins
 
 - Added custom providers with their own icons, settings, permissions, and timeline rendering ([#4314](https://github.com/getpaseo/paseo/pull/4314))
 - Added provider session recovery after plugin reload ([#4629](https://github.com/getpaseo/paseo/pull/4629) by [@mcowger](https://github.com/mcowger))
@@ -66,7 +153,7 @@
 - Changed `paseo plugin ls` to show runtime state, installed commit, and load errors without contacting a remote ([#4265](https://github.com/getpaseo/paseo/pull/4265))
 - Fixed workspace plugin panels missing from the Explorer menu ([#4446](https://github.com/getpaseo/paseo/pull/4446))
 
-### Changed in Paseo 0.8.0
+### Changed
 
 - Changed the desktop app to require macOS 13 or newer; macOS 12 stops receiving desktop updates ([#4322](https://github.com/getpaseo/paseo/pull/4322))
 - Changed `--host` to a global CLI option: `paseo --host <target> <command>` ([#4238](https://github.com/getpaseo/paseo/pull/4238))
@@ -75,7 +162,7 @@
 - Changed Codex Fast availability to the supported model list, including GPT-6 Astra ([#4640](https://github.com/getpaseo/paseo/pull/4640))
 - Changed CLI installs to resolve patched React 19.1.x releases ([#4100](https://github.com/getpaseo/paseo/pull/4100) by [@liujin0506](https://github.com/liujin0506))
 
-### Improved in Paseo 0.8.0
+### Improved
 
 - Reconnected every host immediately when returning to the app ([#4160](https://github.com/getpaseo/paseo/pull/4160))
 - Smoothed mobile keyboard transitions by moving the timeline and composer together ([#4275](https://github.com/getpaseo/paseo/pull/4275))
@@ -84,7 +171,7 @@
 - Removed unsolicited timeline and catalog traffic from idle SDK connections ([#4470](https://github.com/getpaseo/paseo/pull/4470))
 - Added macOS updater diagnostics to App Diagnostics ([#4322](https://github.com/getpaseo/paseo/pull/4322))
 
-### Fixed in Paseo 0.8.0
+### Fixed
 
 - Fixed macOS desktop updates closing the app without installing the new version ([#4322](https://github.com/getpaseo/paseo/pull/4322))
 - Fixed the desktop updater reporting up to date before release manifests were available ([#4201](https://github.com/getpaseo/paseo/pull/4201))
@@ -118,16 +205,16 @@
 
 ## 0.7.2 - 2026-09-02
 
-### Added in Paseo 0.7.2
+### Added
 
 - Added active-turn steering for pi agents so new messages reach the running turn without interrupting it ([#3752](https://github.com/getpaseo/paseo/pull/3752) by [@mcowger](https://github.com/mcowger))
 - Added declared build commands and monorepo source paths for Git-hosted plugins ([#4158](https://github.com/getpaseo/paseo/pull/4158))
 
-### Improved in Paseo 0.7.2
+### Improved
 
 - Reduced JS stalls while watching a streaming agent on mobile ([#4190](https://github.com/getpaseo/paseo/pull/4190))
 
-### Fixed in Paseo 0.7.2
+### Fixed
 
 - Fixed large and many-file diffs stalling or crashing while opening and scrolling ([#4174](https://github.com/getpaseo/paseo/pull/4174))
 - Fixed mobile sidebar and explorer panels losing their settled position when a JS stall crossed the animation ([#4190](https://github.com/getpaseo/paseo/pull/4190))
@@ -141,19 +228,19 @@
 
 ## 0.7.1 - 2026-09-01
 
-### Added in Paseo 0.7.1
+### Added
 
 - Added Claude Fable 5.1 with a 1M context window ([#4179](https://github.com/getpaseo/paseo/pull/4179))
 
 ## 0.7.0 - 2026-08-31
 
-### Changed in Paseo 0.7.0
+### Changed
 
 - Changed the project license to Apache-2.0 ([#3944](https://github.com/getpaseo/paseo/pull/3944))
 - Changed Cmd/Ctrl+E to toggle Explorer visibility without selecting a view ([#3896](https://github.com/getpaseo/paseo/pull/3896))
 - Changed the default mobile content text size from 15px to 16px ([#4111](https://github.com/getpaseo/paseo/pull/4111))
 
-### Added in Paseo 0.7.0
+### Added
 
 - Added plugin installation and updates directly from Git repositories ([#3920](https://github.com/getpaseo/paseo/pull/3920))
 - Added plugin-defined timeline transformations and rendering ([#3940](https://github.com/getpaseo/paseo/pull/3940))
@@ -173,7 +260,7 @@
 - Added F-Droid release metadata and stable changelog generation ([#2501](https://github.com/getpaseo/paseo/pull/2501) by [@antonok-edm](https://github.com/antonok-edm))
 - Added Astro syntax highlighting to files, the editor, and diffs ([#3997](https://github.com/getpaseo/paseo/pull/3997))
 
-### Improved in Paseo 0.7.0
+### Improved
 
 - Streamed assistant text at a steady visual rate instead of in arrival lumps ([#3612](https://github.com/getpaseo/paseo/pull/3612) by [@Tommypop2](https://github.com/Tommypop2))
 - Painted cached conversations before unrelated cache restoration and network loading ([#3907](https://github.com/getpaseo/paseo/pull/3907))
@@ -182,7 +269,7 @@
 - Added manual, action-required, and warning states to GitLab and Gitea checks ([#2337](https://github.com/getpaseo/paseo/pull/2337) by [@nllptrx](https://github.com/nllptrx))
 - Kept cold-start pull request status checks on the shared GitHub batch path ([#4025](https://github.com/getpaseo/paseo/pull/4025))
 
-### Fixed in Paseo 0.7.0
+### Fixed
 
 - Fixed the daemon crashing when a Claude or OMP JSONL process closes during a write ([#4048](https://github.com/getpaseo/paseo/pull/4048))
 - Fixed Android first-message submissions crashing when the keyboard restarted during composer teardown ([#4044](https://github.com/getpaseo/paseo/pull/4044))
@@ -220,11 +307,11 @@
 
 ## 0.6.1 - 2026-08-25
 
-### Improved in Paseo 0.6.1
+### Improved
 
 - Command Center now matches partial multi-word queries in any order and ranks visible results by relevance ([#2971](https://github.com/getpaseo/paseo/pull/2971) by [@cleiter](https://github.com/cleiter))
 
-### Fixed in Paseo 0.6.1
+### Fixed
 
 - Fixed upgrades placing persisted Side panel tabs inside Explorer instead of an ordinary side pane ([#3861](https://github.com/getpaseo/paseo/pull/3861))
 - Fixed Escape leaving Settings open on desktop and web ([#2828](https://github.com/getpaseo/paseo/pull/2828) by [@mcowger](https://github.com/mcowger))
@@ -232,40 +319,40 @@
 
 ## 0.6.0 - 2026-08-25
 
-### Changed in Paseo 0.6.0
+### Changed
 
 - Restored the dedicated Explorer sidebar with Files and Changes by default, replacing the empty user-directed Side panel introduced in 0.5.0 ([#3826](https://github.com/getpaseo/paseo/pull/3826))
 - Changed content opened to the side to use an ordinary closable workspace pane instead of the Explorer sidebar ([#3826](https://github.com/getpaseo/paseo/pull/3826))
 - Restored the resizable combined Explorer dock on tablets ([#3826](https://github.com/getpaseo/paseo/pull/3826))
 
-### Added in Paseo 0.6.0
+### Added
 
 - Added per-action settings for opening files, changes, subagents, and pull requests in the main panel or on the side ([#3826](https://github.com/getpaseo/paseo/pull/3826))
 - Added New tab and drag support for compatible files, diffs, agents, terminals, pull requests, and plugin panels in Explorer ([#3826](https://github.com/getpaseo/paseo/pull/3826))
 - Added standalone Diff tabs while keeping an optional persisted inline-diff mode in Changes ([#3826](https://github.com/getpaseo/paseo/pull/3826))
 - Added custom Windows and Linux window controls ([#3826](https://github.com/getpaseo/paseo/pull/3826))
 
-### Fixed in Paseo 0.6.0
+### Fixed
 
 - Fixed OpenCode turns failing when the first event-stream connection stalls during startup ([#3814](https://github.com/getpaseo/paseo/pull/3814))
 - Fixed OpenCode prompts starting before the provider reports a ready connection ([#3821](https://github.com/getpaseo/paseo/pull/3821))
 
 ## 0.5.2 - 2026-08-24
 
-### Fixed in Paseo 0.5.2
+### Fixed
 
 - Fixed workspaces crashing on Android tablets and foldables in non-compact layouts ([#3760](https://github.com/getpaseo/paseo/pull/3760) by [@jeid64](https://github.com/jeid64))
 - Fixed app settings resetting when builds sharing a profile recognize different settings ([#3787](https://github.com/getpaseo/paseo/pull/3787))
 
 ## 0.5.1 - 2026-08-23
 
-### Fixed in Paseo 0.5.1
+### Fixed
 
 - Fixed multiline composers stopping resizing after workspace and agent transitions on iOS and Android ([#3740](https://github.com/getpaseo/paseo/pull/3740))
 
 ## 0.5.0 - 2026-08-23
 
-### Added in Paseo 0.5.0
+### Added
 
 - Added experimental trusted local plugins ([#3222](https://github.com/getpaseo/paseo/pull/3222), [#3446](https://github.com/getpaseo/paseo/pull/3446), [#3465](https://github.com/getpaseo/paseo/pull/3465))
 - Added plugin-contributed application themes to Settings → Appearance ([#3602](https://github.com/getpaseo/paseo/pull/3602) by [@ragokan](https://github.com/ragokan))
@@ -288,7 +375,7 @@
 - Added Svelte syntax highlighting ([#3487](https://github.com/getpaseo/paseo/pull/3487), [#3534](https://github.com/getpaseo/paseo/pull/3534) by [@fiorelorenzo](https://github.com/fiorelorenzo))
 - Added guided Hub setup that connects a daemon and deploys a compatible starter workflow ([#3651](https://github.com/getpaseo/paseo/pull/3651), [#3657](https://github.com/getpaseo/paseo/pull/3657), [#3677](https://github.com/getpaseo/paseo/pull/3677))
 
-### Improved in Paseo 0.5.0
+### Improved
 
 - Restored cached projects, workspaces, agents, and timelines immediately while hosts reconnect ([#3259](https://github.com/getpaseo/paseo/pull/3259), [#3329](https://github.com/getpaseo/paseo/pull/3329))
 - Reduced workspace-switch stalls on desktop and Android with long chats ([#3447](https://github.com/getpaseo/paseo/pull/3447), [#3610](https://github.com/getpaseo/paseo/pull/3610))
@@ -308,7 +395,7 @@
 - Added password-equivalent warnings to pairing links in the desktop app and CLI ([#3734](https://github.com/getpaseo/paseo/pull/3734))
 - Corrected Russian UI translations and terminology ([#3586](https://github.com/getpaseo/paseo/pull/3586) by [@timz](https://github.com/timz))
 
-### Fixed in Paseo 0.5.0
+### Fixed
 
 - Fixed CJK IME composition being cancelled in text fields and mobile terminals ([#2811](https://github.com/getpaseo/paseo/pull/2811), [#3343](https://github.com/getpaseo/paseo/pull/3343), [#3391](https://github.com/getpaseo/paseo/pull/3391), [#3462](https://github.com/getpaseo/paseo/pull/3462), [#3517](https://github.com/getpaseo/paseo/pull/3517) by [@northsea4](https://github.com/northsea4), [@jimersylee](https://github.com/jimersylee), [@ZacharyZcR](https://github.com/ZacharyZcR), [@chulmin-dev](https://github.com/chulmin-dev))
 - Fixed OpenCode turns failing when their event stream dropped ([#3395](https://github.com/getpaseo/paseo/pull/3395))
@@ -336,11 +423,11 @@
 
 ## 0.4.0 - 2026-08-13
 
-### Breaking in Paseo 0.4.0
+### Breaking
 
 - Removed `paseo chat` and `paseo loop` ([#3053](https://github.com/getpaseo/paseo/pull/3053))
 
-### Added in Paseo 0.4.0
+### Added
 
 - Added host-wide agent profiles for reusable provider, model, mode, thinking, and feature settings ([#3208](https://github.com/getpaseo/paseo/pull/3208))
 - Added workspace file search to Cmd/Ctrl+P ([#3059](https://github.com/getpaseo/paseo/pull/3059))
@@ -352,7 +439,7 @@
 - Added provider installation diagnostics to the CLI ([#3243](https://github.com/getpaseo/paseo/pull/3243))
 - Added workspace rename to the CLI ([#3209](https://github.com/getpaseo/paseo/pull/3209) by [@martinhanzik](https://github.com/martinhanzik))
 
-### Improved in Paseo 0.4.0
+### Improved
 
 - Added a centered reading layout and formatted YAML front matter to Markdown previews ([#3240](https://github.com/getpaseo/paseo/pull/3240))
 - Added sidebar grouping to the Command Center ([#3063](https://github.com/getpaseo/paseo/pull/3063) by [@cleiter](https://github.com/cleiter))
@@ -360,7 +447,7 @@
 - Removed periodic Git polling for idle workspaces ([#3323](https://github.com/getpaseo/paseo/pull/3323))
 - Set provider catalog refreshes to a configurable two-minute deadline ([#3322](https://github.com/getpaseo/paseo/pull/3322))
 
-### Fixed in Paseo 0.4.0
+### Fixed
 
 - Fixed terminal sessions being lost after host sleep or daemon worker stalls ([#3235](https://github.com/getpaseo/paseo/pull/3235), [#3263](https://github.com/getpaseo/paseo/pull/3263))
 - Fixed daemon hang when archiving a workspace ([#3107](https://github.com/getpaseo/paseo/pull/3107))
@@ -386,19 +473,19 @@
 
 ## 0.3.1 - 2026-08-09
 
-### Added in Paseo 0.3.1
+### Added
 
 - Unassign keyboard shortcuts and see the effective bindings in shortcut help ([#2510](https://github.com/getpaseo/paseo/pull/2510) by [@cleiter](https://github.com/cleiter), [#2985](https://github.com/getpaseo/paseo/pull/2985) by [@cleiter](https://github.com/cleiter))
 - Choose a Pure black theme ([#3012](https://github.com/getpaseo/paseo/pull/3012) by [@shrimpwtf](https://github.com/shrimpwtf))
 
-### Improved in Paseo 0.3.1
+### Improved
 
 - Running agents use a clearer animated status ring ([c0daf8e](https://github.com/getpaseo/paseo/commit/c0daf8e066e0d7379723a2a6ddea20afc71ead20) by [@cleiter](https://github.com/cleiter))
 - Workspace Git updates stay responsive under file-watcher failures, heavy Git activity, and large shared-worktree repositories ([#3056](https://github.com/getpaseo/paseo/pull/3056), [#3033](https://github.com/getpaseo/paseo/pull/3033) by [@dwyanewang](https://github.com/dwyanewang), [#3078](https://github.com/getpaseo/paseo/pull/3078))
 - Kimi usage refreshes correctly and shows five-hour limits and reasoning levels ([#2743](https://github.com/getpaseo/paseo/pull/2743) by [@UnbrokenHunter](https://github.com/UnbrokenHunter))
 - Resize the desktop sidebar with touch ([#2953](https://github.com/getpaseo/paseo/pull/2953) by [@colonelpanic8](https://github.com/colonelpanic8))
 
-### Fixed in Paseo 0.3.1
+### Fixed
 
 - Direct LAN connections work again on macOS ([#3071](https://github.com/getpaseo/paseo/pull/3071))
 - Desktop update checks no longer report an error while platform downloads are still publishing ([#3076](https://github.com/getpaseo/paseo/pull/3076))
@@ -414,7 +501,7 @@
 
 ## 0.3.0 - 2026-08-08
 
-### Added in Paseo 0.3.0
+### Added
 
 - New mobile terminal with text selection, copy, paste, and faster rendering ([#1607](https://github.com/getpaseo/paseo/pull/1607), [#2830](https://github.com/getpaseo/paseo/pull/2830))
 - Redesigned sidebar with clearer status colours and rows that are quicker to scan ([#2340](https://github.com/getpaseo/paseo/pull/2340) by [@kaspesi](https://github.com/kaspesi), [#2335](https://github.com/getpaseo/paseo/pull/2335), [#2416](https://github.com/getpaseo/paseo/pull/2416) by [@nikuscs](https://github.com/nikuscs), [#2711](https://github.com/getpaseo/paseo/pull/2711))
@@ -435,7 +522,7 @@
 - Pick a local branch or its origin counterpart as the base for a new worktree ([#2328](https://github.com/getpaseo/paseo/pull/2328) by [@mcowger](https://github.com/mcowger))
 - Paste images from the clipboard on mobile ([#2793](https://github.com/getpaseo/paseo/pull/2793))
 
-### Improved in Paseo 0.3.0
+### Improved
 
 - Provider data is cached in the client for a faster startup
 - Recent chats stay live in the background, so switching back shows current messages right away ([#2842](https://github.com/getpaseo/paseo/pull/2842))
@@ -461,7 +548,7 @@
 - The Nix desktop app uses the right icon on Linux and macOS ([#2506](https://github.com/getpaseo/paseo/pull/2506), [#2783](https://github.com/getpaseo/paseo/pull/2783) by [@colonelpanic8](https://github.com/colonelpanic8))
 - Paseo Desktop builds from the Nix flake on macOS ([#2556](https://github.com/getpaseo/paseo/pull/2556) by [@colonelpanic8](https://github.com/colonelpanic8))
 
-### Fixed in Paseo 0.3.0
+### Fixed
 
 - Pi 0.84 agents no longer crash-loop on every prompt ([#2978](https://github.com/getpaseo/paseo/pull/2978) by [@dundunHa](https://github.com/dundunHa))
 - Workspace file watching no longer stalls the daemon ([#2858](https://github.com/getpaseo/paseo/pull/2858))
@@ -494,13 +581,13 @@
 
 ## 0.2.5 - 2026-07-30
 
-### Fixed in Paseo 0.2.5
+### Fixed
 
 - Fixed the Linux Debian package ([#2654](https://github.com/getpaseo/paseo/pull/2654) by [@Neumannzc](https://github.com/Neumannzc))
 
 ## 0.2.4 - 2026-07-30
 
-### Added in Paseo 0.2.4
+### Added
 
 - Set an agent's thinking level from the CLI ([#2533](https://github.com/getpaseo/paseo/pull/2533))
 - Switch projects while creating a workspace with ⌘P / Ctrl+P ([#2110](https://github.com/getpaseo/paseo/pull/2110) by [@turtleDev](https://github.com/turtleDev))
@@ -508,7 +595,7 @@
 - Flick up on the chat to dismiss the keyboard ([#2417](https://github.com/getpaseo/paseo/pull/2417) by [@nllptrx](https://github.com/nllptrx))
 - Custom providers can read the agent's working directory ([#2563](https://github.com/getpaseo/paseo/pull/2563))
 
-### Fixed in Paseo 0.2.4
+### Fixed
 
 - The same repository added on more than one machine appears as one project in the sidebar ([#2565](https://github.com/getpaseo/paseo/pull/2565))
 - Idle agents keep their background work instead of shutting down when unused ([#2590](https://github.com/getpaseo/paseo/pull/2590))
@@ -529,13 +616,13 @@
 
 ## 0.2.3 - 2026-07-27
 
-### Added in Paseo 0.2.3
+### Added
 
 - Manage workspace scripts from the CLI and agent MCP tools ([#1992](https://github.com/getpaseo/paseo/pull/1992) by [@mcowger](https://github.com/mcowger))
 - Copy terminal IDs from terminal tab menus ([#2371](https://github.com/getpaseo/paseo/pull/2371))
 - Long Markdown lines wrap by default in the file editor ([#2459](https://github.com/getpaseo/paseo/pull/2459))
 
-### Improved in Paseo 0.2.3
+### Improved
 
 - Desktop stops its managed daemon when you quit unless “Keep daemon running after quit” is enabled ([#2454](https://github.com/getpaseo/paseo/pull/2454))
 - Remote terminal and file traffic uses less bandwidth over encrypted connections ([#2480](https://github.com/getpaseo/paseo/pull/2480))
@@ -543,7 +630,7 @@
 - Claude usage shows model-specific weekly limits ([#2303](https://github.com/getpaseo/paseo/pull/2303) by [@cleiter](https://github.com/cleiter))
 - OMP models show only the thinking levels they support ([#2171](https://github.com/getpaseo/paseo/pull/2171) by [@bendavid](https://github.com/bendavid))
 
-### Fixed in Paseo 0.2.3
+### Fixed
 
 - Image uploads preserve the correct image format ([#2380](https://github.com/getpaseo/paseo/pull/2380))
 - Large file views no longer disconnect the session ([#2482](https://github.com/getpaseo/paseo/pull/2482))
@@ -558,19 +645,19 @@
 
 ## 0.2.2 - 2026-07-25
 
-### Fixed in Paseo 0.2.2
+### Fixed
 
 - Claude 5 models now use the correct context windows.
 
 ## 0.2.1 - 2026-07-24
 
-### Added in Paseo 0.2.1
+### Added
 
 - Claude Opus 5 is available
 
 ## 0.2.0 - 2026-07-24
 
-### Added in Paseo 0.2.0
+### Added
 
 - Work with pull requests and merge requests from GitLab, Gitea, Forgejo, and Codeberg ([#1913](https://github.com/getpaseo/paseo/pull/1913) by [@nllptrx](https://github.com/nllptrx))
 - Edit files directly in the web and desktop apps ([#2270](https://github.com/getpaseo/paseo/pull/2270), [#2309](https://github.com/getpaseo/paseo/pull/2309), [#2277](https://github.com/getpaseo/paseo/pull/2277), [#2382](https://github.com/getpaseo/paseo/pull/2382) by [@dwyanewang](https://github.com/dwyanewang))
@@ -587,7 +674,7 @@
 - Open workspace files in more installed editors and file managers ([#2119](https://github.com/getpaseo/paseo/pull/2119))
 - Remove individual custom providers from Settings ([#1951](https://github.com/getpaseo/paseo/pull/1951))
 
-### Improved in Paseo 0.2.0
+### Improved
 
 - Improved model selection on mobile ([#2361](https://github.com/getpaseo/paseo/pull/2361))
 - Selector popovers stay readable on iPad ([#2360](https://github.com/getpaseo/paseo/pull/2360) by [@yzim](https://github.com/yzim))
@@ -604,7 +691,7 @@
 - Remote daemon update failures now show specific recovery steps ([#2120](https://github.com/getpaseo/paseo/pull/2120))
 - Agent history errors now appear immediately instead of after a timeout ([#2124](https://github.com/getpaseo/paseo/pull/2124))
 
-### Fixed in Paseo 0.2.0
+### Fixed
 
 - Terminal pairing QR codes remain scannable in narrow terminals ([#2381](https://github.com/getpaseo/paseo/pull/2381))
 - Workspace creation stays responsive even with many active or archived workspaces ([#2355](https://github.com/getpaseo/paseo/pull/2355), [#2379](https://github.com/getpaseo/paseo/pull/2379))
@@ -638,7 +725,7 @@
 
 ## 0.1.110 - 2026-07-16
 
-### Fixed in Paseo 0.1.110
+### Fixed
 
 - Kimi and other ACP agents now stay marked as running while a response is actively streaming ([#2148](https://github.com/getpaseo/paseo/pull/2148))
 
@@ -648,13 +735,13 @@
 >
 > If you installed Paseo Desktop 0.1.108, you need to [download and reinstall Paseo manually](https://paseo.sh/download) to get this fix. The bug in 0.1.108 prevents its automatic updater from installing 0.1.109. Users on 0.1.107 or earlier can update normally.
 
-### Fixed in Paseo 0.1.109
+### Fixed
 
 - Paseo Desktop no longer gets stuck connecting or loses native window controls after updating ([#2111](https://github.com/getpaseo/paseo/pull/2111) by [@cleiter](https://github.com/cleiter))
 
 ## 0.1.108 - 2026-07-16
 
-### Added in Paseo 0.1.108
+### Added
 
 - Create a new project folder or clone a GitHub repository from Add Project ([#1331](https://github.com/getpaseo/paseo/pull/1331), [#2045](https://github.com/getpaseo/paseo/pull/2045), [#2097](https://github.com/getpaseo/paseo/pull/2097) by [@mcowger](https://github.com/mcowger))
 - Search for and open workspaces from the search menu ([#2096](https://github.com/getpaseo/paseo/pull/2096))
@@ -664,7 +751,7 @@
 - Claude and Codex subagents now show their actual names, with a new option to archive finished Claude Code, Codex, and OpenCode subagents ([#2073](https://github.com/getpaseo/paseo/pull/2073))
 - Fork chats from failed turns ([#2063](https://github.com/getpaseo/paseo/pull/2063))
 
-### Improved in Paseo 0.1.108
+### Improved
 
 - Permission modes have clearer icons ([#1980](https://github.com/getpaseo/paseo/pull/1980) by [@cleiter](https://github.com/cleiter))
 - Desktop stays usable in narrower windows ([#1983](https://github.com/getpaseo/paseo/pull/1983))
@@ -672,7 +759,7 @@
 - Typing in long drafts is smoother ([#2086](https://github.com/getpaseo/paseo/pull/2086))
 - Codex terminal commands always appear in chat, even when they have no output ([#2037](https://github.com/getpaseo/paseo/pull/2037))
 
-### Fixed in Paseo 0.1.108
+### Fixed
 
 - New Workspace keeps your prompt and attachments when you switch projects or hosts ([#2030](https://github.com/getpaseo/paseo/pull/2030), [#2036](https://github.com/getpaseo/paseo/pull/2036))
 - OpenCode sessions close without crashing Paseo ([#2027](https://github.com/getpaseo/paseo/pull/2027) by [@mcowger](https://github.com/mcowger))
@@ -688,12 +775,12 @@
 
 ## 0.1.107 - 2026-07-13
 
-### Added in Paseo 0.1.107
+### Added
 
 - Inspect provider-created subagents and their live conversations from the Subagents track ([#2013](https://github.com/getpaseo/paseo/pull/2013) by [@omercnet](https://github.com/omercnet))
 - Fork chats with every supported agent provider ([#2022](https://github.com/getpaseo/paseo/pull/2022))
 
-### Improved in Paseo 0.1.107
+### Improved
 
 - Add projects directly from New Workspace when none are configured ([#2026](https://github.com/getpaseo/paseo/pull/2026))
 - New terminals open at the correct size immediately ([#2023](https://github.com/getpaseo/paseo/pull/2023) by [@cleiter](https://github.com/cleiter))
@@ -702,7 +789,7 @@
 - Custom ACP providers keep file and terminal work in the agent environment by default ([#2024](https://github.com/getpaseo/paseo/pull/2024))
 - ACP provider catalog updated to the latest registry versions
 
-### Fixed in Paseo 0.1.107
+### Fixed
 
 - Large tables no longer make iOS chats unresponsive
 - Chat controls remain clickable near the scroll-to-bottom button ([#2007](https://github.com/getpaseo/paseo/pull/2007))
@@ -713,15 +800,15 @@
 
 ## 0.1.106 - 2026-07-12
 
-### Added in Paseo 0.1.106
+### Added
 
 - Approve Codex MCP permission requests in Paseo ([#2001](https://github.com/getpaseo/paseo/pull/2001))
 
-### Improved in Paseo 0.1.106
+### Improved
 
 - ACP provider catalog updated to the latest registry versions
 
-### Fixed in Paseo 0.1.106
+### Fixed
 
 - Reduced mobile chat freezes and blank screens when switching workspaces while agents are streaming ([#1989](https://github.com/getpaseo/paseo/pull/1989))
 - OpenCode sessions start reliably instead of occasionally losing the first turn ([#2015](https://github.com/getpaseo/paseo/pull/2015) by [@mcowger](https://github.com/mcowger))
@@ -730,19 +817,19 @@
 
 ## 0.1.105 - 2026-07-10
 
-### Added in Paseo 0.1.105
+### Added
 
 - Browse changed files as a collapsible folder tree or flat list ([#1918](https://github.com/getpaseo/paseo/pull/1918), [#1945](https://github.com/getpaseo/paseo/pull/1945) by [@cleiter](https://github.com/cleiter))
 - Always expand agent reasoning with a new appearance setting ([#1943](https://github.com/getpaseo/paseo/pull/1943) by [@mcowger](https://github.com/mcowger))
 
-### Improved in Paseo 0.1.105
+### Improved
 
 - Project picker finds folders with fuzzy search and native desktop browsing ([#1968](https://github.com/getpaseo/paseo/pull/1968))
 - Large workspace sidebars stay responsive ([#1966](https://github.com/getpaseo/paseo/pull/1966))
 - Generated workspace names and Git text can use MiniMax M3 ([#1955](https://github.com/getpaseo/paseo/pull/1955) by [@octo-patch](https://github.com/octo-patch))
 - Cursor now exposes thinking and fast mode ([#1952](https://github.com/getpaseo/paseo/pull/1952))
 
-### Fixed in Paseo 0.1.105
+### Fixed
 
 - Codex stays active and streams correctly while subagents run ([#1967](https://github.com/getpaseo/paseo/pull/1967))
 - Android audio interruptions no longer crash voice mode or leave dictation stuck ([#1941](https://github.com/getpaseo/paseo/pull/1941))
@@ -755,7 +842,7 @@
 
 ## 0.1.104 - 2026-07-08
 
-### Added in Paseo 0.1.104
+### Added
 
 - Agents can drive the in-app browser with page snapshots, trusted input, dialogs, and tab controls ([#1881](https://github.com/getpaseo/paseo/pull/1881))
 - Inspect, annotate, and send page elements from a browser tab to the agent ([#1708](https://github.com/getpaseo/paseo/pull/1708) by [@huiliaoning](https://github.com/huiliaoning))
@@ -765,7 +852,7 @@
 - Claude Ultra Code is available for supported Claude models ([#1872](https://github.com/getpaseo/paseo/pull/1872))
 - ByteDance TRAE CLI available as an agent provider ([#1831](https://github.com/getpaseo/paseo/pull/1831), [#1896](https://github.com/getpaseo/paseo/pull/1896) by [@park0er](https://github.com/park0er))
 
-### Improved in Paseo 0.1.104
+### Improved
 
 - Manage the built-in daemon from one place in desktop settings ([#1938](https://github.com/getpaseo/paseo/pull/1938))
 - Scheduled and loop runs each get their own workspace in the sidebar ([#1909](https://github.com/getpaseo/paseo/pull/1909), [#1934](https://github.com/getpaseo/paseo/pull/1934))
@@ -776,7 +863,7 @@
 - Diagnostic reports include desktop app logs ([#1914](https://github.com/getpaseo/paseo/pull/1914))
 - Paseo's built-in tools take less context ([#1939](https://github.com/getpaseo/paseo/pull/1939))
 
-### Fixed in Paseo 0.1.104
+### Fixed
 
 - Renamed hosts keep their name after reconnecting ([#1940](https://github.com/getpaseo/paseo/pull/1940))
 - Desktop finds your installed CLIs even when your shell is slow to start ([#1916](https://github.com/getpaseo/paseo/pull/1916))
@@ -792,13 +879,13 @@
 
 ## 0.1.103 - 2026-07-01
 
-### Added in Paseo 0.1.103
+### Added
 
 - Claude Sonnet 5 is available in the Claude model picker ([#1850](https://github.com/getpaseo/paseo/pull/1850))
 
 ## 0.1.102 - 2026-06-30
 
-### Added in Paseo 0.1.102
+### Added
 
 - Fork chats into a new tab or new worktree ([#1788](https://github.com/getpaseo/paseo/pull/1788))
 - See workspaces from all connected hosts ([#1538](https://github.com/getpaseo/paseo/pull/1538), [#1775](https://github.com/getpaseo/paseo/pull/1775), [#1825](https://github.com/getpaseo/paseo/pull/1825))
@@ -810,7 +897,7 @@
 - Show MiniMax usage in quota views ([#1662](https://github.com/getpaseo/paseo/pull/1662) by [@ilteoood](https://github.com/ilteoood))
 - Highlight C# code blocks ([#1651](https://github.com/getpaseo/paseo/pull/1651) by [@dev693](https://github.com/dev693))
 
-### Improved in Paseo 0.1.102
+### Improved
 
 - New Workspace opens from anywhere ([#1746](https://github.com/getpaseo/paseo/pull/1746), [#1806](https://github.com/getpaseo/paseo/pull/1806))
 - Project search shows loading progress ([#1762](https://github.com/getpaseo/paseo/pull/1762))
@@ -820,7 +907,7 @@
 - Open file tabs refresh when you revisit them ([#1699](https://github.com/getpaseo/paseo/pull/1699) by [@cleiter](https://github.com/cleiter))
 - Web terminals scroll more smoothly ([#1622](https://github.com/getpaseo/paseo/pull/1622) by [@TommyLike](https://github.com/TommyLike))
 
-### Fixed in Paseo 0.1.102
+### Fixed
 
 - Freshly added projects can be edited without restarting ([#1761](https://github.com/getpaseo/paseo/pull/1761) by [@huiliaoning](https://github.com/huiliaoning))
 - Large repos open more reliably ([#1620](https://github.com/getpaseo/paseo/pull/1620) by [@jms830](https://github.com/jms830))
@@ -843,14 +930,14 @@
 
 ## 0.1.101 - 2026-06-26
 
-### Added in Paseo 0.1.101
+### Added
 
 - Copy a troubleshooting report from Settings when support needs host, daemon, provider, and log details ([#1728](https://github.com/getpaseo/paseo/pull/1728))
 - Claude image tool results now render as images in chat ([#1717](https://github.com/getpaseo/paseo/pull/1717))
 - Added Japanese ([#1694](https://github.com/getpaseo/paseo/pull/1694) by [@sysCat64](https://github.com/sysCat64))
 - Added Brazilian Portuguese ([#1653](https://github.com/getpaseo/paseo/pull/1653) by [@Alcimerio](https://github.com/Alcimerio))
 
-### Improved in Paseo 0.1.101
+### Improved
 
 - Provider diagnostics stay useful even when model discovery is slow ([#1724](https://github.com/getpaseo/paseo/pull/1724))
 - Slow provider requests no longer make the app look disconnected ([#1723](https://github.com/getpaseo/paseo/pull/1723))
@@ -858,7 +945,7 @@
 - Workspaces started from slash-command prompts get clearer names ([#1709](https://github.com/getpaseo/paseo/pull/1709))
 - ACP provider catalog updated to the latest registry versions
 
-### Fixed in Paseo 0.1.101
+### Fixed
 
 - Pi no longer creates empty sessions while loading new-agent options ([#1727](https://github.com/getpaseo/paseo/pull/1727))
 - Windows daemon status finds the daemon process more reliably ([#1725](https://github.com/getpaseo/paseo/pull/1725))
@@ -867,16 +954,16 @@
 
 ## 0.1.100 - 2026-06-24
 
-### Added in Paseo 0.1.100
+### Added
 
 - Cycle agent modes with Shift+Tab
 - Select a custom Copilot agent when starting or mid-session ([#1700](https://github.com/getpaseo/paseo/pull/1700))
 
-### Improved in Paseo 0.1.100
+### Improved
 
 - ACP provider catalog updated to the latest registry versions
 
-### Fixed in Paseo 0.1.100
+### Fixed
 
 - Claude no longer sends an extra API request after each message ([#1701](https://github.com/getpaseo/paseo/pull/1701))
 - OpenCode no longer leaves stray background servers running after sessions end ([#1697](https://github.com/getpaseo/paseo/pull/1697))
@@ -884,12 +971,12 @@
 
 ## 0.1.99 - 2026-06-23
 
-### Improved in Paseo 0.1.99
+### Improved
 
 - The PR panel now has a refresh button and clearer loading states ([#1664](https://github.com/getpaseo/paseo/pull/1664))
 - Provider diagnostics and model lists now stay in sync ([#1660](https://github.com/getpaseo/paseo/pull/1660))
 
-### Fixed in Paseo 0.1.99
+### Fixed
 
 - ACP providers like Grok no longer show duplicate user messages
 - Saved composer modes no longer reset while provider data is loading ([#1658](https://github.com/getpaseo/paseo/pull/1658))
@@ -897,7 +984,7 @@
 
 ## 0.1.98 - 2026-06-21
 
-### Added in Paseo 0.1.98
+### Added
 
 - See plan usage in-app for Claude, Codex, Copilot, Cursor, Z.AI, Grok, and Kimi ([#1278](https://github.com/getpaseo/paseo/pull/1278) by [@ABorakati](https://github.com/ABorakati))
 - Added Ultracode for Claude ([#1625](https://github.com/getpaseo/paseo/pull/1625))
@@ -905,14 +992,14 @@
 - Add a project without creating a workspace
 - Add a setting to show branch names instead of titles in the sidebar
 
-### Improved in Paseo 0.1.98
+### Improved
 
 - Mid-turn thinking and mode changes now say they apply next turn
 - PR merge options name their method: squash, merge, or rebase ([#1608](https://github.com/getpaseo/paseo/pull/1608) by [@mcowger](https://github.com/mcowger))
 - A running agent's mode change is remembered for new agents
 - Copy a provider's launch diagnostic in one tap ([#1611](https://github.com/getpaseo/paseo/pull/1611))
 
-### Fixed in Paseo 0.1.98
+### Fixed
 
 - OpenCode no longer scans your whole disk on macOS desktop ([#1626](https://github.com/getpaseo/paseo/pull/1626))
 - Daemon no longer crashes when OpenAI speech has no API key ([#1368](https://github.com/getpaseo/paseo/pull/1368) by [@mcowger](https://github.com/mcowger))
@@ -926,7 +1013,7 @@
 
 ## 0.1.97 - 2026-06-18
 
-### Added in Paseo 0.1.97
+### Added
 
 - **Simplify workspace model** — run multiple workspaces on the same code without a worktree, each with its own agents, terminals, and status ([#1539](https://github.com/getpaseo/paseo/pull/1539))
 - **Reopen archived workspaces from History** — restore a past workspace even after its worktree was removed
@@ -936,7 +1023,7 @@
 - **Pin terminal, browser, and new-tab buttons to the tab row and sidebar**
 - **Create a new workspace with a keyboard shortcut**
 
-### Improved in Paseo 0.1.97
+### Improved
 
 - Workspace titles come from your first prompt and are shorter ([#1563](https://github.com/getpaseo/paseo/pull/1563))
 - Copy a workspace's branch or path from its hover card
@@ -946,7 +1033,7 @@
 - Cursor lists only models you can select ([#1556](https://github.com/getpaseo/paseo/pull/1556))
 - ACP provider catalog updated to the latest registry versions
 
-### Fixed in Paseo 0.1.97
+### Fixed
 
 - Brief daemon slowdowns no longer drop your connection
 - Linux AppImage updates no longer hang on quit or delete the app ([#1485](https://github.com/getpaseo/paseo/pull/1485) by [@xpufx](https://github.com/xpufx))
@@ -963,23 +1050,23 @@
 
 ## 0.1.96 - 2026-06-13
 
-### Fixed in Paseo 0.1.96
+### Fixed
 
 - On Android, the sidebar no longer reappears and gets stuck after you open a chat
 
 ## 0.1.95 - 2026-06-13
 
-### Added in Paseo 0.1.95
+### Added
 
 - **Attach any file to agents on desktop** ([#1474](https://github.com/getpaseo/paseo/pull/1474))
 
-### Improved in Paseo 0.1.95
+### Improved
 
 - The git push button shows before merge actions when your branch is ahead ([#1488](https://github.com/getpaseo/paseo/pull/1488))
 - SVG attachments are uploaded to disk
 - Switching workspaces feels smoother
 
-### Fixed in Paseo 0.1.95
+### Fixed
 
 - Fixed cases where outdated GitHub data could be shown ([#1491](https://github.com/getpaseo/paseo/pull/1491))
 - Uploaded images in PR comments and review threads now load in the PR panel ([#1486](https://github.com/getpaseo/paseo/pull/1486))
@@ -989,21 +1076,21 @@
 
 ## 0.1.94 - 2026-06-12
 
-### Added in Paseo 0.1.94
+### Added
 
 - **Attach pull request comments, reviews, threads, and failed check logs to chat from the PR panel** ([#1400](https://github.com/getpaseo/paseo/pull/1400))
 - **Use Paseo in Arabic, Chinese, English, French, Russian, and Spanish** ([#1282](https://github.com/getpaseo/paseo/pull/1282), [#1478](https://github.com/getpaseo/paseo/pull/1478) by [@chyendongnhanh338](https://github.com/chyendongnhanh338), [@dwyanewang](https://github.com/dwyanewang))
 - **Create reusable terminal profiles from Host settings**
 - **Open workspaces in Antigravity** ([#1424](https://github.com/getpaseo/paseo/pull/1424) by [@krumpyzoid](https://github.com/krumpyzoid))
 
-### Improved in Paseo 0.1.94
+### Improved
 
 - Claude skills appear in prompt autocomplete as you type ([#1464](https://github.com/getpaseo/paseo/pull/1464))
 - Copy file paths directly from file preview tab menus ([#1473](https://github.com/getpaseo/paseo/pull/1473))
 - PR status stays current after an agent merges a branch ([#1455](https://github.com/getpaseo/paseo/pull/1455))
 - Workspace tabs stay fast by retaining only the active workspace screens ([#1472](https://github.com/getpaseo/paseo/pull/1472))
 
-### Fixed in Paseo 0.1.94
+### Fixed
 
 - Composer send shortcuts no longer conflict with other keyboard shortcuts
 - Multi-question prompts advance one answer at a time ([#1462](https://github.com/getpaseo/paseo/pull/1462))
@@ -1014,17 +1101,17 @@
 
 ## 0.1.93 - 2026-06-10
 
-### Added in Paseo 0.1.93
+### Added
 
 - **Claude Fable 5 is available in the Claude model picker** ([#1443](https://github.com/getpaseo/paseo/pull/1443) by [@0-Captain](https://github.com/0-Captain))
 
 ## 0.1.92 - 2026-06-10
 
-### Added in Paseo 0.1.92
+### Added
 
 - **Skills autocomplete inside prompts**
 
-### Improved in Paseo 0.1.92
+### Improved
 
 - Provider catalog is inline in Host settings ([#1423](https://github.com/getpaseo/paseo/pull/1423))
 - Manual update checks skip staged rollout delays
@@ -1034,7 +1121,7 @@
 - Model selector descriptions are clearer
 - ACP provider errors show the provider's real failure message
 
-### Fixed in Paseo 0.1.92
+### Fixed
 
 - New Paseo worktree branches can push their first commits
 - Imported sessions no longer open blank or in the wrong workspace
@@ -1048,14 +1135,14 @@
 
 ## 0.1.91 - 2026-06-08
 
-### Added in Paseo 0.1.91
+### Added
 
 - **Open multiple desktop windows** ([#1355](https://github.com/getpaseo/paseo/pull/1355) by [@arieel-ost](https://github.com/arieel-ost))
 - **Open browser pop-ups and links inside workspace tabs** ([#1375](https://github.com/getpaseo/paseo/pull/1375))
 - **Use the command center from mobile**
 - **Add OMP as a provider** ([#1388](https://github.com/getpaseo/paseo/pull/1388))
 
-### Improved in Paseo 0.1.91
+### Improved
 
 - New workspaces remember your last provider, mode, and thinking choices
 - Git controls now default ready branches to pull requests and hide unavailable pull or push actions
@@ -1071,7 +1158,7 @@
 - Local dictation crash reports show more useful details ([#1379](https://github.com/getpaseo/paseo/pull/1379))
 - Daemon logs show why managed workers exit
 
-### Fixed in Paseo 0.1.91
+### Fixed
 
 - Pi compaction slash commands run correctly ([#1338](https://github.com/getpaseo/paseo/pull/1338) by [@chyendongnhanh338](https://github.com/chyendongnhanh338))
 - Auto-archiving still works after a merged PR branch is deleted ([#1378](https://github.com/getpaseo/paseo/pull/1378))
@@ -1089,7 +1176,7 @@
 
 ## 0.1.90 - 2026-06-04
 
-### Added in Paseo 0.1.90
+### Added
 
 - **Group the sidebar by status so workspaces waiting on you, ready to review, working, and done are visible at a glance** ([#1317](https://github.com/getpaseo/paseo/pull/1317))
 - **Start a new workspace from the global sidebar button without choosing a project first** ([#1324](https://github.com/getpaseo/paseo/pull/1324))
@@ -1098,7 +1185,7 @@
 - **Desktop-managed Paseo skills stay current after installing a newer desktop build** ([#1309](https://github.com/getpaseo/paseo/pull/1309))
 - **Dart files and Dart code blocks are now syntax-highlighted** ([#1326](https://github.com/getpaseo/paseo/pull/1326))
 
-### Improved in Paseo 0.1.90
+### Improved
 
 - Sidebar workspaces can be marked as read when they are ready to review or failed ([#1317](https://github.com/getpaseo/paseo/pull/1317))
 - Child agents keep unattended permissions when delegated across providers ([#1315](https://github.com/getpaseo/paseo/pull/1315))
@@ -1110,7 +1197,7 @@
 - Sessions are ordered by latest activity
 - ACP provider catalog entries are updated for Claude Agent, Cline, Codebuddy Code, Factory Droid, and Qoder
 
-### Fixed in Paseo 0.1.90
+### Fixed
 
 - Timeline catch-up no longer leaves older messages unloaded
 - Markdown code in file previews renders correctly
@@ -1122,20 +1209,20 @@
 
 ## 0.1.89 - 2026-06-02
 
-### Added in Paseo 0.1.89
+### Added
 
 - **Open workspace services through public service proxy links** ([#1280](https://github.com/getpaseo/paseo/pull/1280) by [@mcowger](https://github.com/mcowger))
 - **Choose where new worktrees are created** ([#1230](https://github.com/getpaseo/paseo/pull/1230) by [@mcowger](https://github.com/mcowger))
 - **Desktop windows reopen at the same size and position** ([#1224](https://github.com/getpaseo/paseo/pull/1224) by [@everton-dgn](https://github.com/everton-dgn))
 - **Delegated agents can run independently and send recurring heartbeat updates**
 
-### Improved in Paseo 0.1.89
+### Improved
 
 - Composer controls fit better in narrow panes
 - Fork pull request badges stay visible in worktrees
 - Cline in the ACP catalog is updated to v3
 
-### Fixed in Paseo 0.1.89
+### Fixed
 
 - Archiving a worktree finishes even if teardown hits an error ([#1260](https://github.com/getpaseo/paseo/pull/1260) by [@mcowger](https://github.com/mcowger))
 - iOS chat messages render bold, italics, strikethrough, and line breaks correctly ([#1254](https://github.com/getpaseo/paseo/pull/1254) by [@outofrange-consulting](https://github.com/outofrange-consulting))
@@ -1145,7 +1232,7 @@
 
 ## 0.1.88 - 2026-06-01
 
-### Added in Paseo 0.1.88
+### Added
 
 - **Choose an app theme from the new Appearance settings**
 - **Set a custom interface font**
@@ -1155,7 +1242,7 @@
 - **Choose a syntax highlighting theme**
 - **Keep cron schedules aligned to a chosen time zone** ([#1232](https://github.com/getpaseo/paseo/pull/1232) by [@damselem](https://github.com/damselem))
 
-### Improved in Paseo 0.1.88
+### Improved
 
 - Settings now has a flatter sidebar with a host picker
 - Workspace tab switching is faster
@@ -1164,7 +1251,7 @@
 - macOS displays can idle normally while the desktop app is open ([#1242](https://github.com/getpaseo/paseo/pull/1242) by [@fireblue](https://github.com/fireblue))
 - Large generated diffs now show a clear too-large placeholder instead of trying to render the whole file
 
-### Fixed in Paseo 0.1.88
+### Fixed
 
 - Chat history catches up correctly around long-running tool updates
 - Terminal panes keep the right size after splitting or resizing panes
@@ -1174,24 +1261,24 @@
 
 ## 0.1.87 - 2026-05-30
 
-### Added in Paseo 0.1.87
+### Added
 
 - Permission prompts from OpenCode subagents now surface in Paseo so you can approve or deny them
 
-### Fixed in Paseo 0.1.87
+### Fixed
 
 - Fixed an intermittent Android crash while animated views were drawing
 - Fixed mobile bottom sheets not reopening after being dismissed
 
 ## 0.1.86 - 2026-05-29
 
-### Added in Paseo 0.1.86
+### Added
 
 - **Launch Grok (xAI) as a coding agent**
 - **Fast mode for Claude Opus**
 - **Multilingual local dictation with the new Parakeet v3 speech model**
 
-### Improved in Paseo 0.1.86
+### Improved
 
 - Edit, Write, and Read tool calls are now syntax-highlighted
 - The model selector shows the error when a provider fails to load
@@ -1202,7 +1289,7 @@
 - Auto-generated agent titles and worktree branch names now use your configured provider fallbacks ([#1219](https://github.com/getpaseo/paseo/pull/1219) by [@mcowger](https://github.com/mcowger))
 - Local dictation keeps its speech models out of the daemon, lowering its memory use
 
-### Fixed in Paseo 0.1.86
+### Fixed
 
 - On mobile, the whole composer now stays above the keyboard so the subagents track and draft pills no longer hide behind it
 - The mobile agent timeline now catches up fully after reconnecting, so no messages go missing
@@ -1210,22 +1297,22 @@
 
 ## 0.1.85 - 2026-05-29
 
-### Added in Paseo 0.1.85
+### Added
 
 - **Opus 4.8 in the Claude model picker**, with a 1M-context variant
 
-### Improved in Paseo 0.1.85
+### Improved
 
 - Archiving a worktree now keeps its agents under the archived list instead of removing them
 - Archiving an agent cleans up any schedules targeting it
 
 ## 0.1.84 - 2026-05-28
 
-### Added in Paseo 0.1.84
+### Added
 
 - **Auto-accept tool calls for OpenCode agents**
 
-### Improved in Paseo 0.1.84
+### Improved
 
 - Copy an OpenCode resume command to continue the session outside Paseo
 - Model selector lists every enabled provider, with a Retry button when one fails to load
@@ -1240,7 +1327,7 @@
 - Agent mode controls use a cleaner monochrome treatment
 - Compact layouts move the context ring to the footer right edge
 
-### Fixed in Paseo 0.1.84
+### Fixed
 
 - Allow selecting text in the chat on mobile ([#1153](https://github.com/getpaseo/paseo/pull/1153) by [@muzhi1991](https://github.com/muzhi1991))
 - Submitting a Pi question no longer looks like a second prompt opened ([#1188](https://github.com/getpaseo/paseo/pull/1188) by [@yuruiz](https://github.com/yuruiz))
@@ -1251,7 +1338,7 @@
 
 ## 0.1.83 - 2026-05-26
 
-### Fixed in Paseo 0.1.83
+### Fixed
 
 - Creating an agent via MCP now waits for it to actually start, so failures surface as a clear create error
 - Scheduling an agent via MCP no longer rejects blank cadence placeholders
@@ -1259,7 +1346,7 @@
 
 ## 0.1.82 - 2026-05-26
 
-### Added in Paseo 0.1.82
+### Added
 
 - **Rewind chat or files from any user message** ([#1154](https://github.com/getpaseo/paseo/pull/1154))
 - **See the cumulative cost of an agent session** ([#1163](https://github.com/getpaseo/paseo/pull/1163))
@@ -1270,7 +1357,7 @@
 - Devin CLI in the ACP provider catalog (by [@Alcimerio](https://github.com/Alcimerio))
 - OpenCode agents show their mode colors
 
-### Improved in Paseo 0.1.82
+### Improved
 
 - Mobile terminal keyboard hides when you open a sidebar
 - Tool activity for read, write, and OpenCode tools renders more consistently ([#1171](https://github.com/getpaseo/paseo/pull/1171))
@@ -1278,7 +1365,7 @@
 - Settings latency readouts are easier to scan ([#1170](https://github.com/getpaseo/paseo/pull/1170))
 - Pull request merge is available as soon as GitHub reports the PR is ready ([#1172](https://github.com/getpaseo/paseo/pull/1172))
 
-### Fixed in Paseo 0.1.82
+### Fixed
 
 - Mobile slash command autocomplete no longer flickers or mis-layers
 - Interrupting an OpenCode agent returns it to idle instead of showing an error ([#1169](https://github.com/getpaseo/paseo/pull/1169))
@@ -1289,19 +1376,19 @@
 
 ## 0.1.81 - 2026-05-24
 
-### Added in Paseo 0.1.81
+### Added
 
 - **Paseo can now be installed as a web app from supported browsers** ([#1144](https://github.com/getpaseo/paseo/pull/1144))
 - **Pi extension dialogs now appear as Paseo permission prompts** ([#1134](https://github.com/getpaseo/paseo/pull/1134) by [@yuruiz](https://github.com/yuruiz))
 - Added community links and a home button to the sidebar
 
-### Improved in Paseo 0.1.81
+### Improved
 
 - **Mobile terminals load faster and restore existing output more smoothly** ([#1147](https://github.com/getpaseo/paseo/pull/1147))
 - Copying assistant messages preserves formatting
 - Agent metadata fallback failures now log each provider attempt for easier debugging
 
-### Fixed in Paseo 0.1.81
+### Fixed
 
 - Android: slash command suggestions stay interactive when opened from the composer
 - macOS: Alt+letter shortcuts work again
@@ -1316,13 +1403,13 @@
 
 ## 0.1.80 - 2026-05-21
 
-### Fixed in Paseo 0.1.80
+### Fixed
 
 - Opening dropdown menus no longer crashes on mobile
 
 ## 0.1.79 - 2026-05-21
 
-### Added in Paseo 0.1.79
+### Added
 
 - **Pi has been revamped with first-class support**
   - Runs through your installed Pi CLI, so your Pi extensions and configuration carry over
@@ -1340,7 +1427,7 @@
 - Custom environment variables passed when creating an agent now reach the agent process ([#1112](https://github.com/getpaseo/paseo/pull/1112))
 - NixOS module supports the public TLS option for self-hosted relays ([#1106](https://github.com/getpaseo/paseo/pull/1106) by [@yzx9](https://github.com/yzx9))
 
-### Improved in Paseo 0.1.79
+### Improved
 
 - **Stale host connections recover automatically without a manual refresh**
 - Paseo opens to the workspace you were on last time you used it ([#1101](https://github.com/getpaseo/paseo/pull/1101))
@@ -1350,7 +1437,7 @@
 - Agent file-link tooltips show the full resolved file path ([#1088](https://github.com/getpaseo/paseo/pull/1088))
 - Workspace git status refreshes less aggressively in the background ([#1102](https://github.com/getpaseo/paseo/pull/1102))
 
-### Fixed in Paseo 0.1.79
+### Fixed
 
 - macOS desktop no longer freezes after the display wakes from sleep ([#745](https://github.com/getpaseo/paseo/pull/745))
 - Windows: Codex picks up the Microsoft Store install correctly ([#1020](https://github.com/getpaseo/paseo/pull/1020) by [@32r4](https://github.com/32r4))
@@ -1367,11 +1454,11 @@
 
 ## 0.1.78 - 2026-05-18
 
-### Improved in Paseo 0.1.78
+### Improved
 
 - **Mobile model selector is faster and more straightforward** Picking a model, mode, or thinking option takes fewer taps
 
-### Fixed in Paseo 0.1.78
+### Fixed
 
 - Splitting a pane no longer loses your scroll position
 - Typing in mobile sheets no longer flickers
@@ -1379,7 +1466,7 @@
 
 ## 0.1.77 - 2026-05-18
 
-### Added in Paseo 0.1.77
+### Added
 
 - **Slash commands to end and restart an agent**
 - **Syntax highlighting for code blocks in chat**
@@ -1390,7 +1477,7 @@
 - MCP exposes schedule update, logs, and run-once tools ([#1032](https://github.com/getpaseo/paseo/pull/1032) by [@skevetter](https://github.com/skevetter))
 - Self-hosted relays can use a different TLS setting for the public endpoint ([#1045](https://github.com/getpaseo/paseo/pull/1045) by [@yzx9](https://github.com/yzx9))
 
-### Improved in Paseo 0.1.77
+### Improved
 
 - User messages now have a distinct bubble fill for clearer chat hierarchy
 - Closing a tab returns to its parent tab
@@ -1399,7 +1486,7 @@
 - Nix install of the daemon is smaller ([#966](https://github.com/getpaseo/paseo/pull/966) by [@ixxie](https://github.com/ixxie))
 - Nix install honors home-manager profile paths when inheriting the user PATH ([#1040](https://github.com/getpaseo/paseo/pull/1040) by [@ixxie](https://github.com/ixxie))
 
-### Fixed in Paseo 0.1.77
+### Fixed
 
 - OpenCode probes no longer create empty sessions
 - OpenCode custom commands no longer hang
@@ -1417,7 +1504,7 @@
 
 ## 0.1.76 - 2026-05-15
 
-### Added in Paseo 0.1.76
+### Added
 
 - **Chat timestamps and turn durations** Every message shows when it was sent, and each turn surfaces how long the agent took
 - **Auto Review permission mode for Claude Code and Codex** Agents stop after each assistant turn for review instead of running unattended ([#928](https://github.com/getpaseo/paseo/pull/928), [#963](https://github.com/getpaseo/paseo/pull/963) by [@bolasblack](https://github.com/bolasblack))
@@ -1433,7 +1520,7 @@
 - Diagnostics for generic ACP providers surface in the model picker
 - Allow setting fast mode for Paseo subagents ([#909](https://github.com/getpaseo/paseo/pull/909), [#910](https://github.com/getpaseo/paseo/pull/910) by [@kongjiadongyuan](https://github.com/kongjiadongyuan))
 
-### Improved in Paseo 0.1.76
+### Improved
 
 - Surface Claude error messages in chat instead of ending the turn silently
 - Workspace checkout picker auto-selects when a single PR is attached
@@ -1441,7 +1528,7 @@
 - OpenCode models from console subscription providers now appear in the model picker ([#917](https://github.com/getpaseo/paseo/pull/917) by [@t2o2](https://github.com/t2o2))
 - Cursor model picker reflects the models advertised by the Cursor ACP client ([#958](https://github.com/getpaseo/paseo/pull/958) by [@chrisbanes](https://github.com/chrisbanes))
 
-### Fixed in Paseo 0.1.76
+### Fixed
 
 - iPad hardware Enter submits the composer ([#919](https://github.com/getpaseo/paseo/pull/919) by [@kongjiadongyuan](https://github.com/kongjiadongyuan))
 - PR status falls back to a non-checks query for fine-grained GitHub tokens ([#932](https://github.com/getpaseo/paseo/pull/932) by [@32r4](https://github.com/32r4))
@@ -1463,11 +1550,11 @@
 
 ## 0.1.75 - 2026-05-12
 
-### Added in Paseo 0.1.75
+### Added
 
 - Set the speech-to-text language used by dictation and voice mode from settings ([#941](https://github.com/getpaseo/paseo/pull/941))
 
-### Fixed in Paseo 0.1.75
+### Fixed
 
 - Codex resume failures now surface as explicit errors instead of leaving the agent silently stuck ([#947](https://github.com/getpaseo/paseo/pull/947))
 - Custom providers extending Codex now route correctly when they set a custom `OPENAI_BASE_URL` ([#915](https://github.com/getpaseo/paseo/pull/915))
@@ -1480,13 +1567,13 @@
 
 ## 0.1.74 - 2026-05-11
 
-### Fixed in Paseo 0.1.74
+### Fixed
 
 - **OpenCode agent turns no longer stall** Paseo now follows OpenCode's global event stream, so turns stream reliably without falling back to fragile recovery paths ([#916](https://github.com/getpaseo/paseo/pull/916))
 
 ## 0.1.73 - 2026-05-10
 
-### Fixed in Paseo 0.1.73
+### Fixed
 
 - **OpenCode agents work again on OpenCode 1.14.42+** ([#895](https://github.com/getpaseo/paseo/pull/895), [#902](https://github.com/getpaseo/paseo/pull/902), [#904](https://github.com/getpaseo/paseo/pull/904) by [@atomlink-ye](https://github.com/atomlink-ye), [@plutofog](https://github.com/plutofog))
 - Web: opening a workspace no longer hangs in browsers without `crypto.randomUUID` ([#858](https://github.com/getpaseo/paseo/pull/858) by [@cokekitten](https://github.com/cokekitten))
@@ -1501,7 +1588,7 @@
 
 ## 0.1.72 - 2026-05-10
 
-### Fixed in Paseo 0.1.72
+### Fixed
 
 - **Codex approval prompts no longer hang** Fixes a regression introduced in 0.1.70 where Codex agents would wait forever on command and file approvals — the prompt never reached the app and the agent stayed stuck in "running" ([#866](https://github.com/getpaseo/paseo/pull/866), [#869](https://github.com/getpaseo/paseo/pull/869))
 - **Windows: daemon no longer crashes when Codex emits non-JSON output** Localized stdout lines from the Codex CLI are now ignored instead of taking down the daemon worker ([#866](https://github.com/getpaseo/paseo/pull/866))
@@ -1511,7 +1598,7 @@
 
 ## 0.1.71 - 2026-05-09
 
-### Added in Paseo 0.1.71
+### Added
 
 - **Import existing Claude, Codex, and OpenCode sessions** into Paseo — pick up a conversation you started in the terminal and keep going from the app, with the full timeline ([#766](https://github.com/getpaseo/paseo/pull/766), [#833](https://github.com/getpaseo/paseo/pull/833))
 - **Subagents now appear in a collapsible section above the composer** so you can jump into agents your main agent spawned ([#532](https://github.com/getpaseo/paseo/pull/532))
@@ -1522,29 +1609,29 @@
 - Rich context menu on desktop — copy link, copy image, and spellcheck suggestions
 - Archiving a Codex-backed agent now archives the underlying native Codex thread too ([#827](https://github.com/getpaseo/paseo/pull/827) by [@32r4](https://github.com/32r4))
 
-### Improved in Paseo 0.1.71
+### Improved
 
 - Opening a workspace auto-focuses the agent that needs your attention ([#828](https://github.com/getpaseo/paseo/pull/828))
 - An unattended agent that spawns a sub-agent on a different provider via MCP now starts the sub-agent in unattended mode too
 
-### Fixed in Paseo 0.1.71
+### Fixed
 
 - iOS project picker now submits the typed path ([#831](https://github.com/getpaseo/paseo/pull/831))
 - System messages and chat mentions routed to multiple agents now reach every recipient consistently ([#830](https://github.com/getpaseo/paseo/pull/830))
 - Clicking a Markdown link in agent output no longer reloads the desktop app on top of opening the link
 - macOS desktop tab-jump shortcuts now use Cmd+Option+1-9, avoiding conflicts with Option-based international keyboard characters such as `@`
 
-### Security in Paseo 0.1.71
+### Security
 
 - Local state files (daemon keypair, stored credentials, persisted config) are now readable only by the owning user ([#825](https://github.com/getpaseo/paseo/pull/825) by [@joaosa](https://github.com/joaosa))
 
 ## 0.1.70 - 2026-05-08
 
-### Breaking in Paseo 0.1.70
+### Breaking
 
 - **Claude agents now require `claude` on your PATH** Install Claude Code globally (`npm install -g @anthropic-ai/claude-code`) before running a Claude agent — Paseo no longer ships a bundled fallback binary. Same posture as Codex and OpenCode, and shrinks the desktop install by ~210 MB per platform
 
-### Added in Paseo 0.1.70
+### Added
 
 - **One-click ACP providers** — add Cursor, Hermes, Qwen Coder, Kimi Code, and other ACP agents from a built-in catalog instead of writing config by hand
 - Codex `/goal` slash command — set or update the goal mid-turn while a Codex agent is running
@@ -1555,7 +1642,7 @@
 - `paseo schedule run-once` for cron-style triggers, plus `--mode` on `schedule` and `loop`. Background runs now default to unattended mode
 - Projects settings now lists workspaces from any remote — GitLab, Gitea, Bitbucket, self-hosted, and SSH-style URLs, not just GitHub ([#681](https://github.com/getpaseo/paseo/pull/681) by [@krumpyzoid](https://github.com/krumpyzoid))
 
-### Improved in Paseo 0.1.70
+### Improved
 
 - Skills now install, update, and uninstall on demand instead of silently auto-syncing on every desktop launch
 - Self-hosted relays can opt into `wss://` for TLS connections
@@ -1567,7 +1654,7 @@
 - Settings sidebar order: Projects now appears after General
 - Electron upgraded to 41.2.0 for the desktop app
 
-### Fixed in Paseo 0.1.70
+### Fixed
 
 - **Claude agent: daemon no longer crashes mid-turn** when the underlying SDK fires a stray control message after the connection has been torn down
 - **Windows:** Terminals start reliably and shut down cleanly without leaving stuck processes behind
@@ -1598,20 +1685,20 @@
 
 ## 0.1.69 - 2026-05-05
 
-### Fixed in Paseo 0.1.69
+### Fixed
 
 - Paseo now recovers automatically when an internal daemon process crashes — your agents stay connected instead of getting stuck and you don't have to restart anything
 - Answering an interactive question from a Claude agent now reaches Claude correctly instead of being dropped ([#760](https://github.com/getpaseo/paseo/pull/760) by [@somus](https://github.com/somus))
 
 ## 0.1.68 - 2026-05-05
 
-### Fixed in Paseo 0.1.68
+### Fixed
 
 - The desktop app no longer fails on first launch after a fresh install
 
 ## 0.1.67 - 2026-05-03
 
-### Fixed in Paseo 0.1.67
+### Fixed
 
 - Archiving a worktree or workspace feels instant instead of waiting on the daemon, with automatic rollback if it fails
 - The built-in daemon toggle in desktop settings now actually takes effect
@@ -1621,7 +1708,7 @@
 
 ## 0.1.66 - 2026-05-03
 
-### Fixed in Paseo 0.1.66
+### Fixed
 
 - Streaming markdown preserves trailing newlines so paragraph spacing stays correct while the agent is still typing
 - Agent initialization failures surface within 30 seconds instead of 5 minutes
@@ -1629,7 +1716,7 @@
 
 ## 0.1.65 - 2026-05-03
 
-### Added in Paseo 0.1.65
+### Added
 
 - **In-app browser** — open a real web browser in any workspace to test your app ([#670](https://github.com/getpaseo/paseo/pull/670) by [@jasonkneen](https://github.com/jasonkneen))
 - Inline review comments in the git diff pane. Tap a line number to start a comment ([#530](https://github.com/getpaseo/paseo/pull/530))
@@ -1641,7 +1728,7 @@
 - **Windows:** Native ARM64 builds are now available
 - Bundled Paseo skills now refresh automatically on desktop app launch
 
-### Improved in Paseo 0.1.65
+### Improved
 
 - Codex streaming feels more responsive — message boundaries are preserved and output arrives sooner
 - Terminal sessions run in a dedicated worker process for better stability
@@ -1649,7 +1736,7 @@
 - Review comment UI is cleaner and easier to scan
 - The daemon's `/api/status` endpoint is now protected by password auth when one is configured
 
-### Fixed in Paseo 0.1.65
+### Fixed
 
 - **Apple Silicon Mac:** The desktop update pipeline now publishes manifests atomically, closing a race that could install the Intel build on Apple Silicon Macs and cause 100%+ renderer CPU usage. Affected users will self-heal — electron-updater's Rosetta detection migrates back to arm64 on the next update poll ([#555](https://github.com/getpaseo/paseo/issues/555))
 - **Linux:** `.deb` and `.rpm` packages now show as `Paseo` in the dock and process list instead of `Paseo.bin`. `--no-sandbox` is now scoped to AppImage only, matching VS Code's sandbox handling ([#602](https://github.com/getpaseo/paseo/issues/602))
@@ -1677,22 +1764,22 @@
 
 ## 0.1.64 - 2026-04-28
 
-### Added in Paseo 0.1.64
+### Added
 
 - OpenCode now has a Full Access mode that auto-approves tool calls ([#595](https://github.com/getpaseo/paseo/pull/595) by [@tmih06](https://github.com/tmih06))
 - OpenCode supports executable slash commands ([#597](https://github.com/getpaseo/paseo/pull/597) by [@tmih06](https://github.com/tmih06))
 
-### Improved in Paseo 0.1.64
+### Improved
 
 - `@`-mention stays responsive on very large projects ([#600](https://github.com/getpaseo/paseo/pull/600) by [@yuruiz](https://github.com/yuruiz))
 
-### Fixed in Paseo 0.1.64
+### Fixed
 
 - Workspaces still load when `paseo.json` has a parse error
 
 ## 0.1.63 - 2026-04-28
 
-### Added in Paseo 0.1.63
+### Added
 
 - Project settings page with a built-in `paseo.json` editor
 - Cold start restores your last open workspace
@@ -1702,7 +1789,7 @@
 - Paseo prompts you to configure a worktree setup script when one is missing
 - Choose whether the daemon shuts down when you close the desktop app
 
-### Improved in Paseo 0.1.63
+### Improved
 
 - Provider settings and model selection have been redesigned
 - Voice mode transcription endpoint is configurable for OpenAI-compatible providers ([#570](https://github.com/getpaseo/paseo/pull/570) by [@yuruiz](https://github.com/yuruiz))
@@ -1712,7 +1799,7 @@
 - Archiving a worktree is instant instead of waiting for the backend to confirm
 - Agent timelines and git diff lists no longer jump around while loading or streaming
 
-### Fixed in Paseo 0.1.63
+### Fixed
 
 - `paseo loop run` and `paseo run` now respect the `--provider` and `--model` flags ([#594](https://github.com/getpaseo/paseo/pull/594) by [@VincenzoRocchi](https://github.com/VincenzoRocchi))
 - Pi provider shows up when only DeepSeek or other non-OpenAI/Anthropic/OpenRouter API keys are set
@@ -1736,15 +1823,15 @@
 
 ## 0.1.62 - 2026-04-23
 
-### Added in Paseo 0.1.62
+### Added
 
 - Sidebar warning when your app and daemon versions drift apart, with a shortcut to settings
 
-### Improved in Paseo 0.1.62
+### Improved
 
 - Workspaces appear in the sidebar immediately on startup instead of waiting for git registration
 
-### Fixed in Paseo 0.1.62
+### Fixed
 
 - Pull request status resolves correctly for PRs opened from forks
 - Installing the paseo CLI from the macOS desktop app now works in packaged builds
@@ -1752,12 +1839,12 @@
 
 ## 0.1.61 - 2026-04-23
 
-### Added in Paseo 0.1.61
+### Added
 
 - `additionalModels` option in provider config lets you add or relabel models without replacing the full list — entries merge with runtime-discovered models (ACP) or your static `models` list. See the [Providers docs](https://paseo.sh/docs/providers)
 - New [Providers docs page](https://paseo.sh/docs/providers) covering first-class providers and every custom provider config pattern in one place
 
-### Improved in Paseo 0.1.61
+### Improved
 
 - Pi loads your installed extensions on startup so their models show up in the model picker
 - Resizing the explorer sidebar no longer rerenders the rest of the workspace
@@ -1765,7 +1852,7 @@
 
 ## 0.1.60 - 2026-04-22
 
-### Added in Paseo 0.1.60
+### Added
 
 - Scripts and services per worktree — define named commands in `paseo.json`, and long-running services get supervised with their own ports and nice proxy URLs like `http://web.my-app.localhost:6767`. See the [worktrees guide](https://paseo.sh/docs/worktrees)
 - Launch scripts and services for a worktree directly from the workspace header
@@ -1780,7 +1867,7 @@
 - Beta release channel — opt in from Settings to receive beta desktop builds before they are promoted to stable
 - New-workspace picker ranks branches by recency with fast search
 
-### Improved in Paseo 0.1.60
+### Improved
 
 - Workspace and tab switching are dramatically faster on desktop and mobile — you can keep many workspaces open in parallel without lag
 - Agent streams render more smoothly during heavy tool output
@@ -1795,7 +1882,7 @@
 - `paseo ls` defaults to active agents; pass `-a` to include archived
 - GitHub branch and PR picker loads faster — queries are deferred until the picker opens
 
-### Fixed in Paseo 0.1.60
+### Fixed
 
 - Composer textarea shrinks back down after sending on web
 - New workspace drafts clear after submit instead of sticking around
@@ -1817,21 +1904,21 @@
 
 ## 0.1.59 - 2026-04-16
 
-### Added in Paseo 0.1.59
+### Added
 
 - Opus 4.7 in the Claude model picker, with a 1M-context variant
 - Extra High reasoning effort for Opus 4.7, between High and Max
 
 ## 0.1.58 - 2026-04-16
 
-### Added in Paseo 0.1.58
+### Added
 
 - Markdown files render as formatted markdown in the file pane ([#427](https://github.com/getpaseo/paseo/pull/427) by [@aaronflorey](https://github.com/aaronflorey))
 - Cmd+L (Ctrl+L on Windows/Linux) focuses the agent message input
 - Provider models refresh on a freshness TTL; Settings shows last-updated time and any fetch errors ([#426](https://github.com/getpaseo/paseo/pull/426))
 - `disallowedTools` option in provider config to block specific tools from an agent
 
-### Improved in Paseo 0.1.58
+### Improved
 
 - Windows: agents launch reliably from npm `.cmd` shims, paths with spaces, and JSON config args — fixes `spawn EINVAL` startup errors ([#454](https://github.com/getpaseo/paseo/pull/454))
 - OpenCode permission prompts include the requesting tool's context ([#398](https://github.com/getpaseo/paseo/pull/398) by [@aaronflorey](https://github.com/aaronflorey))
@@ -1841,7 +1928,7 @@
 - Paseo MCP tools work against archived agents, matching the CLI ([#423](https://github.com/getpaseo/paseo/pull/423))
 - Native scrollbars match the active theme across all web views ([#399](https://github.com/getpaseo/paseo/pull/399) by [@ethersh](https://github.com/ethersh))
 
-### Fixed in Paseo 0.1.58
+### Fixed
 
 - Code file previews can be selected and copied on iOS ([#447](https://github.com/getpaseo/paseo/pull/447) by [@muzhi1991](https://github.com/muzhi1991))
 - File preview no longer shows stale content when reopening the same file ([#411](https://github.com/getpaseo/paseo/pull/411) by [@muzhi1991](https://github.com/muzhi1991))
@@ -1855,14 +1942,14 @@
 
 ## 0.1.56 - 2026-04-14
 
-### Fixed in Paseo 0.1.56
+### Fixed
 
 - Projects with empty git repositories (no commits yet) no longer crash the app on startup
 - A single problematic project can no longer prevent the rest of your workspaces from loading
 
 ## 0.1.55 - 2026-04-14
 
-### Added in Paseo 0.1.55
+### Added
 
 - Provider profiles — define custom providers in your Paseo config that appear alongside built-ins. Override a built-in's binary, env, or models, or create entirely new providers. See the [configuration guide](https://github.com/getpaseo/paseo/blob/main/docs/custom-providers.md)
 - ACP agent support — add any ACP-compatible agent to Paseo with `extends: "acp"` in your provider config. No code changes needed
@@ -1870,14 +1957,14 @@
 - Max reasoning effort option for Opus 4.6 models
 - Cmd+, (Ctrl+, on Windows/Linux) opens settings
 
-### Improved in Paseo 0.1.55
+### Improved
 
 - Git operations are dramatically faster — workspace status, PR checks, and branch data all use a shared cached snapshot service instead of shelling out to git on every request. Running 20+ workspaces simultaneously is now smooth
 - Windows support — the daemon and CLI run natively on Windows with proper shell quoting, executable resolution, and path handling
 - iPad and tablet layouts work correctly across all screen sizes
 - IME composition (Chinese, Japanese, Korean input) no longer submits prematurely when pressing Enter
 
-### Fixed in Paseo 0.1.55
+### Fixed
 
 - Creating a worktree no longer briefly flashes it as a standalone project before placing it under the correct repository
 - Worktree creation spinner stays visible throughout the process instead of disappearing on mouse-out
@@ -1887,16 +1974,16 @@
 
 ## 0.1.54 - 2026-04-12
 
-### Added in Paseo 0.1.54
+### Added
 
 - Inline image previews in agent messages — screenshots and images generated by agents render directly in the conversation instead of showing as raw markdown links
 
-### Improved in Paseo 0.1.54
+### Improved
 
 - Paseo tools are no longer injected into agents by default — opt in from Settings when you need agent-to-agent orchestration
 - Agent provider and mode are now resolved server-side, so CLI commands like `paseo run` use consistent defaults without client-side lookups
 
-### Fixed in Paseo 0.1.54
+### Fixed
 
 - Shift+Enter now correctly inserts a newline in agent terminal input instead of submitting
 - Windows: MCP configuration is no longer mangled when spawning Claude agents
@@ -1904,7 +1991,7 @@
 
 ## 0.1.53 - 2026-04-12
 
-### Added in Paseo 0.1.53
+### Added
 
 - Agents get Paseo tools automatically — every new agent gets access to terminals, schedules, worktrees, and other agents through MCP. Toggle it off in Settings under "Inject Paseo tools"
 - Git pull — pull remote changes directly from the workspace header. Promoted to the primary action when your branch is behind origin
@@ -1913,7 +2000,7 @@
 - Middle-click to close tabs on desktop
 - Keyboard shortcut to cycle themes
 
-### Improved in Paseo 0.1.53
+### Improved
 
 - Unavailable git actions now explain why in a toast instead of being silently greyed out
 - Streaming markdown on mobile renders significantly faster
@@ -1921,7 +2008,7 @@
 - Paseo tool calls in agent timelines show the Paseo logo and human-readable names
 - Relay and pairing URLs are stripped from daemon logs
 
-### Fixed in Paseo 0.1.53
+### Fixed
 
 - Closed agent tabs no longer reappear after reconnecting
 - Desktop notification badge counts match across all workspaces
@@ -1929,13 +2016,13 @@
 
 ## 0.1.52 - 2026-04-10
 
-### Added in Paseo 0.1.52
+### Added
 
 - Theme selector — choose from six themes including Midnight, Claude, and Ghostty dark variants
 - Branch switching — switch git branches directly from the workspace header, with automatic stash and restore for uncommitted changes
 - Auto-download updates — desktop updates download silently in the background so they're ready to install when you are
 
-### Fixed in Paseo 0.1.52
+### Fixed
 
 - Layout now responds correctly when resizing the window or rotating a tablet — previously the app could get stuck in mobile layout on a large screen
 - Terminal no longer causes massive memory spikes from snapshot thrashing during heavy output
@@ -1948,13 +2035,13 @@
 
 ## 0.1.51 - 2026-04-09
 
-### Added in Paseo 0.1.51
+### Added
 
 - Image attachments for OpenCode — attach screenshots and images to OpenCode agent prompts
 - WebStorm — added to the "Open in editor" list alongside Cursor, VS Code, and Zed
 - Send behavior setting — choose whether pressing Enter while an agent is running interrupts immediately or queues your message
 
-### Fixed in Paseo 0.1.51
+### Fixed
 
 - Model selector no longer crashes on iPad
 - Pairing now uses the correct hostname, fixing connection failures on some network setups
@@ -1966,7 +2053,7 @@
 
 ## 0.1.50 - 2026-04-07
 
-### Added in Paseo 0.1.50
+### Added
 
 - Context window meter — see how much of the context window your agent has used, with color thresholds at 70% and 90%. Works with Claude Code, Codex, and OpenCode
 - Open in editor — jump from any workspace straight into Cursor, VS Code, Zed, or your file manager. Paseo remembers your choice
@@ -1975,7 +2062,7 @@
 - Plan actions — plan cards now show the actions your agent supports (e.g. "Implement", "Deny") instead of generic accept/reject buttons
 - Background git fetch — ahead/behind counts in the Changes pane stay up to date automatically
 
-### Improved in Paseo 0.1.50
+### Improved
 
 - Workspaces load instantly on connect instead of waiting for a full sync
 - File explorer and diff pane remember which folders are expanded when you switch tabs
@@ -1983,7 +2070,7 @@
 - Settings shows a Refresh button for providers and displays error details inline
 - Reload agent moved away from the close button to prevent accidental taps
 
-### Fixed in Paseo 0.1.50
+### Fixed
 
 - Voice mode no longer drifts into false speech detection during long sessions
 - Garbled overlapping text on plan cards
@@ -1996,7 +2083,7 @@
 
 ## 0.1.49 - 2026-04-07
 
-### Fixed in Paseo 0.1.49
+### Fixed
 
 - Models and providers now load reliably on first connect instead of requiring a manual refresh
 - Model picker only shows models from the agent's own provider, not every provider on the server
@@ -2004,20 +2091,20 @@
 
 ## 0.1.48 - 2026-04-05
 
-### Added in Paseo 0.1.48
+### Added
 
 - Provider diagnostics — tap a provider in Settings to see binary path, version, model count, and status at a glance. Helps troubleshoot why an agent type isn't available
 - Provider snapshot system — daemon now pushes real-time provider availability and model lists to the app, replacing the old poll-based approach. Models and modes update live as providers come online or go offline
 - Codex question handling — Codex agents can now ask the user questions mid-session (e.g. "which file?") and receive answers inline, matching the Claude Code question flow
 - Reload tab action — right-click a workspace tab to reload its agent list without restarting the app
 
-### Improved in Paseo 0.1.48
+### Improved
 
 - Model selector redesigned — grouped by provider with status badges, search, and better touch targets on mobile
 - Enter key now submits question card answers and confirms dictation, matching the expected keyboard flow
 - Removed noisy agent lifecycle toasts that fired on every state change
 
-### Fixed in Paseo 0.1.48
+### Fixed
 
 - Desktop app now resolves the user's full login shell environment at startup, fixing tools like `codex`, `node`, `bun`, and `direnv` not being found when Paseo is launched from Finder or Dock. Terminals spawned by Paseo now inherit the same PATH and environment variables as a normal terminal session. Approach adapted from VS Code's battle-tested shell environment resolution
 - Input field on running agent screens now correctly receives keyboard focus
@@ -2025,7 +2112,7 @@
 
 ## 0.1.47 - 2026-04-05
 
-### Fixed in Paseo 0.1.47
+### Fixed
 
 - Voice TTS in Electron — sherpa now requests copied buffers and the voice MCP bridge sets `ELECTRON_RUN_AS_NODE`, preventing "external buffers not allowed" crashes
 - QR pairing in desktop — CLI JSON output parsing now tolerates Node deprecation warnings in stdout
@@ -2034,7 +2121,7 @@
 
 ## 0.1.46 - 2026-04-04
 
-### Fixed in Paseo 0.1.46
+### Fixed
 
 - Voice activation in packaged builds — Silero VAD model is now copied out of the Electron asar archive so native code can read it
 - App version sent in probe client hello so the daemon's version gate no longer hides Pi/Copilot from reconnected sessions
@@ -2043,7 +2130,7 @@
 
 ## 0.1.45 - 2026-04-04
 
-### Added in Paseo 0.1.45
+### Added
 
 - Pi (pi.dev) agent provider — connect Pi as a new agent type with thinking levels and tool call support
 - Copilot agent provider re-enabled after ACP compatibility fixes
@@ -2056,13 +2143,13 @@
 - Auto-restart daemon on version mismatch — the desktop app detects when the running daemon is outdated and restarts it automatically
 - Setup hint and paseo.sh link on the mobile welcome screen so new App Store users know what to do next
 
-### Improved in Paseo 0.1.45
+### Improved
 
 - Desktop startup is faster — existing daemon connections are raced against bootstrap so the app is usable sooner
 - Settings sections reordered for better grouping (integrations and daemon together)
 - Sidebar projects and workspaces now persist across sessions, with a context menu to remove projects
 
-### Fixed in Paseo 0.1.45
+### Fixed
 
 - Sidebar crash when switching iOS theme (Unistyles/Reanimated interaction)
 - Silero VAD crash caused by external buffer mode in CircularBuffer
@@ -2079,7 +2166,7 @@
 
 ## 0.1.44 - 2026-04-03
 
-### Fixed in Paseo 0.1.44
+### Fixed
 
 - Desktop app now stops the daemon cleanly before auto-update restarts
 - Disabled claude-acp and copilot providers from the agent registry
@@ -2089,19 +2176,19 @@
 
 ## 0.1.43 - 2026-04-02
 
-### Added in Paseo 0.1.43
+### Added
 
 - Copilot agent support via ACP base provider — connect GitHub Copilot as a new agent type
 - Searchable model favorites — quickly find and pin preferred models
 - Slash command support for OpenCode agents
 
-### Improved in Paseo 0.1.43
+### Improved
 
 - Refined model selector UX with better mobile sheet behavior
 - Workspace status now uses amber alert styling for "needs input" state
 - Themed scrollbar on message input for consistent styling
 
-### Fixed in Paseo 0.1.43
+### Fixed
 
 - Ctrl+C/V copy and paste now works correctly in the terminal on Windows and Linux
 - Shell arguments with spaces are now properly quoted on Windows
@@ -2109,13 +2196,13 @@
 
 ## 0.1.42 - 2026-04-01
 
-### Fixed in Paseo 0.1.42
+### Fixed
 
 - Fixed Claude Code failing to launch on Windows when installed to a path with spaces (e.g. `C:\Program Files\...`)
 
 ## 0.1.41 - 2026-04-01
 
-### Fixed in Paseo 0.1.41
+### Fixed
 
 - Fixed agent spawning on Windows — all providers (Claude, Codex, OpenCode) now use shell mode so npm shims and `.cmd` wrappers resolve correctly
 - Fixed terminal creation on Windows defaulting to a Unix shell instead of `cmd.exe`
@@ -2127,22 +2214,22 @@
 - Fixed shortcut rebinding UI to show held modifier keys and recognize additional keys (Tab, Delete, Home, End, Page Up/Down, Insert, F1–F12)
 - Removed the 40-item cap on activity timeline output so long agent sessions display their full history
 
-### Improved in Paseo 0.1.41
+### Improved
 
 - Improved light mode theming with dedicated workspace background, scrollbar handle colors, and lighter shadows
 - Window controls overlay on Windows/Linux reduced from 48px to 29px height for a more compact titlebar
 
 ## 0.1.40 - 2026-04-01
 
-### Added in Paseo 0.1.40
+### Added
 
 - Workspace tabs can now be closed in batches
 
-### Improved in Paseo 0.1.40
+### Improved
 
 - Provider model lists are now cached per server and provider, reducing redundant model lookups in the UI
 
-### Fixed in Paseo 0.1.40
+### Fixed
 
 - OpenCode reasoning content no longer appears duplicated as assistant text
 - Daemon no longer crashes when a Codex binary is missing or fails to spawn
@@ -2153,73 +2240,73 @@
 
 ## 0.1.39 - 2026-03-30
 
-### Added in Paseo 0.1.39
+### Added
 
 - **Terminal management from the CLI** — new `paseo terminal` command group lets you list, create, and interact with workspace terminals without leaving your terminal
 - **Material file icons in the explorer** — the file explorer tree now shows language-specific icons (TypeScript, JSON, Markdown, etc.) so you can spot files at a glance
 
-### Fixed in Paseo 0.1.39
+### Fixed
 
 - Fixed iOS sidebar scroll flicker caused by redundant overflow clipping
 - Centralized window controls padding into a shared hook, eliminating layout inconsistencies across platforms
 
 ## 0.1.38 - 2026-03-30
 
-### Fixed in Paseo 0.1.38
+### Fixed
 
 - Fixed daemon startup race where the app could time out connecting on first launch because the PID file advertised a listen address before the server was ready
 - Fixed daemon log rotation losing startup traces — trace-level WebSocket logs no longer include full message payloads
 
 ## 0.1.37 - 2026-03-29
 
-### Added in Paseo 0.1.37
+### Added
 
 - Custom window controls on Windows and Linux — the native titlebar is replaced with overlay controls that match the app's design
 - Desktop file logging with electron-log for easier debugging of daemon and app issues
 
-### Fixed in Paseo 0.1.37
+### Fixed
 
 - Fixed broken PATH propagation and Claude binary resolution on Windows
 - Dictation errors now show a visible toast instead of failing silently
 
 ## 0.1.36 - 2026-03-27
 
-### Fixed in Paseo 0.1.36
+### Fixed
 
 - Fixed Windows drive-letter path handling across the codebase
 - Fixed stale Nix hash with automatic lockfile-change detection
 
-### Added in Paseo 0.1.36
+### Added
 
 - Added metrics collection and terminal performance tests
 
 ## 0.1.35 - 2026-03-26
 
-### Improved in Paseo 0.1.35
+### Improved
 
 - Faster app startup by redirecting to the welcome screen immediately and showing host connection status inline
 - Codex file deletions now display correctly as removed lines in diffs
 - OpenCode questions are now surfaced in the permission UI
 
-### Fixed in Paseo 0.1.35
+### Fixed
 
 - Fixed queued prompt dispatch after idle transition
 - Replaced bash-only `mapfile` with a portable `while-read` loop in the chat script
 
-### Added in Paseo 0.1.35
+### Added
 
 - Added support for Nix and NixOS installation
 
 ## 0.1.34 - 2026-03-25
 
-### Added in Paseo 0.1.34
+### Added
 
 - Added `paseo archive` as a top-level alias for `paseo agent archive`
 - Added the `PASEO_AGENT_ID` environment variable for Claude and Codex agents
 - Added a redesigned command autocomplete with a detail card and dropdown styling
 - Linked Android download surfaces to the Google Play Store
 
-### Improved in Paseo 0.1.34
+### Improved
 
 - Autonomous turns now complete gracefully on interrupt instead of being canceled
 - Thinking/model selection now always resolves to a real option instead of showing a generic Default choice
@@ -2228,7 +2315,7 @@
 - Reduced unnecessary re-renders in the agent panel and input area for smoother interaction
 - Improved chat transcript readability
 
-### Fixed in Paseo 0.1.34
+### Fixed
 
 - Fixed `paseo send --no-wait` not taking effect
 - Fixed stale abort results contaminating replacement turns after an interrupt
@@ -2245,7 +2332,7 @@
 
 ## 0.1.33 - 2026-03-23
 
-### Fixed in Paseo 0.1.33
+### Fixed
 
 - Fixed the desktop app failing to reopen after closing on macOS — the daemon and agent processes were registering with Launch Services as instances of the main app, blocking subsequent launches
 - Fixed dictation not working in the packaged desktop app — the microphone entitlement was missing from the hardened runtime configuration
@@ -2254,7 +2341,7 @@
 
 ## 0.1.32 - 2026-03-23
 
-### Added in Paseo 0.1.32
+### Added
 
 - Fully rebindable keyboard shortcuts with chord support — all shortcuts are now declarative with proper Cmd (Mac) vs Ctrl (Windows/Linux) separation
 - Migrated the desktop app from Tauri to Electron, with macOS notarization, code signing, and Linux Wayland support
@@ -2264,7 +2351,7 @@
 - Expanded diff syntax highlighting to cover more languages
 - Added status bar tooltips for project and agent status
 
-### Improved in Paseo 0.1.32
+### Improved
 
 - Redesigned the mobile tab switcher as a compact header row with quick access to new agents and terminals
 - Streamlined workspace creation — worktrees are now created inline with a single action instead of a multi-step flow
@@ -2279,7 +2366,7 @@
 - Daemon startup no longer blocks on model downloads
 - Better error messages from the daemon — RPC errors now include the actual underlying details
 
-### Fixed in Paseo 0.1.32
+### Fixed
 
 - Fixed user messages appearing as assistant output in the timeline when messages contained structured content blocks
 - Fixed archived workspace routing so navigating to an archived session no longer breaks the app
@@ -2288,19 +2375,19 @@
 
 ## 0.1.30 - 2026-03-19
 
-### Added in Paseo 0.1.30
+### Added
 
 - Added terminal tabs, split pane controls, and drop previews for workspace layouts
 - Added a combined model selector and agent mode visuals across key UI surfaces
 - Added Open Graph metadata improvements for richer website sharing previews
 
-### Improved in Paseo 0.1.30
+### Improved
 
 - Improved workspace navigation with better active-workspace tracking and keyboard-driven pane interactions
 - Improved terminal scrollbar behavior, pane focus handling, and status bar/message input spacing
 - Improved project picker path display and general workspace UI polish
 
-### Fixed in Paseo 0.1.30
+### Fixed
 
 - Fixed agent startup reliability by tightening PATH resolution and surfacing missing provider binaries in status
 - Fixed workspace route syncing, drag hit areas, and git diff panel header styling regressions
@@ -2308,36 +2395,36 @@
 
 ## 0.1.28 - 2026-03-15
 
-### Added in Paseo 0.1.28
+### Added
 
 - Added OpenCode build and plan modes
 - Added website landing pages for Claude Code, Codex, and OpenCode
 
-### Improved in Paseo 0.1.28
+### Improved
 
 - Improved the git action menu for more reliable repository actions
 - Improved the mobile settings screen, workspace header actions, and welcome screen presentation
 - Updated the website hero copy and added a sponsor callout section
 
-### Fixed in Paseo 0.1.28
+### Fixed
 
 - Fixed assistant file links so they open the correct workspace files from chat
 
 ## 0.1.27 - 2026-03-13
 
-### Added in Paseo 0.1.27
+### Added
 
 - Added voice runtime with new audio engine architecture for voice interactions
 - Added Grep tool support in Claude tool-call mapping
 - Added ability to open workspace files directly from agent chat messages
 - Added desktop notifications via a custom native bridge
 
-### Improved in Paseo 0.1.27
+### Improved
 
 - Improved image picker, markdown rendering, and UI interactions
 - Improved shell environment detection using shell-env
 
-### Fixed in Paseo 0.1.27
+### Fixed
 
 - Fixed platform-specific markdown link rendering
 - Fixed Linux AppImage CLI resource paths
@@ -2345,18 +2432,18 @@
 
 ## 0.1.26 - 2026-03-12
 
-### Added in Paseo 0.1.26
+### Added
 
 - Added single-instance desktop behavior, Android APK download access, and refreshed splash screen styling
 - Added bundled Codex and OpenCode binaries in the server so setup no longer depends on global installs
 - Added Windows support with improved cross-platform shell execution
 
-### Improved in Paseo 0.1.26
+### Improved
 
 - Improved desktop runtime behavior on Windows by suppressing console windows and defaulting app data to `~/.paseo`
 - Added a Discord link to the website navigation
 
-### Fixed in Paseo 0.1.26
+### Fixed
 
 - Fixed desktop Claude agent startup from the managed runtime and rotated logs correctly on restart
 - Fixed the home route to hide browser chrome when appropriate
@@ -2366,25 +2453,25 @@
 
 ## 0.1.25 - 2026-03-11
 
-### Fixed in Paseo 0.1.25
+### Fixed
 
 - Fixed desktop app failing to start the built-in daemon on fresh macOS installs. The DMG was not notarized and code-signing stripped entitlements from the bundled Node runtime, causing Gatekeeper to block execution
 - Fixed Linux AppImage build by restoring the AppImage bundle format and stripping CUDA dependencies from onnxruntime
 
 ## 0.1.24 - 2026-03-10
 
-### Improved in Paseo 0.1.24
+### Improved
 
 - Improved command center keyboard navigation and new tab shortcut
 - Simplified desktop release pipeline for faster and more reliable builds
 
 ## 0.1.21 - 2026-03-10
 
-### Improved in Paseo 0.1.21
+### Improved
 
 - Improved desktop release reliability by fixing the Windows managed-runtime build path during GitHub Actions releases
 
-### Fixed in Paseo 0.1.21
+### Fixed
 
 - Fixed a desktop release CI failure caused by a Unix-only server build script on Windows runners
 - Fixed server CI to build the relay dependency before running tests, restoring relay E2EE test coverage on clean runners
@@ -2392,53 +2479,53 @@
 
 ## 0.1.20 - 2026-03-10
 
-### Added in Paseo 0.1.20
+### Added
 
 - Added workspace sidebar git actions with quick diff stats and archive controls
 - Added refreshed website downloads and homepage presentation for desktop installs
 
-### Improved in Paseo 0.1.20
+### Improved
 
 - Desktop release packaging now rebuilds and validates the bundled managed runtime during CI, improving installer reliability for macOS users
 - Improved desktop and web stream rendering, settings polish, and React 19.1.4 compatibility
 
-### Fixed in Paseo 0.1.20
+### Fixed
 
 - Fixed Claude interrupt/restart regressions and strengthened managed-daemon smoke coverage for desktop releases
 
 ## 0.1.19 - 2026-03-09
 
-### Added in Paseo 0.1.19
+### Added
 
 - Added a draft GitHub release flow so maintainers can upload and review desktop and Android release assets before publishing the final release
 
 ## 0.1.18 - 2026-03-06
 
-### Added in Paseo 0.1.18
+### Added
 
 - Added a desktop `Mod+W` shortcut to close the current tab
 
-### Improved in Paseo 0.1.18
+### Improved
 
 - New and newly selected terminals now take focus automatically so you can type immediately
 - Kept newly created workspaces and projects in a more stable order in the sidebar
 - Improved project naming for GitHub remotes and expanded project icon discovery to Phoenix `priv/static` assets
 - Updated the website desktop download link to use the universal macOS DMG
 
-### Fixed in Paseo 0.1.18
+### Fixed
 
 - Restored automatic agent metadata generation for Claude runs
 
 ## 0.1.17 - 2026-03-06
 
-### Added in Paseo 0.1.17
+### Added
 
 - New workspace-first navigation model with workspace tabs, file tabs, and sortable tab groups
 - Keyboard shortcuts for workspace and tab navigation, with shortcut badges in the sidebar
 - Workspace-level archive actions with improved worktree archiving flow and context menu support
 - In-chat task notifications rendered as synthetic tool-call events for clearer status tracking
 
-### Improved in Paseo 0.1.17
+### Improved
 
 - Desktop builds now ship as a universal macOS binary (Apple Silicon + Intel)
 - More reliable workspace routing and tab identity handling across refreshes and deep links
@@ -2446,7 +2533,7 @@
 - Smoother terminal/file rendering and WebGL-backed terminal performance improvements
 - Stronger provider error surfacing and updated Claude model/runtime handling
 
-### Fixed in Paseo 0.1.17
+### Fixed
 
 - Fixed orphan workspace runs caused by non-canonical tab routes
 - Fixed mobile terminal tab remount/routing restore issues
@@ -2456,7 +2543,7 @@
 
 ## 0.1.16 - 2026-02-22
 
-### Added in Paseo 0.1.16
+### Added
 
 - Update the Paseo desktop app and local daemon directly from Settings
 - Microphone and notification permission controls in Settings
@@ -2464,7 +2551,7 @@
 - Autonomous run mode — let agents keep working without manual approval at each step
 - `paseo wait` now shows a snapshot of recent agent activity while you wait
 
-### Improved in Paseo 0.1.16
+### Improved
 
 - Smoother streaming with less UI flicker and scroll jumping during long agent runs
 - Faster agent sidebar list rendering
@@ -2472,7 +2559,7 @@
 - Agent titles no longer reset when refreshing
 - More reliable relay connections
 
-### Fixed in Paseo 0.1.16
+### Fixed
 
 - Fixed Claude background tasks desyncing the chat
 - Fixed duplicate user messages appearing in the timeline
@@ -2481,11 +2568,11 @@
 
 ## 0.1.15 - 2026-02-19
 
-### Added in Paseo 0.1.15
+### Added
 
 - Added a public changelog page on the website so users can browse release notes
 
-### Improved in Paseo 0.1.15
+### Improved
 
 - Redesigned the website get-started experience into a clearer two-step flow
 - Simplified website GitHub navigation and changelog headings
@@ -2493,14 +2580,14 @@
 - Enabled drag interactions in previously unhandled areas on the desktop draft screen
 - Hid empty filter groups in the left sidebar
 
-### Fixed in Paseo 0.1.15
+### Fixed
 
 - Fixed archived-agent navigation by redirecting archived agent routes to draft
 - Fixed duplicate `/rewind` user-message behavior
 
 ## 0.1.14 - 2026-02-19
 
-### Added in Paseo 0.1.14
+### Added
 
 - Added Claude `/rewind` command support
 - Added slash command access in the draft agent composer
@@ -2509,7 +2596,7 @@
 - Added optimistic image previews for pending user message attachments
 - Added shared desktop/web overlay scroll handles, including file preview panes
 
-### Improved in Paseo 0.1.14
+### Improved
 
 - Improved worktree flow after shipping, including better merged PR detection
 - Improved draft workflow by enabling the explorer sidebar immediately after CWD selection
@@ -2519,7 +2606,7 @@
 - Improved desktop settings and permissions UX on desktop
 - Improved scrollbar visibility, drag interactions, tracking, and animation timing on web/desktop
 
-### Fixed in Paseo 0.1.14
+### Fixed
 
 - Fixed worktree archive/setup lifecycle issues, including terminal cleanup and archive timing
 - Fixed worktree path collisions by hashing CWD for collision-safe worktree roots
@@ -2535,13 +2622,13 @@
 
 ## 0.1.9 - 2026-02-17
 
-### Improved in Paseo 0.1.9
+### Improved
 
 - Unified structured-output generation through a single shared schema-validation and retry pipeline
 - Reused provider availability checks for structured generation fallback selection
 - Added structured generation waterfall ordering for internal metadata and git text generation: Claude Haiku, then Codex, then OpenCode
 
-### Fixed in Paseo 0.1.9
+### Fixed
 
 - Fixed CLI `run --output-schema` to use the shared structured-output path instead of ad-hoc JSON parsing
 - Fixed `run --output-schema` failures where providers returned empty `lastMessage` by recovering from timeline assistant output
@@ -2549,16 +2636,16 @@
 
 ## 0.1.8 - 2026-02-17
 
-### Added in Paseo 0.1.8
+### Added
 
 - Added a cross-platform confirm dialog flow for daemon restarts
 
-### Improved in Paseo 0.1.8
+### Improved
 
 - Simplified local speech bootstrap and daemon startup locking behavior
 - Updated website hero copy to emphasize local execution
 
-### Fixed in Paseo 0.1.8
+### Fixed
 
 - Fixed stuck "send while running" recovery across app and server session handling
 - Fixed Claude session identity preservation when reloading existing agents
@@ -2568,17 +2655,17 @@
 
 ## 0.1.7 - 2026-02-16
 
-### Added in Paseo 0.1.7
+### Added
 
 - Improved agent workspace flows with better directory suggestions
 - Added iOS TestFlight and Android app access request forms on the website
 
-### Improved in Paseo 0.1.7
+### Improved
 
 - Unified daemon startup behavior between dev and CLI paths for more predictable local runs
 - Improved website app download and update guidance
 
-### Fixed in Paseo 0.1.7
+### Fixed
 
 - Prevented an initial desktop combobox `0,0` position flash
 - Fixed CLI version output issues
@@ -2586,19 +2673,19 @@
 
 ## 0.1.6 - 2026-02-16
 
-### Notes in Paseo 0.1.6
+### Notes
 
 - No major visible product changes in this patch release
 
 ## 0.1.5 - 2026-02-16
 
-### Added in Paseo 0.1.5
+### Added
 
 - Added terminal reattach support and better worktree terminal handling
 - Added global keyboard shortcut help in the app
 - Added sidebar host filtering and improved agent workflow controls
 
-### Improved in Paseo 0.1.5
+### Improved
 
 - Improved worktree setup visibility by streaming setup progress
 - Improved terminal streaming reliability and lifecycle handling
@@ -2606,21 +2693,21 @@
 
 ## 0.1.4 - 2026-02-14
 
-### Added in Paseo 0.1.4
+### Added
 
 - Added voice capability status reporting in the client
 - Added background local speech model downloads with runtime gating
 - Added adaptive dictation finish timing based on server-provided budgets
 - Added relay reconnect behavior with grace periods and branch suggestions
 
-### Improved in Paseo 0.1.4
+### Improved
 
 - Improved connection selection and agent hydration reliability
 - Improved timeline loading with cursor-based fetch behavior
 - Improved first-run experience by bootstrapping a default localhost connection
 - Improved inline code rendering by auto-linkifying URLs
 
-### Fixed in Paseo 0.1.4
+### Fixed
 
 - Fixed Linux checkout diff watch behavior to avoid recursive watches
 - Fixed stale relay client timer behavior
@@ -2628,32 +2715,32 @@
 
 ## 0.1.3 - 2026-02-12
 
-### Added in Paseo 0.1.3
+### Added
 
 - Added CLI onboarding command
 - Added CLI `--output-schema` support for structured agent output
 - Added CLI agent metadata update support for names and labels
 - Added provider availability detection with normalization of legacy default model IDs
 
-### Improved in Paseo 0.1.3
+### Improved
 
 - Improved file explorer refresh feedback and unresolved checkout fallback handling
 - Added better voice interrupt handling with a speech-start grace period
 - Improved CLI defaults to list all non-archived agents by default
 - Improved website UX with clearer install CTA and privacy policy access
 
-### Fixed in Paseo 0.1.3
+### Fixed
 
 - Fixed dev runner entry issues and sherpa TTS initialization behavior
 
 ## 0.1.2 - 2026-02-11
 
-### Notes in Paseo 0.1.2
+### Notes
 
 - No major visible product changes in this patch release
 
 ## 0.1.1 - 2026-02-11
 
-### Added in Paseo 0.1.1
+### Added
 
 - Initial `0.1.x` release line

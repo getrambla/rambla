@@ -5,10 +5,9 @@ import path from "node:path";
 import {
   readPersistedConfig as loadPersistedConfig,
   savePersistedConfig,
-  readDaemonInstance,
-  waitForDaemonReady,
   type PersistedConfig,
-} from "@getrambla/server";
+} from "@getrambla/server/configuration";
+import { readDaemonInstance, waitForDaemonReady } from "@getrambla/server/daemon-control";
 import { withGlobalOptions } from "../utils/command-options.js";
 import type { CommandOptions } from "../output/index.js";
 import { launchLocalDaemon, parseTimeoutMs } from "./daemon/local-daemon.js";

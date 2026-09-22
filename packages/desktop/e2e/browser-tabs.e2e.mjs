@@ -15,6 +15,8 @@ import { chromium } from "playwright";
 import { runAppearanceFontSizeRegression } from "./appearance-font-size.electron.mjs";
 import { runSettingsMemoryRegression } from "./settings-memory.electron.mjs";
 
+import { seedPluginLinks, runPluginLinksRegression } from "./plugin-links.electron.mjs";
+
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const desktopDir = path.resolve(scriptDir, "..");
 const rootDir = path.resolve(desktopDir, "../..");
@@ -375,7 +377,8 @@ async function readPresentation(page, browserId) {
 async function readViewport(client, browserId) {
   const evaluated = await callBrowserTool(client, "browser_evaluate", {
     browserId,
-    function: "() => ({ width: window.innerWidth, height: window.innerHeight })",
+    function:
+      "() => ({ width: window.innerWidth, height: window.innerHeight, scale: window.devicePixelRatio })",
   });
   return JSON.parse(evaluated.resultJson);
 }
@@ -646,10 +649,11 @@ async function runRegression({
 
   const deviceSizeMenuPainted = await selectDeviceSize(page, "iPhone SE · 375×667");
   assert(deviceSizeMenuPainted, "Device size menu did not paint above the browser surface");
+  const deviceViewport = await readViewport(client, browserId);
   recordViewportMismatch(
     failures,
     "device size menu paints and receives input above the browser surface",
-    await readViewport(client, browserId),
+    deviceViewport,
     { width: 375, height: 667 },
   );
 
@@ -658,6 +662,12 @@ async function runRegression({
     text: "Bridge target",
     timeoutMs: 5_000,
   });
+  const resizedScreenshot = await callBrowserTool(client, "browser_screenshot", { browserId });
+  assert(
+    resizedScreenshot.width === Math.round(375 * deviceViewport.scale) &&
+      resizedScreenshot.height === Math.round(667 * deviceViewport.scale),
+    `Screenshot after resize returned ${resizedScreenshot.width}×${resizedScreenshot.height}`,
+  );
   const requestedViewport = { width: 640, height: 480 };
   await callBrowserTool(client, "browser_resize", { browserId, ...requestedViewport });
   recordViewportMismatch(
@@ -733,7 +743,7 @@ async function runRegression({
     { timeout: timeoutMs },
   );
   try {
-    await callBrowserToolUntilReady(client, "browser_screenshot", { browserId });
+    await callBrowserTool(client, "browser_screenshot", { browserId });
   } catch (error) {
     failures.push(`inactive browser remains captureable: ${String(error)}`);
   }
@@ -1034,7 +1044,8 @@ async function main() {
   const workspaceRoot = path.join(runtimeDir, "workspaces");
   fs.mkdirSync(ramblaHome, { recursive: true });
 
-  const [daemonPort, expoPort, cdpPort, inspectorPort] = await Promise.all([
+  const [daemonPort, expoPort, cdpPort, inspectorPort, remotePort] = await Promise.all([
+    reservePort(),
     reservePort(),
     reservePort(),
     reservePort(),
@@ -1043,13 +1054,28 @@ async function main() {
   const listen = `127.0.0.1:${daemonPort}`;
   seedRamblaHome(ramblaHome, listen, workspaceRoot);
   const target = await startTargetPage();
+  seedPluginLinks(ramblaHome, workspaceIds[0], target.url, workspaceIds[1]);
+  const remoteHome = path.join(runtimeDir, "remote-home");
+  seedRamblaHome(remoteHome, `127.0.0.1:${remotePort}`, path.join(runtimeDir, "remote-workspaces"));
   const children = [];
   let browser = null;
   let client = null;
 
   try {
+    // Observe the real Electron shell handoff without launching a user's browser.
+    const openerDirectory = path.join(runtimeDir, "url-handler");
+    const externalOpenLog = path.join(artifactDir, "external-opens.txt");
+    fs.mkdirSync(openerDirectory, { recursive: true });
+    fs.writeFileSync(externalOpenLog, "");
+    fs.writeFileSync(
+      path.join(openerDirectory, "xdg-open"),
+      '#!/bin/sh\nprintf "%s\\n" "$1" >> "$RAMBLA_TEST_EXTERNAL_OPEN_LOG"\n',
+      { mode: 0o755 },
+    );
     const commonEnv = {
       ...process.env,
+      PATH: `${openerDirectory}${path.delimiter}${process.env.PATH}`,
+      RAMBLA_TEST_EXTERNAL_OPEN_LOG: externalOpenLog,
       RAMBLA_HOME: ramblaHome,
       RAMBLA_LISTEN: listen,
       RAMBLA_DAEMON_ENDPOINT: `localhost:${daemonPort}`,
@@ -1069,6 +1095,25 @@ async function main() {
     );
     children.push(daemon.child);
     await waitForPort(daemonPort, "daemon", daemon);
+
+    const remoteDaemon = spawnLogged(
+      "remote-daemon",
+      process.execPath,
+      ["--import", "tsx", path.join(rootDir, "packages/server/scripts/dev-runner.ts")],
+      {
+        cwd: rootDir,
+        env: {
+          ...commonEnv,
+          RAMBLA_HOME: remoteHome,
+          RAMBLA_LISTEN: `127.0.0.1:${remotePort}`,
+          RAMBLA_SERVER_ID: "plugin-links-remote",
+          RAMBLA_NODE_ENV: "development",
+        },
+      },
+      artifactDir,
+    );
+    children.push(remoteDaemon.child);
+    await waitForPort(remotePort, "remote daemon", remoteDaemon);
 
     const desktopArgs = [
       process.execPath,
@@ -1105,6 +1150,22 @@ async function main() {
     const page = await waitForAppPage(browser, expoPort);
     const status = await waitForDesktopStatus(page);
 
+    const checkPluginLinks = () =>
+      runPluginLinksRegression({
+        page,
+        remotePort,
+        workspaceId: workspaceIds[0],
+        remoteWorkspaceId: workspaceIds[1],
+        url: target.url,
+        artifactDir,
+        externalOpenLog: process.platform === "linux" ? externalOpenLog : null,
+      });
+    if (process.env.RAMBLA_DESKTOP_PLUGIN_LINKS_ONLY === "1") {
+      const pluginLinks = await checkPluginLinks();
+      writeJson(path.join(artifactDir, "result.json"), { pluginLinks });
+      console.log("Plugin external links and workspace browser passed.");
+      return;
+    }
     const settingsMemory = await runSettingsMemoryRegression(page);
     if (process.env.RAMBLA_DESKTOP_SETTINGS_MEMORY_ONLY === "1") {
       writeJson(path.join(artifactDir, "result.json"), { settingsMemory });
@@ -1132,7 +1193,8 @@ async function main() {
       callerAgentId,
       artifactDir,
     });
-    writeJson(path.join(artifactDir, "result.json"), { ...report, settingsMemory });
+    const pluginLinks = await checkPluginLinks();
+    writeJson(path.join(artifactDir, "result.json"), { ...report, settingsMemory, pluginLinks });
     console.log(
       `Browser desktop browser E2E passed: WebContents ${report.originalWebContentsId} remained ${report.finalWebContentsId}; viewport, inactive capture, focus continuity, list, snapshot, click, local-page selectors passed.`,
     );

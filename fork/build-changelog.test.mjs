@@ -44,18 +44,12 @@ Paseo 0.8.1 adds things and fixes things.
 - Fixed an older upstream thing
 `;
 
-test("fork sections come first and upstream sections are labelled", () => {
+test("fork sections come first and upstream sections follow under plain headings", () => {
   const titles = buildChangelog(FORK, UPSTREAM)
     .split("\n")
     .filter((line) => line.startsWith("### "));
 
-  assert.deepEqual(titles, [
-    "### Added",
-    "### Fixed",
-    "### Added in Paseo 0.8.1",
-    "### Plugins in Paseo 0.8.1",
-    "### Fixed in Paseo 0.8.0",
-  ]);
+  assert.deepEqual(titles, ["### Added", "### Fixed", "### Added", "### Plugins", "### Fixed"]);
 });
 
 test("the fork's release date wins over upstream's", () => {

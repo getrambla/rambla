@@ -1,4 +1,8 @@
-import { waitForDaemonReady, resolveRamblaHome, type DaemonInstance } from "@getrambla/server";
+import {
+  waitForDaemonReady,
+  resolveRamblaHome,
+  type DaemonInstance,
+} from "@getrambla/server/daemon-control";
 import { describeDaemonTarget, type DaemonTarget } from "./daemon-target.js";
 export type { DaemonTarget } from "./daemon-target.js";
 import {

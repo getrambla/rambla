@@ -1,6 +1,6 @@
 {
   "name": "rambla",
-  "version": "0.8.0",
+  "version": "0.9.0-beta.2",
   "private": true,
   "description": "Rambla: voice-controlled development environment for local AI coding agents",
   "keywords": [

@@ -1,5 +1,9 @@
 import { Command } from "commander";
-import { readDaemonInstance, isSameDaemonInstance, DaemonInstanceError } from "@getrambla/server";
+import {
+  readDaemonInstance,
+  isSameDaemonInstance,
+  DaemonInstanceError,
+} from "@getrambla/server/daemon-control";
 import { setTimeout as delay } from "node:timers/promises";
 import { connectToDaemon } from "../../utils/client.js";
 import { withOutput, type CommandOptions } from "../../output/index.js";

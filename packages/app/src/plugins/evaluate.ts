@@ -1,3 +1,5 @@
+import type { createPluginHosts } from "./hosts";
+import { openExternalUrl } from "@/utils/open-external-url";
 import * as pluginUiRuntime from "./react-native/ui";
 import { useSettings } from "./settings/use-settings";
 import * as pluginSharedRuntime from "@getrambla/plugin";
@@ -78,7 +80,7 @@ export type PluginClientRuntime = Pick<
   | "openPanel"
   | "addComposerPill"
   | "addHeaderButton"
->;
+> & { hosts: ReturnType<typeof createPluginHosts> };
 
 export function runPluginClientBundle(
   id: string,
@@ -374,7 +376,19 @@ export function runPluginClientBundle(
     if (name === "react/jsx-runtime") return ReactJsxRuntime;
     if (name === "react-native") return ReactNative;
     if (name === "@getrambla/plugin") return pluginSharedRuntime;
-    if (name === "@getrambla/plugin/client") return { ...pluginClientRuntime, useSettings };
+    if (name === "@getrambla/plugin/client")
+      return {
+        ...pluginClientRuntime,
+        useSettings,
+        openExternalUrl,
+        getRamblaClient: (serverId: string) => runtime.hosts.getRamblaClient(serverId),
+        useHosts: () =>
+          React.useSyncExternalStore(
+            runtime.hosts.subscribe,
+            runtime.hosts.getSnapshot,
+            runtime.hosts.getSnapshot,
+          ),
+      };
     if (name === "@getrambla/plugin/client/react-native") {
       return pluginReactNativeRuntime;
     }

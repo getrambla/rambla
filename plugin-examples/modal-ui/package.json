@@ -1,0 +1,29 @@
+{
+  "name": "@getrambla/plugin-example-modal-ui",
+  "version": "0.1.1",
+  "description": "Interactive Rambla plugin example for modal forms, scrolling, and clipboard actions",
+  "homepage": "https://rambla.sh/docs/plugins",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getrambla/rambla.git",
+    "directory": "plugin-examples/modal-ui"
+  },
+  "files": [
+    "rambla-plugin.json",
+    "index.client.tsx",
+    "client/",
+    "screenshots/",
+    "LICENSE"
+  ],
+  "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "peerDependencies": {
+    "@getrambla/plugin": ">=0.8.0",
+    "react": ">=19",
+    "react-native": ">=0.81"
+  }
+}

@@ -33,7 +33,7 @@ export function assertPluginCompatibility(input: PluginCompatibilityInput): void
   if (satisfies(version, range) || satisfies(stableCore, range)) return;
   const action =
     input.requirements?.rambla === undefined
-      ? "This plugin has no requirements.rambla and targets Rambla before 0.8. Ask its author to migrate it: https://rambla.sh/docs/plugins/v0.8/migration"
+      ? "This plugin has no requirements.rambla and targets Rambla before 0.8. Ask its author to migrate it: https://rambla.sh/docs/plugins/migration"
       : `Use a compatible plugin version or update the ${input.runtime}.`;
   throw new Error(
     `Plugin "${input.id}" requires Rambla ${range}. Your ${input.runtime} is ${input.version}. ${action}`,

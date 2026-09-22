@@ -1,4 +1,4 @@
-import { resolveRamblaHome } from "@getrambla/server";
+import { resolveRamblaHome } from "@getrambla/server/daemon-control";
 
 export type DaemonTarget = { kind: "instance"; home: string } | { kind: "endpoint"; host: string };
 

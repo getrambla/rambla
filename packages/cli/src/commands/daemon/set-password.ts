@@ -1,13 +1,13 @@
 import path from "node:path";
 import type { Command } from "commander";
 import { isCancel, password as passwordPrompt } from "@clack/prompts";
+import { hashDaemonPassword } from "@getrambla/server/auth";
 import {
-  hashDaemonPassword,
   readPersistedConfig,
-  resolveRamblaHome,
   savePersistedConfig,
   type PersistedConfig,
-} from "@getrambla/server";
+} from "@getrambla/server/configuration";
+import { resolveRamblaHome } from "@getrambla/server/daemon-control";
 import type {
   CommandError,
   CommandOptions,

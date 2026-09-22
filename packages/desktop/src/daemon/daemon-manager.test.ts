@@ -51,7 +51,7 @@ vi.mock("electron-log/main", () => ({
   },
 }));
 
-vi.mock("@getrambla/server", () => ({
+vi.mock("@getrambla/server/daemon-control", () => ({
   resolveRamblaHome: vi.fn(() => mocks.ramblaHome),
   spawnProcess: mocks.spawnProcess,
 }));

@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
-import { spawnProcess } from "@getrambla/server";
+import { spawnProcess } from "@getrambla/server/process";
 import { buildAgentDeepLink, type AgentDeepLinkTarget } from "@getrambla/protocol/agent-deep-link";
 
 function findDesktopApp(): string | null {

@@ -16,7 +16,7 @@ import {
   DaemonConnectionError,
   type WebSocketLike,
 } from "@getrambla/client/internal/daemon-client";
-import { readDaemonInstance, isSameDaemonInstance } from "@getrambla/server";
+import { readDaemonInstance, isSameDaemonInstance } from "@getrambla/server/daemon-control";
 import { runLocalRambla } from "./helpers/local-cli.ts";
 import { getAvailablePort } from "./helpers/network.ts";
 

@@ -5,7 +5,7 @@ import net from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { startDaemonInstance, readDaemonInstance } from "@getrambla/server";
+import { startDaemonInstance, readDaemonInstance } from "@getrambla/server/daemon-control";
 import { expect, test } from "vitest";
 import { connectToDaemon } from "../../utils/client.js";
 

@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Command } from "commander";
-import { isBearerTokenValid } from "@getrambla/server";
+import { isBearerTokenValid } from "@getrambla/server/auth";
 import {
   runSetPasswordCommand,
   setDaemonPasswordInConfig,

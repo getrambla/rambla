@@ -6,9 +6,8 @@
 // CHANGELOG.md is, and it has to carry both, because a Rambla user gets upstream's
 // work too.
 //
-// Fork sections come first under plain headings. Upstream's keep their own titles
-// with " in Paseo <version>" appended, so provenance is visible without inventing
-// any structure the consumers cannot parse. scripts/changelog-utils.mjs recognizes
+// Fork sections come first under plain headings, followed by upstream's sections
+// under plain headings of their own. scripts/changelog-utils.mjs recognizes
 // `###` headings, `-` bullets and `>` quotes and nothing else; a `####` sub-heading
 // or a `**Rambla**` divider would be swallowed as a note and hoisted above every
 // bullet in the 500-character F-Droid text.
@@ -165,12 +164,7 @@ export function buildChangelog(forkText, upstreamText) {
 
     if (upstreamEntry) {
       for (const section of splitSections(upstreamEntry.bodyLines).sections) {
-        out.push(
-          `### ${section.title} in Paseo ${version}`,
-          "",
-          ...trimBlankEdges(section.lines),
-          "",
-        );
+        out.push(`### ${section.title}`, "", ...trimBlankEdges(section.lines), "");
       }
     }
   }

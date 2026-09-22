@@ -25,6 +25,7 @@ type NewWorkspaceDaemonClient = Pick<
   | "getRamblaWorktreeList"
   | "getDaemonConfig"
   | "installDirectoryPlugin"
+  | "installPluginSource"
   | "disablePlugin"
   | "enablePlugin"
   | "inspectWorkspaceRecovery"

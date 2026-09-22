@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildRelayWebSocketUrl } from "@getrambla/protocol/daemon-endpoints";
 import { parseConnectionOfferFromUrl } from "@getrambla/protocol/connection-offer";
-import { generateLocalPairingOffer } from "@getrambla/server";
+import { generateLocalPairingOffer } from "@getrambla/server/pairing";
 import { DaemonClient } from "@getrambla/client/internal/daemon-client";
 import { WebSocket } from "ws";
 import { getAvailablePort } from "../helpers/network.ts";
