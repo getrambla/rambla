@@ -20,7 +20,7 @@ is merged in, roughly weekly, forever.
 Three roles, kept separate.
 
 - **Supervisor** — holds the user's request, the plan, and the reviewer's
-  verdicts. Doesn't read the codebase; that's what the subagents are for.
+  verdicts. Reads little itself — see "The supervisor reads little" below.
 - **Coder** (a subagent) — writes the tests and the code. Edits code only.
 - **Reviewer** (a separate subagent) — checks the work against the plan and
   against this skill's rules. Never the agent that wrote the code. Reviewing
@@ -28,20 +28,21 @@ Three roles, kept separate.
 
 **Accept/reject loop, every time.** The reviewer returns ACCEPT or REJECT.
 ACCEPT means all three: the work matches the plan, the reviewer ran the tests
-itself and saw them pass, and nothing changed outside the mitigation table —
-`.rambla.test.ts` files excepted, they are always ours.
+itself and saw them pass, and nothing changed outside the mitigation table.
 REJECT is a numbered list of deficiencies, sent to the coder only. Re-review
 is blind — re-send the same original instructions, never a summary of what
 was fixed. **At most 2 fix-and-rereview rounds**; still rejected after that,
 stop and bring both positions to the user to decide.
 
-**The plan file is read-only.** The coder and the reviewer may read it.
-Neither may edit it, and neither may quietly work around it. When the plan
-turns out wrong, incomplete, or inconsistent with the code: stop and report
-back to the supervisor — do not re-decide placement mid-edit, do not work
-around it. The supervisor asks the user; changing a reviewed plan is the
-user's call. A plan exists for every task sent to implementation; whether
-one is needed is never the coder's call.
+**The plan file is read-only — no agent edits it, ever.** The coder, the
+reviewer, and the supervisor may read it; not one of them may edit it,
+and none may quietly work around it. When the plan turns out wrong,
+incomplete, or inconsistent with the code: stop and report to the
+supervisor with your reasons — do not re-decide placement mid-edit. The
+supervisor takes it to the user, work stays stopped, and the user amends
+the plan in a separate planning session if they agree. A plan exists for
+every task sent to implementation; whether one is needed is never the
+coder's call.
 
 ## Step 0 — read these first
 
@@ -57,17 +58,31 @@ one is needed is never the coder's call.
 
 ## Reading rules
 
+These rules bind the coder AND the reviewer.
+
 - **Never read or grep a minified file — not even partially.** They are 1
   line and hundreds of KB; any read returns the whole line and buries your
   context. To learn what a bundled library does, search its documentation.
 - **Files over 2000 lines are named ranges only.** Read the regions the plan
   cites, not the file.
-- **Targeted reads only — ±30 lines around the spot the plan touches.** A
-  whole-file read needs the supervisor's say-so.
-- Read what you need to verify a claim — but a whole-file read of a large
-  file is how a coder's context dies. Scope reads to what the plan touches.
+- **Read what the work needs, inside the plan's files.** The whole function
+  you are changing, the regions the plan cites, a caller in another file
+  when behavior depends on it, the test file — reading is how you avoid
+  coding against a guess. No repo-wide searching for context.
+- You are a throwaway subagent: if your context fills up, stop and report
+  to the supervisor so it can start a fresh coder for the remaining steps.
+  A replaced coder loses nothing — its finished edits stay in the working
+  tree, and the next coder continues from them.
 
-These rules bind the coder AND the reviewer.
+## The supervisor reads little
+
+The supervisor delegates reading, not just writing. It does not read diffs,
+logs, or code to check the work — the reviewer's ACCEPT is how it knows.
+It opens a file itself only to pin down a concrete failure an agent has
+reported twice, or to answer a question the plan must settle before the
+coder can continue. If a coder's context goes bad mid-plan, starting a
+fresh coder for the remaining steps is the recovery — a last resort, not a
+tool; never preemptively.
 
 ## The placement rules, in one screen
 
@@ -126,10 +141,9 @@ name, stop and report to the supervisor.
 
 **Write the failing test first**, then the code that makes it pass.
 
-- `.rambla.test.ts` files are ours, always — never upstream's. Each upstream
-  file the
-  plan edits implies its companion `*.rambla.test.ts`, created or extended
-  as the work needs. They never need a table row.
+- `.rambla.test.ts` files are ours, always — never upstream's. Every test
+  file the work creates or extends has its own row in the table, marked
+  `new` or `existing`. Tests never go inside upstream test files.
 - **Never add tests to upstream test files, and never edit, delete, or skip
   an upstream test.** Not to make your change
   pass, not because the assertion looks outdated. When one fails:
@@ -166,34 +180,40 @@ once; full verification happens in CI, not here.
 ```
 npm run typecheck
 npm run lint
-npm run format
 ```
 
-Never hand-fix formatting; Biome owns it.
-
 **A verification command that fails on a file in the table:
-fix it and rerun. It fails on a file outside the table: stop and report —
+fix it and rerun. It fails on any other file: stop and report —
 that is not yours to fix.**
+
+Never format code — that is the commit machinery's job, and you never
+run it.
 
 Then:
 
 - `git grep "RAMBLA-FORK:" -- <each upstream file you edited>` — every one
   must show a tag. An untagged divergence is one we lose at the next merge.
-- Branch: 4 or more upstream files edited (upstream tests never count;
-  new `*.rambla.*` files never count) → the work is on
-  `fix/<slug>` or `feat/<slug>`, and you run `just trial-merge` from
-  `rambla/` before calling it done. Conflicts mean move our code, not
-  resolve them. `just trial-merge drop` cleans up. 1-3 files → main, no
-  branch.
-- **Commit only after ACCEPT**, on the branch the plan names, staging only
-  files in the table — never another agent's files.
+- Branch: 4 or more upstream files edited (rows with `.rambla.` in the
+  name never count) → the work is on
+  `fix/<slug>` or `feat/<slug>`. 1-3 files → main, no branch.
+- **Always run `just trial-merge` from `rambla/` after the review passes** —
+  every job, branched or not. It rehearses the weekly upstream merge in a
+  throwaway copy and never touches the real repo; `just trial-merge drop`
+  cleans up. If it reports conflicts: do not resolve them in place, do not
+  move our code, do not create modules the plan never named. Study the
+  conflict, propose the resolution, and report it to the supervisor for
+  the user — work stops until the user decides.
+- **Commit only when the user asks**, on the branch the plan names, staging
+  only files in the table — never another agent's files.
 - Add the `PATCHES.md` entry from the plan's Ledger section. Last step.
 
 ## Stop and ask
 
 - **The plan turns out to be wrong, incomplete, or inconsistent with the
-  code.** Stop and report to the supervisor, who asks the user. Do not edit
-  the plan, do not re-decide placement mid-edit, do not work around it.
+  code.** Stop and report to the supervisor, who takes it to the user with
+  your reasons in a handoff. Only the user edits a plan, ever — through a
+  separate planning session. Do not re-decide placement mid-edit, do not
+  work around it.
 - **An upstream test fails and the change conflicts with what it asserts** —
   stop all
   work and report to the supervisor: the test name, the failure output, why
@@ -211,24 +231,26 @@ Then:
 Do exactly what the plan says. Not more, not less. Not the obvious
 improvement next to it, not the half of it that seems sufficient.
 
-**The mitigation table is the complete list of production files that may be
-created or
-edited** — `.rambla.test.ts` files are always ours: each edited
-upstream file implies its companion `.rambla.test.ts`, no row needed. No other file
+**The mitigation table is the complete list of files that may be
+created or edited — tests included, every one with a row.** No other file
 gets created or edited — not a config line, not a one-line
 import fix somewhere else, not a rename that "has to happen anyway". If the
 work appears to need a file that isn't listed, stop and report to the
 supervisor. That is a hole in an approved plan, and only the user can widen
 it. The reviewer rejects on any file outside the table, whatever the reason.
 
-**Other agents work in this checkout at the same time.** Uncommitted changes
-and new files you didn't make are someone else's job in progress. If they
-don't touch your files, they don't exist as far as you're concerned.
+**Other agents work in this checkout at the same time.** Before writing
+anything, check every file in the table with `git status --porcelain`:
+if any of them carries an uncommitted change you didn't make, stop and
+report to the supervisor — begin only when the table's files are clean.
+After that, uncommitted changes and new files you didn't make, in files
+outside the table, don't exist as far as you're concerned.
 
 **NEVER run a command that discards work you didn't write.** Not
 `git checkout -- <file>`, not `git restore`, not `git stash`, not
 `git reset --hard`, not `git clean`, and never an edit or a write to any
-file outside the table. **Read anything you like — reading is
+file outside the table — not even to revert it, not even to tidy it.
+**Read anything you like — reading is
 free and encouraged, within the Reading rules above. Writing is
 confined to the table.** Uncommitted work has no undo — one
 `git checkout` on another agent's file destroys hours of work permanently,

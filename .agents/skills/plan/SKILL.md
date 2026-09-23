@@ -125,9 +125,9 @@ first, each option's cost in 1 line. Wait for the answer before writing.
 
 The scope is exactly what the user asked — not rounded up to the feature you
 think they meant, not quietly trimmed where it is awkward. The mitigation
-table is the contract: it is the complete list of files that may change; no
-file outside it may change. A file you would need to touch but did not list
-is a hole in the plan.
+table is the contract: every file this work may create or edit gets a row —
+tests included. No file outside the table may change. A file you would need
+to touch but did not list is a hole in the plan.
 
 ## Merge conflict mitigation
 
@@ -159,9 +159,7 @@ Inside upstream files: our edits in 1 contiguous block per file; new imports
 at the END of the import block; every diverging site tagged
 `// RAMBLA-FORK: <category>: <what and why>` with a category from the fixed
 list at the top of `PATCHES.md`; never reformat, rename, or move upstream
-code you are not changing. `npm run format` in Verification only ever
-touches the files this work changed — the repo is already Biome-formatted,
-so it never disturbs untouched upstream lines. If upstream already fixed the
+code you are not changing. If upstream already fixed the
 same problem, say
 so in plain English and cite the upstream commit; the coder ports the fix
 verbatim during implementation — its code never enters the plan.
@@ -170,11 +168,9 @@ Upstream activity for the table comes from
 `git log upstream-rebrand -- <path>`. **Always `upstream-rebrand`, never
 `upstream/main`** — main is unrebranded, so the diff is noise or empty.
 
-**Branch:** 4 or more upstream files edited (upstream tests never count;
-new `*.rambla.*` files never
-count) → `feat/<slug>` or `fix/<slug>`,
-and the work is not done until `just trial-merge` runs clean (or the
-conflicts are resolved deliberately). 1-3 files → work on main.
+**Branch:** 4 or more upstream files edited (rows with `.rambla.` in the
+name never count) → `feat/<slug>` or `fix/<slug>`.
+1-3 files → work on main.
 
 ## How git decides conflicts — do not relitigate this
 
@@ -182,7 +178,9 @@ This is why the placement rules above are what they are. Background — read
 once, never research it again. Per file, git merges
 both sides' changed line ranges silently when even 1 unchanged base line
 separates them; touching or overlapping ranges conflict. New files never
-conflict. The entire strategy: keep our edits in 1 block per file, prefer new
+conflict. Any file with `.rambla.` in its name is ours alone — upstream
+never has it, so it never conflicts, whatever its age. Every other file,
+including upstream's test files, can conflict. The entire strategy: keep our edits in 1 block per file, prefer new
 files for new code, edit at calm seams (function entry/exit), never move
 upstream code. Line counts are not the measure — which files change, and how
 active upstream is in them, is.
@@ -253,12 +251,15 @@ is merged in weekly. Code below follows the fork's placement rules.
 | --------------------- | ----------------------------------------- | ----------------------------------------- | ------------------- |
 | `packages/.../foo.ts` | one import + one call into the new module | last touched 3 weeks ago, twice this year | `RAMBLA-FORK: fix:` |
 | `packages/.../thing.rambla.ts` | <what lives there>               | new                                       | (none)              |
+| `packages/.../thing.rambla.test.ts` | <what it covers>            | new                                       | (none)              |
 
-Fill the activity column from `git log upstream-rebrand -- <path>`. This
-table is the complete list of production files the coder may create or edit.
-Each row implies its companion `*.rambla.test.ts` — `.rambla.test.ts` files
-are ours,
-always, never upstream, and never need a row. Tests never go inside
+Fill the activity column from `git log upstream-rebrand -- <path>` for every
+file without `.rambla.` in its name — how hot the file is decides how
+careful the placement is. Files with `.rambla.` in the name are ours alone
+and can never conflict, so their activity entry is just `new` or `existing`.
+This table is the complete list of files the coder may create or edit —
+tests included, every test file its own row. It is also the fork's record
+of what touched each file, and why. Tests never go inside
 upstream test files.
 
 **Why this shape:** <one or two sentences — the judgment call, stated so a
@@ -286,7 +287,7 @@ be touched. The plan's prohibitions live here — more of these than freedoms.>
 ## Steps
 
 0. Read the `code` skill before writing anything. If a step below turns out
-   to be wrong, stop and report back to the planner — do not amend this plan
+   to be wrong, stop and report back to the supervisor — do not amend this plan
    and do not re-decide placement while coding.
 1. <One action per step. Name the file. Say what changes — never how.>
 2. ...
@@ -295,11 +296,9 @@ be touched. The plan's prohibitions live here — more of these than freedoms.>
 
 - `npm run typecheck`
 - `npm run lint`
-- `npm run format`
-- `npx vitest run <the one test file> --bail=1`
+- `npx vitest run <your .rambla.test.ts> --bail=1`
 - `git grep "RAMBLA-FORK:" -- <each upstream file edited>` — every one must
   show a tag.
-- `just trial-merge` (branched work only; see "How git decides conflicts")
 - <Anything that has to be seen working in the app, named specifically.>
 
 ## Ledger
