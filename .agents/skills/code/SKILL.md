@@ -9,10 +9,8 @@ description: Implement a fix or feature in the Rambla fork of upstream Paseo, fo
 
 **All of it is in `rambla/`** — a permanent, terminal fork of upstream
 `getpaseo/paseo`, rebranded by script. Every package, test, and npm script
-lives there, and that is where commands run. The outer repo you start in —
-whatever it happens to be called — holds no application code. It's the
-container: plans, research, notes, tooling, and `rambla/` as a submodule.
-Don't go hunting for source at the top level; there isn't any.
+lives there, and that is where commands run. The outer repo holds plans,
+research, notes, and tooling only — no application code.
 
 Nothing is ever contributed upstream and the fork is never rebased. Upstream
 is merged in, roughly weekly, forever.
@@ -30,34 +28,51 @@ Three roles, kept separate.
 
 **Accept/reject loop, every time.** The reviewer returns ACCEPT or REJECT.
 ACCEPT means all three: the work matches the plan, the reviewer ran the tests
-itself and saw them pass, and nothing changed outside the plan's scope.
+itself and saw them pass, and nothing changed outside the mitigation table —
+`.rambla.test.ts` files excepted, they are always ours.
 REJECT is a numbered list of deficiencies, sent to the coder only. Re-review
 is blind — re-send the same original instructions, never a summary of what
-was fixed. Third REJECT on the same deficiency: stop and go to the user.
+was fixed. **At most 2 fix-and-rereview rounds**; still rejected after that,
+stop and bring both positions to the user to decide.
 
 **The plan file is read-only.** The coder and the reviewer may read it.
-Neither may edit it, and neither may quietly work around it. Once a plan is
-reviewed and approved it is fixed — see "Stop and ask the user".
+Neither may edit it, and neither may quietly work around it. When the plan
+turns out wrong, incomplete, or inconsistent with the code: stop and report
+back to the supervisor — do not re-decide placement mid-edit, do not work
+around it. The supervisor asks the user; changing a reviewed plan is the
+user's call. A plan exists for every task sent to implementation; whether
+one is needed is never the coder's call.
 
 ## Step 0 — read these first
 
-1. **The plan** for this work, in `rambla/plans/`. Its merge conflict
-   mitigation table is a contract, not a suggestion. Its Provenance section
+1. **The plan** for this work, in `rambla/plans/`. Its mitigation table is
+   the complete list of files that may be created or edited — a contract,
+   not a suggestion. Its Provenance section
    says which commit of main the plan was written against — if main has moved
    since, every line number in it is suspect, so say so before starting.
-2. **The `plan` skill**, sections "Nothing unchecked goes in a plan",
-   "Placement decision", "Edit rules inside upstream files", and "Where
-   conflicts come from". Those are the rules. This skill is how you apply
-   them while coding, and does not repeat the reasoning behind them. The
-   verification rule holds while coding exactly as it does while planning:
-   read it, cite it, or don't claim it.
+2. **The `plan` skill**, sections "What a plan is" (the citation rule) and
+   "How git decides conflicts — do not relitigate this". This skill is how
+   you apply them while coding, and does not repeat the reasoning behind
+   them.
 
-No plan exists? Stop and ask whether to write one. Fixes of one or two lines
-can skip a plan; anything larger should not.
+## Reading rules
+
+- **Never read or grep a minified file — not even partially.** They are 1
+  line and hundreds of KB; any read returns the whole line and buries your
+  context. To learn what a bundled library does, search its documentation.
+- **Files over 2000 lines are named ranges only.** Read the regions the plan
+  cites, not the file.
+- **Targeted reads only — ±30 lines around the spot the plan touches.** A
+  whole-file read needs the supervisor's say-so.
+- Read what you need to verify a claim — but a whole-file read of a large
+  file is how a coder's context dies. Scope reads to what the plan touches.
+
+These rules bind the coder AND the reviewer.
 
 ## The placement rules, in one screen
 
-The `plan` skill has the mechanism. The short form you work from:
+The plan skill's "Placement decision" is authoritative. The coder's working
+form:
 
 - New function, type, component, hook, constant table → **new
   `*.rambla.ts(x)` file.** Any size. A new file cannot conflict, ever.
@@ -65,10 +80,9 @@ The `plan` skill has the mechanism. The short form you work from:
   `*.rambla.ts(x)` file, under a different name, called from the upstream
   site. Their signature and call sites stay untouched.
 - Changing some of upstream's logic → put the logic in a `*.rambla.ts`
-  helper, call it in **one line**. Twenty lines inside their function is
-  twenty lines of future conflict.
-- Changing a handful of lines where extracting would be sillier than the
-  edit → edit in place, minimally.
+  helper, call it in **one line**.
+- Changing a few lines where extracting would be sillier than the
+  edit → edit in place, minimally. At most 5 changed lines.
 
 Plus:
 
@@ -87,23 +101,16 @@ Plus:
 
 ```
 git diff HEAD upstream-rebrand -- <path>
-```
-
-**Always `upstream-rebrand`, never `upstream/main`.** `upstream/main` is
-unrebranded: every line mentioning the brand differs, and a path we renamed
-doesn't exist there at all, so the diff is either noise or empty. The
-rebrand branch is upstream's tree with the rename already applied, so a diff
-against it shows only differences that are real.
-
-If upstream already fixed this, **port their fix verbatim.** Do not invent a
-parallel solution — an invented fix conflicts with theirs on the next merge
-and we get the worst of both.
-
-Also check whether the file is even upstream's:
-
-```
 git log upstream-rebrand -- <path>      # any history = upstream's
 ```
+
+**Always `upstream-rebrand`, never `upstream/main`** — it is unrebranded, so
+the diff is noise or empty (see the plan skill, "How git decides conflicts").
+
+If the plan names an upstream fix, **port it verbatim.** Do not invent a
+parallel solution — an invented fix conflicts with theirs on the next merge
+and we get the worst of both. If you find an upstream fix the plan didn't
+name, stop and report to the supervisor.
 
 ## Write the minimum code that works
 
@@ -111,23 +118,32 @@ git log upstream-rebrand -- <path>      # any history = upstream's
   for cases that can't happen, no "while I'm here" cleanups.
 - If the fix is three lines, it's three lines. Do not grow it into a module
   because a module feels tidier.
-- This applies to production code only. Tests are ours, in our own files,
+- This applies to production code only. Tests are ours, in our own
+  `.rambla.test.ts` files,
   and can be as thorough as you like.
 
 ## Tests
 
 **Write the failing test first**, then the code that makes it pass.
 
-- **Our tests go in `*.rambla.test.ts`.** New file, even when an upstream
-  suite covers the same module. These never conflict.
-- Keep the category suffix last: `foo.rambla.e2e.test.ts`,
-  `foo.rambla.browser.test.ts`.
-- **Never edit, delete, or skip an upstream test.** Not to make your change
-  pass, not because the assertion looks outdated. A failing upstream test
-  means your change broke behavior someone deliberately asserted. Bring it
-  to the user with what you think is causing it.
-- A `.skip` that carries a `RAMBLA-FORK: skip-test:` comment is a deliberate
-  divergence the user already approved. Leave it.
+- `.rambla.test.ts` files are ours, always — never upstream's. Each upstream
+  file the
+  plan edits implies its companion `*.rambla.test.ts`, created or extended
+  as the work needs. They never need a table row.
+- **Never add tests to upstream test files, and never edit, delete, or skip
+  an upstream test.** Not to make your change
+  pass, not because the assertion looks outdated. When one fails:
+  1. **If your code caused it** — a bug in your change, a wrong assumption
+     about existing behavior — fix your code. Do not report it; it is yours.
+  2. **If your feature or fix genuinely conflicts with the test** — the
+     behavior the change requires is not what the test asserts — **stop all
+     work**, and report to the supervisor: the test name, the failure
+     output, and why you believe the change conflicts. The supervisor shows
+     the failure to the user and asks what to do. Work stops until the user
+     decides. Never edit, delete, or skip the test — not on your judgment,
+     only on the user's explicit decision.
+- A `.skip` that carries a `RAMBLA-FORK: skip-test:` comment is an approved
+  divergence the user already made. Leave it.
 
 ### Which tests to run
 
@@ -142,8 +158,8 @@ Pipe to a file and read the file if the output is long.
 
 **Never run the full suite.** No `npm run test` at the workspace or repo
 level, no `test:e2e*`, no `test:integration*`, no Playwright, no Maestro.
-They will freeze the machine — several agents may be running at once. Full
-verification happens in CI, not here.
+This binds the coder AND the reviewer. Several agents may be running at
+once; full verification happens in CI, not here.
 
 ## When you're done
 
@@ -153,45 +169,57 @@ npm run lint
 npm run format
 ```
 
-Never hand-fix formatting; Biome owns it. Formatting that diverges from
-upstream's output widens every future conflict.
+Never hand-fix formatting; Biome owns it.
+
+**A verification command that fails on a file in the table:
+fix it and rerun. It fails on a file outside the table: stop and report —
+that is not yours to fix.**
 
 Then:
 
 - `git grep "RAMBLA-FORK:" -- <each upstream file you edited>` — every one
   must show a tag. An untagged divergence is one we lose at the next merge.
-- **4 or more upstream files edited** (tests excluded): you should be on a
-  branch, and you run `just trial-merge` from `rambla/` before calling it
-  done. Conflicts usually mean move our code, not resolve them. `just
-trial-merge drop` cleans up.
+- Branch: 4 or more upstream files edited (upstream tests never count;
+  new `*.rambla.*` files never count) → the work is on
+  `fix/<slug>` or `feat/<slug>`, and you run `just trial-merge` from
+  `rambla/` before calling it done. Conflicts mean move our code, not
+  resolve them. `just trial-merge drop` cleans up. 1-3 files → main, no
+  branch.
+- **Commit only after ACCEPT**, on the branch the plan names, staging only
+  files in the table — never another agent's files.
 - Add the `PATCHES.md` entry from the plan's Ledger section. Last step.
 
-## Stop and ask the user
+## Stop and ask
 
 - **The plan turns out to be wrong, incomplete, or inconsistent with the
-  code.** Stop and ask the user what to do. Do not edit the plan, do not
-  re-decide placement mid-edit, do not work around it. The plan was reviewed
-  and approved; changing it is the user's call, not yours.
-- An upstream test fails, or would have to change.
-- Upstream already fixed this a different way (say in plain English what they
-  did and how it differs).
+  code.** Stop and report to the supervisor, who asks the user. Do not edit
+  the plan, do not re-decide placement mid-edit, do not work around it.
+- **An upstream test fails and the change conflicts with what it asserts** —
+  stop all
+  work and report to the supervisor: the test name, the failure output, why
+  the change conflicts. The supervisor shows the failure to the user and
+  asks. Work stops until the user decides. (A failure your own code caused
+  is not this: fix your code.) Never edit, delete, or skip an upstream test
+  on your own judgment.
+- Upstream already fixed this a different way (say in plain English what
+  they did and how it differs).
 - The change needs an identifier rename that upstream also names.
-- **Anything else this skill doesn't clearly cover.** These are the obvious
-  cases, not the whole list. Ask rather than pick. Slow and asking is the
-  intended pace.
+- **Anything else this skill doesn't clearly cover.** Ask rather than pick.
 
 ## The scope is the plan's scope
 
 Do exactly what the plan says. Not more, not less. Not the obvious
 improvement next to it, not the half of it that seems sufficient.
 
-**The mitigation table is the complete list of files that may change.** No
-file outside it gets created or edited — not a config line, not a one-line
+**The mitigation table is the complete list of production files that may be
+created or
+edited** — `.rambla.test.ts` files are always ours: each edited
+upstream file implies its companion `.rambla.test.ts`, no row needed. No other file
+gets created or edited — not a config line, not a one-line
 import fix somewhere else, not a rename that "has to happen anyway". If the
-work appears to need a file that isn't listed, stop and ask the user. That
-is a hole in an approved plan, and only they can widen it.
-
-The reviewer rejects on any file outside the table, whatever the reason.
+work appears to need a file that isn't listed, stop and report to the
+supervisor. That is a hole in an approved plan, and only the user can widen
+it. The reviewer rejects on any file outside the table, whatever the reason.
 
 **Other agents work in this checkout at the same time.** Uncommitted changes
 and new files you didn't make are someone else's job in progress. If they
@@ -200,21 +228,20 @@ don't touch your files, they don't exist as far as you're concerned.
 **NEVER run a command that discards work you didn't write.** Not
 `git checkout -- <file>`, not `git restore`, not `git stash`, not
 `git reset --hard`, not `git clean`, and never an edit or a write to any
-file that isn't in the plan's mitigation table. **Read anything you like —
-reading is free and encouraged. Writing is confined to the table.**
-Uncommitted work has no undo — one
+file outside the table. **Read anything you like — reading is
+free and encouraged, within the Reading rules above. Writing is
+confined to the table.** Uncommitted work has no undo — one
 `git checkout` on another agent's file destroys hours of work permanently,
-and this has happened. There is no situation in this task where discarding
-someone else's changes is the right move. If a file you didn't write is in
+and this has happened. If a file you didn't write is in
 your way, stop and ask.
 
 Beyond that: don't fix them, don't stage them, don't tidy them, don't report
 them as problems.
 
-If something uncommitted does touch a file in your mitigation table, check
+If something uncommitted does touch a file in the table, check
 before reacting — `git status --porcelain` and `git diff -- <file>` — and
 confirm it's really another agent's change and really overlaps yours. Then
-ask the user what to do and wait. Never resolve an overlap on your own
+ask the supervisor what to do and wait. Never resolve an overlap on your own
 judgment.
 
 **Something worth fixing that's out of scope? Stop and raise it now.** Don't
@@ -227,9 +254,9 @@ plan or waits.
 Concerns first, always — if something is risky, unresolved, or out of scope,
 that's the first sentence.
 
-**Check every claim before you make it, and cite it.** Anything you say about
-the code — in chat, in a commit message, in the `PATCHES.md` entry — is
-something you opened and read, carrying a `file.ts:120` reference. Not
+**Check every claim before you make it, and cite it.** Anything you say
+about the code — in chat, in a commit message, in the `PATCHES.md` entry —
+is something you opened and read, carrying a `file.ts:120` reference. Not
 inferred from a name, not a mechanism that sounds right. If you can't cite
 it, you haven't checked it, and you don't say it yet.
 
@@ -243,9 +270,7 @@ out", no "it assumed", no account of a wrong turn you already corrected.
 
 **Every thing you name must exist outside your own head** — a file path, a UI
 element the user has seen, a heading in the plan. If you can't attach one,
-rewrite the sentence until you can. "The copy is gone" is unresolvable: a
-deleted file, deleted code, an abandoned idea? It reads as damage. This binds
-short status messages too; "it's only an update" is not an exemption.
+rewrite the sentence until you can.
 
 **Never report effort** — what a reviewer tried, examined, or couldn't find
 is not a result. Report findings and what changed because of them.
@@ -255,6 +280,13 @@ which files change and how active upstream is in them.
 
 **Land every report**: end with where the work now stands, written as if the
 user had read none of the updates before it.
+
+The plan skill's 3-place plan-link rule is planning-phase only; code-phase
+reports never link the plan file. File references in chat start with
+`rambla/`; inside committed files (`PATCHES.md`) they are relative to the
+fork root. Link text is always `name.ts:120`. Digits for counted numbers,
+words for numbers inside English phrases. A bare path renders as plain text
+the user cannot open — they read with a screen reader.
 
 ### Review round templates
 
@@ -269,8 +301,8 @@ The reviewer accepted 6 of 7 items. Rejected:
 2. ...
 ```
 
-Never reproduce the reviewer's own words; it writes for whoever fixes the
-problem. Don't say what happens next — going back for a fix is understood.
+Never reproduce the reviewer's own words. Don't say what happens next —
+going back for a fix is understood.
 
 **Reviewer accepted:**
 
@@ -288,49 +320,4 @@ Files changed:
 Conflict mitigation: <the approach in 25 words or less>
 ```
 
-Code findings always have a location, so every rejected item carries a link —
-see "File links".
-
-## Numbers are digits when they are data
-
-A number that is **data** — a count, a measurement, a limit, a version, a
-date — is a digit. `5 sites`, `3 files`, `2 of 7 items`. Never `five sites`.
-This holds at 1 as well: `1 upstream file`, not `one upstream file`.
-
-The test: **would the user want to spot it at a glance?** They read with a
-screen reader; a digit is findable, a spelled-out number has to be read
-through.
-
-A number that is part of an English phrase rather than a quantity stays a
-word: "one at a time", "one another", "no one", "one of them".
-
-Applies in chat, in commit messages, in `PATCHES.md` and in code comments.
-
-## File links
-
-**Never write a bare path.** Every file reference, everywhere, is a markdown
-link with the line as `#L<n>`. Link text is always `name.ts:120`.
-
-| Where the text is read  | Target starts with           |
-| ----------------------- | ---------------------------- |
-| Chat with the user      | `rambla/`                    |
-| A file inside `rambla/` | a path relative to that file |
-
-```markdown
-chat: [en.ts:2207](rambla/packages/app/src/i18n/resources/en.ts#L2207)
-PATCHES.md: [en.ts:2207](packages/app/src/i18n/resources/en.ts#L2207)
-```
-
-Why they differ: the user runs this project from a workspace folder that
-holds the fork in a subfolder named `rambla/`, so paths in chat resolve from
-that workspace root. A file committed in the repo has no `rambla/` above it —
-on GitHub and in a clone, the repo root _is_ the fork — so links written into
-a file are relative to that file. `PATCHES.md` sits at the fork root, so it
-needs no prefix at all; a plan in `rambla/plans/` needs `../`.
-
-`#L<n>` is the GitHub form and it works in both places, so the line syntax
-never changes. Only the prefix does.
-
-A bare `path:line` renders as plain text. The user cannot open it, and this
-user reads with a screen reader — an unclickable path costs them a manual
-lookup every time.
+Code findings always have a location, so every rejected item carries a link.
