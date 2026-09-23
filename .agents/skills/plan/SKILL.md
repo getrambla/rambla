@@ -129,6 +129,16 @@ table is the contract: it is the complete list of files that may change; no
 file outside it may change. A file you would need to touch but did not list
 is a hole in the plan.
 
+## Merge conflict mitigation
+
+Every plan's core act. This fork is an experiment in staying surgically
+minimal: every file gets a deliberate placement decision, because minimal
+divergence is what keeps upstream's fixes flowing to us — and surgical
+placement forces you to understand the code you are touching, which is what
+makes the code good. Decide placements with the rules below, then record
+them in the skeleton's mitigation table. The plan should get better on every
+revision, never longer.
+
 ## Placement decision
 
 First match wins.
@@ -160,21 +170,22 @@ Upstream activity for the table comes from
 `git log upstream-rebrand -- <path>`. **Always `upstream-rebrand`, never
 `upstream/main`** — main is unrebranded, so the diff is noise or empty.
 
+**Branch:** 4 or more upstream files edited (upstream tests never count;
+new `*.rambla.*` files never
+count) → `feat/<slug>` or `fix/<slug>`,
+and the work is not done until `just trial-merge` runs clean (or the
+conflicts are resolved deliberately). 1-3 files → work on main.
+
 ## How git decides conflicts — do not relitigate this
 
-Verified against git's source; do not research it again. Per file, git merges
+This is why the placement rules above are what they are. Background — read
+once, never research it again. Per file, git merges
 both sides' changed line ranges silently when even 1 unchanged base line
 separates them; touching or overlapping ranges conflict. New files never
 conflict. The entire strategy: keep our edits in 1 block per file, prefer new
 files for new code, edit at calm seams (function entry/exit), never move
 upstream code. Line counts are not the measure — which files change, and how
 active upstream is in them, is.
-
-**Branch:** 4 or more upstream files edited (upstream tests never count;
-new `*.rambla.*` files never
-count) → `feat/<slug>` or `fix/<slug>`,
-and the work is not done until `just trial-merge` runs clean (or the
-conflicts are resolved deliberately). 1-3 files → work on main.
 
 ## Provenance
 
