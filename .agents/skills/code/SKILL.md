@@ -104,9 +104,29 @@ Plus:
 - **Keep our edits in one contiguous block per file.** Scattered one-line
   edits multiply the chances of colliding with upstream.
 - **New imports go at the END of the import block, after a blank line.**
-- **Every diverging site gets a tag comment on the line above:**
-  `// RAMBLA-FORK: <category>: <what and why>.` Categories are the fixed list
-  at the top of `PATCHES.md`. Never invent one.
+- **Every block of code we add or change gets a fork tag on the line
+  above — one line, exactly this format:**
+
+  ```
+  // RAMBLA-FORK: <category>: <plan file name>: <what it does>.
+  ```
+
+  `<category>` is `feature` or `fix` — matching the plan's title (`feat:` →
+  `feature`, `fix:` → `fix`). `<plan file name>` is the plan's exact file
+  name, e.g. `2026-09-22-fix-os-notification-toggle.md` — it points any
+  future reader (a merge-conflict resolver, an auditor) to the plan that
+  commissioned this code. `<what it does>` is one brief clause. One line,
+  never more — the comment is a pointer, not an essay. Example:
+
+  ```
+  // RAMBLA-FORK: fix: 2026-09-22-fix-os-notification-toggle.md: adds the desktop notifications toggle.
+  ```
+
+  This tag goes on every block in upstream files, in our own
+  `*.rambla.*` files, and in test files alike — it is the code's audit
+  trail. Never invent a category; `skip-test:` and `release:` exist for
+  special cases you did not choose.
+
 - **Never reformat, reorder, rename, or tidy upstream code you aren't
   fixing.** Keep their lines in their order.
 - **Never rename or move upstream code.** A move is a delete plus an insert,
@@ -205,7 +225,37 @@ Then:
   the user — work stops until the user decides.
 - **Commit only when the user asks**, on the branch the plan names, staging
   only files in the table — never another agent's files.
-- Add the `PATCHES.md` entry from the plan's Ledger section. Last step.
+- **Append the changelog entry.** Under `## Unreleased` in
+  `rambla/RAMBLA-CHANGELOG.md`, add one bullet — under `### Added` for a
+  `feature`, `### Fixed` for a `fix`. This is the one write allowed outside
+  the table, ever. Format:
+
+  ```
+  - <YYYY-MM-DD> - [<short hash>](<commit URL>) - [<plan file name>](<plan file>) - <one user-visible sentence>.
+  ```
+
+  A filled example:
+
+  ```
+  - 2026-09-23 - [a1b2c3d](https://github.com/getrambla/rambla/commit/a1b2c3d) - [2026-09-22-fix-os-notification-toggle.md](plans/2026-09-22-fix-os-notification-toggle.md) - Added desktop notification toggle.
+  ```
+
+  All entries share that shape, so dates, hashes, and plan links line up
+  down the page. Field by field:
+  - `<short hash>` — the 7-character git short hash; until the user's
+    commit exists, the link text is exactly 7 underscores `_______` and
+    the URL is left as plain `_______` too (grep `_______` later to find
+    unfilled entries). When the commit exists, link it to
+    `https://github.com/getrambla/rambla/commit/<hash>`.
+  - `<plan file name>` — the plan's file name as the link text, linking to
+    the plan's relative path (`plans/<file>`). If the work had no plan
+    file, this field is the plain text `(no plan)`.
+  - `<one user-visible sentence>` — short, plain English, no links; start
+    with the verb (`Added…`, `Fixed…`, `Renamed…`) and drop filler
+    articles when the sentence stays clear (`Added desktop notification
+toggle`, not `Added a toggle for the enabling of notifications`).
+    Create either `###` heading if it is not there yet. The fork tag in the
+    code and this line are the whole audit trail. Last step.
 
 ## Stop and ask
 
@@ -277,7 +327,7 @@ Concerns first, always — if something is risky, unresolved, or out of scope,
 that's the first sentence.
 
 **Check every claim before you make it, and cite it.** Anything you say
-about the code — in chat, in a commit message, in the `PATCHES.md` entry —
+about the code — in chat or in a commit message —
 is something you opened and read, carrying a `file.ts:120` reference. Not
 inferred from a name, not a mechanism that sounds right. If you can't cite
 it, you haven't checked it, and you don't say it yet.
@@ -305,8 +355,7 @@ user had read none of the updates before it.
 
 The plan skill's 3-place plan-link rule is planning-phase only; code-phase
 reports never link the plan file. File references in chat start with
-`rambla/`; inside committed files (`PATCHES.md`) they are relative to the
-fork root. Link text is always `name.ts:120`. Digits for counted numbers,
+`rambla/`. Link text is always `name.ts:120`. Digits for counted numbers,
 words for numbers inside English phrases. A bare path renders as plain text
 the user cannot open — they read with a screen reader.
 

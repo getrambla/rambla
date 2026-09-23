@@ -156,10 +156,11 @@ Before deciding, ask the researcher how this app already does this kind of
 thing, and say so in the plan with a citation when it drives the placement.
 
 Inside upstream files: our edits in 1 contiguous block per file; new imports
-at the END of the import block; every diverging site tagged
-`// RAMBLA-FORK: <category>: <what and why>` with a category from the fixed
-list at the top of `PATCHES.md`; never reformat, rename, or move upstream
-code you are not changing. If upstream already fixed the
+at the END of the import block; every diverging site tagged with the one-line
+fork tag (format in the `code` skill — category and plan file name are
+decided here, so write the tag into the plan's step for that edit); never
+reformat, rename, or move upstream code you are not changing. If upstream
+already fixed the
 same problem, say
 so in plain English and cite the upstream commit; the coder ports the fix
 verbatim during implementation — its code never enters the plan.
@@ -247,19 +248,20 @@ is merged in weekly. Code below follows the fork's placement rules.
 
 **Files this work changes:**
 
-| File                  | Edit                                      | Upstream activity                         | Tag                 |
-| --------------------- | ----------------------------------------- | ----------------------------------------- | ------------------- |
-| `packages/.../foo.ts` | one import + one call into the new module | last touched 3 weeks ago, twice this year | `RAMBLA-FORK: fix:` |
-| `packages/.../thing.rambla.ts` | <what lives there>               | new                                       | (none)              |
-| `packages/.../thing.rambla.test.ts` | <what it covers>            | new                                       | (none)              |
+| File                                | Edit                                      | Upstream activity                         | Tag                 |
+| ----------------------------------- | ----------------------------------------- | ----------------------------------------- | ------------------- |
+| `packages/.../foo.ts`               | one import + one call into the new module | last touched 3 weeks ago, twice this year | `RAMBLA-FORK: fix:` |
+| `packages/.../thing.rambla.ts`      | <what lives there>                        | new                                       | `RAMBLA-FORK: fix:` |
+| `packages/.../thing.rambla.test.ts` | <what it covers>                          | new                                       | `RAMBLA-FORK: fix:` |
 
 Fill the activity column from `git log upstream-rebrand -- <path>` for every
 file without `.rambla.` in its name — how hot the file is decides how
 careful the placement is. Files with `.rambla.` in the name are ours alone
 and can never conflict, so their activity entry is just `new` or `existing`.
-This table is the complete list of files the coder may create or edit —
-tests included, every test file its own row. It is also the fork's record
-of what touched each file, and why. Tests never go inside
+The Tag column previews the fork tag's category for that file; the coder
+writes the full tag (category, plan file name, one clause) per block. This
+table is the complete list of files the coder may create or edit —
+tests included, every test file its own row. Tests never go inside
 upstream test files.
 
 **Why this shape:** <one or two sentences — the judgment call, stated so a
@@ -268,7 +270,6 @@ by editing more.>
 
 **Branch:** `fix/<slug>` — required, N upstream files edited.
 <or: "none — N upstream files edited, work on main.">
-
 
 ## Cause
 
@@ -300,12 +301,6 @@ be touched. The plan's prohibitions live here — more of these than freedoms.>
 - `git grep "RAMBLA-FORK:" -- <each upstream file edited>` — every one must
   show a tag.
 - <Anything that has to be seen working in the app, named specifically.>
-
-## Ledger
-
-<The `PATCHES.md` entry this work adds, written out: what diverges, which
-files, the standing resolution rule, and the "Drops when: ..." condition.
-Written into `PATCHES.md` as the last step of implementation, not before.>
 
 ## Risks
 
