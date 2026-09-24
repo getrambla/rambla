@@ -2,7 +2,7 @@
 
 ## Provenance
 
-- main: `0dc520cf8` — 2026-09-23
+- main: `723e0bc70` — 2026-09-23
 - upstream-rebrand: `61b044d8b` — 2026-09-21
 - upstream/main: `135a3b4c9` (untagged) — 2026-09-21
 
@@ -14,8 +14,7 @@
    `SettingsSection`'s `trailing` slot.
 2. Off stops Rambla firing OS notifications.
 3. Off hides the card under the heading; the heading and switch stay.
-4. The refresh button moves off the heading to the right edge of the
-   permission row, beside the status pill.
+4. The refresh button is no longer rendered.
 
 **Not in scope:**
 
@@ -37,8 +36,8 @@
 ## Goal
 
 One switch on the Settings > Notifications heading in the desktop app turns OS
-notifications off; off hides the card below it, and refresh moves onto the
-permission row beside the status pill.
+notifications off; off hides the card below it, and the refresh button is
+not rendered.
 
 ## Merge conflict mitigation
 
@@ -53,8 +52,7 @@ weekly. Code below follows the fork's placement rules.
 | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------------- |
 | [`storage.ts`](../packages/app/src/hooks/use-settings/storage.ts)                                               | `notificationsEnabled` in `AppSettings` (beside [`storage.ts:90`](../packages/app/src/hooks/use-settings/storage.ts#L90)), `DEFAULT_CLIENT_SETTINGS` (beside [`storage.ts:143`](../packages/app/src/hooks/use-settings/storage.ts#L143)), `StoredAppSettingsSchema` (beside [`storage.ts:238`](../packages/app/src/hooks/use-settings/storage.ts#L238))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | last touched 2026-09-14, 30 times this year                     | `RAMBLA-FORK: feature:` |
 | [`session-context.tsx`](../packages/app/src/contexts/session-context.tsx)                                       | 4 sites: `useSettings` import at the end of the import block; the selector, a ref and its per-render assignment beside `appStateRef` ([`session-context.tsx:238`](../packages/app/src/contexts/session-context.tsx#L238)); a braced guard before `sendOsNotification` at [`session-context.tsx:312`](../packages/app/src/contexts/session-context.tsx#L312); the same before [`session-context.tsx:713`](../packages/app/src/contexts/session-context.tsx#L713)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | last touched 2026-09-21, 153 times this year                    | `RAMBLA-FORK: feature:` |
-| [`desktop-notifications-section.tsx`](../packages/app/src/desktop/components/desktop-notifications-section.tsx) | `useSettings` import at the end of the import block; one block after `permissionLabels` ([`desktop-notifications-section.tsx:73-80`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L73-L80)) and above upstream's early return, holding an aliased destructure of the no-argument `useSettings()` — the app store under `appSettings`, its updater under `updateAppSettings` — because [`desktop-notifications-section.tsx:22`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L22) already binds `settings` and `updateSettings` to `useDesktopSettings()` and upstream's `handlePlaySoundChange` and play-sound `Switch` keep using those — a `handleOsNotificationsChange` `useCallback` shaped like `handlePlaySoundChange` ([`desktop-notifications-section.tsx:42-49`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L42-L49)), and a `notificationsSwitch` `useMemo` wrapping the `Switch` upstream writes at [`desktop-notifications-section.tsx:103-109`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L103-L109); an early return after upstream's own at [`desktop-notifications-section.tsx:82-84`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L82-L84); `trailing` at [`desktop-notifications-section.tsx:89`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L89) takes the switch; the `DesktopPermissionRow` call at [`desktop-notifications-section.tsx:91-97`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L91-L97) takes the refresh button | last touched 2026-09-06, 2 times this year (created 2026-08-08) | `RAMBLA-FORK: feature:` |
-| [`desktop-permission-row.tsx`](../packages/app/src/desktop/components/desktop-permission-row.tsx)               | `trailing?: ReactNode` prop ([`desktop-permission-row.tsx:10`](../packages/app/src/desktop/components/desktop-permission-row.tsx#L10)), destructure ([`desktop-permission-row.tsx:33`](../packages/app/src/desktop/components/desktop-permission-row.tsx#L33)), rendered in the row, and a `ReactNode` type import at the end of the import block                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | last touched 2026-08-17, 9 times this year                      | `RAMBLA-FORK: feature:` |
+| [`desktop-notifications-section.tsx`](../packages/app/src/desktop/components/desktop-notifications-section.tsx) | `useSettings` import at the end of the import block; one block after `permissionLabels` ([`desktop-notifications-section.tsx:73-80`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L73-L80)) and above upstream's early return, holding an aliased destructure of the no-argument `useSettings()` — the app store under `appSettings`, its updater under `updateAppSettings` — because [`desktop-notifications-section.tsx:22`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L22) already binds `settings` and `updateSettings` to `useDesktopSettings()` and upstream's `handlePlaySoundChange` and play-sound `Switch` keep using those — a `handleOsNotificationsChange` `useCallback` shaped like `handlePlaySoundChange` ([`desktop-notifications-section.tsx:42-49`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L42-L49)), and a `notificationsSwitch` `useMemo` wrapping the `Switch` upstream writes at [`desktop-notifications-section.tsx:103-109`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L103-L109); an early return after upstream's own at [`desktop-notifications-section.tsx:82-84`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L82-L84); `trailing` at [`desktop-notifications-section.tsx:89`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L89) takes the switch; the `refreshButton` memo ([`desktop-notifications-section.tsx:58-72`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L58-L72)) is removed and the `DesktopPermissionRow` call renders without it | last touched 2026-09-06, 2 times this year (created 2026-08-08) | `RAMBLA-FORK: feature:` |
 
 **Why this shape:** every change is a minimal in-place edit at a cold seam
 (placement rule 4); copying the two UI files into `*.rambla.tsx` modules would
@@ -64,28 +62,28 @@ The gates read a ref rather than joining a dependency array because those deps
 are frozen ([`session-context.tsx:318`](../packages/app/src/contexts/session-context.tsx#L318)) — widening them would resubscribe every feed on each toggle.
 
 **Tests:** all new; upstream tests modified: none.
-`desktop/components/desktop-permission-row.rambla.test.tsx` — the new prop
-renders in the row. `desktop/components/desktop-notifications-section.rambla.test.tsx` — renders
+`desktop/components/desktop-notifications-section.rambla.test.tsx` — renders
 upstream's component: the switch reflects and writes the preference; off, the
-card and alerts are gone with heading and switch present; on, the refresh
-button sits in the permission row; it imports `@/test/window-local-storage`
+card and alerts are gone with heading and switch present; on, no refresh
+button is rendered; it imports `@/test/window-local-storage`
 (allowlisted at [`.oxlintrc.json:74`](../.oxlintrc.json#L74)) because writing
 the preference persists to storage. `contexts/os-notification-gate.rambla.test.tsx` — both notification paths
 with the preference off and on, in the shape of
 [`voice-capture-claim.rambla.test.tsx`](../packages/app/src/contexts/voice-capture-claim.rambla.test.tsx).
-All three are jsdom renders; the project default is `node`
+Both are jsdom renders; the project default is `node`
 ([`vitest.config.ts:17`](../packages/app/vitest.config.ts#L17)). Mount
 requirements and fakes are named in the steps.
 
-**Branch:** `feat/os-notification-toggle` — required, 4 upstream files edited.
+**Branch:** `feat/os-notification-toggle` — required, 3 upstream files edited.
 
 ## Constraints
 
-- Only the 4 upstream files in the mitigation table and the 3 new
+- Only the 3 upstream files in the mitigation table and the 2 new
   `*.rambla.test.tsx` files change. No other file is touched.
 - Upstream behavior is otherwise unchanged: the play-sound row keeps reading
-  the desktop store; `os-notifications.ts`, `use-desktop-permissions.ts` and
-  every dependency array in `session-context.tsx` stay as they are.
+  the desktop store; `os-notifications.ts`, `use-desktop-permissions.ts`,
+  `desktop-permission-row.tsx` and every dependency array in
+  `session-context.tsx` stay as they are.
 - No new abstractions, settings keys, i18n keys, or error handling beyond
   what the steps name. Upstream test files are not modified.
 
@@ -114,17 +112,7 @@ requirements and fakes are named in the steps.
    assignment; an early return on the ref before each `sendOsNotification`
    ([`session-context.tsx:312`](../packages/app/src/contexts/session-context.tsx#L312), [`session-context.tsx:713`](../packages/app/src/contexts/session-context.tsx#L713)). No dependency array
    changes: [`session-context.tsx:318`](../packages/app/src/contexts/session-context.tsx#L318) and [`session-context.tsx:744-761`](../packages/app/src/contexts/session-context.tsx#L744-L761) stay as they are.
-3. `desktop-permission-row.rambla.test.tsx` failing first, then
-   [`desktop-permission-row.tsx`](../packages/app/src/desktop/components/desktop-permission-row.tsx): `trailing?: ReactNode` prop ([`desktop-permission-row.tsx:10`](../packages/app/src/desktop/components/desktop-permission-row.tsx#L10)),
-   destructure ([`desktop-permission-row.tsx:33`](../packages/app/src/desktop/components/desktop-permission-row.tsx#L33)), the new prop rendered after the actions view closing at
-   [`desktop-permission-row.tsx:68`](../packages/app/src/desktop/components/desktop-permission-row.tsx#L68),
-   and a type-only
-   `ReactNode` import from `react` as a second `react` import at
-   the end of the import block, leaving [`desktop-permission-row.tsx:1`](../packages/app/src/desktop/components/desktop-permission-row.tsx#L1)
-   (`import { useMemo } from "react"`) alone. The row is
-   `flexDirection: "row"` ([`settings.ts:35-41`](../packages/app/src/styles/settings.ts#L35-L41)), so `trailing` lands right of
-   the pill ([`desktop-permission-row.tsx:56-59`](../packages/app/src/desktop/components/desktop-permission-row.tsx#L56-L59)).
-4. `desktop-notifications-section.rambla.test.tsx` failing first. It renders
+3. `desktop-notifications-section.rambla.test.tsx` failing first. It renders
    upstream's component, so it must fake `@/desktop/host` with a
    `getDesktopHost()` that returns a bridge — otherwise
    `shouldShowDesktopPermissionSection()` is false
@@ -161,32 +149,34 @@ requirements and fakes are named in the steps.
    explicitly; `flush` is not used. The card and the test-result `Alert`s
    ([`desktop-notifications-section.tsx:132-147`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L132-L147)) are both below the early return, so both disappear.
    Then `trailing` at [`desktop-notifications-section.tsx:89`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L89)
-   takes the switch, and the `DesktopPermissionRow` call at [`desktop-notifications-section.tsx:91-97`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L91-L97) takes
-   the refresh button (the named `refreshButton`, [`desktop-notifications-section.tsx:58-72`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L58-L72)). Upstream's early return stays as the platform
+   takes the switch, the `refreshButton` memo ([`desktop-notifications-section.tsx:58-72`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L58-L72)) is removed, and the
+   `DesktopPermissionRow` call at [`desktop-notifications-section.tsx:91-97`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L91-L97) renders
+   without it. Upstream's early return stays as the platform
    gate. No new i18n keys.
 
 ## Verification
 
 - `npm run typecheck`, `npm run lint`, `npm run format` (from `rambla/`)
-- `npx vitest run <file> --bail=1` for the 3 new tests and
+- `npx vitest run <file> --bail=1` for the 2 new tests and
   [`storage.test.ts`](../packages/app/src/hooks/use-settings/storage.test.ts)
-- `git grep "RAMBLA-FORK:" -- <each of the 4 upstream files>` — all tagged.
+- `git grep "RAMBLA-FORK:" -- <each of the 3 upstream files>` — all tagged.
 - `just trial-merge`, then `just trial-merge drop`
 - Desktop app, no restart: off — card gone, no banner for a finished agent; on
-  — card back, refresh beside the pill, banner back. Restart: switch kept.
+  — card back, no refresh button, banner back. Restart: switch kept.
 - Desktop app, switch on: the play-sound row sits where it did, toggles, and
   survives a restart — unchanged from before this work.
 
 ## Risks
 
 - Our 4 sites in [`session-context.tsx`](../packages/app/src/contexts/session-context.tsx), the file upstream edits most often
-  of the 4, are the widest exposure in this change.
+  of the 3, are the widest exposure in this change.
 - The 3 [`storage.ts`](../packages/app/src/hooks/use-settings/storage.ts) adds are 3 conflict sites, not 1 block — the
   shape every preference here has (`chatOutlineEnabled` [`storage.ts:90`](../packages/app/src/hooks/use-settings/storage.ts#L90), [`storage.ts:143`](../packages/app/src/hooks/use-settings/storage.ts#L143), [`storage.ts:238`](../packages/app/src/hooks/use-settings/storage.ts#L238)).
-- The 5 sites in [`desktop-notifications-section.tsx`](../packages/app/src/desktop/components/desktop-notifications-section.tsx) sit at the import
+- The 6 sites in [`desktop-notifications-section.tsx`](../packages/app/src/desktop/components/desktop-notifications-section.tsx) sit at the import
   block, after [`desktop-notifications-section.tsx:80`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L80), after
   [`desktop-notifications-section.tsx:84`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L84), at
-  [`desktop-notifications-section.tsx:89`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L89) and at
+  [`desktop-notifications-section.tsx:89`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L89), at
+  [`desktop-notifications-section.tsx:58-72`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L58-L72) and at
   [`desktop-notifications-section.tsx:91-97`](../packages/app/src/desktop/components/desktop-notifications-section.tsx#L91-L97), so an upstream
   rework of that section conflicts in several places at once.
 - Until the settings query resolves, `useSettings` returns
