@@ -4,9 +4,13 @@
 
 ### Added
 
-- 2026-09-24 - [8e9d363](https://github.com/getrambla/rambla/commit/8e9d36373f49608997378a3b58f8aec6e97c77bd) - [2026-09-22-feat-os-notification-toggle.md](plans/2026-09-22-feat-os-notification-toggle.md) - Added a settings switch that turns OS notifications off, hides the notifications card, and removes the refresh button.
+- 2026-09-24 - TODO - [**\_\_\_**](_______) - [2026-09-24-feat-user-adjustable-composer-height.md](plans/2026-09-24-feat-user-adjustable-composer-height.md) - Added a drag handle on the composer's top edge that sets how tall the composer may grow, with double-tap to flip between default and maximum.
+- 2026-09-24 - 8e9d363 - [2026-09-22-feat-os-notification-toggle.md](plans/2026-09-22-feat-os-notification-toggle.md) - Added a settings switch that turns OS notifications off, hides the notifications card, and removes the refresh button.
 
 ### Fixed
+
+- 2026-09-24 - [5376d23](https://github.com/getrambla/rambla/commit/5376d23) - [2026-09-24-fix-ios-link-scroll-gate.md](plans/2026-09-24-fix-ios-link-scroll-gate.md) - Fixed lifting a finger off an assistant file link after scrolling the chat on iOS opening the link.
+- 2026-09-24 - b7138f6 - (no plan) - Bump react-native-uitextview to 2.7.1 to improve a11y on iOS.
 
 ## 0.8.1 - 2026-09-15
 
