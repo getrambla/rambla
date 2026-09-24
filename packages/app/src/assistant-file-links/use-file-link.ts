@@ -16,6 +16,10 @@ import {
   type AssistantFileLinkSource,
 } from "./resolver";
 
+// RAMBLA-FORK: fix: 2026-09-24-fix-ios-link-scroll-gate.md: imports Platform for the iOS-only gate and the link-scroll gate.
+import { Platform } from "react-native";
+import { isLinkScrollActive } from "@/agent-stream/link-scroll.rambla";
+
 export interface UseFileLinkResult {
   target: InlinePathTarget | null;
   onHoverIn: () => void;
@@ -160,6 +164,10 @@ function openAssistantFileLink(input: {
   queryClient: ReturnType<typeof useQueryClient>;
   formatNoFileFoundMessage: (token: string) => string;
 }): void {
+  // RAMBLA-FORK: fix: 2026-09-24-fix-ios-link-scroll-gate.md: ignores link opens while the chat scroll gesture is active, iOS only.
+  if (Platform.OS === "ios" && isLinkScrollActive()) {
+    return;
+  }
   const capturedConfig = input.context.configRef.current;
   const capturedResolution = classifyForResolution(input.source, {
     workspaceRoot: capturedConfig.workspaceRoot,

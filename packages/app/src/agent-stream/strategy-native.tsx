@@ -47,6 +47,9 @@ import {
   type HistoryStartSettleScheduler,
 } from "./history-start-settle-scheduler";
 
+// RAMBLA-FORK: fix: 2026-09-24-fix-ios-link-scroll-gate.md: imports the link-scroll gate.
+import { setLinkScrollActive } from "./link-scroll.rambla";
+
 const DEFAULT_MAINTAIN_VISIBLE_CONTENT_POSITION = Object.freeze({
   minIndexForVisible: 0,
   autoscrollToTopThreshold: 0,
@@ -405,6 +408,8 @@ function NativeStreamViewport(props: StreamRenderInput & { strategy: StreamStrat
   const handleScrollBeginDrag = useStableEvent((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     clearPendingUserScrollEnd();
     isUserScrollActiveRef.current = true;
+    // RAMBLA-FORK: fix: 2026-09-24-fix-ios-link-scroll-gate.md: marks the link gate active at drag begin.
+    setLinkScrollActive(true);
     scrollKeyboardDismiss.onScrollBeginDrag(event);
     bottomAnchorController.beginUserScroll();
     const rearmed = rearmHistoryStartPagination(historyStartPaginationStateRef.current);
@@ -425,6 +430,8 @@ function NativeStreamViewport(props: StreamRenderInput & { strategy: StreamStrat
     userScrollEndFrameIdRef.current = requestAnimationFrame(() => {
       userScrollEndFrameIdRef.current = null;
       isUserScrollActiveRef.current = false;
+      // RAMBLA-FORK: fix: 2026-09-24-fix-ios-link-scroll-gate.md: clears the link gate at deferred drag end.
+      setLinkScrollActive(false);
       bottomAnchorController.endUserScroll({ isNearBottom });
     });
   });
@@ -443,6 +450,8 @@ function NativeStreamViewport(props: StreamRenderInput & { strategy: StreamStrat
       const isNearBottom = isScrollEventNearBottom(event);
       clearPendingUserScrollEnd();
       isUserScrollActiveRef.current = false;
+      // RAMBLA-FORK: fix: 2026-09-24-fix-ios-link-scroll-gate.md: clears the link gate at momentum end.
+      setLinkScrollActive(false);
       bottomAnchorController.endUserScroll({ isNearBottom });
     },
   );
