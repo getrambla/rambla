@@ -1,9 +1,12 @@
-// RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: tests the persisted composer ceiling store.
+// RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: tests the persisted explicit composer height store.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { StateStorage } from "zustand/middleware";
 import {
   COMPOSER_HEIGHT_STORE_VERSION,
   DEFAULT_COMPOSER_MAX_INPUT_HEIGHT,
+  MIN_COMPOSER_HEIGHT_LINES,
+  resolveComposerHeightArgs,
+  resolveComposerViewportBound,
   useComposerHeightStore,
   type ComposerHeightPersistedState,
 } from "./composer-height-store.rambla";
@@ -28,91 +31,128 @@ function createMemoryStorage(entries: Record<string, string>): StateStorage {
   };
 }
 
+const LINE_HEIGHT = 20;
 const WINDOW_HEIGHT = 800;
-// The existing viewport bound: max(default, 50% of the window), from input.rambla.tsx.
-const VIEWPORT_BOUND = Math.max(DEFAULT_COMPOSER_MAX_INPUT_HEIGHT, Math.floor(WINDOW_HEIGHT * 0.5));
+// The existing viewport bound: max(default, 50% of the window), matching input.rambla.tsx.
+const VIEWPORT_BOUND = resolveComposerViewportBound(WINDOW_HEIGHT);
 
 describe("composer height store", () => {
   beforeEach(() => {
-    useComposerHeightStore.setState({ userMaxInputHeight: null });
+    useComposerHeightStore.setState({ explicitHeight: null });
   });
 
-  it("defaults to the null sentinel meaning the app default", () => {
-    expect(useComposerHeightStore.getState().userMaxInputHeight).toBeNull();
+  it("resolves auto-grow min/max without an explicit height and pins with one", () => {
+    expect(resolveComposerHeightArgs(null, VIEWPORT_BOUND, LINE_HEIGHT, 46)).toEqual({
+      minHeight: 46,
+      maxHeight: VIEWPORT_BOUND,
+    });
+    expect(
+      resolveComposerHeightArgs(VIEWPORT_BOUND + 500, VIEWPORT_BOUND, LINE_HEIGHT, 46),
+    ).toEqual({ minHeight: VIEWPORT_BOUND, maxHeight: VIEWPORT_BOUND });
+    expect(resolveComposerHeightArgs(10, VIEWPORT_BOUND, LINE_HEIGHT, 46)).toEqual({
+      minHeight: MIN_COMPOSER_HEIGHT_LINES * LINE_HEIGHT,
+      maxHeight: MIN_COMPOSER_HEIGHT_LINES * LINE_HEIGHT,
+    });
   });
 
-  it("clamps the setter to the viewport bound and the app default minimum", () => {
-    useComposerHeightStore.getState().setUserMaxInputHeight(10000, VIEWPORT_BOUND);
-    expect(useComposerHeightStore.getState().userMaxInputHeight).toBe(VIEWPORT_BOUND);
+  it("defaults to the null sentinel meaning today's auto-grow", () => {
+    expect(useComposerHeightStore.getState().explicitHeight).toBeNull();
+  });
 
-    useComposerHeightStore.getState().setUserMaxInputHeight(10, VIEWPORT_BOUND);
-    expect(useComposerHeightStore.getState().userMaxInputHeight).toBe(
-      DEFAULT_COMPOSER_MAX_INPUT_HEIGHT,
+  it("quantizes the setter to whole text lines", () => {
+    useComposerHeightStore.getState().setExplicitHeight(45, VIEWPORT_BOUND, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().explicitHeight).toBe(40);
+  });
+
+  it("clamps the setter to a minimum of 2 lines", () => {
+    useComposerHeightStore.getState().setExplicitHeight(10, VIEWPORT_BOUND, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().explicitHeight).toBe(2 * LINE_HEIGHT);
+  });
+
+  it("clamps the setter to the viewport bound", () => {
+    useComposerHeightStore.getState().setExplicitHeight(10000, VIEWPORT_BOUND, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().explicitHeight).toBe(VIEWPORT_BOUND);
+  });
+
+  it("quantizes the viewport bound down to a whole line when it is not a multiple", () => {
+    useComposerHeightStore.getState().setExplicitHeight(10000, VIEWPORT_BOUND + 5, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().explicitHeight).toBe(VIEWPORT_BOUND);
+  });
+
+  it("applies a delta from the app default when no explicit height is stored", () => {
+    useComposerHeightStore
+      .getState()
+      .setExplicitHeightDelta(LINE_HEIGHT, VIEWPORT_BOUND, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().explicitHeight).toBe(
+      DEFAULT_COMPOSER_MAX_INPUT_HEIGHT + LINE_HEIGHT,
     );
   });
 
-  it("keeps a previous ceiling when the setter is clamped with a smaller viewport bound", () => {
-    useComposerHeightStore.getState().setUserMaxInputHeight(400, 800);
-    useComposerHeightStore.getState().setUserMaxInputHeight(400, VIEWPORT_BOUND);
-    expect(useComposerHeightStore.getState().userMaxInputHeight).toBe(400);
+  it("applies a delta from the stored height in both directions", () => {
+    useComposerHeightStore.getState().setExplicitHeight(200, VIEWPORT_BOUND, LINE_HEIGHT);
+    useComposerHeightStore
+      .getState()
+      .setExplicitHeightDelta(-LINE_HEIGHT, VIEWPORT_BOUND, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().explicitHeight).toBe(180);
+
+    useComposerHeightStore
+      .getState()
+      .setExplicitHeightDelta(LINE_HEIGHT, VIEWPORT_BOUND, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().explicitHeight).toBe(200);
   });
 
-  it("reset returns to the null sentinel", () => {
-    useComposerHeightStore.getState().setUserMaxInputHeight(400, VIEWPORT_BOUND);
-    useComposerHeightStore.getState().resetUserMaxInputHeight();
-    expect(useComposerHeightStore.getState().userMaxInputHeight).toBeNull();
+  it("clamps the delta at both ends", () => {
+    useComposerHeightStore.getState().setExplicitHeightDelta(10000, VIEWPORT_BOUND, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().explicitHeight).toBe(VIEWPORT_BOUND);
+
+    useComposerHeightStore.getState().setExplicitHeightDelta(-10000, VIEWPORT_BOUND, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().explicitHeight).toBe(2 * LINE_HEIGHT);
   });
 
-  it("applies a delta from the app default when no ceiling is stored", () => {
-    useComposerHeightStore.getState().setUserMaxInputHeightDelta(-40, VIEWPORT_BOUND);
-    expect(useComposerHeightStore.getState().userMaxInputHeight).toBe(
-      DEFAULT_COMPOSER_MAX_INPUT_HEIGHT + 40,
-    );
-  });
-
-  it("applies a delta from the stored ceiling", () => {
-    useComposerHeightStore.getState().setUserMaxInputHeight(300, VIEWPORT_BOUND);
-    useComposerHeightStore.getState().setUserMaxInputHeightDelta(-40, VIEWPORT_BOUND);
-    expect(useComposerHeightStore.getState().userMaxInputHeight).toBe(340);
-
-    useComposerHeightStore.getState().setUserMaxInputHeightDelta(40, VIEWPORT_BOUND);
-    expect(useComposerHeightStore.getState().userMaxInputHeight).toBe(300);
-  });
-
-  it("clamps the delta-applied ceiling at both ends", () => {
-    useComposerHeightStore.getState().setUserMaxInputHeightDelta(10000, VIEWPORT_BOUND);
-    expect(useComposerHeightStore.getState().userMaxInputHeight).toBe(
-      DEFAULT_COMPOSER_MAX_INPUT_HEIGHT,
-    );
-
-    useComposerHeightStore.getState().setUserMaxInputHeightDelta(-10000, VIEWPORT_BOUND);
-    expect(useComposerHeightStore.getState().userMaxInputHeight).toBe(VIEWPORT_BOUND);
+  it("reset returns to the null sentinel and today's auto-grow", () => {
+    useComposerHeightStore.getState().setExplicitHeight(300, VIEWPORT_BOUND, LINE_HEIGHT);
+    useComposerHeightStore.getState().resetExplicitHeight();
+    expect(useComposerHeightStore.getState().explicitHeight).toBeNull();
   });
 
   it("toggles between the null sentinel and the viewport bound", () => {
-    useComposerHeightStore.getState().toggleUserMaxInputHeight(VIEWPORT_BOUND);
-    expect(useComposerHeightStore.getState().userMaxInputHeight).toBe(VIEWPORT_BOUND);
+    useComposerHeightStore.getState().toggleExplicitHeight(VIEWPORT_BOUND, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().explicitHeight).toBe(VIEWPORT_BOUND);
 
-    useComposerHeightStore.getState().toggleUserMaxInputHeight(VIEWPORT_BOUND);
-    expect(useComposerHeightStore.getState().userMaxInputHeight).toBeNull();
+    useComposerHeightStore.getState().toggleExplicitHeight(VIEWPORT_BOUND, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().explicitHeight).toBeNull();
   });
 
-  it("persists the ceiling and reads it back through the schema", async () => {
+  it("migrates v1 ceiling-shaped values to the null sentinel", () => {
+    const migrate = useComposerHeightStore.persist.getOptions().migrate;
+    expect(migrate?.({ userMaxInputHeight: 320 }, 1)).toEqual({ explicitHeight: null });
+  });
+
+  it("passes v2-shaped state through migration and drops invalid state", () => {
+    const migrate = useComposerHeightStore.persist.getOptions().migrate;
+    expect(migrate?.({ explicitHeight: 240 }, 2)).toEqual({ explicitHeight: 240 });
+    expect(migrate?.({ explicitHeight: "tall" }, 2)).toEqual({ explicitHeight: null });
+  });
+
+  it("persists the explicit height and reads it back through the schema", async () => {
     const entries: Record<string, string> = {};
     const { createComposerHeightPersistStorage } = await import("./composer-height-store.rambla");
     const storage = createComposerHeightPersistStorage(createMemoryStorage(entries));
 
-    await storage.setItem("composer-height", { state: { userMaxInputHeight: 320 }, version: 1 });
+    await storage.setItem("composer-height", {
+      state: { explicitHeight: 240 } satisfies ComposerHeightPersistedState,
+      version: COMPOSER_HEIGHT_STORE_VERSION,
+    });
 
     const raw = entries["composer-height"];
     expect(raw).toBeDefined();
     const parsed = JSON.parse(raw!) as { state: ComposerHeightPersistedState };
-    expect(parsed.state.userMaxInputHeight).toBe(320);
+    expect(parsed.state.explicitHeight).toBe(240);
 
     const restored = await storage.getItem("composer-height");
     expect(restored).not.toBeNull();
-    expect(restored!.state).toEqual({ userMaxInputHeight: 320 });
-    expect(COMPOSER_HEIGHT_STORE_VERSION).toBe(1);
+    expect(restored!.state).toEqual({ explicitHeight: 240 });
+    expect(COMPOSER_HEIGHT_STORE_VERSION).toBe(2);
   });
 
   it("drops persisted state that fails the schema", async () => {
@@ -121,15 +161,9 @@ describe("composer height store", () => {
     const storage = createComposerHeightPersistStorage(createMemoryStorage(entries));
 
     await storage.setItem("composer-height", {
-      state: { userMaxInputHeight: "tall" } as unknown as ComposerHeightPersistedState,
-      version: 1,
+      state: { explicitHeight: "tall" } as unknown as ComposerHeightPersistedState,
+      version: COMPOSER_HEIGHT_STORE_VERSION,
     });
     expect(await storage.getItem("composer-height")).toBeNull();
-
-    const migrated = useComposerHeightStore.persist.getOptions().migrate;
-    expect(migrated?.({ userMaxInputHeight: "tall" }, 1)).toEqual({
-      userMaxInputHeight: null,
-    });
-    expect(migrated?.({ userMaxInputHeight: 240 }, 1)).toEqual({ userMaxInputHeight: 240 });
   });
 });

@@ -22,7 +22,7 @@ import {
   useMemo,
   forwardRef,
 } from "react";
-import { StyleSheet, withUnistyles } from "react-native-unistyles";
+import { StyleSheet, UnistylesRuntime, withUnistyles } from "react-native-unistyles";
 import { useTranslation } from "react-i18next";
 import { ICON_SIZE, type Theme } from "@/styles/theme";
 import { ArrowUp, Mic, MicOff, CornerDownLeft, Plus, Square } from "lucide-react-native";
@@ -90,11 +90,8 @@ import { DictationRecordingControls } from "./dictation-recording-controls.rambl
 import { insertDictationAtSelection } from "./dictation-insert.rambla";
 import { useDictationField } from "./use-dictation-field.rambla";
 
-// RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: imports the persisted ceiling store and the drag handle.
-import {
-  resolveEffectiveMaxInputHeight,
-  useComposerHeightStore,
-} from "./composer-height-store.rambla";
+// RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: imports the persisted explicit height store and the drag handle.
+import { resolveComposerHeightArgs, useComposerHeightStore } from "./composer-height-store.rambla";
 import { ComposerDragHandle } from "./composer-drag-handle.rambla";
 
 const DEFAULT_SEND_KEYS: ShortcutKey[][] = [["Enter"]];
@@ -1210,12 +1207,17 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const { t } = useTranslation();
     const isCompact = useIsCompactFormFactor();
     const { height: windowHeight } = useWindowDimensions();
-    // RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: caps the viewport bound by the user's persisted ceiling.
-    const userMaxInputHeight = useComposerHeightStore((s) => s.userMaxInputHeight);
-    const maxInputHeight = resolveEffectiveMaxInputHeight(
-      userMaxInputHeight,
+    // RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: pins the composer at the user's explicit height when one is stored.
+    const userExplicitHeight = useComposerHeightStore((s) => s.explicitHeight);
+    // The composer's own text style: fontSize.content with a 1.4 line height (styles.textInput).
+    const composerLineHeight = UnistylesRuntime.getTheme().fontSize.content * 1.4;
+    const composerHeightArgs = resolveComposerHeightArgs(
+      userExplicitHeight,
       resolveMaxInputHeight(windowHeight),
+      composerLineHeight,
+      MIN_INPUT_HEIGHT,
     );
+    const { minHeight: composerMinHeight, maxHeight: maxInputHeight } = composerHeightArgs;
     const buttonIconSize = isWeb ? ICON_SIZE.md : ICON_SIZE.lg;
     const toast = useToast();
     const voice = useVoiceOptional();
@@ -1240,7 +1242,8 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const composerHeight = useComposerHeight({
       getText: getLiveText,
       textareaRef: webTextareaRef,
-      minHeight: MIN_INPUT_HEIGHT,
+      // RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: equal min/max pins the box at the explicit height with inner scroll.
+      minHeight: composerMinHeight,
       maxHeight: maxInputHeight,
     });
     const { style: composerHeightStyle, scrollEnabled: isComposerScrollEnabled } = composerHeight;
@@ -1857,7 +1860,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         onLayout={handleComposerLayout}
       >
         {/* RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: grabber row on the composer's top edge. */}
-        <ComposerDragHandle />
+        <ComposerDragHandle lineHeight={composerLineHeight} />
         <MessageInputAutoFocus
           enabled={autoFocus}
           autoFocusKey={autoFocusKey}

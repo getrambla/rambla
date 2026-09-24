@@ -1,4 +1,4 @@
-// RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: persisted per-device ceiling for the composer's auto-grow height.
+// RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: persisted explicit composer height (null = today's auto-grow).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { persist, type PersistStorage, type StateStorage } from "zustand/middleware";
@@ -6,48 +6,71 @@ import { z } from "zod";
 import { createValidatedPersistStorage } from "@/storage/validated-persist-storage";
 
 const COMPOSER_HEIGHT_STORAGE_KEY = "composer-height";
-export const COMPOSER_HEIGHT_STORE_VERSION = 1;
+export const COMPOSER_HEIGHT_STORE_VERSION = 2;
 
 /**
- * The height the composer grows to when the user has never dragged the handle — the same
- * default `input.rambla.tsx` has always applied. Kept here so the store can clamp against it
- * without importing from the component file.
+ * The app's existing default max composer height (`DEFAULT_MAX_INPUT_HEIGHT` in
+ * input.rambla.tsx), kept here so deltas can grow from it without importing from the
+ * component file. Only used as the starting point for drags from the auto-grow state.
  */
 export const DEFAULT_COMPOSER_MAX_INPUT_HEIGHT = 160;
 
+export const MIN_COMPOSER_HEIGHT_LINES = 2;
+
 /**
- * Null means "use the app default". A number is the user's ceiling in px, already clamped to
- * the viewport bound at write time; it is clamped again at read time so rotation and window
- * resizes cannot push the composer past the bound the current viewport allows.
+ * Null means "today's auto-grow". A number is the user's fixed composer height in px,
+ * already quantized to whole text lines and clamped to [2 lines, viewport bound] at write
+ * time; it is clamped again at read time so rotation and window resizes cannot push the
+ * composer past the bound the current viewport allows.
  */
 export interface ComposerHeightPersistedState {
-  userMaxInputHeight: number | null;
+  explicitHeight: number | null;
 }
 
 const ComposerHeightPersistedStateSchema = z.strictObject({
-  userMaxInputHeight: z.number().finite().positive().nullable(),
+  explicitHeight: z.number().finite().positive().nullable(),
 });
 
 interface ComposerHeightStoreState extends ComposerHeightPersistedState {
-  setUserMaxInputHeight: (height: number, viewportBound: number) => void;
-  setUserMaxInputHeightDelta: (delta: number, viewportBound: number) => void;
-  resetUserMaxInputHeight: () => void;
-  toggleUserMaxInputHeight: (viewportBound: number) => void;
+  setExplicitHeight: (height: number, viewportBound: number, lineHeight: number) => void;
+  setExplicitHeightDelta: (delta: number, viewportBound: number, lineHeight: number) => void;
+  resetExplicitHeight: () => void;
+  toggleExplicitHeight: (viewportBound: number, lineHeight: number) => void;
 }
 
-function clampCeiling(height: number, viewportBound: number): number | null {
-  const bound = Math.max(DEFAULT_COMPOSER_MAX_INPUT_HEIGHT, viewportBound);
-  const clamped = Math.min(Math.max(height, DEFAULT_COMPOSER_MAX_INPUT_HEIGHT), bound);
-  // Round to whole pixels so persisted values stay stable across platforms.
-  return Math.floor(clamped);
+/**
+ * The composer's viewport bound: max(app default, 50% of the window) — the same rule
+ * `resolveMaxInputHeight` applies in input.rambla.tsx.
+ */
+export function resolveComposerViewportBound(windowHeight: number): number {
+  if (!Number.isFinite(windowHeight) || windowHeight <= 0) {
+    return DEFAULT_COMPOSER_MAX_INPUT_HEIGHT;
+  }
+  return Math.max(DEFAULT_COMPOSER_MAX_INPUT_HEIGHT, Math.floor(windowHeight * 0.5));
 }
 
-export function migrateComposerHeightState(persistedState: unknown): ComposerHeightPersistedState {
+function clampExplicitHeight(height: number, viewportBound: number, lineHeight: number): number {
+  // Quantize to whole text lines so the composer's rows never shear mid-drag.
+  const minHeight = MIN_COMPOSER_HEIGHT_LINES * lineHeight;
+  const bound = Math.max(minHeight, Math.floor(viewportBound / lineHeight) * lineHeight);
+  const quantized = Math.floor(height / lineHeight) * lineHeight;
+  return Math.min(Math.max(quantized, minHeight), bound);
+}
+
+export function migrateComposerHeightState(
+  persistedState: unknown,
+  version: number,
+): ComposerHeightPersistedState {
+  // v1 stored a grow-only ceiling (`userMaxInputHeight`) that was unobservable on native;
+  // migrate it to the null sentinel so those installs fall back to today's auto-grow.
+  if (version < 2) {
+    return { explicitHeight: null };
+  }
   const result = ComposerHeightPersistedStateSchema.safeParse(persistedState);
   if (!result.success) {
-    return { userMaxInputHeight: null };
+    return { explicitHeight: null };
   }
-  return { userMaxInputHeight: result.data.userMaxInputHeight };
+  return { explicitHeight: result.data.explicitHeight };
 }
 
 export function createComposerHeightStorage(
@@ -69,47 +92,56 @@ export function createComposerHeightPersistStorage(
   );
 }
 
+/**
+ * The composer's pixel height setup for a render. With no explicit height, today's
+ * auto-grow: min = the app's minimum, max = the viewport bound. With one, both equal the
+ * explicit height (re-clamped to the bound and 2 lines) so the box pins with inner scroll.
+ */
+export function resolveComposerHeightArgs(
+  explicitHeight: number | null,
+  viewportBound: number,
+  lineHeight: number,
+  autoMinHeight: number,
+): { minHeight: number; maxHeight: number } {
+  if (explicitHeight === null) {
+    return { minHeight: autoMinHeight, maxHeight: viewportBound };
+  }
+  const minLines = MIN_COMPOSER_HEIGHT_LINES * lineHeight;
+  const pinned = Math.min(Math.max(explicitHeight, minLines), viewportBound);
+  return { minHeight: pinned, maxHeight: pinned };
+}
+
 export const useComposerHeightStore = create<ComposerHeightStoreState>()(
   persist(
     (set) => ({
-      userMaxInputHeight: null,
-      setUserMaxInputHeight: (height, viewportBound) =>
-        set({ userMaxInputHeight: clampCeiling(height, viewportBound) }),
-      // A null current starts from the app default, so the first upward drag grows from today's
+      explicitHeight: null,
+      setExplicitHeight: (height, viewportBound, lineHeight) =>
+        set({ explicitHeight: clampExplicitHeight(height, viewportBound, lineHeight) }),
+      // A null current starts from the app default, so the first drag grows from today's
       // default rather than from the sentinel.
-      setUserMaxInputHeightDelta: (delta, viewportBound) =>
+      setExplicitHeightDelta: (delta, viewportBound, lineHeight) =>
         set((state) => ({
-          userMaxInputHeight: clampCeiling(
-            (state.userMaxInputHeight ?? DEFAULT_COMPOSER_MAX_INPUT_HEIGHT) - delta,
+          explicitHeight: clampExplicitHeight(
+            (state.explicitHeight ?? DEFAULT_COMPOSER_MAX_INPUT_HEIGHT) + delta,
             viewportBound,
+            lineHeight,
           ),
         })),
-      resetUserMaxInputHeight: () => set({ userMaxInputHeight: null }),
-      toggleUserMaxInputHeight: (viewportBound) =>
+      resetExplicitHeight: () => set({ explicitHeight: null }),
+      toggleExplicitHeight: (viewportBound, lineHeight) =>
         set((state) => ({
-          userMaxInputHeight:
-            state.userMaxInputHeight === null ? clampCeiling(viewportBound, viewportBound) : null,
+          explicitHeight:
+            state.explicitHeight === null
+              ? clampExplicitHeight(viewportBound, viewportBound, lineHeight)
+              : null,
         })),
     }),
     {
       name: COMPOSER_HEIGHT_STORAGE_KEY,
       version: COMPOSER_HEIGHT_STORE_VERSION,
       storage: createComposerHeightPersistStorage(),
-      partialize: (state) => ({ userMaxInputHeight: state.userMaxInputHeight }),
+      partialize: (state) => ({ explicitHeight: state.explicitHeight }),
       migrate: migrateComposerHeightState,
     },
   ),
 );
-
-/**
- * The effective ceiling for the composer: the user's value if one is stored, capped by the
- * current viewport bound so a stored ceiling from a taller window can never overflow this one.
- * The bound itself keeps the app's existing floor-of-defaults behavior.
- */
-export function resolveEffectiveMaxInputHeight(
-  userMaxInputHeight: number | null,
-  viewportBound: number,
-): number {
-  if (userMaxInputHeight === null) return viewportBound;
-  return Math.min(Math.max(userMaxInputHeight, DEFAULT_COMPOSER_MAX_INPUT_HEIGHT), viewportBound);
-}
