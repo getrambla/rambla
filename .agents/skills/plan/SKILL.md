@@ -50,7 +50,9 @@ and strip it back to scope, files, and steps.
   never this skill.
 
 Subagents run the same model as the supervisor, unless the user says
-otherwise. The researcher runs a low thinking budget.
+otherwise. Before spawning, look your model up (`list_agents`), state it in
+chat, and pass that exact value — never infer it from the provider name.
+The researcher runs a low thinking budget.
 
 No planner subagent, no coder. Planning writes the plan and no code, no
 tests, no branch.

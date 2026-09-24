@@ -27,7 +27,8 @@ Three roles, kept separate.
   is read-only: it reports, it does not fix.
 
 Subagents run the same model as the supervisor, unless the user says
-otherwise.
+otherwise. Before spawning, look your model up (`list_agents`), state it in
+chat, and pass that exact value — never infer it from the provider name.
 
 **Accept/reject loop, every time.** The reviewer returns ACCEPT or REJECT.
 ACCEPT means all three: the work matches the plan, the reviewer ran the tests
