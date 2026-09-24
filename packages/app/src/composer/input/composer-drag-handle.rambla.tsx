@@ -1,4 +1,4 @@
-// RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: grabber row — drag moves the actual composer height in line steps with haptics; double-tap toggles default/max.
+// RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: grabber row — hold to drag the composer 1:1 in line steps with per-line haptics; release pins; double-tap toggles default/max.
 import { useCallback, useMemo, useRef, useState } from "react";
 import { View, type PointerEvent as RNPointerEvent } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -6,10 +6,7 @@ import * as Haptics from "expo-haptics";
 import { StyleSheet } from "react-native-unistyles";
 import { useHasFinePointer } from "@/hooks/use-fine-pointer";
 import { useWindowDimensions } from "react-native";
-import {
-  resolveComposerViewportBound,
-  useComposerHeightStore,
-} from "./composer-height-store.rambla";
+import { useComposerHeightStore } from "./composer-height-store.rambla";
 
 const HANDLE_ROW_HEIGHT = 16;
 const GRIP_WIDTH = 36;
@@ -27,63 +24,63 @@ interface DragState {
 
 export function ComposerDragHandle({ lineHeight }: { lineHeight: number }) {
   const windowHeight = useWindowDimensions().height;
-  const viewportBound = resolveComposerViewportBound(windowHeight);
   const finePointer = useHasFinePointer();
   const dragRef = useRef<DragState | null>(null);
   const lastTapTimeRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
 
-  const setExplicitHeightDelta = useComposerHeightStore((s) => s.setExplicitHeightDelta);
+  const setDragHeightDelta = useComposerHeightStore((s) => s.setDragHeightDelta);
+  const pinDragHeight = useComposerHeightStore((s) => s.pinDragHeight);
   const toggleExplicitHeight = useComposerHeightStore((s) => s.toggleExplicitHeight);
 
-  // Dragging up (negative deltaY) grows the composer, so invert. One haptic tick per
-  // whole-line step, following the haptics pattern in use-long-press-drag-interaction.ts.
-  const lineRef = useRef<number | null>(null);
+  // RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: one haptic on grab; during the drag one tick per line crossed, only when the line index changes (v2 device bug: constant buzz).
+  const tickedLineRef = useRef<number | null>(null);
   const lastTranslationRef = useRef(0);
 
-  const beginDrag = useCallback(() => {
-    lastTranslationRef.current = 0;
-    setIsDragging(true);
-    lineRef.current = null;
-    void Haptics.selectionAsync().catch(() => {});
-  }, []);
-
-  const applyDragDelta = useCallback(
-    (deltaY: number) => {
-      setExplicitHeightDelta(-deltaY, viewportBound, lineHeight);
-    },
-    [setExplicitHeightDelta, viewportBound, lineHeight],
-  );
-
-  const tickPerLine = useCallback(
-    (y: number, downY: number) => {
-      const line = Math.round((y - downY) / lineHeight);
-      if (lineRef.current === null) {
-        lineRef.current = line;
-        return;
-      }
-      if (line !== lineRef.current) {
-        lineRef.current = line;
+  const tickForHeight = useCallback(
+    (height: number) => {
+      const line = Math.round(height / lineHeight);
+      if (tickedLineRef.current !== line) {
+        tickedLineRef.current = line;
         void Haptics.selectionAsync().catch(() => {});
       }
     },
     [lineHeight],
   );
 
+  const beginDrag = useCallback(() => {
+    lastTranslationRef.current = 0;
+    tickedLineRef.current = null;
+    setIsDragging(true);
+    // Grab: a single tick, then the drag session starts.
+    void Haptics.selectionAsync().catch(() => {});
+  }, []);
+
+  // Dragging up (negative deltaY) grows the composer, so invert; the store quantizes to
+  // whole lines with a 1-line minimum and no maximum.
+  const applyDragDelta = useCallback(
+    (deltaY: number) => {
+      setDragHeightDelta(-deltaY, lineHeight);
+    },
+    [setDragHeightDelta, lineHeight],
+  );
+
   const endDrag = useCallback(() => {
     setIsDragging(false);
-    lineRef.current = null;
-  }, []);
+    tickedLineRef.current = null;
+    // Release: pin min = max = the height the box was left at.
+    pinDragHeight();
+  }, [pinDragHeight]);
 
   const handleTap = useCallback(() => {
     const now = Date.now();
     if (now - lastTapTimeRef.current < DOUBLE_TAP_MS) {
       lastTapTimeRef.current = 0;
-      toggleExplicitHeight(viewportBound, lineHeight);
+      toggleExplicitHeight(windowHeight, lineHeight);
     } else {
       lastTapTimeRef.current = now;
     }
-  }, [toggleExplicitHeight, viewportBound, lineHeight]);
+  }, [toggleExplicitHeight, windowHeight, lineHeight]);
 
   const handlePointerDown = useCallback(
     (event: RNPointerEvent) => {
@@ -114,10 +111,12 @@ export function ComposerDragHandle({ lineHeight }: { lineHeight: number }) {
       if (Math.abs(y - drag.downY) > MAX_TAP_DRIFT_PX) {
         drag.moved = true;
         applyDragDelta(delta);
+        // 1:1: the tick tracks the height the finger produced, not the raw pointer.
+        const { dragHeight } = useComposerHeightStore.getState();
+        if (dragHeight !== null) tickForHeight(dragHeight);
       }
-      tickPerLine(y, drag.downY);
     },
-    [applyDragDelta, tickPerLine],
+    [applyDragDelta, tickForHeight],
   );
 
   const handlePointerUp = useCallback(
@@ -152,15 +151,18 @@ export function ComposerDragHandle({ lineHeight }: { lineHeight: number }) {
           const previous = lastTranslationRef.current;
           lastTranslationRef.current = event.translationY;
           applyDragDelta(event.translationY - previous);
-          tickPerLine(event.translationY, 0);
+          const { dragHeight } = useComposerHeightStore.getState();
+          if (dragHeight !== null) tickForHeight(dragHeight);
         })
-        .onEnd((event) => {
+        .onEnd(() => {
           endDrag();
-          if (Math.abs(event.translationY) <= MAX_TAP_DRIFT_PX) {
+          const translation = lastTranslationRef.current;
+          lastTranslationRef.current = 0;
+          if (Math.abs(translation) <= MAX_TAP_DRIFT_PX) {
             handleTap();
           }
         }),
-    [applyDragDelta, beginDrag, endDrag, handleTap, tickPerLine],
+    [applyDragDelta, beginDrag, endDrag, handleTap, tickForHeight],
   );
 
   const pointerHandlers = useMemo(

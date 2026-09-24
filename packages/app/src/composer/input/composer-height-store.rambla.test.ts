@@ -1,4 +1,4 @@
-// RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: tests the persisted explicit composer height store.
+// RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: tests the pinned composer height store and its live drag state.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { StateStorage } from "zustand/middleware";
 import {
@@ -33,89 +33,119 @@ function createMemoryStorage(entries: Record<string, string>): StateStorage {
 
 const LINE_HEIGHT = 20;
 const WINDOW_HEIGHT = 800;
-// The existing viewport bound: max(default, 50% of the window), matching input.rambla.tsx.
+// The v3 bound is the window itself: the box may grow to the top of the window.
 const VIEWPORT_BOUND = resolveComposerViewportBound(WINDOW_HEIGHT);
 
 describe("composer height store", () => {
   beforeEach(() => {
-    useComposerHeightStore.setState({ explicitHeight: null });
+    useComposerHeightStore.setState({ explicitHeight: null, dragHeight: null });
   });
 
-  it("resolves auto-grow min/max without an explicit height and pins with one", () => {
-    expect(resolveComposerHeightArgs(null, VIEWPORT_BOUND, LINE_HEIGHT, 46)).toEqual({
+  it("resolves the three render states", () => {
+    // Live drag: 1-line minimum, no max beyond the window.
+    expect(resolveComposerHeightArgs(null, 120, VIEWPORT_BOUND, LINE_HEIGHT, 46)).toEqual({
+      minHeight: MIN_COMPOSER_HEIGHT_LINES * LINE_HEIGHT,
+      maxHeight: VIEWPORT_BOUND,
+    });
+    // Pinned: min = max = the pinned height.
+    expect(resolveComposerHeightArgs(240, null, VIEWPORT_BOUND, LINE_HEIGHT, 46)).toEqual({
+      minHeight: 240,
+      maxHeight: 240,
+    });
+    // Null: today's auto-grow, byte-identical values.
+    expect(resolveComposerHeightArgs(null, null, VIEWPORT_BOUND, LINE_HEIGHT, 46)).toEqual({
       minHeight: 46,
       maxHeight: VIEWPORT_BOUND,
     });
-    expect(
-      resolveComposerHeightArgs(VIEWPORT_BOUND + 500, VIEWPORT_BOUND, LINE_HEIGHT, 46),
-    ).toEqual({ minHeight: VIEWPORT_BOUND, maxHeight: VIEWPORT_BOUND });
-    expect(resolveComposerHeightArgs(10, VIEWPORT_BOUND, LINE_HEIGHT, 46)).toEqual({
-      minHeight: MIN_COMPOSER_HEIGHT_LINES * LINE_HEIGHT,
-      maxHeight: MIN_COMPOSER_HEIGHT_LINES * LINE_HEIGHT,
+  });
+
+  it("re-clamps a pinned height taller than the window on rotation", () => {
+    expect(resolveComposerHeightArgs(1200, null, 400, LINE_HEIGHT, 46)).toEqual({
+      minHeight: 400,
+      maxHeight: 400,
+    });
+    // And re-quantizes the bound down to a whole line when it is not a multiple.
+    expect(resolveComposerHeightArgs(1200, null, 405, LINE_HEIGHT, 46)).toEqual({
+      minHeight: 400,
+      maxHeight: 400,
     });
   });
 
   it("defaults to the null sentinel meaning today's auto-grow", () => {
     expect(useComposerHeightStore.getState().explicitHeight).toBeNull();
+    expect(useComposerHeightStore.getState().dragHeight).toBeNull();
   });
 
-  it("quantizes the setter to whole text lines", () => {
-    useComposerHeightStore.getState().setExplicitHeight(45, VIEWPORT_BOUND, LINE_HEIGHT);
-    expect(useComposerHeightStore.getState().explicitHeight).toBe(40);
+  it("tracks the live drag height quantized to whole text lines", () => {
+    useComposerHeightStore.getState().setDragHeight(45, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().dragHeight).toBe(40);
+    useComposerHeightStore.getState().setDragHeight(82, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().dragHeight).toBe(80);
   });
 
-  it("clamps the setter to a minimum of 2 lines", () => {
-    useComposerHeightStore.getState().setExplicitHeight(10, VIEWPORT_BOUND, LINE_HEIGHT);
-    expect(useComposerHeightStore.getState().explicitHeight).toBe(2 * LINE_HEIGHT);
-  });
-
-  it("clamps the setter to the viewport bound", () => {
-    useComposerHeightStore.getState().setExplicitHeight(10000, VIEWPORT_BOUND, LINE_HEIGHT);
-    expect(useComposerHeightStore.getState().explicitHeight).toBe(VIEWPORT_BOUND);
-  });
-
-  it("quantizes the viewport bound down to a whole line when it is not a multiple", () => {
-    useComposerHeightStore.getState().setExplicitHeight(10000, VIEWPORT_BOUND + 5, LINE_HEIGHT);
-    expect(useComposerHeightStore.getState().explicitHeight).toBe(VIEWPORT_BOUND);
-  });
-
-  it("applies a delta from the app default when no explicit height is stored", () => {
-    useComposerHeightStore
-      .getState()
-      .setExplicitHeightDelta(LINE_HEIGHT, VIEWPORT_BOUND, LINE_HEIGHT);
-    expect(useComposerHeightStore.getState().explicitHeight).toBe(
-      DEFAULT_COMPOSER_MAX_INPUT_HEIGHT + LINE_HEIGHT,
+  it("floors the live drag height at 1 text line", () => {
+    useComposerHeightStore.getState().setDragHeight(5, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().dragHeight).toBe(
+      MIN_COMPOSER_HEIGHT_LINES * LINE_HEIGHT,
+    );
+    useComposerHeightStore.getState().setDragHeight(-500, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().dragHeight).toBe(
+      MIN_COMPOSER_HEIGHT_LINES * LINE_HEIGHT,
     );
   });
 
-  it("applies a delta from the stored height in both directions", () => {
-    useComposerHeightStore.getState().setExplicitHeight(200, VIEWPORT_BOUND, LINE_HEIGHT);
-    useComposerHeightStore
-      .getState()
-      .setExplicitHeightDelta(-LINE_HEIGHT, VIEWPORT_BOUND, LINE_HEIGHT);
-    expect(useComposerHeightStore.getState().explicitHeight).toBe(180);
+  it("applies no maximum to the live drag height beyond the window", () => {
+    useComposerHeightStore.getState().setDragHeight(VIEWPORT_BOUND + 500, LINE_HEIGHT);
+    // No ceiling clamp: the window top is enforced at render, not in the drag setter.
+    expect(useComposerHeightStore.getState().dragHeight).toBe(
+      Math.floor((VIEWPORT_BOUND + 500) / LINE_HEIGHT) * LINE_HEIGHT,
+    );
+  });
 
-    useComposerHeightStore
-      .getState()
-      .setExplicitHeightDelta(LINE_HEIGHT, VIEWPORT_BOUND, LINE_HEIGHT);
+  it("starts a delta drag from the pinned height, else the app default", () => {
+    useComposerHeightStore.getState().setDragHeightDelta(LINE_HEIGHT, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().dragHeight).toBe(
+      DEFAULT_COMPOSER_MAX_INPUT_HEIGHT + LINE_HEIGHT,
+    );
+
+    useComposerHeightStore.getState().pinDragHeight();
+    expect(useComposerHeightStore.getState().explicitHeight).toBe(
+      DEFAULT_COMPOSER_MAX_INPUT_HEIGHT + LINE_HEIGHT,
+    );
+
+    useComposerHeightStore.getState().setDragHeightDelta(-LINE_HEIGHT, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().dragHeight).toBe(DEFAULT_COMPOSER_MAX_INPUT_HEIGHT);
+  });
+
+  it("pins on release: min = max = the height the box was left at, drag session ends", () => {
+    useComposerHeightStore.getState().setDragHeight(200, LINE_HEIGHT);
+    useComposerHeightStore.getState().pinDragHeight();
     expect(useComposerHeightStore.getState().explicitHeight).toBe(200);
+    expect(useComposerHeightStore.getState().dragHeight).toBeNull();
+
+    // Pinned min=max must not fight the next drag: deltas quantize against the live
+    // height, not the pinned one, so a downward drag can recover.
+    useComposerHeightStore.getState().setDragHeightDelta(LINE_HEIGHT, LINE_HEIGHT);
+    expect(useComposerHeightStore.getState().dragHeight).toBe(220);
   });
 
-  it("clamps the delta at both ends", () => {
-    useComposerHeightStore.getState().setExplicitHeightDelta(10000, VIEWPORT_BOUND, LINE_HEIGHT);
-    expect(useComposerHeightStore.getState().explicitHeight).toBe(VIEWPORT_BOUND);
-
-    useComposerHeightStore.getState().setExplicitHeightDelta(-10000, VIEWPORT_BOUND, LINE_HEIGHT);
-    expect(useComposerHeightStore.getState().explicitHeight).toBe(2 * LINE_HEIGHT);
-  });
-
-  it("reset returns to the null sentinel and today's auto-grow", () => {
-    useComposerHeightStore.getState().setExplicitHeight(300, VIEWPORT_BOUND, LINE_HEIGHT);
-    useComposerHeightStore.getState().resetExplicitHeight();
+  it("pins only when a drag is live", () => {
+    useComposerHeightStore.getState().pinDragHeight();
     expect(useComposerHeightStore.getState().explicitHeight).toBeNull();
   });
 
-  it("toggles between the null sentinel and the viewport bound", () => {
+  it("reset returns to the null sentinel and today's auto-grow", () => {
+    useComposerHeightStore.getState().setDragHeight(300, LINE_HEIGHT);
+    useComposerHeightStore.getState().pinDragHeight();
+    useComposerHeightStore.getState().resetExplicitHeight();
+    expect(useComposerHeightStore.getState().explicitHeight).toBeNull();
+    expect(resolveComposerHeightArgs(null, null, VIEWPORT_BOUND, LINE_HEIGHT, 46)).toEqual({
+      minHeight: 46,
+      maxHeight: VIEWPORT_BOUND,
+    });
+  });
+
+  it("toggles between the null sentinel and the window bound", () => {
     useComposerHeightStore.getState().toggleExplicitHeight(VIEWPORT_BOUND, LINE_HEIGHT);
     expect(useComposerHeightStore.getState().explicitHeight).toBe(VIEWPORT_BOUND);
 
@@ -134,7 +164,7 @@ describe("composer height store", () => {
     expect(migrate?.({ explicitHeight: "tall" }, 2)).toEqual({ explicitHeight: null });
   });
 
-  it("persists the explicit height and reads it back through the schema", async () => {
+  it("persists the pinned height and reads it back through the schema", async () => {
     const entries: Record<string, string> = {};
     const { createComposerHeightPersistStorage } = await import("./composer-height-store.rambla");
     const storage = createComposerHeightPersistStorage(createMemoryStorage(entries));
@@ -153,6 +183,23 @@ describe("composer height store", () => {
     expect(restored).not.toBeNull();
     expect(restored!.state).toEqual({ explicitHeight: 240 });
     expect(COMPOSER_HEIGHT_STORE_VERSION).toBe(2);
+  });
+
+  it("never persists the live drag height", async () => {
+    const entries: Record<string, string> = {};
+    const { createComposerHeightPersistStorage } = await import("./composer-height-store.rambla");
+    const storage = createComposerHeightPersistStorage(createMemoryStorage(entries));
+
+    useComposerHeightStore.getState().setDragHeight(200, LINE_HEIGHT);
+    await storage.setItem("composer-height", {
+      state: { explicitHeight: useComposerHeightStore.getState().explicitHeight },
+      version: COMPOSER_HEIGHT_STORE_VERSION,
+    });
+    const parsed = JSON.parse(entries["composer-height"]!) as {
+      state: ComposerHeightPersistedState;
+    };
+    expect(parsed.state).toEqual({ explicitHeight: null });
+    expect("dragHeight" in parsed.state).toBe(false);
   });
 
   it("drops persisted state that fails the schema", async () => {

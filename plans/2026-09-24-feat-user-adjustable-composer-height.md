@@ -10,10 +10,12 @@
 
 **In scope:**
 
-1. Dragging the handle sets the composer's actual height — it follows the finger continuously in both directions, content scrolls inside the box, and the chosen height persists per device and holds for any draft length.
-2. The drag is quantized to whole text lines, with a haptic tick on grab and per line step; the handle row shows a pressed/active state for the whole drag.
-3. Works while composing and while live dictation is running, mobile and desktop/web.
-4. Hard clamps: minimum 2 text lines, maximum the existing viewport-ratio bound. Double-tap (double-click on web) still toggles between the app default and the viewport maximum.
+1. While the handle is held, the composer's height follows the finger 1:1 — constraints released: the minimum drops to 1 text line, and there is no maximum (the box may grow to the top of the window). Content scrolls inside the box while dragging.
+2. On release, the height the user left the box at is pinned: minimum = maximum = that height. The chosen height persists per device and holds for any draft length.
+3. Haptic feedback: a single tick on grab, and one tick per line crossed during the drag (not continuous).
+4. The handle row shows a pressed/active state for the whole drag.
+5. Works while composing and while live dictation is running, mobile and desktop/web.
+6. Double-tap (double-click on web) still toggles between the app default and the viewport maximum.
 
 **Not in scope:**
 
@@ -25,7 +27,7 @@
 
 ## Goal
 
-Let the user decide how tall the composer is: draggable to any height between 2 lines and the viewport bound, at any draft length, with the box visibly following the finger.
+Let the user decide how tall the composer is: while held, the handle drags the box freely (1 line minimum, no maximum); on release the box pins at the height it was left at.
 
 ## Merge conflict mitigation
 
@@ -61,10 +63,10 @@ The app renders `input.rambla.tsx` on every platform — it is the only `Message
 ## Steps
 
 0. Read the `code` skill before writing anything. If a step below turns out to be wrong, stop and report back to the supervisor — do not amend this plan and do not re-decide placement while coding.
-1. Rewrite `composer-height-store.rambla.ts`: persisted store holds the composer's explicit height (null = today's auto-grow); setters quantize to whole text lines and clamp to 2 lines minimum and the viewport bound; bump `COMPOSER_HEIGHT_STORE_VERSION` to 2 so v1's ceiling-shaped values migrate to null (today's auto-grow) instead of being reinterpreted as explicit heights.
-2. Update `composer-height-store.rambla.test.ts`: explicit height set/clear, line quantization, both bounds, persistence round-trip.
-3. Rewrite `composer-drag-handle.rambla.tsx`: drag moves the actual height continuously (line steps) in both directions; relax the gesture activation so slight horizontal drift does not kill the grab (fix for [composer-drag-handle.rambla.tsx:106](../packages/app/src/composer/input/composer-drag-handle.rambla.tsx#L106)); haptic on grab and per line step via `expo-haptics` (pattern at [use-long-press-drag-interaction.ts:90](../packages/app/src/components/sidebar/use-long-press-drag-interaction.ts#L90)); pressed/active state on the row while the drag lives; double-tap toggle stays.
-4. Edit `input.rambla.tsx`: when the store holds an explicit height H, pass `minHeight: H, maxHeight: H` through the existing intrinsic mode — the box renders at H with content scrolling inside; when null, today's values. Keep the handle as the wrapper's first child.
+1. Rewrite `composer-height-store.rambla.ts`: persisted store holds the composer's pinned height (null = today's auto-grow); a non-persisted live `dragHeight` field tracks the height mid-drag; setters quantize to whole text lines with a 1-line minimum and no maximum beyond the window; bump `COMPOSER_HEIGHT_STORE_VERSION` to 2 so v1's ceiling-shaped values migrate to null (today's auto-grow) instead of being reinterpreted as explicit heights.
+2. Update `composer-height-store.rambla.test.ts`: pin set/clear, drag-height tracking, line quantization, 1-line minimum, persistence round-trip, migration.
+3. Rewrite `composer-drag-handle.rambla.tsx`: on grab, one haptic and the drag session starts; while held, the finger's height (1:1, quantized to line steps, one haptic per line crossed — never continuous) feeds the store's live `dragHeight`; on release, the store pins min = max = that height; fix the haptic loop so ticks fire only on line changes (v2 device bug: constant buzz); relax the gesture activation so slight horizontal drift does not kill the grab (fix for [composer-drag-handle.rambla.tsx:106](../packages/app/src/composer/input/composer-drag-handle.rambla.tsx#L106)); haptics via `expo-haptics` (pattern at [use-long-press-drag-interaction.ts:90](../packages/app/src/components/sidebar/use-long-press-drag-interaction.ts#L90)); pressed/active state on the row while held; double-tap toggle stays.
+4. Edit `input.rambla.tsx`: three render states — during an active drag (live `dragHeight`), release the constraints: minimum 1 line, no maximum (window top); when a height is pinned, pass `minHeight: H, maxHeight: H` through the existing intrinsic mode — the box renders at H with content scrolling inside; when null, today's values. Keep the handle as the wrapper's first child.
 5. Verify per below.
 
 ## Verification
@@ -73,12 +75,12 @@ The app renders `input.rambla.tsx` on every platform — it is the only `Message
 - `npm run lint`
 - `npx vitest run packages/app/src/composer/input/composer-height-store.rambla.test.ts --bail=1`
 - `git grep "RAMBLA-FORK:" -- packages/app/src/composer/input/input.rambla.tsx` — shows the tags.
-- On device (iOS TestFlight): with a tall dictating composer, drag down to 2 lines and back up — height follows the finger in line steps both ways; haptic ticks on grab and each line; row visibly pressed while held; grabs succeed even with sloppy diagonal starts; works while dictation is running; a short draft holds a tall height; never-touched installs keep today's auto-grow; double-tap still flips default/max.
+- On device (iOS TestFlight): press and hold the handle and drag — the box follows the finger freely, down to 1 line and up toward the window top with no ceiling; release — the box pins exactly where left; haptic fires once on grab and once per line crossed, never continuously; row visibly pressed while held; grabs succeed even with sloppy diagonal starts; works while dictation is running; a short draft holds a tall pinned height; never-touched installs keep today's auto-grow; double-tap still flips default/max.
 
 ## Risks
 
 - The handle row sits where the attachment slot appears; when an attachment tray renders, the handle must stay above it without overlapping its hit area.
 - Web drag could start a text selection; the handle must set `userSelect: "none"` on web itself and capture the pointer, not rely on any ancestor style.
 - On native, repeated height changes mid-dictation re-run the keyboard-shift layout; the existing `onHeightChange` → `prepareForViewportChange` path is the mitigation and needs no new code.
-- Fixed-height mode must re-clamp on rotation and window resize (the viewport bound moves).
+- Fixed-height mode must re-clamp on rotation and window resize (a pinned height taller than a rotated window shrinks to fit; the window top is the only ceiling).
 - Relaxing the pan activation must not make the handle steal vertical scrolls meant for the chat list; the gesture lives only on the 16px row.

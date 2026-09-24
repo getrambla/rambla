@@ -93,6 +93,8 @@ import { useDictationField } from "./use-dictation-field.rambla";
 // RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: imports the persisted explicit height store and the drag handle.
 import { resolveComposerHeightArgs, useComposerHeightStore } from "./composer-height-store.rambla";
 import { ComposerDragHandle } from "./composer-drag-handle.rambla";
+// RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: shallow equality for the object-valued height store selector.
+import { useShallow } from "zustand/shallow";
 
 const DEFAULT_SEND_KEYS: ShortcutKey[][] = [["Enter"]];
 const COMPOSER_INPUT_DATASET = { composerInput: "" } as const;
@@ -1207,12 +1209,16 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const { t } = useTranslation();
     const isCompact = useIsCompactFormFactor();
     const { height: windowHeight } = useWindowDimensions();
-    // RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: pins the composer at the user's explicit height when one is stored.
-    const userExplicitHeight = useComposerHeightStore((s) => s.explicitHeight);
+    // RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: three render states — live drag (1-line min, no max), pinned min=max, null = today's auto-grow.
+    const { explicitHeight: userExplicitHeight, dragHeight: userDragHeight } =
+      useComposerHeightStore(
+        useShallow((s) => ({ explicitHeight: s.explicitHeight, dragHeight: s.dragHeight })),
+      );
     // The composer's own text style: fontSize.content with a 1.4 line height (styles.textInput).
     const composerLineHeight = UnistylesRuntime.getTheme().fontSize.content * 1.4;
     const composerHeightArgs = resolveComposerHeightArgs(
       userExplicitHeight,
+      userDragHeight,
       resolveMaxInputHeight(windowHeight),
       composerLineHeight,
       MIN_INPUT_HEIGHT,
@@ -1242,7 +1248,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const composerHeight = useComposerHeight({
       getText: getLiveText,
       textareaRef: webTextareaRef,
-      // RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: equal min/max pins the box at the explicit height with inner scroll.
+      // RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: live drag releases the constraints; pinned min=max holds the box with inner scroll.
       minHeight: composerMinHeight,
       maxHeight: maxInputHeight,
     });
