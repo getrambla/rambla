@@ -51,6 +51,9 @@ import { showProviderNoticeToast } from "@/utils/provider-notice-toast";
 import { applyCheckoutStatusUpdateFromEvent } from "@/git/checkout-status-cache";
 import { useProviderSubagentStore } from "@/subagents/provider-store";
 
+// RAMBLA-FORK: feature: 2026-09-22-feat-os-notification-toggle.md: reads the OS notifications preference for the send gates.
+import { useSettings } from "@/hooks/use-settings";
+
 // Re-export types from session-store and draft-store for backward compatibility
 export type { DraftInput } from "@/stores/draft-store";
 export type {
@@ -236,6 +239,10 @@ function SessionProviderInternal({ children, serverId, client }: SessionProvider
   const _sessionStateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attentionNotifiedRef = useRef<Map<string, number>>(new Map());
   const appStateRef = useRef(AppState.currentState);
+  // RAMBLA-FORK: feature: 2026-09-22-feat-os-notification-toggle.md: mirrors the OS notifications preference into a ref for the send gates.
+  const notificationsEnabled = useSettings((settings) => settings.notificationsEnabled);
+  const notificationsEnabledRef = useRef(notificationsEnabled);
+  notificationsEnabledRef.current = notificationsEnabled;
   const viewedTimelineSyncRef = useRef<ViewedTimelineOwner | null>(null);
   const audioOutputBuffersRef = useRef<Map<string, BufferedAudioChunk[]>>(new Map());
   const activeAudioGroupsRef = useRef<Set<string>>(new Set());
@@ -270,6 +277,10 @@ function SessionProviderInternal({ children, serverId, client }: SessionProvider
       timestamp: string;
       notification?: AgentAttentionNotificationPayload;
     }) => {
+      // RAMBLA-FORK: feature: 2026-09-22-feat-os-notification-toggle.md: skips the OS notification when the preference is off.
+      if (!notificationsEnabledRef.current) {
+        return;
+      }
       const appState = appStateRef.current;
       const session = useSessionStore.getState().sessions[serverId];
       const attentionFocusedAgentId = session?.focusedAgentId ?? null;
@@ -708,6 +719,10 @@ function SessionProviderInternal({ children, serverId, client }: SessionProvider
         return;
       }
       if (!message.payload.shouldNotify) {
+        return;
+      }
+      // RAMBLA-FORK: feature: 2026-09-22-feat-os-notification-toggle.md: skips the OS notification when the preference is off.
+      if (!notificationsEnabledRef.current) {
         return;
       }
       void sendOsNotification({

@@ -1,8 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Text, View } from "react-native";
-import { withUnistyles } from "react-native-unistyles";
-import { RotateCw } from "lucide-react-native";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -12,29 +10,23 @@ import { useDesktopSettings } from "@/desktop/settings/desktop-settings";
 import { SettingsSection } from "@/components/settings/headings/settings-section";
 import { settingsStyles } from "@/styles/settings";
 
-const ThemedRotateCw = withUnistyles(RotateCw, (theme) => ({
-  size: theme.iconSize.md,
-  color: theme.colors.foregroundMuted,
-}));
+// RAMBLA-FORK: feature: 2026-09-22-feat-os-notification-toggle.md: reads and writes the OS notifications preference; removes the refresh button and its icon, imports, and handler.
+import { useSettings } from "@/hooks/use-settings";
 
 export function DesktopNotificationsSection() {
   const { t } = useTranslation();
   const { settings, isSaving, updateSettings } = useDesktopSettings();
+  // RAMBLA-FORK: feature: 2026-09-22-feat-os-notification-toggle.md: drops refreshPermissions with the refresh handler.
   const {
     isDesktopApp,
     snapshot,
-    isRefreshing,
     requestingPermission,
     testNotificationState,
-    refreshPermissions,
     requestPermission,
     sendTestNotification,
   } = useDesktopPermissions();
 
-  const handleRefreshPress = useCallback(() => {
-    void refreshPermissions();
-  }, [refreshPermissions]);
-
+  // RAMBLA-FORK: feature: 2026-09-22-feat-os-notification-toggle.md: removes the refresh handler with the refresh button.
   const handleRequestNotifications = useCallback(() => {
     void requestPermission("notifications");
   }, [requestPermission]);
@@ -52,24 +44,10 @@ export function DesktopNotificationsSection() {
     void sendTestNotification();
   }, [sendTestNotification]);
 
-  const isPermissionBusy = isRefreshing || requestingPermission !== null;
+  // RAMBLA-FORK: feature: 2026-09-22-feat-os-notification-toggle.md: isPermissionBusy drops isRefreshing with the refresh button.
+  const isPermissionBusy = requestingPermission !== null;
   const isSendingTestNotification = testNotificationState.status === "sending";
-  const refreshIcon = useMemo(() => <ThemedRotateCw />, []);
-  const refreshButton = useMemo(
-    () => (
-      <Button
-        variant="ghost"
-        size="sm"
-        leftIcon={refreshIcon}
-        onPress={handleRefreshPress}
-        disabled={isPermissionBusy}
-        accessibilityLabel={t("settings.notifications.refreshAccessibility")}
-      >
-        {isRefreshing ? t("settings.permissions.refreshing") : t("settings.permissions.refresh")}
-      </Button>
-    ),
-    [handleRefreshPress, isPermissionBusy, isRefreshing, refreshIcon, t],
-  );
+  // RAMBLA-FORK: feature: 2026-09-22-feat-os-notification-toggle.md: remove refreshButton and refreshIcon.
   const permissionLabels = useMemo(
     () => ({
       granted: t("settings.permissions.actions.granted"),
@@ -79,14 +57,45 @@ export function DesktopNotificationsSection() {
     [t],
   );
 
+  const { settings: appSettings, updateSettings: updateAppSettings } = useSettings();
+  const handleOsNotificationsChange = useCallback(
+    (notificationsEnabled: boolean) => {
+      void updateAppSettings({ notificationsEnabled }).catch(() => {
+        // useAppSettings owns the user-visible persistence error.
+      });
+    },
+    [updateAppSettings],
+  );
+  const notificationsSwitch = useMemo(
+    () => (
+      <Switch
+        value={appSettings.notificationsEnabled}
+        onValueChange={handleOsNotificationsChange}
+        accessibilityLabel={t("settings.notifications.title")}
+        testID="desktop-os-notifications-switch"
+      />
+    ),
+    [appSettings.notificationsEnabled, handleOsNotificationsChange, t],
+  );
+
   if (!isDesktopApp) {
     return null;
+  }
+
+  // RAMBLA-FORK: feature: 2026-09-22-feat-os-notification-toggle.md: preference off keeps the heading and switch, hides the card.
+  if (!appSettings.notificationsEnabled) {
+    return (
+      <SettingsSection title={t("settings.notifications.title")} trailing={notificationsSwitch}>
+        {null}
+      </SettingsSection>
+    );
   }
 
   const notificationsGranted = snapshot?.notifications.state === "granted";
 
   return (
-    <SettingsSection title={t("settings.notifications.title")} trailing={refreshButton}>
+    // RAMBLA-FORK: feature: 2026-09-22-feat-os-notification-toggle.md: add Notifications switch.
+    <SettingsSection title={t("settings.notifications.title")} trailing={notificationsSwitch}>
       <View style={settingsStyles.card}>
         <DesktopPermissionRow
           title={t("settings.notifications.permission")}
