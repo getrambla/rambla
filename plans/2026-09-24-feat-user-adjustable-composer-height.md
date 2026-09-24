@@ -1,7 +1,7 @@
 # feat: composer height set by dragging the top handle
 
-**Revision 4 — full rewrite from stock (revert commit `5a36aa28b`). Supersedes
-revisions 1–3 entirely; no code from them survives.**
+**Revision 5 — the handle must track the finger absolutely. Supersedes
+revision 4; R4's code is the base, amended per the diagnosis below.**
 
 ## Wrong turns
 
@@ -25,6 +25,18 @@ revisions 1–3 entirely; no code from them survives.**
    added 6 coupled moving parts whose base disagreed with the rendered value.
    Device: touch collapsed the box, drag enlarged nothing, release pinned a
    junk value.
+4. **R4 (clean rewrite, `3c7480146` + `4e185ca8a`):** logic was correct but
+   shipped two native defects. (a) The pan lacked `.runOnJS(true)`, so its
+   callbacks ran as Reanimated worklets on the UI thread; the React setState
+   and expo-haptics call inside crashed iOS the instant the handle was
+   touched (crash log: Hermes `throwPendingError` under
+   `UIGestureRecognizer _componentsBegan`). (b) With the crash fixed, the
+   box moved in whole-line jumps: on iOS, a TextInput sized via
+   `minHeight`/`maxHeight` snaps its committed frame to content-line
+   multiples, so min=max can never give pixel-exact sizing. Root cause for
+   both: gesture-callback threading and native text-view sizing behavior are
+   platform facts no static review caught — the sizing mechanism must be
+   `height` (explicit), not min/max, and gestures must run on JS.
 
 Lessons applied in this revision: the rendered value must BE the dragged
 value; quantization is dropped (raw pixels); one bound definition; tap does
@@ -42,9 +54,9 @@ nothing more.
 **In scope:**
 
 1. Dragging the handle sets the composer's height in real time: while held,
-   the box is exactly as tall as the finger position (raw pixels, no
-   quantization), with text scrolling inside. The dragged value is what
-   renders — every frame.
+   the box height equals the finger's position — **the handle tracks the
+   finger absolutely, 1:1, pixel-exact; no relative drift, no snapping, no
+   lag**. The dragged value is what renders — every frame.
 2. On release, that height is pinned and persists per device. While pinned,
    the box does NOT size to content — typing grows the text, which scrolls
    inside the fixed box.
@@ -79,20 +91,27 @@ merged in weekly. Code below follows the fork's placement rules.
 
 **Files this work changes:**
 
-| File                                                                   | Edit                                                                                                                                                                                                                                               | Upstream activity          | Tag                  |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | -------------------- |
-| `packages/app/src/composer/input/composer-height-store.rambla.ts`      | new store: persisted `pinnedHeight` (null = default 3 lines) + non-persisted `liveHeight` (set during drag, cleared on release); clamped to [MIN_PINNED_HEIGHT, window height]; exposes DEFAULT_PINNED_HEIGHT = 3 lines                            | new (fresh, post-revert)   | `RAMBLA-FORK: feat:` |
-| `packages/app/src/composer/input/composer-height-store.rambla.test.ts` | pin/live/clamp round-trip, default-height passthrough, persistence excludes live, garbage-tolerant load                                                                                                                                            | new                        | `RAMBLA-FORK: feat:` |
-| `packages/app/src/composer/input/composer-drag-handle.rambla.tsx`      | grabber row: pan drives `liveHeight` = drag-start box height + (−translationY), raw pixels; release pins; haptic on grab and release; pressed state; single tap does nothing; double-tap restores default 3 lines                                  | new                        | `RAMBLA-FORK: feat:` |
-| `packages/app/src/composer/input/input.rambla.tsx`                     | render: live → `minHeight = maxHeight = liveHeight`; pinned → `minHeight = maxHeight = pinnedHeight`; null (default) → `minHeight = maxHeight = DEFAULT_PINNED_HEIGHT` (3 lines, fixed — auto-grow removed); handle row as container's first child | existing (fork-only, ours) | `RAMBLA-FORK: feat:` |
+| File                                                                   | Edit                                                                                                                                                                                                                             | Upstream activity          | Tag                  |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | -------------------- |
+| `packages/app/src/composer/input/composer-height-store.rambla.ts`      | new store: persisted `pinnedHeight` (null = default 3 lines) + non-persisted `liveHeight` (set during drag, cleared on release); clamped to [MIN_PINNED_HEIGHT, window height]; exposes DEFAULT_PINNED_HEIGHT = 3 lines          | new (fresh, post-revert)   | `RAMBLA-FORK: feat:` |
+| `packages/app/src/composer/input/composer-height-store.rambla.test.ts` | pin/live/clamp round-trip, default-height passthrough, persistence excludes live, garbage-tolerant load                                                                                                                          | new                        | `RAMBLA-FORK: feat:` |
+| `packages/app/src/composer/input/composer-drag-handle.rambla.tsx`      | grabber row: pan drives `liveHeight` = drag-start box height + (−translationY), raw pixels; release pins; haptic on grab and release; pressed state; single tap does nothing; double-tap restores default 3 lines                | new                        | `RAMBLA-FORK: feat:` |
+| `packages/app/src/composer/input/input.rambla.tsx`                     | render: live → explicit `height = liveHeight`; pinned → explicit `height = pinnedHeight`; null (default) → explicit `height = DEFAULT_PINNED_HEIGHT` (3 lines, fixed — auto-grow removed); handle row as container's first child | existing (fork-only, ours) | `RAMBLA-FORK: feat:` |
 
-**Why this shape:** the researcher confirmed equal `minHeight`/`maxHeight`
-fully pins the box on BOTH platforms with zero new machinery — native's
-intrinsic style cannot render any other size, and web's measured mode
-self-clamps every recompute into the equal bounds. So the whole feature is one
-nullable number plus one transient number, rendered as min=max; no new height
-mode, no line-height plumbing, no quantizer. The dragged value is rendered
-directly, which is the exact defect that killed R3.
+**Why this shape:** revision 4's device test proved equal `minHeight`/
+`maxHeight` is NOT pixel-exact on iOS — the UITextView snaps its committed
+frame to whole text-line multiples, so the box moved a line at a time
+(researcher-confirmed; R4 wrong turn 4b). The fix is an explicit `height`
+style: a fixed frame on the text view cannot snap, giving exact pixels. Web's
+measured mode self-clamps any recompute into the provided bounds, so an
+explicit height is equally safe there. The whole feature remains one nullable
+number plus one transient number, now rendered as explicit `height`.
+
+**Finger tracking (the binding rule):** the handle must stay under the finger
+at all times — 1:1, absolute, no relative drift or snapping. Drag deltas use
+RNGH `translationY` (absolute since gesture start), so dropped or batched
+events cannot accumulate error; the explicit-height render applies each value
+as an exact frame.
 
 **The bound:** the window top is `useWindowDimensions().height`, read once in
 `input.rambla.tsx` (which already subscribes to window dimensions) and passed
@@ -114,19 +133,27 @@ stated pixel constant, not a per-platform derivation).
 
 The composer sizes itself to content (native intrinsic mode). The user needs a
 user-defined fixed height — content-independent — for accessibility; content
-auto-grow pushes the box to the window top and hides the chat. Fixed height is
-achievable through the existing props by rendering min=max=H (researcher
-verified on both height.native.ts and height.web.ts), which no prior revision
-did while dragging.
+auto-grow pushes the box to the window top and hides the chat. A fixed height
+must be applied as an explicit `height` style: iOS snaps min/max-sized text
+views to whole line multiples, so min=max cannot deliver pixel-exact tracking.
 
 ## Constraints
 
 - No file outside the table changes — including height.native.ts,
   height.types.ts, height.web.ts, upstream input.tsx.
 - The drag value must appear in the render in the same frame it updates: the
-  store's live value flows straight into minHeight/maxHeight with no
+  store's live value flows straight into the explicit `height` style with no
   intervening clamps, rounding, or alternate bounds.
-- No line-height derivation, no quantization, no lineHeight prop.
+- The handle must track the finger absolutely: 1:1, pixel-exact, no snapping,
+  no lag, no relative drift. This is the acceptance criterion that overrides
+  convenience — if the mechanism cannot deliver it, stop and report.
+- Gesture callbacks must include `.runOnJS(true)` (R4 crash: worklet-thread
+  execution of setState/haptics aborts iOS on touch-down).
+- Quantization is FORBIDDEN everywhere in this feature — no rounding,
+  snapping, stepping, or line-grid alignment of the height, in any file, at
+  any layer (store, gesture, render, native). Rounding the height detaches
+  the handle from the finger, which violates the binding tracking rule
+  (Scope item 1). Any code that quantizes is a defect.
 - Haptics: exactly 2 per drag (grab, release) via the
   `use-long-press-drag-interaction.ts` pattern (selectionAsync, `.catch`-
   guarded). No ticks during movement. Double-tap adds one haptic outside a
@@ -143,41 +170,36 @@ did while dragging.
 ## Steps
 
 0. Read the `code` skill first. If a step is wrong, stop and report.
-1. Create `composer-height-store.rambla.ts`: constants `MIN_PINNED_HEIGHT`
-   (60) and `DEFAULT_PINNED_HEIGHT` (3 lines ≈ 90px); `pinnedHeight:
-number | null` (persisted, zod-validated, garbage → null = default),
-   `liveHeight: number | null` (not persisted), `setLiveHeight(h)`,
-   `pinLiveHeight()`, `restoreDefault()` (clears pin); setters clamp to
-   `[MIN_PINNED_HEIGHT, windowHeightArg]` using the window height passed in
-   from the caller (the store owns no window query); the store also exposes
-   `resolveRenderBounds(windowHeight)` which returns `{ minHeight, maxHeight }`
-   for the three states — live (min=max=live), pinned (min=max=pinned,
-   re-clamped to the current windowHeightArg so rotation shrinks a stale
-   pin), or null (min=max=DEFAULT_PINNED_HEIGHT). That resolution is the
-   single clamp site.
-2. Create `composer-height-store.rambla.test.ts`: clamps, pin round-trip,
-   rotation re-clamp of a stale pin, live-not-persisted, garbage-tolerant
-   load, null = default 3 lines, and the double-tap path:
-   `restoreDefault()` returns to null/default, and is a no-op when already
-   default.
-3. Create `composer-drag-handle.rambla.tsx`: RNGH pan, `failOffsetX([-24,24])`
-   / `activeOffsetY([-6,6])`; on activation haptic + record drag start =
-   the composer's current rendered height, passed in as a prop
-   (`dragStartHeight`) from input.rambla.tsx, with a fallback of
-   `MIN_PINNED_HEIGHT` when no measurement exists yet; on update
-   `setLiveHeight(start − translationY)`; on end: if translation ≥ 8px
-   `pinLiveHeight()` + haptic, else `clearLiveHeight()` (single tap mutates
-   nothing); two taps within ~300ms → `restoreDefault()` + haptic; pressed
-   row style while active.
-4. Edit `input.rambla.tsx`: feed the store's `resolveRenderBounds(windowHeight)`
-   into the existing `useComposerHeight` call (replacing the stock
-   auto-grow arguments — the composer height is now always user-or-default
-   fixed); pass the current
-   measured composer height (already surfaced by the existing
-   `onHeightChange`/`handleComposerLayout` path at
-   [input.rambla.tsx:1250](../packages/app/src/composer/input/input.rambla.tsx#L1250)) down to the handle as `dragStartHeight`;
-   mount the handle row as the container's first child
-   ([input.rambla.tsx:1842](../packages/app/src/composer/input/input.rambla.tsx#L1842), before MessageInputAutoFocus). Tag every block.
+1. Amend `composer-height-store.rambla.ts`: rename `resolveRenderBounds`'s
+   return to a single explicit height — `resolveRenderHeight(windowHeight)`
+   returns `number`: live if set, else pinned re-clamped to the current
+   windowHeightArg (rotation shrink), else DEFAULT_PINNED_HEIGHT. Setters
+   clamp as before. That resolution is the single clamp site.
+2. Update `composer-height-store.rambla.test.ts`: same coverage, asserting
+   the resolved number (live, rotation-shrunk pin, default).
+3. Amend `composer-drag-handle.rambla.tsx`: keep `.runOnJS(true)` FIRST in
+   the pan chain (R4 crash), `failOffsetX([-24,24])` / `activeOffsetY([-6,6])`;
+   drag start = current measured height via `dragStartHeight` prop
+   (fallback `MIN_PINNED_HEIGHT`); on update
+   `setLiveHeight(start − translationY)`; on end: translation ≥ 8px →
+   `pinLiveHeight()` + haptic, else `clearLiveHeight()`; two taps <300ms →
+   `restoreDefault()` + haptic; pressed row style while active.
+4. Edit `input.rambla.tsx`: resolve `composerHeight = resolveRenderHeight(
+windowHeight)` and pass `minHeight: composerHeight, maxHeight:
+composerHeight` into the existing `useComposerHeight` call — with an
+   explicit-height mode so the style carries `height: composerHeight` rather
+   than min/max (see deviation note below); keep the `dragStartHeight`
+   measurement feed and the handle row as container's first child. Tag every
+   block.
+   DEVIATION NOTE: delivering pixel-exact tracking requires the native style
+   to carry an explicit `height` instead of min/max —
+   height.native.ts/height.types.ts are upstream and off-limits per the
+   table, so input.rambla.tsx composes the final style itself: apply
+   `composerHeight` as an explicit `height` on the composer surface style
+   where the stock minHeight/maxHeight were consumed, leaving
+   `useComposerHeight`'s mode untouched. If that composition cannot express
+   `height` cleanly at the existing style site, STOP and report — do not
+   widen the table.
 5. Verify per below.
 
 ## Verification
@@ -187,11 +209,13 @@ number | null` (persisted, zod-validated, garbage → null = default),
 - `npx vitest run packages/app/src/composer/input/composer-height-store.rambla.test.ts --bail=1`
 - `git grep "RAMBLA-FORK:" -- packages/app/src/composer/input/input.rambla.tsx packages/app/src/composer/input/composer-height-store.rambla.ts packages/app/src/composer/input/composer-drag-handle.rambla.tsx`
 - On device (iOS TestFlight): with an EMPTY box, drag the handle — the box
-  follows the finger to any height up to the window top (this exact case
-  failed in every prior revision; it is the acceptance test). Release — the
-  box stays exactly there. Type a long draft — text scrolls inside the fixed
-  box; the box never grows on its own. Drag down to 2 lines — holds. Single
-  tap — nothing changes. Double-tap — box returns to the 3-line default.
+  edge stays exactly under the finger: 1:1, pixel-exact, no line-sized jumps,
+  no snap after release, no catch-up lag (R4's whole-line jumping is the
+  failure this test must exclude). Any height between the 2-line floor and
+  the window top is reachable and holds. Release — the box stays exactly
+  there. Type a long draft — text scrolls inside the fixed
+  box; the box never grows on its own. Single tap —
+  nothing changes. Double-tap — box returns to the 3-line default.
   Fresh install — fixed 3 lines, no auto-grow. Rotation — a too-tall pin
   shrinks to fit.
 

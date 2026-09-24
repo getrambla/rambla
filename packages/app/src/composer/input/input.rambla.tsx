@@ -108,11 +108,9 @@ function useComposerHeightState(): ComposerHeightState {
   );
 }
 
-function resolveComposerHeightBounds(
-  renderBounds: { minHeight: number; maxHeight: number } | null,
-): { minHeight: number; maxHeight: number } {
-  // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: never null — the fixed 3-line default replaced auto-grow.
-  return renderBounds ?? { minHeight: DEFAULT_PINNED_HEIGHT, maxHeight: DEFAULT_PINNED_HEIGHT };
+function resolveComposerHeightStyle(height: number): { height: number } {
+  // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: explicit height, never min/max — iOS snaps min/max text frames to whole lines.
+  return { height };
 }
 
 const DEFAULT_SEND_KEYS: ShortcutKey[][] = [["Enter"]];
@@ -1226,9 +1224,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     useEffect(() => {
       void composerHeightStore.hydrate();
     }, []);
-    const composerHeightBounds = resolveComposerHeightBounds(
-      composerHeightStore.resolveRenderBounds(windowHeight),
-    );
+    const composerRenderHeight = composerHeightStore.resolveRenderHeight(windowHeight);
     const buttonIconSize = isWeb ? ICON_SIZE.md : ICON_SIZE.lg;
     const toast = useToast();
     const voice = useVoiceOptional();
@@ -1250,11 +1246,12 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const appliedTextReplacementKeyRef = useRef(textReplacement.key);
     const webTextareaRef = useRef<HTMLElement | null>(null);
     const getLiveText = useCallback(() => valueRef.current, []);
+    // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: stock args retained for useComposerHeight's mode; the explicit height overrides the style below.
     const composerHeight = useComposerHeight({
       getText: getLiveText,
       textareaRef: webTextareaRef,
-      minHeight: composerHeightBounds.minHeight,
-      maxHeight: composerHeightBounds.maxHeight,
+      minHeight: MIN_INPUT_HEIGHT,
+      maxHeight: DEFAULT_PINNED_HEIGHT,
     });
     const { style: composerHeightStyle, scrollEnabled: isComposerScrollEnabled } = composerHeight;
     const measuredComposerHeight = composerHeight.mode === "measured" ? composerHeight : undefined;
@@ -1823,8 +1820,14 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     // `fontFamily` here is silently dropped while every other property lands.
     // An inline style outranks both classes. See docs/unistyles.md.
     const textInputStyle = useMemo(
-      () => [styles.textInput, mode.isMonospace && styles.textInputMonospace, composerHeightStyle],
-      [composerHeightStyle, mode.isMonospace],
+      () => [
+        styles.textInput,
+        mode.isMonospace && styles.textInputMonospace,
+        composerHeightStyle,
+        // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: explicit height last so it overrides the mode's min/max; pixel-exact, unrounded.
+        resolveComposerHeightStyle(composerRenderHeight),
+      ],
+      [composerHeightStyle, composerRenderHeight, mode.isMonospace],
     );
     // Static content has no textarea to mirror, so it grows with its own text
     // instead of the measured input height.

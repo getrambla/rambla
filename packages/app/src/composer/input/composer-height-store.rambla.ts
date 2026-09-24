@@ -25,7 +25,7 @@ export interface ComposerHeightStore {
   clearLiveHeight(): void;
   pinLiveHeight(windowHeight: number): void;
   restoreDefault(): void;
-  resolveRenderBounds(windowHeight: number): { minHeight: number; maxHeight: number } | null;
+  resolveRenderHeight(windowHeight: number): number;
   hydrate(): Promise<void>;
   subscribe(listener: () => void): () => void;
 }
@@ -82,16 +82,11 @@ export function createComposerHeightStore(storage: ValidatedStringStorage): Comp
       void persistPinned(null);
     },
 
-    resolveRenderBounds(windowHeight) {
-      // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: single clamp site; live renders as-is, pinned re-clamps on rotation, null renders the fixed default.
-      if (state.liveHeight !== null) {
-        return { minHeight: state.liveHeight, maxHeight: state.liveHeight };
-      }
-      if (state.pinnedHeight !== null) {
-        const clamped = clampToWindow(state.pinnedHeight, windowHeight);
-        return { minHeight: clamped, maxHeight: clamped };
-      }
-      return { minHeight: DEFAULT_PINNED_HEIGHT, maxHeight: DEFAULT_PINNED_HEIGHT };
+    // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: single clamp site; explicit height — live as-is, pinned re-clamps on rotation, null the fixed default.
+    resolveRenderHeight(windowHeight) {
+      if (state.liveHeight !== null) return state.liveHeight;
+      if (state.pinnedHeight !== null) return clampToWindow(state.pinnedHeight, windowHeight);
+      return DEFAULT_PINNED_HEIGHT;
     },
 
     async hydrate() {

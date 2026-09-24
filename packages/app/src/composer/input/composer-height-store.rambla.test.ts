@@ -28,10 +28,7 @@ function createFakeStorage(initial: Record<string, string> = {}): ValidatedStrin
 describe("composer-height-store", () => {
   it("returns the fixed 3-line default when never pinned", () => {
     const store = createComposerHeightStore(createFakeStorage());
-    expect(store.resolveRenderBounds(800)).toEqual({
-      minHeight: DEFAULT_PINNED_HEIGHT,
-      maxHeight: DEFAULT_PINNED_HEIGHT,
-    });
+    expect(store.resolveRenderHeight(800)).toBe(DEFAULT_PINNED_HEIGHT);
     expect(store.getState()).toEqual({ pinnedHeight: null, liveHeight: null });
   });
 
@@ -45,10 +42,10 @@ describe("composer-height-store", () => {
     expect(store.getState().liveHeight).toBe(300);
   });
 
-  it("renders live height unclamped by resolveRenderBounds", () => {
+  it("renders live height as-is from resolveRenderHeight", () => {
     const store = createComposerHeightStore(createFakeStorage());
     store.setLiveHeight(300, 800);
-    expect(store.resolveRenderBounds(800)).toEqual({ minHeight: 300, maxHeight: 300 });
+    expect(store.resolveRenderHeight(800)).toBe(300);
   });
 
   it("pins the live height and clears live on release", () => {
@@ -56,7 +53,7 @@ describe("composer-height-store", () => {
     store.setLiveHeight(320, 800);
     store.pinLiveHeight(800);
     expect(store.getState()).toEqual({ pinnedHeight: 320, liveHeight: null });
-    expect(store.resolveRenderBounds(800)).toEqual({ minHeight: 320, maxHeight: 320 });
+    expect(store.resolveRenderHeight(800)).toBe(320);
   });
 
   it("pinLiveHeight is a no-op without a live height", () => {
@@ -77,7 +74,7 @@ describe("composer-height-store", () => {
     const store = createComposerHeightStore(storage);
     store.setLiveHeight(800, 800);
     store.pinLiveHeight(800);
-    expect(store.resolveRenderBounds(400)).toEqual({ minHeight: 400, maxHeight: 400 });
+    expect(store.resolveRenderHeight(400)).toBe(400);
     expect(store.getState().pinnedHeight).toBe(800);
   });
 
@@ -86,10 +83,7 @@ describe("composer-height-store", () => {
     store.setLiveHeight(300, 800);
     store.pinLiveHeight(800);
     store.restoreDefault();
-    expect(store.resolveRenderBounds(800)).toEqual({
-      minHeight: DEFAULT_PINNED_HEIGHT,
-      maxHeight: DEFAULT_PINNED_HEIGHT,
-    });
+    expect(store.resolveRenderHeight(800)).toBe(DEFAULT_PINNED_HEIGHT);
     store.restoreDefault();
     expect(store.getState()).toEqual({ pinnedHeight: null, liveHeight: null });
   });
