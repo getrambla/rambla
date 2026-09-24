@@ -10,22 +10,22 @@
 
 **In scope:**
 
-1. A persisted, per-device user ceiling for the chat composer's auto-grow height, set by dragging a grabber handle on the composer's top edge.
-2. Double-tap (double-click on web) on the handle toggles the ceiling between the app default and the maximum the viewport bound allows.
-3. Works for typed and dictated composition alike, mobile and desktop/web: content still auto-grows with text up to the user ceiling and scrolls beyond it.
-4. Hard clamps: the stored ceiling can never push the composer past the existing viewport-ratio bound, and the existing minimum height is untouched.
+1. Dragging the handle sets the composer's actual height — it follows the finger continuously in both directions, content scrolls inside the box, and the chosen height persists per device and holds for any draft length.
+2. The drag is quantized to whole text lines, with a haptic tick on grab and per line step; the handle row shows a pressed/active state for the whole drag.
+3. Works while composing and while live dictation is running, mobile and desktop/web.
+4. Hard clamps: minimum 2 text lines, maximum the existing viewport-ratio bound. Double-tap (double-click on web) still toggles between the app default and the viewport maximum.
 
 **Not in scope:**
 
 - Fullscreen or expanded compose modal.
-- Changing the minimum height, the 160px default, or the 50%-viewport bound for users who never touch the handle.
+- Behavior for users who never touch the handle: today's auto-grow stays exactly as shipped.
 - A settings-page entry for composer height.
 - Per-workspace or per-conversation height memory.
 - Keyboard-inset or safe-area behavior around the composer dock.
 
 ## Goal
 
-Let the user decide how tall the composer may grow while composing, so a long draft stays readable without covering chat history.
+Let the user decide how tall the composer is: draggable to any height between 2 lines and the viewport bound, at any draft length, with the box visibly following the finger.
 
 ## Merge conflict mitigation
 
@@ -33,22 +33,24 @@ This is a permanent fork of upstream Paseo. Nothing goes upstream; upstream is m
 
 **Files this work changes:**
 
-| File                                                                   | Edit                                                                                | Upstream activity          | Tag                  |
-| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------- | -------------------- |
-| `packages/app/src/composer/input/input.rambla.tsx`                     | read the store to cap `maxInputHeight`; render the handle at the wrapper's top edge | existing (fork-only, ours) | `RAMBLA-FORK: feat:` |
-| `packages/app/src/composer/input/composer-height-store.rambla.ts`      | persisted zustand store: stored ceiling or default sentinel, clamped setter, toggle | new                        | `RAMBLA-FORK: feat:` |
-| `packages/app/src/composer/input/composer-height-store.rambla.test.ts` | sentinel default, clamp behavior, persistence round-trip, toggle                    | new                        | `RAMBLA-FORK: feat:` |
-| `packages/app/src/composer/input/composer-drag-handle.rambla.tsx`      | grabber row: pan adjusts the ceiling, double-tap toggles default/max                | new                        | `RAMBLA-FORK: feat:` |
+| File                                                                   | Edit                                                                                                                                                  | Upstream activity          | Tag                  |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | -------------------- |
+| `packages/app/src/composer/input/input.rambla.tsx`                     | read the store to cap `maxInputHeight`; render the handle at the wrapper's top edge; honor an explicit stored height (fixed height with inner scroll) | existing (fork-only, ours) | `RAMBLA-FORK: feat:` |
+| `packages/app/src/composer/input/composer-height-store.rambla.ts`      | persisted zustand store: explicit height (null = today's auto-grow), line-quantized setters clamped to 2 lines and the viewport bound                 | new                        | `RAMBLA-FORK: feat:` |
+| `packages/app/src/composer/input/composer-height-store.rambla.test.ts` | sentinel default, clamp behavior, persistence round-trip, toggle                                                                                      | new                        | `RAMBLA-FORK: feat:` |
+| `packages/app/src/composer/input/composer-drag-handle.rambla.tsx`      | grabber row: drag moves the actual height in line steps with haptics and a pressed state; double-tap toggles default/max                              | new                        | `RAMBLA-FORK: feat:` |
 
 The app renders `input.rambla.tsx` on every platform — it is the only `MessageInput` import site ([index.tsx:57](../packages/app/src/composer/index.tsx#L57)) — so 1 file serves mobile and web. The wrapper is a column whose first child, the attachment slot, renders `null` when empty ([input.rambla.tsx:1858](../packages/app/src/composer/input/input.rambla.tsx#L1858)), leaving the top edge free for the handle. The height cap enters at the existing `useComposerHeight` wiring ([input.rambla.tsx:1232](../packages/app/src/composer/input/input.rambla.tsx#L1232)); height changes already flow to the panel via `onHeightChange` ([input.rambla.tsx:1239](../packages/app/src/composer/input/input.rambla.tsx#L1239)), so no panel file changes. Persistence follows the local view-state store pattern ([sidebar-view-store.ts:179](../packages/app/src/stores/sidebar-view-store.ts#L179) with [validated-persist-storage.ts](../packages/app/src/storage/validated-persist-storage.ts)); it is a per-device view preference, not a synced app setting.
 
-**Why this shape:** every touched path is fork-owned, so upstream's weekly merges can never conflict; keeping the input-file edit to cap-resolution plus one rendered row leaves the fork file small enough to stay diffable against its upstream origin.
+**Why this shape:** every touched path is fork-owned, so upstream's weekly merges can never conflict. The v1 defect was the interaction model, not the placement: the store held a grow-only ceiling floored at 160px while the native composer's height is content-driven, so most store values were unobservable ([height.native.ts:13](../packages/app/src/composer/input/height.native.ts#L13)); the fix replaces ceiling-state with height-state in the same fork files.
+
+**Device-tested defects this revision fixes** (auditor citations): the pan gate `activeOffsetY([-6,6])` + `failOffsetX([-6,6])` rejects any drag that drifts horizontally, so grabs fail ([composer-drag-handle.rambla.tsx:106](../packages/app/src/composer/input/composer-drag-handle.rambla.tsx#L106)); the 160px floor in `clampCeiling` makes every downward drag a no-op ([composer-height-store.rambla.ts:42](../packages/app/src/composer/input/composer-height-store.rambla.ts#L42)); height being content-driven left exactly 2 visible sizes — content-hug (~4 lines) and the 160 cap (~6.5 lines); no pressed state or haptic exists ([composer-drag-handle.rambla.tsx:171](../packages/app/src/composer/input/composer-drag-handle.rambla.tsx#L171)) despite the design docs requiring pressed states and `expo-haptics` already being the codebase pattern ([use-long-press-drag-interaction.ts:90](../packages/app/src/components/sidebar/use-long-press-drag-interaction.ts#L90)). Nothing overlays the handle during dictation (the strip is in-flow below the text surface, [dictation-recording-controls.rambla.tsx:52](../packages/app/src/composer/input/dictation-recording-controls.rambla.tsx#L52)); the dictation failure is the same gesture gate plus no visible drag effect.
 
 **Branch:** none — 0 upstream files edited, work on main.
 
 ## Constraints
 
-- No file outside the table changes — including upstream's `input.tsx`, which carries the same constants but is dead code at runtime.
+- No file outside the table changes — including upstream's `input.tsx`, which carries the same constants but is dead code at runtime, and the height hooks (`height.native.ts`, `height.types.ts`, `height.web.ts`): the fixed height rides the existing intrinsic mode via equal min/max.
 - Users who never drag the handle see today's behavior exactly.
 - No new dependency: gestures use what the codebase already uses (react-native-gesture-handler where present).
 - No app-settings schema or migration changes; the store uses `createValidatedPersistStorage`.
@@ -59,10 +61,10 @@ The app renders `input.rambla.tsx` on every platform — it is the only `Message
 ## Steps
 
 0. Read the `code` skill before writing anything. If a step below turns out to be wrong, stop and report back to the supervisor — do not amend this plan and do not re-decide placement while coding.
-1. Create `composer-height-store.rambla.ts`: persisted store holding the user ceiling (null sentinel = app default), a clamped setter, a reset action; clamp against the live viewport bound at read time so rotation/window resize stays safe.
-2. Create `composer-height-store.rambla.test.ts`: default sentinel, clamping, persistence round-trip, reset.
-3. Create `composer-drag-handle.rambla.tsx`: a slim grabber row; drag adjusts the ceiling by pixel delta through the store's clamped setter; double-tap toggles between the app default and the viewport maximum.
-4. Edit `input.rambla.tsx`: resolve `maxInputHeight` as the existing bound capped by the store value, and render the handle as the wrapper's first child above the attachment slot. Tag each block `RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height` + one clause.
+1. Rewrite `composer-height-store.rambla.ts`: persisted store holds the composer's explicit height (null = today's auto-grow); setters quantize to whole text lines and clamp to 2 lines minimum and the viewport bound; bump `COMPOSER_HEIGHT_STORE_VERSION` to 2 so v1's ceiling-shaped values migrate to null (today's auto-grow) instead of being reinterpreted as explicit heights.
+2. Update `composer-height-store.rambla.test.ts`: explicit height set/clear, line quantization, both bounds, persistence round-trip.
+3. Rewrite `composer-drag-handle.rambla.tsx`: drag moves the actual height continuously (line steps) in both directions; relax the gesture activation so slight horizontal drift does not kill the grab (fix for [composer-drag-handle.rambla.tsx:106](../packages/app/src/composer/input/composer-drag-handle.rambla.tsx#L106)); haptic on grab and per line step via `expo-haptics` (pattern at [use-long-press-drag-interaction.ts:90](../packages/app/src/components/sidebar/use-long-press-drag-interaction.ts#L90)); pressed/active state on the row while the drag lives; double-tap toggle stays.
+4. Edit `input.rambla.tsx`: when the store holds an explicit height H, pass `minHeight: H, maxHeight: H` through the existing intrinsic mode — the box renders at H with content scrolling inside; when null, today's values. Keep the handle as the wrapper's first child.
 5. Verify per below.
 
 ## Verification
@@ -71,10 +73,12 @@ The app renders `input.rambla.tsx` on every platform — it is the only `Message
 - `npm run lint`
 - `npx vitest run packages/app/src/composer/input/composer-height-store.rambla.test.ts --bail=1`
 - `git grep "RAMBLA-FORK:" -- packages/app/src/composer/input/input.rambla.tsx` — shows the tags.
-- In the running app: drag the handle up and down with a long dictation draft in the field on mobile and web; the chat list stays visible; typing past the ceiling scrolls inside the box; double-tap flips between default and near-full height; reload keeps the chosen height.
+- On device (iOS TestFlight): with a tall dictating composer, drag down to 2 lines and back up — height follows the finger in line steps both ways; haptic ticks on grab and each line; row visibly pressed while held; grabs succeed even with sloppy diagonal starts; works while dictation is running; a short draft holds a tall height; never-touched installs keep today's auto-grow; double-tap still flips default/max.
 
 ## Risks
 
 - The handle row sits where the attachment slot appears; when an attachment tray renders, the handle must stay above it without overlapping its hit area.
 - Web drag could start a text selection; the handle must set `userSelect: "none"` on web itself and capture the pointer, not rely on any ancestor style.
 - On native, repeated height changes mid-dictation re-run the keyboard-shift layout; the existing `onHeightChange` → `prepareForViewportChange` path is the mitigation and needs no new code.
+- Fixed-height mode must re-clamp on rotation and window resize (the viewport bound moves).
+- Relaxing the pan activation must not make the handle steal vertical scrolls meant for the chat list; the gesture lives only on the 16px row.
