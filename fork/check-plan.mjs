@@ -34,7 +34,7 @@ if (!/^\d{4}-\d{2}-\d{2}-(fix|feat)-[a-z0-9-]+\.md$/.test(basename(file))) {
 // Required sections, in order. Cause is required for fix plans only —
 // feat plans have no cause.
 const headings = lines.filter((l) => l.startsWith("## ")).map((l) => l.slice(3).trim());
-const isFix = /^# fix: /.test(lines[0] ?? "");
+const isFix = (lines[0] ?? "").startsWith("# fix: ");
 const required = [
   "Provenance",
   "Scope",
