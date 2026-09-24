@@ -4,7 +4,7 @@
 
 ### Added
 
-- 2026-09-24 - [46d8b95](https://github.com/getrambla/rambla/commit/46d8b95) - [2026-09-24-feat-user-adjustable-composer-height.md](plans/2026-09-24-feat-user-adjustable-composer-height.md) - Added a drag handle on the composer's top edge that sets how tall the composer may grow, with double-tap to flip between default and maximum.
+- 2026-09-24 - [0ba8347](https://github.com/getrambla/rambla/commit/0ba8347) - [2026-09-24-feat-user-adjustable-composer-height.md](plans/2026-09-24-feat-user-adjustable-composer-height.md) - Made the composer height resizable by dragging its top handle, with haptic ticks, a pressed state, and double-tap to flip between default and maximum.
 - 2026-09-24 - 8e9d363 - [2026-09-22-feat-os-notification-toggle.md](plans/2026-09-22-feat-os-notification-toggle.md) - Added a settings switch that turns OS notifications off, hides the notifications card, and removes the refresh button.
 
 ### Fixed
