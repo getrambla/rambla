@@ -95,6 +95,9 @@ import type {
 import type { ProviderRamblaToolsPolicy } from "@getrambla/protocol/provider-config";
 import { isRamblaToolEnabled } from "../rambla-tool-policy.js";
 
+// RAMBLA-FORK: fix: 2026-09-24-fix-subagent-default-provider-model.md: imports the create_agent provider/model defaulting helper.
+import { resolveCreateAgentProviderModel } from "./resolve-create-agent-provider.rambla.js";
+
 export interface RamblaToolHostDependencies {
   agentManager: AgentManager;
   agentStorage: AgentStorage;
@@ -1016,8 +1019,13 @@ export function createRamblaToolCatalog(options: RamblaToolHostDependencies): Ra
         "Existing workspace id. Agent-scoped calls default to the caller workspace; top-level calls create a new local workspace when omitted.",
       ),
   };
+  // RAMBLA-FORK: fix: 2026-09-24-fix-subagent-default-provider-model.md: agent-scoped create_agent makes provider optional, defaulting to the caller's provider/model; top-level keeps it required.
+  const agentScopedProviderField = ProviderModelInputSchema.optional().describe(
+    "Optional provider/model pair. Omit it to run the new agent on your own provider and current model; pass one only to verify and honor a provider the user asked for.",
+  );
   const agentToAgentInputSchema = {
     ...canonicalCreateAgentFields,
+    provider: agentScopedProviderField,
     notifyOnFinish: z
       .boolean()
       .optional()
@@ -1046,6 +1054,7 @@ export function createRamblaToolCatalog(options: RamblaToolHostDependencies): Ra
   const legacyAgentToAgentInputSchema = {
     ...commonCreateAgentFields,
     ...legacyCreateAgentPlacementFields,
+    provider: agentScopedProviderField,
     notifyOnFinish: agentToAgentInputSchema.notifyOnFinish,
   };
   const legacyTopLevelCreateAgentInputSchema = {
@@ -1408,7 +1417,8 @@ export function createRamblaToolCatalog(options: RamblaToolHostDependencies): Ra
     {
       title: "Create agent",
       description:
-        "Create an agent. Agent-scoped creation defaults to your workspace and creates your subagent. Top-level creation without workspaceId creates a new local workspace. Requires provider/model (for example codex/gpt-5.4) and an initial prompt. Do not guess; call list_providers and list_models first if uncertain.",
+        // RAMBLA-FORK: fix: 2026-09-24-fix-subagent-default-provider-model.md: rewrites the description: your provider/model is the default, no vendor examples or list-first nudge.
+        "Create an agent. Agent-scoped creation defaults to your workspace and creates your subagent; if you omit provider, the new agent runs on your own provider and current model. Top-level creation without workspaceId creates a new local workspace and requires provider/model and an initial prompt. Pass provider/model only when the user asked for a different one — use the provider-listing tools to verify that provider and model exist, not by default.",
       inputSchema: createAgentInputSchema,
       outputSchema: {
         agentId: z.string(),
@@ -1435,7 +1445,18 @@ export function createRamblaToolCatalog(options: RamblaToolHostDependencies): Ra
         requestedBackground = resolvedArgs.parsedArgs.background;
         notifyOnFinish = resolvedArgs.parsedArgs.notifyOnFinish ?? false;
       }
-      const selectedProvider = resolveRequiredProviderModel(parsedArgs.provider).provider;
+      // RAMBLA-FORK: fix: 2026-09-24-fix-subagent-default-provider-model.md: agent-scoped create_agent defaults provider/model to the caller's own.
+      const resolveCallerDefaultModel = (provider: string) =>
+        providerSnapshotManager.resolveDefaultModel({
+          provider: provider as never,
+          cwd: resolvedArgs.cwd,
+        });
+      const effectiveProvider = await resolveCreateAgentProviderModel(
+        callerAgentId ? resolveCallerAgent() : undefined,
+        parsedArgs.provider,
+        resolveCallerDefaultModel,
+      );
+      const selectedProvider = resolveRequiredProviderModel(effectiveProvider).provider;
       const inheritedConfig = resolveInheritedProviderConfig(selectedProvider);
       const {
         snapshot,
@@ -1457,7 +1478,7 @@ export function createRamblaToolCatalog(options: RamblaToolHostDependencies): Ra
         },
         {
           kind: "mcp",
-          provider: parsedArgs.provider,
+          provider: effectiveProvider,
           title: parsedArgs.title,
           initialPrompt: parsedArgs.initialPrompt,
           config: inheritedConfig,
