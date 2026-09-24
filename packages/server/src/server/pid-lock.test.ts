@@ -1,4 +1,4 @@
-import { mkdtemp, open, rm, stat, utimes, writeFile } from "node:fs/promises";
+import { mkdtemp, open, readFile, rm, stat, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
@@ -73,7 +73,7 @@ describe("pid-lock ownership", () => {
         pidPath,
         JSON.stringify({
           pid: process.pid,
-          startedAt: "2026-01-01T00:00:00.000Z",
+          startedAt: new Date().toISOString(),
           hostname: "old-host",
           uid: process.getuid?.() ?? 0,
           listen: "127.0.0.1:6767",
@@ -106,7 +106,7 @@ describe("pid-lock ownership", () => {
         pidPath,
         JSON.stringify({
           pid: process.pid,
-          startedAt: "2026-01-01T00:00:00.000Z",
+          startedAt: new Date().toISOString(),
           hostname: "old-host",
           uid: process.getuid?.() ?? 0,
           listen: "127.0.0.1:6767",
@@ -138,7 +138,7 @@ describe("pid-lock ownership", () => {
         pidPath,
         JSON.stringify({
           pid: process.pid,
-          startedAt: "2026-01-01T00:00:00.000Z",
+          startedAt: new Date().toISOString(),
           hostname: "old-host",
           uid: process.getuid?.() ?? 0,
           listen: "127.0.0.1:6767",
@@ -169,7 +169,7 @@ describe("pid-lock ownership", () => {
         pidPath,
         JSON.stringify({
           pid: process.pid,
-          startedAt: "2026-01-01T00:00:00.000Z",
+          startedAt: new Date().toISOString(),
           hostname: "old-host",
           uid: process.getuid?.() ?? 0,
           listen: "127.0.0.1:6767",
@@ -252,6 +252,40 @@ describe("pid-lock ownership", () => {
       const lock = await getPidLockInfo(ramblaHome);
       expect(lock?.pid).toBe(process.pid);
       expect(lock?.listen).toBe("127.0.0.1:6767");
+    } finally {
+      await rm(ramblaHome, { recursive: true, force: true });
+    }
+  });
+
+  test("starts over an empty lock file left by a supervisor killed before writing it", async () => {
+    const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-pid-lock-empty-"));
+    const ownerPid = process.pid + 10_000;
+
+    try {
+      await writeFile(join(ramblaHome, "rambla.pid"), "");
+
+      await expect(getPidLockInfo(ramblaHome)).resolves.toBeNull();
+      await acquirePidLock(ramblaHome, null, { ownerPid });
+
+      const lock = await getPidLockInfo(ramblaHome);
+      expect(lock?.pid).toBe(ownerPid);
+    } finally {
+      await rm(ramblaHome, { recursive: true, force: true });
+    }
+  });
+
+  test("keeps a lock file whose contents cannot be read as a lock", async () => {
+    const ramblaHome = await mkdtemp(join(tmpdir(), "rambla-pid-lock-unparseable-"));
+    const pidPath = join(ramblaHome, "rambla.pid");
+
+    try {
+      await writeFile(pidPath, JSON.stringify({ pid: "unknown" }));
+
+      await expect(
+        acquirePidLock(ramblaHome, null, { ownerPid: process.pid + 10_000 }),
+      ).rejects.toThrow("Cannot read daemon state");
+
+      await expect(readFile(pidPath, "utf-8")).resolves.toBe(JSON.stringify({ pid: "unknown" }));
     } finally {
       await rm(ramblaHome, { recursive: true, force: true });
     }

@@ -367,6 +367,7 @@ function createRamblaWorktreeForTest(options: {
     projectRegistry,
     workspaceRegistry,
     workspaceGitService,
+    isDirectory: async () => true,
     logger: createLogger(),
   });
 

@@ -737,6 +737,7 @@ function createRamblaWorktreeForMcpTest(options: {
     projectRegistry,
     workspaceRegistry,
     workspaceGitService,
+    isDirectory: async () => true,
     logger: createTestLogger(),
   });
   const workspaceAutoName = new WorkspaceAutoName({

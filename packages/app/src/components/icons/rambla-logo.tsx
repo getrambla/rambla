@@ -39,7 +39,7 @@ export function RamblaLogo({ size = 64, color }: RamblaLogoProps) {
         <Path
           d="M198 600 L198 268
       C198 202 240 166 300 166
-      L320 180 L306 434 L262 434 L262 600 Z"
+      L320 180 L306 434 L274 434 L274 600 Z"
         />
         <Path d="M204 206 L136 220 L206 248 Z" />
         <Path
@@ -48,7 +48,7 @@ export function RamblaLogo({ size = 64, color }: RamblaLogoProps) {
         />
         <Path
           d="M320 402 C412 434 508 500 574 578
-      L530 616 C456 538 376 486 294 456 Z"
+      L522 622 C448 545 368 493 286 462 Z"
         />
       </G>
     </Svg>
