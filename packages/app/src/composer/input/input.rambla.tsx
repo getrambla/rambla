@@ -21,6 +21,7 @@ import {
   useImperativeHandle,
   useMemo,
   forwardRef,
+  useSyncExternalStore,
 } from "react";
 import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { useTranslation } from "react-i18next";
@@ -89,6 +90,30 @@ import {
 import { DictationRecordingControls } from "./dictation-recording-controls.rambla";
 import { insertDictationAtSelection } from "./dictation-insert.rambla";
 import { useDictationField } from "./use-dictation-field.rambla";
+
+// RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: composer height pin/live store and drag handle.
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  createComposerHeightStore,
+  DEFAULT_PINNED_HEIGHT,
+  type ComposerHeightState,
+} from "./composer-height-store.rambla";
+import { ComposerDragHandle } from "./composer-drag-handle.rambla";
+
+const composerHeightStore = createComposerHeightStore(AsyncStorage);
+
+function useComposerHeightState(): ComposerHeightState {
+  return useSyncExternalStore(composerHeightStore.subscribe, () =>
+    composerHeightStore.getState(),
+  );
+}
+
+function resolveComposerHeightBounds(
+  renderBounds: { minHeight: number; maxHeight: number } | null,
+): { minHeight: number; maxHeight: number } {
+  // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: never null — the fixed 3-line default replaced auto-grow.
+  return renderBounds ?? { minHeight: DEFAULT_PINNED_HEIGHT, maxHeight: DEFAULT_PINNED_HEIGHT };
+}
 
 const DEFAULT_SEND_KEYS: ShortcutKey[][] = [["Enter"]];
 const COMPOSER_INPUT_DATASET = { composerInput: "" } as const;
@@ -198,8 +223,6 @@ export interface MessageInputRef {
 
 const MIN_INPUT_HEIGHT_MOBILE = 30;
 const MIN_INPUT_HEIGHT_DESKTOP = 46;
-const DEFAULT_MAX_INPUT_HEIGHT = 160;
-const MAX_INPUT_VIEWPORT_RATIO = 0.5;
 const MIN_INPUT_HEIGHT = isWeb ? MIN_INPUT_HEIGHT_DESKTOP : MIN_INPUT_HEIGHT_MOBILE;
 type WebTextInputKeyPressEvent = NativeSyntheticEvent<
   TextInputKeyPressEventData & {
@@ -996,11 +1019,6 @@ function computeIsDictationStartEnabled(
   return (isReadyForDictation ?? isConnected) && !disabled;
 }
 
-function resolveMaxInputHeight(windowHeight: number): number {
-  if (!Number.isFinite(windowHeight) || windowHeight <= 0) return DEFAULT_MAX_INPUT_HEIGHT;
-  return Math.max(DEFAULT_MAX_INPUT_HEIGHT, Math.floor(windowHeight * MAX_INPUT_VIEWPORT_RATIO));
-}
-
 function isTextAreaLike(v: unknown): v is TextAreaHandle {
   return typeof v === "object" && v !== null && "scrollHeight" in v;
 }
@@ -1203,7 +1221,14 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const { t } = useTranslation();
     const isCompact = useIsCompactFormFactor();
     const { height: windowHeight } = useWindowDimensions();
-    const maxInputHeight = resolveMaxInputHeight(windowHeight);
+    // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: fixed height in every state; auto-grow removed, no stock bounds in the height path.
+    useComposerHeightState();
+    useEffect(() => {
+      void composerHeightStore.hydrate();
+    }, []);
+    const composerHeightBounds = resolveComposerHeightBounds(
+      composerHeightStore.resolveRenderBounds(windowHeight),
+    );
     const buttonIconSize = isWeb ? ICON_SIZE.md : ICON_SIZE.lg;
     const toast = useToast();
     const voice = useVoiceOptional();
@@ -1228,18 +1253,24 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const composerHeight = useComposerHeight({
       getText: getLiveText,
       textareaRef: webTextareaRef,
-      minHeight: MIN_INPUT_HEIGHT,
-      maxHeight: maxInputHeight,
+      minHeight: composerHeightBounds.minHeight,
+      maxHeight: composerHeightBounds.maxHeight,
     });
     const { style: composerHeightStyle, scrollEnabled: isComposerScrollEnabled } = composerHeight;
     const measuredComposerHeight = composerHeight.mode === "measured" ? composerHeight : undefined;
     const updateComposerHeightForText = measuredComposerHeight?.onTextChange;
     const resetComposerHeight = measuredComposerHeight?.reset;
 
+    // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: retain the composer box's measured height from its own onLayout for the drag handle's start value.
+    const measuredComposerHeightRef = useRef<number | null>(null);
     const handleComposerLayout = useCallback(
-      (event: LayoutChangeEvent) => onHeightChange?.(event.nativeEvent.layout.height),
+      (event: LayoutChangeEvent) => {
+        measuredComposerHeightRef.current = event.nativeEvent.layout.height;
+        onHeightChange?.(event.nativeEvent.layout.height);
+      },
       [onHeightChange],
     );
+    const dragStartHeight = measuredComposerHeightRef.current;
 
     const updateLiveTextPresence = useCallback((text: string) => {
       const nextHasLiveText = text.trim().length > 0;
@@ -1844,6 +1875,12 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         testID="message-input-root"
         onLayout={handleComposerLayout}
       >
+        {/* RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: drag handle row as the container's first child. */}
+        <ComposerDragHandle
+          store={composerHeightStore}
+          windowHeight={windowHeight}
+          dragStartHeight={dragStartHeight}
+        />
         <MessageInputAutoFocus
           enabled={autoFocus}
           autoFocusKey={autoFocusKey}
