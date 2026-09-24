@@ -90,6 +90,13 @@ import { DictationRecordingControls } from "./dictation-recording-controls.rambl
 import { insertDictationAtSelection } from "./dictation-insert.rambla";
 import { useDictationField } from "./use-dictation-field.rambla";
 
+// RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: imports the persisted ceiling store and the drag handle.
+import {
+  resolveEffectiveMaxInputHeight,
+  useComposerHeightStore,
+} from "./composer-height-store.rambla";
+import { ComposerDragHandle } from "./composer-drag-handle.rambla";
+
 const DEFAULT_SEND_KEYS: ShortcutKey[][] = [["Enter"]];
 const COMPOSER_INPUT_DATASET = { composerInput: "" } as const;
 
@@ -1203,7 +1210,12 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const { t } = useTranslation();
     const isCompact = useIsCompactFormFactor();
     const { height: windowHeight } = useWindowDimensions();
-    const maxInputHeight = resolveMaxInputHeight(windowHeight);
+    // RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: caps the viewport bound by the user's persisted ceiling.
+    const userMaxInputHeight = useComposerHeightStore((s) => s.userMaxInputHeight);
+    const maxInputHeight = resolveEffectiveMaxInputHeight(
+      userMaxInputHeight,
+      resolveMaxInputHeight(windowHeight),
+    );
     const buttonIconSize = isWeb ? ICON_SIZE.md : ICON_SIZE.lg;
     const toast = useToast();
     const voice = useVoiceOptional();
@@ -1844,6 +1856,8 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         testID="message-input-root"
         onLayout={handleComposerLayout}
       >
+        {/* RAMBLA-FORK: feat: 2026-09-24-feat-user-adjustable-composer-height.md: grabber row on the composer's top edge. */}
+        <ComposerDragHandle />
         <MessageInputAutoFocus
           enabled={autoFocus}
           autoFocusKey={autoFocusKey}
