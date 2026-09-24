@@ -32,7 +32,9 @@ export function ComposerDragHandle({
 
   const pan = useMemo(
     () =>
+      // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: runOnJS keeps callbacks on the JS thread; worklet execution crashes on setState/haptics.
       Gesture.Pan()
+        .runOnJS(true)
         .failOffsetX([-24, 24])
         .activeOffsetY([-6, 6])
         .onBegin(() => {
