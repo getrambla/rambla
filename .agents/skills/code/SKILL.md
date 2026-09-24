@@ -26,6 +26,9 @@ Three roles, kept separate.
   against this skill's rules. Never the agent that wrote the code. Reviewing
   is read-only: it reports, it does not fix.
 
+Subagents run the same model as the supervisor, unless the user says
+otherwise.
+
 **Accept/reject loop, every time.** The reviewer returns ACCEPT or REJECT.
 ACCEPT means all three: the work matches the plan, the reviewer ran the tests
 itself and saw them pass, and nothing changed outside the mitigation table.

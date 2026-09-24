@@ -13,6 +13,8 @@ called — holds no application code; it's the container that carries
 
 You are the supervisor for this run. Never hand the whole merge to one
 subagent — you own the decisions, and the user owns the calls you can't make.
+Subagents run the same model as the supervisor, unless the user says
+otherwise.
 
 Read the `plan` skill's "Where conflicts come from" section before resolving
 anything. It explains how git decides a conflict; resolutions that ignore it

@@ -49,6 +49,9 @@ and strip it back to scope, files, and steps.
 - **Reviewer — 1 subagent, blind.** Spawned with the fixed prompt below,
   never this skill.
 
+Subagents run the same model as the supervisor, unless the user says
+otherwise. The researcher runs a low thinking budget.
+
 No planner subagent, no coder. Planning writes the plan and no code, no
 tests, no branch.
 
