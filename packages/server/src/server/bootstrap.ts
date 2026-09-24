@@ -471,6 +471,7 @@ export interface RamblaDaemon {
   start(): Promise<void>;
   stop(): Promise<void>;
   getListenTarget(): ListenTarget | null;
+  getServerId(): string;
 }
 
 export interface RamblaDaemonDependencies {
@@ -1831,6 +1832,7 @@ export async function createRamblaDaemon(
     start,
     stop,
     getListenTarget: () => boundListenTarget,
+    getServerId: () => serverId,
   };
 }
 

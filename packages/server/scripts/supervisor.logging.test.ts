@@ -38,7 +38,7 @@ async function runSupervisorFixture(options: {
 
   await writeFile(
     workerPath,
-    `process.send?.({ type: "rambla:ready", listen: "fixture" });\n${options.workerSource}`,
+    `process.send?.({ type: "rambla:ready", listen: "fixture", serverId: "srv_fixture" });\n${options.workerSource}`,
   );
   await writeFile(
     runnerPath,

@@ -172,10 +172,11 @@ async function main(): Promise<void> {
       : undefined,
     restartOnCrash: true,
     logFile: supervisorLogFile,
-    onWorkerReady: async ({ listen }) => {
-      await updatePidLock(ramblaHome, { listen }, { ownerPid: process.pid });
+    onWorkerReady: async ({ listen, serverId }) => {
+      await updatePidLock(ramblaHome, { listen, serverId }, { ownerPid: process.pid });
     },
-    onWorkerExit: () => updatePidLock(ramblaHome, { listen: null }, { ownerPid: process.pid }),
+    onWorkerExit: () =>
+      updatePidLock(ramblaHome, { listen: null, serverId: null }, { ownerPid: process.pid }),
     onSupervisorExit: releaseLock,
   });
   requestSupervisorShutdown = supervisor.requestShutdown;
