@@ -1,7 +1,237 @@
-# feat: composer height set by dragging the top handle
+# feat: user-adjustable composer height
 
-**Revision 5 — the handle must track the finger absolutely. Supersedes
-revision 4; R4's code is the base, amended per the diagnosis below.**
+**Revision 6 — position-controlled, height derived. Supersedes revision 5.
+The gesture drives the composer's top edge in window coordinates; height is
+derived per frame as bottomAnchorY − topY, never accumulated. A diagnostic
+build precedes any fix.**
+
+## Provenance
+
+- main: `3e5566f2b` — 2026-09-24
+- upstream-rebrand: `61b044d8b` — 2026-09-21
+- upstream/main: `135a3b4c9` (v0.9.1) — 2026-09-21
+
+## Scope
+
+**In scope:**
+
+1. The gesture controls the composer's **top edge position** (absolute
+   window Y). The handle tracks the finger 1:1, pixel-exact, every frame —
+   no snapping, no lag, no drift.
+2. Height is **derived, never accumulated**: every frame,
+   `height = bottomAnchorY − topY`, where `bottomAnchorY` is the composer's
+   bottom edge in window coordinates (fixed during a drag) and `topY` is the
+   finger-derived top edge. No drag-start baseline, no `translationY`
+   accumulation.
+3. The derived height renders as an explicit `height` on the **container
+   View** (a fork-owned wrapper around the text input), never as a style on
+   the text input; the text input fills the container.
+4. One coordinate space: window coordinates only. Finger values come from
+   RNGH `absoluteY`; anchors from `measureInWindow`. No `event.x/y`, no
+   `translationY`, no `onLayout`-derived y-values in the height path.
+5. Bounds live entirely in `topY` clamping: `topY ∈ [windowTop,
+bottomAnchorY − MIN_HEIGHT]` (min 2 lines ~60px, max window top).
+6. Release persists `topY` (the last rendered frame's value, not a
+   re-measurement). Mount restores: measure anchor, restore `topY`, derive.
+   Double-tap: `topY = bottomAnchorY − DEFAULT_HEIGHT` (3 lines, ~90px).
+7. The box never sizes to content, for anyone; text scrolls inside.
+8. Haptics: grab, release, double-tap only. Single tap does nothing.
+9. Works on mobile AND web/desktop: the store, topY derivation, and
+   container-height mechanism are platform-agnostic; the drag handle must
+   be draggable on all three. On web/desktop the same gesture code runs on
+   pointer events (RNGH web backend) and the text input is the DOM
+   textarea path; desktop wraps the same web app.
+10. Diagnostic step (before any fix): instrumented TestFlight build logging,
+    during one drag, store value → style → container `onLayout` →
+    `onHeightChange`, alongside the gesture's `absoluteY`. The layer the log
+    indicts is the only layer the fix touches. Web/desktop get the same
+    logging during one drag before their fix is called done.
+
+**Not in scope:**
+
+- Any height quantization (forbidden — see Constraints).
+- Per-workspace height, settings entry.
+- Android-specific tuning (same code ships; Android gets the same code
+  untested, like today).
+
+## Goal
+
+The composer's top edge follows the finger 1:1; its height is derived from
+the finger position against a fixed bottom anchor. The box never sizes to
+content.
+
+## Merge conflict mitigation
+
+This is a permanent fork of upstream Paseo. Nothing goes upstream; upstream is
+merged in weekly. Code below follows the fork's placement rules.
+
+**Files this work changes:**
+
+| File                                                                          | Edit                                                                                                                                                                                                                                                                                                                                                                                                                           | Upstream activity          | Tag                  |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- | -------------------- |
+| `packages/app/src/composer/input/composer-height-store.rambla.ts`             | store: persisted `topY` (null = default) + transient live `topY`; anchor Y and window-top as arguments; clamp lives in topY, not height                                                                                                                                                                                                                                                                                        | existing (fork-only, ours) | `RAMBLA-FORK: feat:` |
+| `packages/app/src/composer/input/composer-height-store.rambla.test.ts`        | rewrite from the height-based API to the topY API: derivation, clamp at window top and min height, persistence excludes live topY, restore-default, garbage-tolerant load                                                                                                                                                                                                                                                      | existing (fork-only, ours) | `RAMBLA-FORK: feat:` |
+| `packages/app/src/composer/input/composer-drag-handle.rambla.tsx`             | pan: report `absoluteY` per frame (no baseline, no translationY); grab/release/double-tap haptics; pressed state; ≥8px = drag, else tap logic                                                                                                                                                                                                                                                                                  | existing (fork-only, ours) | `RAMBLA-FORK: feat:` |
+| `packages/app/src/composer/input/composer-drag-frame.rambla.ts`               | new module: per-frame derivation `height = anchorY − topY`, clamp, and anchor measurement contract (`measureInWindow`)                                                                                                                                                                                                                                                                                                         | new                        | `RAMBLA-FORK: feat:` |
+| `packages/app/src/composer/input/input.rambla.tsx`                            | fork-owned container View around the text input carrying explicit `height` (derived per frame); text input fills it; remove the stock min/max style (`composerHeightStyle`) from the input's style array and the `useComposerHeight` call that produces it, folding its `scrollEnabled` into a constant true (native mode always returns true); anchor re-measure on keyboard show/hide; handle row as container's first child | existing (fork-only, ours) | `RAMBLA-FORK: feat:` |
+| `packages/app/src/composer/input/diagnostics.rambla.ts`                       | temporary instrumented logging (step 1); removed in step 6                                                                                                                                                                                                                                                                                                                                                                     | new                        | `RAMBLA-FORK: fix:`  |
+| `packages/app/src/composer/input/composer-drag-handle.rambla.browser.test.ts` | browser end-to-end test: mounts the composer in a real browser, dispatches synthetic pointer drags through the RNGH web backend, asserts the container's top edge tracks the pointer per frame (≤1px, no jumps) and release + relaunch persist                                                                                                                                                                                 | new                        | `RAMBLA-FORK: feat:` |
+
+**Why this shape:** R5 proved a style on the text input does not control the
+observed size; a plain container View with explicit `height` obeys the layout
+value exactly (the resize-handle.tsx pattern: gesture → state → plain View
+style). The controlled quantity is the top edge, not height — accumulated
+deltas made every wrong baseline a jump (R2–R5).
+
+**Branch:** none — 0 upstream files edited, work on `fixes-2026-09-24`.
+
+## Cause
+
+R4b/R5 device behavior: box moves in whole-line jumps; explicit height on
+the text input changed nothing. The dragged value was applied to the wrong
+node (text input, not container) and the controlled quantity was wrong
+(accumulated height instead of absolute top-edge Y) — a wrong drag-start
+baseline turns the first pixels of drag into a large jump.
+
+## Constraints
+
+- No file outside the table changes — including height.native.ts,
+  height.types.ts, height.web.ts, upstream input.tsx.
+- No quantization anywhere: no rounding, snapping, stepping, or line-grid
+  alignment in store, gesture, render, or native. (Detaches handle from
+  finger — the R4b defect.)
+- One coordinate space: window coordinates only. Gesture values from
+  `absoluteY` only; anchors from `measureInWindow` only. `event.x/y`,
+  `translationY`, and `onLayout`-reported y-values are forbidden in the
+  height path. (Mixing spaces is a jump.)
+- No drag-start baseline: the derivation reads the finger's absolute Y each
+  frame plus a constant grab offset captured once at activation
+  (`grabOffset = restingTopY − absoluteY_at_activation`), so the box moves
+  with the finger without snapping the top edge to the grab point. The
+  offset is a per-drag constant; nothing accumulates across frames or drags.
+  (Without it, the 6px activation threshold makes the first frame jump.)
+- The derived height renders as explicit `height` on the fork-owned
+  container View; the text input carries no explicit height and no min/max
+  from this feature.
+- Store persists `topY`, never height. Release persists the last rendered
+  frame's `topY`; no re-measurement at release. (Re-measuring can disagree
+  with the rendered frame — R3's junk pin.)
+- Anchor re-measured on `keyboardWillChangeFrame` / `keyboardDidChangeFrame`
+  / `keyboardDidHide` (the documented trigger points); during a drag the
+  anchor is fixed.
+- On mount, restored `topY` is re-clamped against the freshly measured
+  anchor before rendering (window geometry may have changed since the pin;
+  what persists is the user's perceived size, via the re-derivation).
+- `.runOnJS(true)` FIRST in the pan chain (R4 crash).
+- Haptics: grab, release, double-tap only; none during movement.
+- Tap <8px mutates nothing; two taps <300ms restore default.
+- Stored `topY` that fails schema loads as null.
+- The browser test drives trusted pointer events (Playwright mouse API —
+  real input, not JS-constructed PointerEvents); it must not call store
+  setters directly, or it tests nothing about the gesture path.
+- Simplicity: helper machinery beyond the table's shapes → stop and report.
+
+## Steps
+
+0. Read the `code` skill first. If a step is wrong, stop and report.
+
+   **Starting state:** the branch contains the r4+r5 implementation
+   (HEAD = `05feda809`) — device-verified BROKEN (whole-line jumps, r5's
+   style change did nothing observable). The drag handle, store, and
+   wiring exist but implement the wrong mechanism; steps 3–5 AMEND that
+   code in place, they do not write from scratch. The known-good stock
+   composer is `5a36aa28b` if a comparison is ever needed. The r4 crash
+   fixes (`.runOnJS(true)`, haptics on events only) are KEEP — they
+   survived device testing.
+
+1. Diagnostic build: add `diagnostics.rambla.ts`; during one drag log
+   gesture `absoluteY`, store value, style height sent, container
+   `onLayout` height, `onHeightChange` value. Ship via TestFlight; capture
+   one drag's log. Findings decide which layer the fix touches (steps 2–5
+   assume the container, per R5's evidence; if the log indicts a different
+   layer, stop and report — do not re-decide placement while coding).
+2. Add `composer-drag-frame.rambla.ts`: derivation function
+   (anchorY, topY → clamped height), clamp constants
+   (MIN_HEIGHT = 60, DEFAULT_HEIGHT = 90), anchor measurement contract.
+3. Amend `composer-height-store.rambla.ts`: persisted `topY` + transient
+   live `topY`; setters clamp topY to [windowTop, anchorY − MIN_HEIGHT];
+   restore-default sets `topY = anchorY − DEFAULT_HEIGHT`; anchor and window
+   top are arguments (the store owns no measurement).
+4. Amend `composer-drag-handle.rambla.tsx`: keep `.runOnJS(true)` FIRST,
+   `failOffsetX([-24,24])` / `activeOffsetY([-6,6])` (activation threshold);
+   on activation capture a constant grab offset
+   (`grabOffset = restingTopY − absoluteY_at_activation`, from the store's
+   current topY — a per-drag constant, not an accumulated baseline);
+   `onUpdate` reports `absoluteY + grabOffset` to the store; on end:
+   ≥8px translation persists live topY + haptic, else tap logic; two taps
+   <300ms → restore-default + haptic; pressed row style while active.
+   Remove the `dragStartHeight` prop entirely.
+5. Edit `input.rambla.tsx`: wrap the text input in a fork-owned container
+   View; apply the derived height as explicit `height` on that container
+   (style recomposed per frame from the store); remove the stock min/max
+   `composerHeightStyle` from the input's style array and the
+   `useComposerHeight` call producing it — dispose of ALL its consumers:
+   the `onTextChange` calls at :1281/:1349/:1757, the `reset` call at
+   :1584, and their dependency-array entries (:1292, :1357, :1762) get
+   deleted with the call; `scrollEnabled` folds into a constant true
+   (native mode returns true unconditionally; web's dynamic value is
+   superseded by this feature's fixed-height design — the box no longer
+   grows, so the input must always scroll); `webTextareaRef`/`getLiveText`
+   lose their only consumer and go with it; text input fills the
+   container with no height or min/max styles of its own; measure the
+   anchor with `measureInWindow` and re-measure on keyboard show/hide;
+   handle row stays the container's first child. Tag every block.
+6. Add `composer-drag-handle.rambla.browser.test.ts`: in a real browser
+   (Playwright), mount the composer, drive trusted pointer sequences
+   (Playwright mouse down/move/up) through the RNGH web backend, and
+   assert per-frame after activation: container top edge == pointer Y +
+   grabOffset (≤1px) across small (few-px, including sub-6px drags that
+   must NOT activate), large (multi-hundred-px), and fast drags — no jumps,
+   including the first post-activation frame; release holds; remount
+   restores; double-tap restores default. Tag it. The browser test may be
+   marked heavy/skippable but MUST be run before
+   declaring the feature done.
+7. Remove `diagnostics.rambla.ts` and all logging.
+8. Verify per below.
+
+## Verification
+
+- `npm run typecheck`
+- `npm run lint`
+- `npx vitest run packages/app/src/composer/input/composer-height-store.rambla.test.ts --bail=1`
+- `npx vitest run packages/app/src/composer/input/composer-drag-handle.rambla.browser.test.ts --bail=1`
+  — must pass: per-frame top-edge == pointer Y + grabOffset (≤1px), no
+  jumps, release/relaunch persist, double-tap restores default.
+- `git grep "RAMBLA-FORK:" -- packages/app/src/composer/input/input.rambla.tsx packages/app/src/composer/input/composer-height-store.rambla.ts packages/app/src/composer/input/composer-drag-handle.rambla.tsx packages/app/src/composer/input/composer-drag-frame.rambla.ts packages/app/src/composer/input/composer-drag-handle.rambla.browser.test.ts`
+- Diagnostic-log check (step 1, before coding the fix): for every logged
+  frame, container `onLayout` height == anchorY − (absoluteY + grabOffset)
+  (within 1px) — equivalently, it equals anchorY − the store's rendered
+  topY. Container reports pixel values matching that predicate → proceed.
+  Line-quantized values → stop and report.
+- On device (iOS TestFlight), the acceptance test: with an EMPTY box, drag
+  the handle any distance at any speed — the box's top edge stays exactly
+  under the finger, 1:1, pixel-exact, every frame: no line jumps, no fling
+  from a few pixels of movement, no snap after release, no lag. Release —
+  the box stays exactly there. Kill and relaunch — same height. Type a long
+  draft — text scrolls inside the fixed box. Keyboard show/hide — no jump.
+  Single tap — nothing. Double-tap — 3-line default. Fresh install — fixed
+  3 lines.
+- Same acceptance test on web (browser) and desktop (Electron): drag with
+  the mouse — the top edge stays under the cursor 1:1, no jumps, no snap;
+  release holds; relaunch holds; long draft scrolls; double-tap restores
+  the 3-line default. Web drag logging from step 1 shows pixel-exact
+  values, not line-quantized ones.
+
+## Risks
+
+- iOS pixel snapping and PasteInput intrinsic-size behavior are
+  doc-silent; the diagnostic gate (step 1) exists to falsify the container
+  assumption on device before the fix ships. Web textarea behavior is
+  likewise verified by web logging first.
+- The pan gesture must not steal scrolls from the chat list; it lives only
+  on the handle row.
+- Rotation mid-drag is unhandled by design; the anchor is fixed during a
+  drag.
 
 ## Wrong turns
 
@@ -37,193 +267,15 @@ revision 4; R4's code is the base, amended per the diagnosis below.**
    both: gesture-callback threading and native text-view sizing behavior are
    platform facts no static review caught — the sizing mechanism must be
    `height` (explicit), not min/max, and gestures must run on JS.
+5. **R5 (explicit height on text input, `05feda809`):** an explicit `height`
+   style appended last to the text input's style array changed nothing
+   observable on device — the size the user sees is controlled by the
+   container/frame chain, not the TextInput's style. Additionally, the whole
+   height-driven design was wrong: height is a derived quantity
+   (bottom anchor − top edge), not the controlled one; controlling it via
+   drag-start baselines and accumulated deltas made every wrong baseline a
+   jump. The controlled quantity is the top edge's absolute window Y.
 
-Lessons applied in this revision: the rendered value must BE the dragged
-value; quantization is dropped (raw pixels); one bound definition; tap does
-nothing; the state is one nullable height + one non-persisted live height,
-nothing more.
-
-## Provenance
-
-- main: `3e5566f2b` — 2026-09-24
-- upstream-rebrand: `61b044d8b` — 2026-09-21
-- upstream/main: `135a3b4c9` (v0.9.1) — 2026-09-21
-
-## Scope
-
-**In scope:**
-
-1. Dragging the handle sets the composer's height in real time: while held,
-   the box height equals the finger's position — **the handle tracks the
-   finger absolutely, 1:1, pixel-exact; no relative drift, no snapping, no
-   lag**. The dragged value is what renders — every frame.
-2. On release, that height is pinned and persists per device. While pinned,
-   the box does NOT size to content — typing grows the text, which scrolls
-   inside the fixed box.
-3. Bounds: minimum 2 text lines, maximum the window top. One definition of
-   that bound, used by store, handle, and renderer alike.
-4. Default behavior for EVERYONE: a fixed 3-line height — no content auto-grow
-   anywhere in this feature. The box never sizes to content; text scrolls
-   inside. Double-tap returns to this default.
-5. Feedback: one haptic tick on grab, one on release; the handle row shows a
-   pressed state while held.
-6. Double-tap on the handle restores the default 3-line height, with a
-   haptic tick. Single tap still does nothing.
-7. Works while composing and while live dictation is running, mobile and web.
-
-**Not in scope:**
-
-- Double-tap _toggle_ between default/other cycles (out of scope — only
-  restore-default-on-double-tap is in scope, Scope item 6).
-- Quantization to text lines (dropped — see Wrong turns 3).
-- Per-workspace height, settings entry, keyboard-inset behavior.
-- Android-specific tuning (same code ships; only iOS is device-tested now).
-
-## Goal
-
-The user defines the composer's size by dragging; the box stays exactly where
-put, at any text length.
-
-## Merge conflict mitigation
-
-This is a permanent fork of upstream Paseo. Nothing goes upstream; upstream is
-merged in weekly. Code below follows the fork's placement rules.
-
-**Files this work changes:**
-
-| File                                                                   | Edit                                                                                                                                                                                                                             | Upstream activity          | Tag                  |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | -------------------- |
-| `packages/app/src/composer/input/composer-height-store.rambla.ts`      | new store: persisted `pinnedHeight` (null = default 3 lines) + non-persisted `liveHeight` (set during drag, cleared on release); clamped to [MIN_PINNED_HEIGHT, window height]; exposes DEFAULT_PINNED_HEIGHT = 3 lines          | new (fresh, post-revert)   | `RAMBLA-FORK: feat:` |
-| `packages/app/src/composer/input/composer-height-store.rambla.test.ts` | pin/live/clamp round-trip, default-height passthrough, persistence excludes live, garbage-tolerant load                                                                                                                          | new                        | `RAMBLA-FORK: feat:` |
-| `packages/app/src/composer/input/composer-drag-handle.rambla.tsx`      | grabber row: pan drives `liveHeight` = drag-start box height + (−translationY), raw pixels; release pins; haptic on grab and release; pressed state; single tap does nothing; double-tap restores default 3 lines                | new                        | `RAMBLA-FORK: feat:` |
-| `packages/app/src/composer/input/input.rambla.tsx`                     | render: live → explicit `height = liveHeight`; pinned → explicit `height = pinnedHeight`; null (default) → explicit `height = DEFAULT_PINNED_HEIGHT` (3 lines, fixed — auto-grow removed); handle row as container's first child | existing (fork-only, ours) | `RAMBLA-FORK: feat:` |
-
-**Why this shape:** revision 4's device test proved equal `minHeight`/
-`maxHeight` is NOT pixel-exact on iOS — the UITextView snaps its committed
-frame to whole text-line multiples, so the box moved a line at a time
-(researcher-confirmed; R4 wrong turn 4b). The fix is an explicit `height`
-style: a fixed frame on the text view cannot snap, giving exact pixels. Web's
-measured mode self-clamps any recompute into the provided bounds, so an
-explicit height is equally safe there. The whole feature remains one nullable
-number plus one transient number, now rendered as explicit `height`.
-
-**Finger tracking (the binding rule):** the handle must stay under the finger
-at all times — 1:1, absolute, no relative drift or snapping. Drag deltas use
-RNGH `translationY` (absolute since gesture start), so dropped or batched
-events cannot accumulate error; the explicit-height render applies each value
-as an exact frame.
-
-**The bound:** the window top is `useWindowDimensions().height`, read once in
-`input.rambla.tsx` (which already subscribes to window dimensions) and passed
-into the store as an argument — the store owns no window query. The single
-clamp site is where the store computes what to render: the render resolution
-re-clamps `pinnedHeight` against the current window bound (so rotation shrinks
-a too-tall pin), while `liveHeight` is transient and rendered as-is (rotation
-mid-drag is irrelevant). One definition, one clamp site, in the file that
-knows the window.
-
-**The minimum:** one named constant in the store, `MIN_PINNED_HEIGHT = 60`
-(justification: roughly 2 rendered text lines at the composer's stock 16px
-font/1.4 line-height ≈ 45px, plus vertical padding ≈ 15px — a deliberate,
-stated pixel constant, not a per-platform derivation).
-
-**Branch:** none — 0 upstream files edited, work on `fixes-2026-09-24`.
-
-## Cause
-
-The composer sizes itself to content (native intrinsic mode). The user needs a
-user-defined fixed height — content-independent — for accessibility; content
-auto-grow pushes the box to the window top and hides the chat. A fixed height
-must be applied as an explicit `height` style: iOS snaps min/max-sized text
-views to whole line multiples, so min=max cannot deliver pixel-exact tracking.
-
-## Constraints
-
-- No file outside the table changes — including height.native.ts,
-  height.types.ts, height.web.ts, upstream input.tsx.
-- The drag value must appear in the render in the same frame it updates: the
-  store's live value flows straight into the explicit `height` style with no
-  intervening clamps, rounding, or alternate bounds.
-- The handle must track the finger absolutely: 1:1, pixel-exact, no snapping,
-  no lag, no relative drift. This is the acceptance criterion that overrides
-  convenience — if the mechanism cannot deliver it, stop and report.
-- Gesture callbacks must include `.runOnJS(true)` (R4 crash: worklet-thread
-  execution of setState/haptics aborts iOS on touch-down).
-- Quantization is FORBIDDEN everywhere in this feature — no rounding,
-  snapping, stepping, or line-grid alignment of the height, in any file, at
-  any layer (store, gesture, render, native). Rounding the height detaches
-  the handle from the finger, which violates the binding tracking rule
-  (Scope item 1). Any code that quantizes is a defect.
-- Haptics: exactly 2 per drag (grab, release) via the
-  `use-long-press-drag-interaction.ts` pattern (selectionAsync, `.catch`-
-  guarded). No ticks during movement. Double-tap adds one haptic outside a
-  drag.
-- Content auto-grow is REMOVED for everyone: no render state sizes to content.
-  Null pin = fixed default (DEFAULT_PINNED_HEIGHT, 3 lines).
-- Tap (translation under ~8px) as a SINGLE tap mutates nothing; two taps
-  within ~300ms are the restore-default gesture (Scope item 4).
-- Persistence: validated storage; any stored value that fails the schema
-  loads as null and never crashes.
-- Simplicity is a requirement: if a step needs helper machinery beyond the
-  table's shapes, stop and report.
-
-## Steps
-
-0. Read the `code` skill first. If a step is wrong, stop and report.
-1. Amend `composer-height-store.rambla.ts`: rename `resolveRenderBounds`'s
-   return to a single explicit height — `resolveRenderHeight(windowHeight)`
-   returns `number`: live if set, else pinned re-clamped to the current
-   windowHeightArg (rotation shrink), else DEFAULT_PINNED_HEIGHT. Setters
-   clamp as before. That resolution is the single clamp site.
-2. Update `composer-height-store.rambla.test.ts`: same coverage, asserting
-   the resolved number (live, rotation-shrunk pin, default).
-3. Amend `composer-drag-handle.rambla.tsx`: keep `.runOnJS(true)` FIRST in
-   the pan chain (R4 crash), `failOffsetX([-24,24])` / `activeOffsetY([-6,6])`;
-   drag start = current measured height via `dragStartHeight` prop
-   (fallback `MIN_PINNED_HEIGHT`); on update
-   `setLiveHeight(start − translationY)`; on end: translation ≥ 8px →
-   `pinLiveHeight()` + haptic, else `clearLiveHeight()`; two taps <300ms →
-   `restoreDefault()` + haptic; pressed row style while active.
-4. Edit `input.rambla.tsx`: resolve `composerHeight = resolveRenderHeight(
-windowHeight)` and pass `minHeight: composerHeight, maxHeight:
-composerHeight` into the existing `useComposerHeight` call — with an
-   explicit-height mode so the style carries `height: composerHeight` rather
-   than min/max (see deviation note below); keep the `dragStartHeight`
-   measurement feed and the handle row as container's first child. Tag every
-   block.
-   DEVIATION NOTE: delivering pixel-exact tracking requires the native style
-   to carry an explicit `height` instead of min/max —
-   height.native.ts/height.types.ts are upstream and off-limits per the
-   table, so input.rambla.tsx composes the final style itself: apply
-   `composerHeight` as an explicit `height` on the composer surface style
-   where the stock minHeight/maxHeight were consumed, leaving
-   `useComposerHeight`'s mode untouched. If that composition cannot express
-   `height` cleanly at the existing style site, STOP and report — do not
-   widen the table.
-5. Verify per below.
-
-## Verification
-
-- `npm run typecheck`
-- `npm run lint`
-- `npx vitest run packages/app/src/composer/input/composer-height-store.rambla.test.ts --bail=1`
-- `git grep "RAMBLA-FORK:" -- packages/app/src/composer/input/input.rambla.tsx packages/app/src/composer/input/composer-height-store.rambla.ts packages/app/src/composer/input/composer-drag-handle.rambla.tsx`
-- On device (iOS TestFlight): with an EMPTY box, drag the handle — the box
-  edge stays exactly under the finger: 1:1, pixel-exact, no line-sized jumps,
-  no snap after release, no catch-up lag (R4's whole-line jumping is the
-  failure this test must exclude). Any height between the 2-line floor and
-  the window top is reachable and holds. Release — the box stays exactly
-  there. Type a long draft — text scrolls inside the fixed
-  box; the box never grows on its own. Single tap —
-  nothing changes. Double-tap — box returns to the 3-line default.
-  Fresh install — fixed 3 lines, no auto-grow. Rotation — a too-tall pin
-  shrinks to fit.
-
-## Risks
-
-- Web measured mode recomputes on every keystroke but self-clamps into
-  min=max; if web still fights the pin, stop and report rather than patching
-  height.web.ts.
-- Fixed-height mode must re-clamp on rotation (window top moves).
-- The pan gesture must not steal scrolls from the chat list; it lives only on
-  the 16px handle row.
+Lessons carried into this revision: position-controlled, height derived;
+one coordinate space (window); no quantization anywhere; gesture on JS;
+diagnosis by instrumented build before any fix.

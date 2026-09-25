@@ -90,7 +90,11 @@ export function createComposerHeightStore(storage: ValidatedStringStorage): Comp
     },
 
     async hydrate() {
-      const parsed = await readValidatedJson(storage, COMPOSER_HEIGHT_STORAGE_KEY, PinnedHeightSchema);
+      const parsed = await readValidatedJson(
+        storage,
+        COMPOSER_HEIGHT_STORAGE_KEY,
+        PinnedHeightSchema,
+      );
       setState({ ...state, pinnedHeight: parsed });
     },
 

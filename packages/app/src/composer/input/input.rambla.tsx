@@ -100,12 +100,13 @@ import {
 } from "./composer-height-store.rambla";
 import { ComposerDragHandle } from "./composer-drag-handle.rambla";
 
+// RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: step-1 drag diagnostics import; removed in step 7.
+import { logComposerDragFrame } from "./diagnostics.rambla";
+
 const composerHeightStore = createComposerHeightStore(AsyncStorage);
 
 function useComposerHeightState(): ComposerHeightState {
-  return useSyncExternalStore(composerHeightStore.subscribe, () =>
-    composerHeightStore.getState(),
-  );
+  return useSyncExternalStore(composerHeightStore.subscribe, () => composerHeightStore.getState());
 }
 
 function resolveComposerHeightStyle(height: number): { height: number } {
@@ -1263,6 +1264,13 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const handleComposerLayout = useCallback(
       (event: LayoutChangeEvent) => {
         measuredComposerHeightRef.current = event.nativeEvent.layout.height;
+        // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: step-1 diagnostics — log container onLayout height and onHeightChange value.
+        logComposerDragFrame({
+          t: Date.now(),
+          layer: "layout",
+          layoutHeight: event.nativeEvent.layout.height,
+          onHeightChange: event.nativeEvent.layout.height,
+        });
         onHeightChange?.(event.nativeEvent.layout.height);
       },
       [onHeightChange],
@@ -1829,6 +1837,15 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       ],
       [composerHeightStyle, composerRenderHeight, mode.isMonospace],
     );
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: step-1 diagnostics — log store value and style height sent to the text input per render.
+    logComposerDragFrame({
+      t: Date.now(),
+      layer: "render",
+      liveHeight: composerHeightStore.getState().liveHeight,
+      pinnedHeight: composerHeightStore.getState().pinnedHeight,
+      styleHeight: resolveComposerHeightStyle(composerRenderHeight).height,
+      windowHeight,
+    });
     // Static content has no textarea to mirror, so it grows with its own text
     // instead of the measured input height.
     const readOnlyTextStyle = useMemo(

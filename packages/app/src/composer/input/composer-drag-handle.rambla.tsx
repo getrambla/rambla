@@ -4,10 +4,10 @@ import { View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import * as Haptics from "expo-haptics";
 import { StyleSheet } from "react-native-unistyles";
-import {
-  MIN_PINNED_HEIGHT,
-  type ComposerHeightStore,
-} from "./composer-height-store.rambla";
+import { MIN_PINNED_HEIGHT, type ComposerHeightStore } from "./composer-height-store.rambla";
+
+// RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: step-1 drag diagnostics import.
+import { logComposerDragFrame } from "./diagnostics.rambla";
 
 const DRAG_PIN_THRESHOLD_PX = 8;
 const DOUBLE_TAP_WINDOW_MS = 300;
@@ -42,10 +42,16 @@ export function ComposerDragHandle({
           void Haptics.selectionAsync().catch(() => {});
         })
         .onUpdate((event) => {
-          store.setLiveHeight(
-            dragStartHeightRef.current - event.translationY,
-            windowHeight,
-          );
+          store.setLiveHeight(dragStartHeightRef.current - event.translationY, windowHeight);
+          // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: step-1 diagnostics — log gesture absoluteY and store value per frame.
+          logComposerDragFrame({
+            t: Date.now(),
+            layer: "gesture",
+            absoluteY: event.absoluteY,
+            translationY: event.translationY,
+            liveHeight: store.getState().liveHeight,
+            pinnedHeight: store.getState().pinnedHeight,
+          });
         })
         .onEnd((event) => {
           if (Math.abs(event.translationY) >= DRAG_PIN_THRESHOLD_PX) {
