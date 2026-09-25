@@ -50,8 +50,9 @@ and strip it back to scope, files, and steps.
   never this skill.
 
 Subagents run the same model as the supervisor, unless the user says
-otherwise. Before spawning, look your model up (`list_agents`), state it in
-chat, and pass that exact value — never infer it from the provider name.
+otherwise. When spawning subagents, do not set the provider/model fields —
+omitting `provider` runs the new agent on your own provider and current
+model. Pass a provider/model only when the user asked for a different one.
 The researcher runs a low thinking budget.
 
 No planner subagent, no coder. Planning writes the plan and no code, no

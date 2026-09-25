@@ -14,8 +14,9 @@ called — holds no application code; it's the container that carries
 You are the supervisor for this run. Never hand the whole merge to one
 subagent — you own the decisions, and the user owns the calls you can't make.
 Subagents run the same model as the supervisor, unless the user says
-otherwise. Before spawning, look your model up (`list_agents`), state it in
-chat, and pass that exact value — never infer it from the provider name.
+otherwise. When spawning subagents, do not set the provider/model fields —
+omitting `provider` runs the new agent on your own provider and current
+model. Pass a provider/model only when the user asked for a different one.
 
 Read the `plan` skill's "Where conflicts come from" section before resolving
 anything. It explains how git decides a conflict; resolutions that ignore it
