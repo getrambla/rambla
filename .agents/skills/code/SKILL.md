@@ -1,6 +1,6 @@
 ---
 name: code
-description: Implement a fix or feature in the Rambla fork of upstream Paseo, following an approved plan's merge-conflict mitigation table. Covers where code is allowed to go, how small an edit in an upstream file has to be, tagging divergences, which tests to run, and when to stop and ask. Use when writing or changing code in this repo, or when implementing a plan from the plan skill.
+description: Implement a fix or feature in the Rambla fork of upstream Paseo, following an approved plan's merge-conflict mitigation table. Covers the starting gates (approved plan, committed plan, right branch), where code is allowed to go, how small an edit in an upstream file has to be, tagging divergences, per-step commits and review, when to push and dispatch a TestFlight build, which tests to run, and when to stop and ask. Use when writing or changing code in this repo, or when implementing a plan from the plan skill.
 ---
 
 # Writing code in the Rambla fork
@@ -45,10 +45,12 @@ stop and bring both positions to the user to decide.
 **The unit of review is the plan step.** Each step is one submission: the
 coder codes that step (tests first, per the Tests section), then a fresh
 blind reviewer verifies that step against its acceptance criteria before the
-supervisor commissions the next. A step without an ACCEPT may not be built
-upon — reporting a step as done without its reviewer verdict is a violation,
-not a shortcut. Reviewing several steps in one batch after the fact is not
-compliance; it is the violation this rule exists to prevent.
+supervisor commissions the next. Multi-step plans start a **fresh coder and
+a fresh reviewer for every step** — neither role carries over from the step
+before. A step without an ACCEPT may not be built upon — reporting a step
+as done without its reviewer verdict is a violation, not a shortcut.
+Reviewing several steps in one batch after the fact is not compliance; it
+is the violation this rule exists to prevent.
 
 **The plan file is read-only — no agent edits it, ever.** The coder, the
 reviewer, and the supervisor may read it; not one of them may edit it,
@@ -71,6 +73,28 @@ coder's call.
    "How git decides conflicts — do not relitigate this". This skill is how
    you apply them while coding, and does not repeat the reasoning behind
    them.
+
+## Starting the work — the three gates
+
+Before the first line of code, pass all three, in order:
+
+1. **The plan is approved.** The plan's `Status:` line reads `approved`.
+   Anything else — **STOP and tell the user.** Nothing is coded against an
+   unapproved plan.
+2. **The approved plan is committed.** If the plan file sits uncommitted in
+   the working tree, commit the plan file itself as part of the coding
+   work, before the first code step. That commit records the user's
+   approval; it is not an edit, and the plan stays read-only after it.
+3. **The branch is right.**
+   - On a `fixes-YYYY-MM-DD` branch — parallel work with other agents:
+     ask the user to confirm they want this plan done in parallel with the
+     others, and include the plan's complexity in the message — whether it
+     is a one-step simple plan or a multi-step complex plan. Start only
+     after they confirm.
+   - On main: check out a new `feat/<feature-name>` or `fix/<fix-name>`
+     branch, named from the plan's title. **Never work directly on main.**
+     The single exception: a one-step plan may stay on main, and only
+     after the user has been asked and has approved it.
 
 ## Reading rules
 
@@ -96,9 +120,9 @@ The supervisor delegates reading, not just writing. It does not read diffs,
 logs, or code to check the work — the reviewer's ACCEPT is how it knows.
 It opens a file itself only to pin down a concrete failure an agent has
 reported twice, or to answer a question the plan must settle before the
-coder can continue. If a coder's context goes bad mid-plan, starting a
-fresh coder for the remaining steps is the recovery — a last resort, not a
-tool; never preemptively.
+coder can continue. A coder whose context goes bad mid-step stops and a
+fresh coder takes over for the next step — the stalled coder's finished
+edits stay in the working tree, and the fresh one continues from them.
 
 ## The placement rules, in one screen
 
@@ -236,9 +260,9 @@ Then:
 
 - `git grep "RAMBLA-FORK:" -- <each upstream file you edited>` — every one
   must show a tag. An untagged divergence is one we lose at the next merge.
-- Branch: 4 or more upstream files edited (rows with `.rambla.` in the
-  name never count) → the work is on
-  `fix/<slug>` or `feat/<slug>`. 1-3 files → main, no branch.
+- Branch: decided at the starting gates — a multi-step plan works on
+  `fix/<slug>` or `feat/<slug>`; main takes only a user-approved one-step
+  plan.
 - **Always run `just trial-merge` from `rambla/` after the review passes** —
   every job, branched or not. It rehearses the weekly upstream merge in a
   throwaway copy and never touches the real repo; `just trial-merge drop`
@@ -246,8 +270,16 @@ Then:
   move our code, do not create modules the plan never named. Study the
   conflict, propose the resolution, and report it to the supervisor for
   the user — work stops until the user decides.
-- **Commit only when the user asks**, on the branch the plan names, staging
-  only files in the table — never another agent's files.
+- **Commit each step as the reviewer accepts it**, on the working branch —
+  never to main. Stage only files in the table — never another agent's
+  files. The final step's commit is the final commit the changelog cites.
+- **Dedicated branch — the plan has its own `feat/` or `fix/` branch and is
+  not parallel work:** once the reviewer accepts the final code, push the
+  branch to GitHub so CI runs, then dispatch a TestFlight build with
+  `just testflight <branch-name>` from `rambla/`, and tell the user the
+  build number to test.
+- **Parallel work — e.g. a daily `fixes-YYYY-MM-DD` branch: never push
+  without the user's approval.**
 - **Append the changelog entry.** Under `## Unreleased` in
   `rambla/RAMBLA-CHANGELOG.md`, add one bullet — under `### Added` for a
   `feature`, `### Fixed` for a `fix`. This is the one write allowed outside
@@ -265,11 +297,12 @@ Then:
 
   All entries share that shape, so dates, hashes, and plan links line up
   down the page. Field by field:
-  - `<short hash>` — the 7-character git short hash; until the user's
-    commit exists, the link text is exactly 7 underscores `_______` and
-    the URL is left as plain `_______` too (grep `_______` later to find
-    unfilled entries). When the commit exists, link it to
-    `https://github.com/getrambla/rambla/commit/<hash>`.
+  - `<short hash>` — the 7-character git short hash of the final commit,
+    linked to `https://github.com/getrambla/rambla/commit/<hash>`. If the
+    entry is written before that commit exists, the link text and URL are
+    exactly 7 underscores `_______` (grep `_______` later to find unfilled
+    entries). Changes that follow — a fix after TestFlight, another commit
+    — amend the entry to the new final commit.
   - `<plan file name>` — the plan's file name as the link text, linking to
     the plan's relative path (`plans/<file>`). If the work had no plan
     file, this field is the plain text `(no plan)`.
