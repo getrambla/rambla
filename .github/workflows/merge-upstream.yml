@@ -72,6 +72,22 @@ jobs:
         if: steps.sync.outputs.merged == 'true'
         run: npm run build:server
 
+      - name: Verify provenance before commit
+        if: steps.sync.outputs.merged == 'true'
+        run: |
+          # Before recording anything: the staged merge must still be a merge,
+          # and both upstream tips must be reachable from it — upstream-rebrand
+          # (what was merged) and upstream/main (the originals it carries).
+          # HEAD itself cannot be checked yet; it gains both only when the
+          # merge commit is created in the next step.
+          if [ "$(git rev-parse MERGE_HEAD)" != "$(git rev-parse upstream-rebrand)" ]; then
+            echo "::error::MERGE_HEAD is not the upstream-rebrand tip; refusing to commit" >&2
+            exit 1
+          fi
+          tip="$(git rev-parse upstream/main)"
+          git merge-base --is-ancestor "$tip" MERGE_HEAD || { echo "::error::upstream/main $tip not reachable from MERGE_HEAD; provenance lost" >&2; exit 1; }
+          echo "provenance ok: merge sources contain upstream-rebrand and upstream/main at $tip"
+
       - name: Commit and push
         if: steps.sync.outputs.merged == 'true'
         run: |
@@ -84,6 +100,14 @@ jobs:
           # Absent when upstream had nothing new and no merge was started.
           if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
             git commit --no-edit
+            # Same assertion as the justfile recipe, now against the real
+            # commit: both parents present, both upstream tips reachable.
+            parents="$(git rev-list --parents -n 1 HEAD)"
+            [ "$(echo "$parents" | wc -w)" -eq 3 ] || { echo "::error::not a merge commit: $parents" >&2; exit 1; }
+            for ref in upstream-rebrand upstream/main; do
+              tip="$(git rev-parse "$ref")"
+              git merge-base --is-ancestor "$tip" HEAD || { echo "::error::$ref ($tip) not reachable from HEAD; provenance lost" >&2; exit 1; }
+            done
           fi
           # upstream-rebrand was already pushed by the sync step. Gating its
           # push on a release would throw away every non-release day's advance
