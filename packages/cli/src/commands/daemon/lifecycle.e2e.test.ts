@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { startDaemonInstance, readDaemonInstance } from "@getrambla/server/daemon-control";
 import { expect, test } from "vitest";
 import { connectToDaemon } from "../../utils/client.js";
+import { sleep } from "zx";
 
 const repo = fileURLToPath(new URL("../../../../..", import.meta.url));
 const cli = path.join(repo, "packages/cli/dist/index.js");
@@ -342,6 +343,8 @@ test.skipIf(process.platform === "win32").each([["start"], ["daemon", "run"]])(
       await expect
         .poll(async () => existsSync(path.join(home, "rambla.pid")), { timeout: 10_000 })
         .toBe(true);
+      // RAMBLA-FORK: fix: pid file non-atomic write race condition
+      await sleep(100);
       const lock = JSON.parse(await readFile(path.join(home, "rambla.pid"), "utf8"));
       await f.ok(["status", "--home", home]);
       child.kill("SIGINT");
