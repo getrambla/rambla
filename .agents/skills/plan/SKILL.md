@@ -1,106 +1,92 @@
 ---
 name: plan
-description: Plan a fix, feature, or refactor for the Rambla fork of upstream Paseo. Every plan opens with a merge-conflict mitigation section that decides, per file, whether code goes in a new *.rambla.ts module or as a minimal tagged edit inside an upstream file. Use whenever the user asks to plan work in this repo, or before writing code for a fix or feature here.
+description: Plan a fix, feature, or refactor in Rambla. Every plan opens with a merge-conflict mitigation section that keeps continual merges from upstream small and conflict-free. Use whenever the user asks to plan work in this repo, or before writing code for a fix or feature here.
 ---
 
-# Planning work on the Rambla fork
+# Planning work on Rambla
 
-`rambla/` is a permanent fork of upstream Paseo. Nothing is contributed
-upstream; upstream merges in weekly, forever, so every line we touch in an
-upstream file can conflict on every future merge. All code lives in the `rambla/` subfolder of this workspace.
+Rambla is its own product, permanently forked from upstream Paseo. Continual merges come from upstream, nothing goes back, so every line we touch in an upstream file can conflict on every future merge. All code lives in the `rambla/` subfolder of this workspace.
 
-## The one rule: the plan stays short
+## When rules conflict
 
-Before writing any sentence, ask: **does this sentence make the finished work
-bigger or smaller?** Keep only what the scope requires. Cut background,
-rationale, prose, and anything the coder already knows. A routine plan over
-~500 words of your own prose — the skeleton's fixed text and the mitigation
-section's table don't count; the section's prose does — means you are
-implementing inside the plan file: stop
-and strip it back to scope, files, and steps.
+If any rules conflict or one cannot be followed, stop and ask the user — never improvise an exception.
+
+## The plan stays short
+
+Past ~500 words of your own prose on a routine plan, you are implementing inside the plan file: stop and strip back to scope, files, and steps.
 
 ## What a plan is
 
 - **A constraint on the coder, not a script for one.** It states the outcome,
-  the scope, the files, and the limits. More prohibitions than freedoms.
-  Specificity belongs in scope and placement — that is what keeps the code
-  small — never in implementation detail.
+  the scope, the files, and the limits.
+- **Acceptance criteria at both levels.** A numbered `## Acceptance criteria`
+  section the user approved, and criteria ending every step. Criteria are
+  what coder and reviewer check against; instructions are hints — when a
+  result contradicts a criterion, the criterion wins. A step with
+  instructions but no criteria is incomplete.
 - **No implementation code.** No function bodies, no JSX, no exact import
-  lines, nothing the coder could paste. If a shape is truly hard to describe
-  in words, sketch it: a type or signature only, at most 5 lines, no bodies,
-  no defaults, no inline comments. The plan never reproduces library, React,
-  or API documentation; the coder may search docs while implementing.
-- **Citations only for load-bearing facts.** A claim about how this repo or
-  its code works that a placement or scope decision rests on is cited as a
-  markdown link with `file.ts:120` text. Nothing else gets a citation, and no
-  unverified claim goes in.
+  lines, nothing the coder could paste. A hard-to-describe shape is sketched
+  as a type or signature: at most 5 lines, no bodies, no defaults, no inline
+  comments. Never reproduce library, React, or API documentation; the coder
+  may search docs.
+- **Citations only for load-bearing facts.** A claim about this repo's code
+  that a placement or scope decision rests on is a `file.ts:120` link.
+  Nothing else gets a citation; no unverified claim goes in.
 - **Public record.** Written to `rambla/plans/YYYY-MM-DD-fix-<slug>.md` (or
   `feat-`), 1 file, nothing else in it. The plan never links outside the
   fork repo.
 
 ## Who does what
 
-- **Supervisor — you, the planner.** You hold the user's request, decide
-  scope and placement, ask the user, write the plan, and report. You are the
-  only writer of the plan file.
-- **Researcher — a subagent, mandatory.** A fact gatherer. It runs the
-  repository searches, names the files and line numbers a request touches,
-  and returns facts with citations. No placement opinions, ever.
+- **Supervisor — you, the planner.** Hold the request, decide scope and
+  placement, ask the user, write the plan, report. The only writer of the
+  plan file.
+- **Researcher — a subagent, mandatory.** Runs the repository searches;
+  returns files, line numbers, citations. No placement opinions, ever.
 - **Reviewer — 1 subagent, blind.** Spawned with the fixed prompt below,
   never this skill.
 
-Subagents run the same model as the supervisor, unless the user says
-otherwise. When spawning subagents, do not set the provider/model fields —
-omitting `provider` runs the new agent on your own provider and current
-model. Pass a provider/model only when the user asked for a different one.
-The researcher runs a low thinking budget.
-
-No planner subagent, no coder. Planning writes the plan and no code, no
-tests, no branch.
+Subagents run the same model as you, unless the user says otherwise — omit
+`provider`/`model` when spawning; pass one only if the user asked.
 
 **NEVER run a command that discards work you didn't write** — no `git
-checkout`, `restore`, `stash`, `reset --hard`, or `clean`. Other agents work
-in this checkout; uncommitted changes you didn't make are theirs. If one
-overlaps a file your plan needs, ask the user and wait. Uncommitted work has
-no undo — one `git checkout` on another agent's file destroys hours of work
-permanently, and this has happened.
+checkout`, `restore`, `stash`, `reset --hard`, or `clean`. Other agents
+work in this checkout; uncommitted changes are theirs. If one overlaps a
+file your plan needs, ask the user and wait — uncommitted work has no undo,
+and one `git checkout` has destroyed hours of another agent's work here.
 
 ## Reading rules
 
-- **The supervisor never searches the repository.** Repo-wide grep and
-  exploration are researcher tasks. You may open only files the researcher
-  has named, and only targeted reads: ±30 lines around a load-bearing spot.
-  Treat a file the researcher flags as large (2000+ lines) as ranges only:
-  ask the researcher for the exact line ranges. A read tool on a whole large
-  file fills your context and degrades the plan.
+- **The supervisor never searches the repository.** Repo-wide grep is
+  researcher work. Open only files the researcher named, ±30 lines around a
+  load-bearing spot; files flagged large (2000+ lines) as exact ranges only.
+  Reading a whole large file fills your context and degrades the plan.
 - **Never read or grep a minified file — not even partially.** They are 1
   line and hundreds of KB; any read or grep returns the whole line and
-  buries the context. To
-  learn what a bundled library does, search that library's documentation.
-  Report a minified file as minified and move on.
+  buries the context. To learn what a bundled library does, search that
+  library's documentation. Report a minified file as minified and move on.
 - A researcher is reusable: send it follow-up questions as they come up. When
   its context is bloated by a broad search and the next question is narrower,
-  spawn a fresh researcher for that question instead. Reuse when you can,
-  replace when you must.
+  spawn a fresh researcher for that question instead.
 
 ## Workflow
 
 1. **Frame the request.** Restate it as a scope guess in chat — 2 lines, not
    a plan.
 2. **Spawn the researcher** with the fixed prompt below. It returns file
-   paths, line numbers, quotes of at most 3 lines. Its findings count as
-   verified — they carry citations the reviewer re-checks.
+   paths and line numbers.
 3. **Spot-check and decide.** Open the named regions, decide placement per
    the rules below. More research needed? Back to the researcher, never your
    own searching.
-4. **Confirm with the user.** The researcher's file list is input to the
-   scope decision, not the scope itself — confirm scope, then propose the
-   shape (see "Ask the user"). Skip the shape question only when the
+4. **Confirm with the user.** Confirm scope, then propose the shape (see
+   "Ask the user"): the design or architecture, the step breakdown or the
+   decision to have 1 step, and the numbered acceptance criteria. The user
+   may approve, edit, or replace the criteria; approval is explicit and
+   precedes writing the plan. Skip the shape question only when the
    placement rules yield exactly 1 path and no upstream code is copied —
-   scope is always confirmed.
+   scope is always confirmed, criteria never skipped.
 5. **Write the plan.** Run the style checker, spawn the blind reviewer, fix
-   and re-review — at most 2 rounds, then bring both positions to the user.
-   Report and stop. The `code` skill is a separate act the user triggers.
+   and re-review (see "Every plan is reviewed"). Report and stop.
 
 ### Researcher prompt — fill the blank, change nothing
 
@@ -129,21 +115,64 @@ first, each option's cost in 1 line. Wait for the answer before writing.
 
 ## Scope
 
-The scope is exactly what the user asked — not rounded up to the feature you
-think they meant, not quietly trimmed where it is awkward. The mitigation
-table is the contract: every file this work may create or edit gets a row —
-tests included. No file outside the table may change. A file you would need
-to touch but did not list is a hole in the plan.
+The scope is exactly what the user asked — not rounded up, not trimmed
+where it is awkward. The mitigation
+table is binding: every file this work may create or edit gets a row —
+tests included. No file outside the table may change.
+
+## Acceptance criteria
+
+Propose them with the shape of the plan, before breaking work into steps
+(workflow step 4). Draft them yourself; restating the user's own criteria
+still counts as a proposal. Numbered — the user approves by number, steps
+cite by number.
+
+- Testable: an automated test can assert it, or a named UI check can. For
+  visual design, "the user likes it" is valid — it means the step ships a
+  build the user can try before the plan can finish.
+- Observable through the real interface, not implementation-internal.
+- No section, or unapproved criteria, means no plan.
+
+## Plan status
+
+The first line under the title is one line:
+
+```
+Status: unapproved | approved | coding | done
+```
+
+No other statuses, no timeline, no dates — the file date and git history
+cover that. `unapproved` on write. The user approving criteria + plan, plus
+the reviewer's ACCEPT, make it `approved`. The coder sets `coding` and
+appends the last commit hash and steps completed
+(`Status: coding — 3f2a1b9, completed through step 2`); a single-step plan
+finishes in one sitting and just says `done`. Never code a plan that is not
+`approved`.
+
+## Steps and the accept-reject loop
+
+- **Large plans are broken into steps; small plans are not.** You decide
+  from the research, and say so when proposing the shape; the user can
+  override. A 1-step plan is a single work item, never labeled "step 1";
+  the plan-level criteria are its criteria. Only multi-step plans number
+  their steps.
+- **Steps are closed.** Each step ends with its tests written and passing,
+  the step's code working, a commit, and the status line updated. The app
+  may be mid-feature between steps; the step itself works.
+- **Each step runs its own accept-reject loop with a fresh coder and a
+  fresh reviewer** — never reuse a coder across steps. The reviewer checks
+  the code against that step's criteria, you present the step to the user
+  (what was done, what it looks like, how it was tested), then the next
+  step starts.
+- **Decide where the user weighs in, and write it into the plan.** Mark
+  the steps where the user reviews the result before the plan continues.
+  Err toward more user involvement when the step touches UI or UX design.
 
 ## Merge conflict mitigation
 
-Every plan's core act. This fork is an experiment in staying surgically
-minimal: every file gets a deliberate placement decision, because minimal
-divergence is what keeps upstream's fixes flowing to us — and surgical
-placement forces you to understand the code you are touching, which is what
-makes the code good. Decide placements with the rules below, then record
-them in the skeleton's mitigation table. The plan should get better on every
-revision, never longer.
+Every file gets a deliberate placement decision. Decide with the rules
+below, record in the skeleton's mitigation table. A revision gets better,
+never longer.
 
 ## Placement decision
 
@@ -166,14 +195,13 @@ at the END of the import block; every diverging site tagged with the one-line
 fork tag (format in the `code` skill — category and plan file name are
 decided here, so write the tag into the plan's step for that edit); never
 reformat, rename, or move upstream code you are not changing. If upstream
-already fixed the
-same problem, say
-so in plain English and cite the upstream commit; the coder ports the fix
-verbatim during implementation — its code never enters the plan.
+already fixed the same problem, say so and cite the upstream commit; the
+coder ports it verbatim — its code never enters the plan.
 
 Upstream activity for the table comes from
 `git log upstream-rebrand -- <path>`. **Always `upstream-rebrand`, never
-`upstream/main`** — main is unrebranded, so the diff is noise or empty.
+`upstream/main`** — main is unrebranded, so the diff shows every rebrand
+line as a change, or is empty.
 
 **Branch:** 4 or more upstream files edited (rows with `.rambla.` in the
 name never count) → `feat/<slug>` or `fix/<slug>`.
@@ -181,21 +209,16 @@ name never count) → `feat/<slug>` or `fix/<slug>`.
 
 ## How git decides conflicts — do not relitigate this
 
-This is why the placement rules above are what they are. Background — read
-once, never research it again. Per file, git merges
-both sides' changed line ranges silently when even 1 unchanged base line
-separates them; touching or overlapping ranges conflict. New files never
-conflict. Any file with `.rambla.` in its name is ours alone — upstream
-never has it, so it never conflicts, whatever its age. Every other file,
-including upstream's test files, can conflict. The entire strategy: keep our edits in 1 block per file, prefer new
-files for new code, edit at calm seams (function entry/exit), never move
-upstream code. Line counts are not the measure — which files change, and how
-active upstream is in them, is.
+Per file, git merges both sides' changed line ranges silently when even
+1 unchanged base line separates them; touching or overlapping ranges
+conflict. New files never conflict. A `.rambla.` file is ours alone —
+upstream never has it, so it never conflicts. Every other file, including
+upstream's test files, can conflict. Line counts are not the measure —
+which files change, and how active upstream is in them, is.
 
 ## Provenance
 
-3 bullets, no prose — everything below is predicated on this state, down to
-the line numbers. Run these from `rambla/`:
+3 bullets, no prose — everything below is predicated on this state. From `rambla/`:
 
 ```bash
 # 1. main — what the plan is written against
@@ -212,9 +235,9 @@ git log -1 --format='%h — %cs' <that short hash>
 ```
 
 For the tag on bullet 3: upstream is fetched with `--no-tags`, so
-`git describe` can't name it. One network call gets it —
-`git ls-remote --tags --refs upstream` — and if nothing contains that commit,
-write `(untagged)`. Never leave the field blank and never guess a tag.
+`git describe` can't name it — `git ls-remote --tags --refs upstream` gets
+it in 1 network call; if nothing contains that commit, write `(untagged)`.
+Never blank, never guessed.
 
 ## Required output
 
@@ -222,6 +245,8 @@ The plan uses this exact skeleton, in this order.
 
 ```markdown
 # fix: <short title> <- or "feat: <short title>"
+
+Status: unapproved
 
 ## Provenance
 
@@ -243,14 +268,18 @@ The plan uses this exact skeleton, in this order.
   for, the second platform. If it isn't listed here and isn't in the list
   above, it isn't happening.>
 
+## Acceptance criteria
+
+1. <Numbered, testable, observable through the real interface. The user
+   approved this exact list before the plan was written; steps cite these
+   numbers.>
+2. ...
+
 ## Goal
 
 <One or two sentences: what bug is fixed or what feature is added.>
 
 ## Merge conflict mitigation
-
-This is a permanent fork of upstream Paseo. Nothing goes upstream; upstream
-is merged in weekly. Code below follows the fork's placement rules.
 
 **Files this work changes:**
 
@@ -261,14 +290,10 @@ is merged in weekly. Code below follows the fork's placement rules.
 | `packages/.../thing.rambla.test.ts` | <what it covers>                          | new                                       | `RAMBLA-FORK: fix:` |
 
 Fill the activity column from `git log upstream-rebrand -- <path>` for every
-file without `.rambla.` in its name — how hot the file is decides how
-careful the placement is. Files with `.rambla.` in the name are ours alone
+file without `.rambla.` in its name. Files with `.rambla.` in the name are ours alone
 and can never conflict, so their activity entry is just `new` or `existing`.
-The Tag column previews the fork tag's category for that file; the coder
-writes the full tag (category, plan file name, one clause) per block. This
-table is the complete list of files the coder may create or edit —
-tests included, every test file its own row. Tests never go inside
-upstream test files.
+The Tag column states the fork tag's category for that file; the coder
+writes the full tag (category, plan file name, one clause) per block.
 
 **Why this shape:** <one or two sentences — the judgment call, stated so a
 reviewer can disagree with it. What we'd lose by copying more, what we'd risk
@@ -289,14 +314,18 @@ found it yet, you aren't ready to write the plan.>
 <The coder's limits, as bullets: files that may not change beyond the table,
 behavior that may not change, code that may not be added (abstractions,
 options, error handling for impossible cases), upstream tests that may not
-be touched. The plan's prohibitions live here — more of these than freedoms.>
+be touched.>
 
 ## Steps
 
 0. Read the `code` skill before writing anything. If a step below turns out
    to be wrong, stop and report back to the supervisor — do not amend this plan
    and do not re-decide placement while coding.
-1. <One action per step. Name the file. Say what changes — never how.>
+1. <One action per step. Name the file. Say what changes — never how.
+   End the step with its **Acceptance criteria** — testable conditions the
+   step's code must satisfy, citing the plan-level criteria it delivers
+   where it does. When the user reviews this
+   step's result before the plan continues, say so here.>
 2. ...
 
 ## Verification
@@ -319,8 +348,8 @@ table's place instead of guessing, and stop for the user.
 
 ## Every plan is reviewed
 
-Before sending for review, run the style checker and fix silently — style is
-never the reviewer's job and never the user's:
+Before review, run the style checker and fix silently — style is never the
+reviewer's job and never the user's:
 
 ```bash
 node fork/check-plan.mjs plans/YYYY-MM-DD-fix-slug.md
@@ -344,7 +373,9 @@ most 5 lines; 1. a placement decision the user was
 never asked; 2. a claim the code does not support; 3. a file the edit needs
 that the mitigation table misses; 4. scope beyond the request; 5. a
 described edit that cannot fit the current code — a name already taken, a
-function not where the plan says. "Does it compile" is not your job — the
+function not where the plan says; 6. a step without acceptance criteria,
+or criteria too vague for a test to assert; 7. a status line that is not
+`approved`. "Does it compile" is not your job — the
 code does not exist yet. Style, wording, and link format are not your
 job. Reply ACCEPT, or REJECT with a numbered list, each item backed by
 file.ts:120 evidence you opened yourself.
@@ -400,26 +431,19 @@ Conflict mitigation: <the approach in 25 words or less>
 
 File references here are **chat**, so the target starts with `rambla/` —
 `rambla/packages/app/...#L120`. Inside the plan file they're relative
-instead (`../packages/app/...`). Same link text either way: `name.ts:120`.
+instead (`../packages/app/...`).
 
 ## Reporting to the user
 
-Report every plan change as it happens, 1 line each — the user is watching a
-loop they cannot see inside. Then land the report: end with where the plan
-now stands, written as if the user had read none of the updates.
-
-Report decided things, never reasoning. No "should", no "turns out", no
-account of a wrong turn already corrected. Every noun in every sentence is a
-file path, a UI element the user has seen, or a heading in the plan. Concerns
-first. Never report effort, and no line counts. Read git and test output
-yourself and say what it means in 1 line; never paste raw output.
-
-Style details (digits for counted numbers, `file.ts:120` link form, chat
-links starting `rambla/`) are enforced by the checker — fix silently, never
-discuss them.
+Report every plan change as it happens, 1 line each. Close with a final
+report: where the plan stands, for a reader who saw none of the updates.
+Decided things, never reasoning. Concerns first. No effort, no line counts.
+Read git and test output yourself; say what it means in 1 line.
 
 ## Planning ends when the user approves
 
-An ACCEPT from the reviewer is not the finish line. Bring the user the plan
-and the verdict, and **stop there**. Nothing gets written — no code, no
-tests, no branch, no head start — until they say go.
+The status line stays `unapproved` until both have accepted: the reviewer,
+then the user. Then flip it to `approved` — the one
+edit allowed to you. Bring the user the plan and the verdict, and **stop
+there**: no code, no tests, no branch, no head start. The `code` skill runs
+from an `approved` plan and owns the status from there (`coding`, `done`).
