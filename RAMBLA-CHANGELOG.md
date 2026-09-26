@@ -4,8 +4,8 @@
 
 ### Added
 
-- 2026-09-24 - TODO - [**\_\_\_**](_______) - [2026-09-24-feat-user-adjustable-composer-height.md](plans/2026-09-24-feat-user-adjustable-composer-height.md) - Added a drag handle on the composer's top edge that sets how tall the composer may grow, with double-tap to flip between default and maximum.
-- 2026-09-24 - 8e9d363 - [2026-09-22-feat-os-notification-toggle.md](plans/2026-09-22-feat-os-notification-toggle.md) - Added a settings switch that turns OS notifications off, hides the notifications card, and removes the refresh button.
+- 2026-09-24 - [**\_\_\_**](https://github.com/getrambla/rambla/commit/**___**) - [2026-09-24-feat-user-adjustable-composer-height.md](plans/2026-09-24-feat-user-adjustable-composer-height.md) - Gave the composer a fixed, user-defined height: drag the top handle to resize (2-line floor, window-top ceiling), release to pin, double-tap to restore the 3-line default; content auto-grow removed.
+- 2026-09-24 - [2f02b83](https://github.com/getrambla/rambla/commit/2f02b8312) - [2026-09-22-feat-os-notification-toggle.md](plans/2026-09-22-feat-os-notification-toggle.md) - Added a settings switch that turns OS notifications off, hides the notifications card, and removes the refresh button.
 
 ### Fixed
 
