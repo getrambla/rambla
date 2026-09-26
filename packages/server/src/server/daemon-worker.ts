@@ -17,6 +17,7 @@ type SupervisorLifecycleMessage =
   | {
       type: "rambla:ready";
       listen: string;
+      serverId: string;
     }
   | {
       type: "rambla:restart";
@@ -327,7 +328,11 @@ async function main() {
     if (!listen) {
       throw new Error("Daemon did not expose a listen target after startup");
     }
-    sendSupervisorLifecycleMessage({ type: "rambla:ready", listen });
+    sendSupervisorLifecycleMessage({
+      type: "rambla:ready",
+      listen,
+      serverId: daemon.getServerId(),
+    });
   } catch (err) {
     logger.fatal({ err }, "Daemon failed to start listening");
     throw err;

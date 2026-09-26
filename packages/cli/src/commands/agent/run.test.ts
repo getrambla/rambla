@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DaemonConnectionError } from "@getrambla/client/internal/daemon-client";
 import {
   resolveExistingRunWorkspace,
   resolveRunCallerAgentId,
@@ -8,13 +9,51 @@ import {
 
 const daemonTarget = { kind: "endpoint" as const, host: "example.test:12345" };
 
+// Answers fetchAgent the way a daemon does: an unknown id is an error.
+function daemonWithAgents(...agentIds: string[]) {
+  return {
+    async fetchAgent({ agentId }: { agentId: string }) {
+      if (!agentIds.includes(agentId)) {
+        throw new Error(`Agent not found: ${agentId}`);
+      }
+      return { agent: { id: agentId } };
+    },
+  };
+}
+
 describe("managed agent caller context", () => {
-  it("propagates a trimmed RAMBLA_AGENT_ID", () => {
-    expect(resolveRunCallerAgentId({ RAMBLA_AGENT_ID: "  parent-agent  " })).toBe("parent-agent");
+  it("uses a trimmed RAMBLA_AGENT_ID when the target daemon runs that agent", async () => {
+    await expect(
+      resolveRunCallerAgentId(daemonWithAgents("parent-agent"), {
+        RAMBLA_AGENT_ID: "  parent-agent  ",
+      }),
+    ).resolves.toBe("parent-agent");
   });
 
-  it("omits blank caller ids", () => {
-    expect(resolveRunCallerAgentId({ RAMBLA_AGENT_ID: "   " })).toBeUndefined();
+  it("runs without a caller when RAMBLA_AGENT_ID belongs to another daemon", async () => {
+    await expect(
+      resolveRunCallerAgentId(daemonWithAgents("other-agent"), {
+        RAMBLA_AGENT_ID: "parent-agent",
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("fails instead of dropping the caller when the lookup loses its connection", async () => {
+    const disconnectedDaemon = {
+      async fetchAgent(): Promise<never> {
+        throw new DaemonConnectionError("Connection lost before message could be sent");
+      },
+    };
+
+    await expect(
+      resolveRunCallerAgentId(disconnectedDaemon, { RAMBLA_AGENT_ID: "parent-agent" }),
+    ).rejects.toBeInstanceOf(DaemonConnectionError);
+  });
+
+  it("omits blank caller ids", async () => {
+    await expect(
+      resolveRunCallerAgentId(daemonWithAgents(), { RAMBLA_AGENT_ID: "   " }),
+    ).resolves.toBeUndefined();
   });
 });
 
