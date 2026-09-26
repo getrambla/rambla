@@ -1997,7 +1997,8 @@ const styles = StyleSheet.create((theme: Theme) => ({
     borderColor: theme.colors.borderAccent,
     borderRadius: theme.borderRadius["2xl"],
     paddingVertical: {
-      xs: theme.spacing[2],
+      // RAMBLA-FORK: fix: 2026-09-26-fix-composer-ios-bottom-spacing.md: reduces input wrapper vertical padding on phone breakpoint.
+      xs: theme.spacing[1],
       md: theme.spacing[4],
     },
     paddingHorizontal: {

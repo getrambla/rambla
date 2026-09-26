@@ -2537,7 +2537,8 @@ const styles = StyleSheet.create((theme: Theme) => ({
     width: "100%",
     overflow: "visible",
     paddingHorizontal: theme.spacing[4],
-    paddingBottom: theme.spacing[4],
+    // RAMBLA-FORK: fix: 2026-09-26-fix-composer-ios-bottom-spacing.md: reduces input-area bottom padding on phone.
+    paddingBottom: theme.spacing[2],
   },
   inputAreaLocked: {
     opacity: 0.6,

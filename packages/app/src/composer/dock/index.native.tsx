@@ -16,6 +16,8 @@ import Animated, {
 import { useKeyboardShift } from "@/keyboard/shift";
 import { updateComposerCapacity, type ComposerCapacity } from "./internal/capacity";
 
+import { getComposerBottomInset } from "./composer-bottom-inset.rambla";
+
 const ViewportCapacity = createContext<SharedValue<number | undefined> | null>(null);
 
 interface ComposerViewportProps extends ViewProps {
@@ -129,7 +131,12 @@ export function ComposerDock({
           </View>
         </View>
         <ComposerViewportContent style={dockStyles.composer}>
-          <View style={[dockStyles.composer, { paddingBottom: insets.bottom }]}>{composer}</View>
+          {/* RAMBLA-FORK: fix: 2026-09-26-fix-composer-ios-bottom-spacing.md: pads with the computed bottom inset instead of the raw safe-area inset. */}
+          <View
+            style={[dockStyles.composer, { paddingBottom: getComposerBottomInset(insets.bottom) }]}
+          >
+            {composer}
+          </View>
         </ComposerViewportContent>
         {overlay}
       </KeyboardTranslateView>
