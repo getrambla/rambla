@@ -1,5 +1,7 @@
 # fix: iOS link scroll gate
 
+Status: Done - last commit: 5376d23b9
+
 ## Provenance
 
 - main: `3e5566f2b` — 2026-09-24

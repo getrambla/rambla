@@ -1,5 +1,7 @@
 # feat: switch to turn off system notifications
 
+Status: Done - last commit: 2f02b8312
+
 ## Provenance
 
 - main: `723e0bc70` — 2026-09-23

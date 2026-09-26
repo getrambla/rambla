@@ -1,5 +1,7 @@
 # fix: create_agent defaults to the caller's provider/model
 
+Status: Done - last commit: 73aa827ec
+
 ## Provenance
 
 - main: `3e5566f2b` — 2026-09-24

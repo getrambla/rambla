@@ -2,9 +2,9 @@
 // Check a plan file against the mechanical rules in .agents/skills/plan/SKILL.md.
 //
 // These are the rules an agent reviewer must never spend attention on: section
-// shape, link form, digits, provenance freshness. Checking them here costs a
-// second and never misses, which keeps a review's numbered list to things that
-// would make the work wrong.
+// shape, plan status, acceptance-criteria presence, link form, digits,
+// provenance freshness. Checking them here costs a second and never misses,
+// which keeps a review's numbered list to things that would make the work wrong.
 //
 // Usage: node fork/check-plan.mjs plans/2026-09-22-feat-slug.md
 // Exits 1 and prints one line per problem.
@@ -38,6 +38,7 @@ const isFix = (lines[0] ?? "").startsWith("# fix: ");
 const required = [
   "Provenance",
   "Scope",
+  "Acceptance criteria",
   "Goal",
   "Merge conflict mitigation",
   ...(isFix ? ["Cause"] : []),
@@ -61,6 +62,57 @@ for (const want of required) {
 // Title line: "# fix: ..." or "# feat: ...".
 if (!/^# (fix|feat): \S/.test(lines[0] ?? "")) {
   at(0, 'title must start with "# fix: " or "# feat: "');
+}
+
+// Status line: first non-blank line under the title, before any heading.
+// `unapproved` and `approved` are the planning-side values; `coding` and
+// `done` are written by the code skill and must also parse.
+const bodyAfterTitle = lines.slice(1);
+const statusIdx = bodyAfterTitle.findIndex((l) => /^Status: /.test(l.trim()));
+const firstHeadingIdx = bodyAfterTitle.findIndex((l) => l.startsWith("## "));
+if (statusIdx === -1 || (firstHeadingIdx !== -1 && statusIdx > firstHeadingIdx)) {
+  problems.push(`${file}  missing status line — "Status: <value>" must be the first line under the title`);
+} else {
+  const status = bodyAfterTitle[statusIdx].trim().replace(/^Status: /, "");
+  if (!/^(unapproved|approved|coding|done)( |$)/.test(status)) {
+    at(statusIdx + 1, `status "${status}" is not one of unapproved | approved | coding | done`);
+  }
+}
+
+// Acceptance criteria: numbered items, no empty section.
+const acIdx = headings.indexOf("Acceptance criteria");
+if (acIdx !== -1) {
+  const next = headings.findIndex((h, i) => i > acIdx);
+  const start = lines.indexOf(`## ${headings[acIdx]}`);
+  const end =
+    next === -1 ? lines.length : lines.indexOf(`## ${headings[next]}`, start + 1);
+  const items = lines
+    .slice(start + 1, end)
+    .filter((l) => /^\d+\. /.test(l.trim()));
+  if (items.length === 0) {
+    problems.push(`${file}  Acceptance criteria has no numbered items — plans propose criteria as a numbered list`);
+  }
+}
+
+// Steps: every numbered step (not the fixed step 0) carries acceptance criteria.
+const stepsIdx = headings.indexOf("Steps");
+if (stepsIdx !== -1) {
+  const start = lines.indexOf("## Steps");
+  const end = lines.indexOf("## Verification", start + 1);
+  const stepLines = lines.slice(start + 1, end === -1 ? lines.length : end);
+  const steps = stepLines.filter((l) => /^\d+\. /.test(l.trim()));
+  if (steps.length > 2) {
+    // steps[0] is the fixed "read the code skill" step; a multi-step plan
+    // (3+ lines) numbers its work steps, and each needs criteria. A 1- or
+    // 2-line Steps section is a single-step plan — the plan-level criteria
+    // serve as that step's criteria.
+    const criteria = stepLines.filter((l) => /\*\*Acceptance criteria\*\*/.test(l));
+    if (criteria.length < steps.length - 1) {
+      problems.push(
+        `${file}  ${steps.length - 1} work steps but ${criteria.length} acceptance-criteria lines — every work step needs its own`,
+      );
+    }
+  }
 }
 
 // Links. Inside a plan the target is relative to the plan, so it must not
