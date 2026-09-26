@@ -57,13 +57,13 @@ if [ "$MODE" = release ]; then
 	# because `sort -V` alone orders v0.9.0 ahead of v0.9.0-beta.2; `~` sorts below
 	# everything, which restores semver order. Tags cut from side branches that
 	# never landed are caught by the ancestry check below.
-	TIP=$(git -C "$REPO" ls-remote --tags --refs upstream 'refs/tags/v*' |
-		awk -F'refs/tags/' '{print $2}' | sed 's/-/~/' | sort -V | tail -1 | sed 's/~/-/')
+	TIP=$(git -C "$REPO" ls-remote --tags --refs upstream 'refs/tags/*' |
+		awk -F'refs/tags/' '{print $2}' | grep -E '^v?[0-9]+([.][0-9]+)+([-][0-9A-Za-z.]+)?$' | sed 's/-/~/' | sort -V | tail -1 | sed 's/~/-/')
 	[ -n "$TIP" ] || {
 		echo "no upstream release tag found" >&2
 		exit 1
 	}
-	TARGET=$(git -C "$REPO" ls-remote upstream "refs/tags/$TIP" | awk '{print $1}')
+	TARGET=$(git -C "$REPO" ls-remote upstream "refs/tags/$TIP^{}" | awk '{print $1}')
 
 	# A tag can be cut from a side branch that never landed; 0.7.0-beta.2 was. Those
 	# commits are not what upstream shipped on main, so refuse rather than merge one.
