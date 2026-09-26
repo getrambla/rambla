@@ -2,11 +2,11 @@
 
 Status: approved
 
-**Revision 7**
+**Revision 8**
 
 ## Provenance
 
-- main: `2572b98ea` — 2026-09-26
+- main: `0d14ce680` — 2026-09-26
 - upstream-rebrand: `7b8f99096` — 2026-09-25
 - upstream/main: `8cd989529` (untagged) — 2026-09-25
 
@@ -114,6 +114,8 @@ is merged in weekly. Code below follows the fork's placement rules.
 | `packages/app/src/composer/input/composer-drag-handle.rambla.tsx`       | handle row: RNGH pan with `.runOnJS(true)` first (the `resize-handle.tsx` pattern), activation threshold, grab/release haptics, double-tap toggle, pressed state                                                                                                                                                                                                                                    | new                                                                                | `RAMBLA-FORK: feat:`      |
 | `packages/app/src/composer/input/composer-drag-handle.rambla.test.ts`   | handle unit tests, written first in its step: haptic schedule — exactly one on grab, release, double-tap, zero during movement — asserted through the composer-haptics guard module (native-only guard, the `use-long-press-drag-interaction.ts` precedent), which the handle takes as its only haptics path; plus threshold and 300ms double-tap-window decisions                                  | new                                                                                | `RAMBLA-FORK: feat:`      |
 | `packages/app/src/composer/input/input.rambla.tsx`                      | explicit `height` on the wrapper container; handle row as its first child; remove the stock growth wiring (`useComposerHeight` import+call, its entry in the text input's style array, `updateComposerHeightForText` at all 3 call sites + dep-array entries, `resetComposerHeight`, `isComposerScrollEnabled` folded to constant true, `webTextareaRef`/`getLiveText` if their only consumer goes) | existing (fork-only, ours; carries unrelated dictation work — surgical edits only) | `RAMBLA-FORK: feat:`      |
+| `packages/app/src/composer/input/usable-area-geometry.rambla.ts`        | new: context provider + `useUsableAreaTop()` hook; holds the live header-bottom measurement                                                                                                                                                                                                                                                                                                         | new                                                                                | `RAMBLA-FORK: feat:`      |
+| `packages/app/src/components/headers/screen-header.tsx`                 | existing: onLayout reports its measured bottom edge into the context (0 when the header is not rendered, e.g. desktop focus mode; note: header always shows on mobile per shouldShowWorkspaceScreenHeader)                                                                                                                                                                                          | last touched 2026-09-16 (#4973)                                                    | `RAMBLA-FORK: feat:`      |
 | `packages/app/e2e/browser/composer-drag-handle.rambla.browser.test.ts`  | Playwright E2E against the real web app (setup spawns Metro): real mouse drags, per-frame 1:1 (≤1px), threshold, bounds hold, fling/reversal, release hold, double-tap, reload persistence, type-200-lines                                                                                                                                                                                          | new                                                                                | `RAMBLA-FORK: feat:`      |
 | `packages/app/e2e/browser/composer-whitespace.spec.ts`                  | fork-tagged skips on its two growth tests ("blank composer lines remain present and keep their measured height", "composer growth keeps a bottom-pinned chat at the bottom") — this feature replaces the behavior they assert (user-authorized 2026-09-26)                                                                                                                                          | upstream, last touched 2026-09-16 (#4902)                                          | `RAMBLA-FORK: skip-test:` |
 
@@ -142,9 +144,9 @@ checked out.
   wrapper's resolved vertical padding and border, read from the same
   resolved style the wrapper renders — breakpoint included. Never
   re-derived from token tables.
-- Max from a live measurement of the usable area's top under the header
-  (`measureInWindow`), re-measured on keyboard frame change/hide; the
-  anchor is fixed during a drag.
+- Max from the header's measured bottom edge via the usable-area-geometry
+  context (header onLayout; 0 when the header is hidden); re-measured on
+  layout, keyboard, rotation. No constants.
 - Default measured on mount (the resting height before any drag). A stored
   height is re-clamped against fresh bounds before first render.
 - No quantization anywhere — store, gesture, render; heights are arbitrary
