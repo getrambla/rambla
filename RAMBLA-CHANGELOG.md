@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- 2026-09-26 - [de47f4f](https://github.com/getrambla/rambla/commit/de47f4fb8) - [2026-09-26-fix-composer-ios-bottom-spacing.md](plans/2026-09-26-fix-composer-ios-bottom-spacing.md) - Slimmed the composer's bottom spacing on iOS: smaller gap under the panel and above the controls, keyboard alignment kept.
 - 2026-09-24 - [73aa827](https://github.com/getrambla/rambla/commit/73aa827) - [2026-09-24-fix-subagent-default-provider-model.md](plans/2026-09-24-fix-subagent-default-provider-model.md) - Fixed create_agent requiring a provider name: a subagent now inherits the caller's provider and model when none is named.
 - 2026-09-24 - [5376d23](https://github.com/getrambla/rambla/commit/5376d23) - [2026-09-24-fix-ios-link-scroll-gate.md](plans/2026-09-24-fix-ios-link-scroll-gate.md) - Fixed lifting a finger off an assistant file link after scrolling the chat on iOS opening the link.
 - 2026-09-24 - b7138f6 - (no plan) - Bump react-native-uitextview to 2.7.1 to improve a11y on iOS.
