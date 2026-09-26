@@ -21,6 +21,9 @@ Three roles, kept separate.
 
 - **Supervisor** — holds the user's request, the plan, and the reviewer's
   verdicts. Reads little itself — see "The supervisor reads little" below.
+  The supervisor briefs the coder with each step's **acceptance criteria**
+  from the plan — what must be observably true when the step is done — never
+  with implementation instructions that substitute for them.
 - **Coder** (a subagent) — writes the tests and the code. Edits code only.
 - **Reviewer** (a separate subagent) — checks the work against the plan and
   against this skill's rules. Never the agent that wrote the code. Reviewing
@@ -38,6 +41,14 @@ REJECT is a numbered list of deficiencies, sent to the coder only. Re-review
 is blind — re-send the same original instructions, never a summary of what
 was fixed. **At most 2 fix-and-rereview rounds**; still rejected after that,
 stop and bring both positions to the user to decide.
+
+**The unit of review is the plan step.** Each step is one submission: the
+coder codes that step (tests first, per the Tests section), then a fresh
+blind reviewer verifies that step against its acceptance criteria before the
+supervisor commissions the next. A step without an ACCEPT may not be built
+upon — reporting a step as done without its reviewer verdict is a violation,
+not a shortcut. Reviewing several steps in one batch after the fact is not
+compliance; it is the violation this rule exists to prevent.
 
 **The plan file is read-only — no agent edits it, ever.** The coder, the
 reviewer, and the supervisor may read it; not one of them may edit it,
@@ -164,7 +175,14 @@ name, stop and report to the supervisor.
 
 ## Tests
 
-**Write the failing test first**, then the code that makes it pass.
+**Test-driven development is mandatory.** Write the failing test first, then
+the code that makes it pass. A step's tests must assert that step's
+**acceptance criteria** from the plan — each criterion traceable to at least
+one test assertion. A step whose tests do not test its acceptance criteria is
+not done, and a reviewer must REJECT it for that alone. This includes
+end-to-end criteria: if a step's acceptance criteria are behavioral (the user
+drags, the UI tracks), the test reproduces that behavior through the real
+interface, not by calling internals.
 
 - `.rambla.test.ts` files are ours, always — never upstream's. Every test
   file the work creates or extends has its own row in the table, marked
@@ -264,6 +282,13 @@ toggle`, not `Added a toggle for the enabling of notifications`).
 
 ## Stop and ask
 
+- **The plan's step has no acceptance criteria, or criteria too vague to
+  test** (e.g. "works correctly", no observable check). A step that cannot
+  state how it will be verified cannot be executed on trust: stop and report
+  to the supervisor — "this step has no acceptance criteria I can code
+  against" — and the supervisor takes it to the user. Do not invent criteria
+  silently and proceed; do not translate instructions into your own idea of
+  done.
 - **The plan turns out to be wrong, incomplete, or inconsistent with the
   code.** Stop and report to the supervisor, who takes it to the user with
   your reasons in a handoff. Only the user edits a plan, ever — through a
