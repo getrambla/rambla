@@ -88,7 +88,7 @@ function parseForkEntries(changelogText) {
       heading.headingLineIndex + 1,
       nextHeading ? nextHeading.headingLineIndex : lines.length,
     );
-    return { ...heading, bodyLines };
+    return Object.assign({}, heading, { bodyLines });
   });
 }
 

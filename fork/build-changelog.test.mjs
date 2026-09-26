@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { parseChangelogBody, parseChangelogEntries } from "../scripts/changelog-utils.mjs";
+import { parseChangelogBody } from "../scripts/changelog-utils.mjs";
 import { buildChangelog } from "./build-changelog.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
