@@ -138,3 +138,8 @@ if [ -n "$CONFLICTS" ]; then
 	exit 1
 fi
 echo "merged upstream through $TIP with no conflicts"
+
+# The merge changed PASEO-CHANGELOG.md; regenerate the shipped file, staged
+# into the still-uncommitted merge.
+node "$REPO/fork/build-changelog.mjs"
+git -C "$REPO" add CHANGELOG.md
