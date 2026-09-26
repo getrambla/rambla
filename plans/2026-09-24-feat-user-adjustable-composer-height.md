@@ -1,11 +1,10 @@
 # feat: user-adjustable composer height
 
-Status: Unapproved (reverted)
+Status: unapproved
 
-**Revision 6 — position-controlled, height derived. Supersedes revision 5.
-The gesture drives the composer's top edge in window coordinates; height is
-derived per frame as bottomAnchorY − topY, never accumulated. A diagnostic
-build precedes any fix.**
+**Revision 7 — full restart on `fixes-2026-09-26`. Supersedes revision 6;
+none of the prior material is trusted until re-verified against this
+branch.**
 
 ## Provenance
 
