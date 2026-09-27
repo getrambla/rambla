@@ -1316,11 +1316,27 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       [adoptComposerHeight],
     );
 
+    const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: clears the trailing persist timer on unmount so a drag ending at teardown cannot write after unmount.
+    useEffect(
+      () => () => {
+        if (persistTimerRef.current !== null) clearTimeout(persistTimerRef.current);
+      },
+      [],
+    );
     const handleComposerHandleHeightChange = useCallback(
       (next: number) => {
         isResizingRef.current = true;
+        // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: paints the dragged height to the DOM immediately on web — the React state commit lands one or more frames later and showed as a visible 10-20px lag behind the pointer; the commit below then agrees with it.
+        if (isWeb && inputWrapperRef.current !== null) {
+          (inputWrapperRef.current as unknown as HTMLElement).style.height = `${next}px`;
+        }
         adoptComposerHeight(next);
-        void composerHeightStore.persist();
+        // Per-event AsyncStorage writes queued main-thread work inside the drag; a trailing debounce keeps persistence (criterion 14) off the move path.
+        if (persistTimerRef.current !== null) clearTimeout(persistTimerRef.current);
+        persistTimerRef.current = setTimeout(() => {
+          void composerHeightStore.persist();
+        }, 250);
       },
       [adoptComposerHeight, composerHeightStore],
     );
