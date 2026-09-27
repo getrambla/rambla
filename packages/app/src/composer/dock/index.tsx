@@ -38,7 +38,12 @@ export function ComposerDock({
 const styles = StyleSheet.create({
   surface: { flex: 1, overflow: "hidden" },
   content: { flex: 1, justifyContent: "flex-end" },
-  composer: { width: "100%", flexShrink: 1 },
+  composer: {
+    width: "100%",
+    flexShrink: 1,
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: bottom-anchor the composer stack so height growth pushes the top edge up.
+    justifyContent: "flex-end",
+  },
   centered: {
     flex: 1,
     alignItems: "center",

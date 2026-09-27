@@ -1724,7 +1724,8 @@ const animatedStaticStyles = RNStyleSheet.create({
   },
   inputAreaWrapper: {
     width: "100%",
-    flexShrink: 1,
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: flexShrink 0 — flex pressure must not squash the composer.
+    flexShrink: 0,
   },
 });
 

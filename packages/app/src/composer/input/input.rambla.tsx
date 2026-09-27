@@ -1324,6 +1324,14 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       },
       [],
     );
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: clears the resizing flag when a drag ends so layout measurement (and thus the max bound) resumes tracking keyboard/rotation changes.
+    const handleComposerHandleResizeEnd = useCallback(() => {
+      isResizingRef.current = false;
+      inputWrapperRef.current?.measureInWindow((_x, y, _w, h) => {
+        setWrapperBottomY(y + h);
+      });
+    }, []);
+
     const handleComposerHandleHeightChange = useCallback(
       (next: number) => {
         isResizingRef.current = true;
@@ -1965,6 +1973,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
             minHeight={composerMinHeight}
             maxHeight={composerMaxHeight}
             onHeightChange={handleComposerHandleHeightChange}
+            onResizeEnd={handleComposerHandleResizeEnd}
           />
           {attachmentSlot}
           {/* Text input */}

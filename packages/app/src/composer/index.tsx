@@ -2517,8 +2517,8 @@ function ComposerContentImpl({
 const animatedStaticStyles = RNStyleSheet.create({
   container: {
     flexDirection: "column",
-    // Propagate the viewport's height constraint down to the scrolling input.
-    flexShrink: 1,
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: flexShrink 0 — flex pressure must not squash the composer.
+    flexShrink: 0,
     position: "relative",
   },
 });
@@ -2529,9 +2529,10 @@ const styles = StyleSheet.create((theme: Theme) => ({
     backgroundColor: theme.colors.border,
   },
   inputAreaContainer: {
-    flexShrink: 1,
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: flexShrink 0 — flex pressure must not squash the composer.
+    flexShrink: 0,
     position: "relative",
-    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: no minHeight — a reserved box below the composer absorbed the first ~20px of every upward drag, so the pill detached from the pointer.
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: no minHeight — it absorbed the first ~20px of upward drags.
     marginHorizontal: "auto",
     alignItems: "center",
     width: "100%",
@@ -2544,13 +2545,15 @@ const styles = StyleSheet.create((theme: Theme) => ({
     opacity: 0.6,
   },
   inputAreaContent: {
-    flexShrink: 1,
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: flexShrink 0 — flex pressure must not squash the composer.
+    flexShrink: 0,
     width: "100%",
     maxWidth: MAX_CONTENT_WIDTH,
     gap: theme.spacing[3],
   },
   messageInputContainer: {
-    flexShrink: 1,
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: flexShrink 0 — flex pressure must not squash the composer.
+    flexShrink: 0,
     position: "relative",
     width: "100%",
     gap: theme.spacing[3],

@@ -88,6 +88,8 @@ export interface ComposerDragHandleProps {
   minHeight: number;
   maxHeight: number;
   onHeightChange: (height: number) => void;
+  /** Fires when a drag finishes, so the host can resume layout measurement. */
+  onResizeEnd?: () => void;
 }
 
 export function ComposerDragHandle({
@@ -96,6 +98,7 @@ export function ComposerDragHandle({
   minHeight,
   maxHeight,
   onHeightChange,
+  onResizeEnd,
 }: ComposerDragHandleProps) {
   const [, setIsActive] = useState(false);
   const heightRef = useRef(height);
@@ -173,11 +176,12 @@ export function ComposerDragHandle({
         })
         .onEnd(() => {
           haptics.onRelease();
+          onResizeEnd?.();
         })
         .onFinalize(() => {
           setIsActive(false);
         }),
-    [emitHeight, haptics],
+    [emitHeight, haptics, onResizeEnd],
   );
 
   const handlePress = useCallback(() => {
@@ -201,11 +205,11 @@ export function ComposerDragHandle({
 
 const styles = StyleSheet.create((theme) => ({
   handle: {
-    height: 8,
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: comfortable grab target, pill at its center.
+    height: 24,
     width: "100%",
     alignItems: "center",
-    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: pill flush at the wrapper's top edge — the user grabs the pill, so the pill, not the row's middle, is what must ride the pointer.
-    justifyContent: "flex-start",
+    justifyContent: "center",
   },
   handleIndicator: {
     width: 36,

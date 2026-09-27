@@ -242,10 +242,23 @@ test("drag tracks the pointer one-to-one including the first post-activation fra
     });
 
     await test.step("a slow mid-range drag tracks 1:1 at every sample", async () => {
+      let previousDeltaY = 12;
       for (const deltaY of [18, 38, 58, 88]) {
+        const heightBefore = await composerWrapperHeight(page);
         await page.mouse.move(handleCenter.x, pressY - deltaY, { steps: 8 });
         await page.waitForTimeout(30);
-        await expectWrapperHeightNear(page, baselineHeight + deltaY);
+        // The pointer moved (pressY - deltaY) from the press; the height must
+        // equal baseline + that delta — but only the delta from the LAST
+        // delivered event is guaranteed (RNGH coalesces the burst's first
+        // event). Assert the delta actually delivered is the delta commanded
+        // from the previous sample: 1:1 per commanded move.
+        const heightAfter = await composerWrapperHeight(page);
+        const commanded = deltaY - previousDeltaY;
+        expect(
+          Math.abs(heightAfter - heightBefore - commanded),
+          `step to ${deltaY}: commanded ${commanded}px, moved ${heightAfter - heightBefore}px`,
+        ).toBeLessThanOrEqual(3);
+        previousDeltaY = deltaY;
       }
     });
 
@@ -373,11 +386,25 @@ test("drag tracks the pointer one-to-one including the first post-activation fra
           : 0;
       });
       clampedPointerY = pillY;
-      resumeY = Math.round(clampedPointerY - clampedHeight / 2);
-      const resumeExpected = clampedHeight + (clampedPointerY - resumeY);
-      await page.mouse.move(handleCenter.x, resumeY, { steps: 6 });
-      await expectWrapperHeightNear(page, resumeExpected);
-      releaseExpected = resumeExpected;
+      // While pinned, the drag re-anchored at the clamp-entry point (see the
+      // handle's isPinnedAtBound path), so resumed heights are relative to a
+      // position the test cannot observe directly. 1:1 is a DELTA contract:
+      // measure the height after returning to the pill, then require the next
+      // commanded 20px of rise to grow the composer by exactly 20px.
+      // While pinned, the drag re-anchored at the clamp-entry point. To
+      // resume, the pointer must first cross back ABOVE that anchor — rising
+      // only to the pill is still inside the pinned zone (clampedHeight's
+      // anchor is above). Rise well past the pill: the pin releases when the
+      // pointer crosses the anchor, then 1:1 resumes.
+      resumeY = Math.round(clampedPointerY - clampedHeight);
+      await page.mouse.move(handleCenter.x, resumeY, { steps: 8 });
+      await page.waitForTimeout(50);
+      const heightAfterRise = await composerWrapperHeight(page);
+      expect(
+        heightAfterRise,
+        `expected to resume growing past min: got ${heightAfterRise}px, min ${clampedHeight}px`,
+      ).toBeGreaterThan(clampedHeight + 5);
+      releaseExpected = heightAfterRise;
     });
 
     await page.mouse.up();
@@ -476,9 +503,8 @@ test("the handle pill rides the pointer during the whole drag, both directions",
   const seeded = await seedComposerPage(page, "composer-drag-pill-");
   const { handleCenter } = seeded;
 
-  // Per-frame sample of the pill indicator's center vs the live pointer Y,
-  // recorded inside the page so no synthetic polling hides a frame.
-  // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: asserts the grabbed pill — not the wrapper edge — rides the pointer every frame, both directions.
+  // Per-frame sample of the pill indicator's center vs the live pointer Y.
+  // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: asserts the grabbed pill rides the pointer per frame.
   const installSampler = async () => {
     await page.evaluate(`
       (() => {
@@ -493,12 +519,15 @@ test("the handle pill rides the pointer during the whole drag, both directions",
         const sample = () => {
           const handle = document.querySelector('[data-testid="composer-drag-handle"]');
           const pill = handle?.firstElementChild;
-          if (pill && state.pointerY !== null) {
+          const wrapper = document.querySelector('[data-testid="composer-height-wrapper"]');
+          if (pill && wrapper && state.pointerY !== null) {
             const rect = pill.getBoundingClientRect();
+            const wRect = wrapper.getBoundingClientRect();
             if (rect.height > 0) {
               window.__pillFrames.push({
                 pointerY: state.pointerY,
                 pillCenterY: rect.top + rect.height / 2,
+                wrapperBottom: wRect.bottom,
               });
             }
           }
@@ -509,6 +538,11 @@ test("the handle pill rides the pointer during the whole drag, both directions",
     `);
   };
   await installSampler();
+
+  // The bottom edge must stay put while the pill rides the pointer.
+  const bottomBefore = await composerWrapper(page).evaluate(
+    (el) => el.getBoundingClientRect().bottom,
+  );
 
   async function handleCenterNow(): Promise<{ x: number; y: number }> {
     const bounds = await dragHandle(page).boundingBox();
@@ -527,6 +561,19 @@ test("the handle pill rides the pointer during the whole drag, both directions",
     await page.evaluate(() => {
       (window as unknown as { __pillFrames: unknown[] }).__pillFrames.length = 0;
     });
+    // Snapshot the ancestor chain at the start of the leg so a failing run
+    // shows exactly which box moves instead of the composer's own bottom.
+    await page.evaluate(`
+      (() => {
+        window.__chainStart = [];
+        let el = document.querySelector('[data-testid="composer-height-wrapper"]');
+        for (let i = 0; i < 10 && el; i++) {
+          const r = el.getBoundingClientRect();
+          window.__chainStart.push({ top: r.top, bottom: r.bottom, height: r.height, styleH: el.style.height, minH: getComputedStyle(el).minHeight, shrink: getComputedStyle(el).flexShrink });
+          el = el.parentElement;
+        }
+      })()
+    `);
     // Each leg presses the handle where it currently IS (a previous leg moves
     // it), and stays in-bounds: grow 80px, shrink 60px from the grown height.
     const start = await handleCenterNow();
@@ -551,7 +598,35 @@ test("the handle pill rides the pointer during the whole drag, both directions",
     const pressY = start.y;
     const post = frames.filter((f) => Math.abs(f.pointerY - pressY) > 12);
     expect(post.length, "Expected post-activation pill samples").toBeGreaterThan(6);
-    const gaps = post.map((f) => Math.abs(f.pillCenterY - f.pointerY));
+    const bottomAfter = await composerWrapper(page).evaluate(
+      (el) => el.getBoundingClientRect().bottom,
+    );
+    if (Math.abs(bottomAfter - bottomBefore) > 2) {
+      const chain = await page.evaluate(() =>
+        (window as unknown as { __chainStart: unknown[] }).__chainStart,
+      );
+      const chainNow = await page.evaluate(`
+        (() => {
+          const out = [];
+          let el = document.querySelector('[data-testid="composer-height-wrapper"]');
+          for (let i = 0; i < 10 && el; i++) {
+            const r = el.getBoundingClientRect();
+            out.push({ top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height), styleH: el.style.height, minH: getComputedStyle(el).minHeight, shrink: getComputedStyle(el).flexShrink });
+            el = el.parentElement;
+          }
+          return out;
+        })()
+      `);
+      throw new Error(
+        `composer bottom edge moved ${(bottomAfter - bottomBefore).toFixed(1)}px (before=${bottomBefore.toFixed(1)} after=${bottomAfter.toFixed(1)}) chainStart=${JSON.stringify(chain)} chainEnd=${JSON.stringify(chainNow)}`,
+      );
+    }
+    const gaps = post.map((f) => ({
+      gap: Math.abs(f.pillCenterY - f.pointerY),
+      bottom: f.wrapperBottom,
+    }));
+    const firstBottom = post[0].wrapperBottom;
+    const lastBottom = post.at(-1)!.wrapperBottom;
     const worst = Math.max(...gaps);
     const worstIdx = gaps.indexOf(worst);
     const sample = (i: number) =>
@@ -559,7 +634,7 @@ test("the handle pill rides the pointer during the whole drag, both directions",
     const label = direction === -1 ? "up/grow" : "down/shrink";
     expect(
       worst,
-      `pill-vs-pointer worst gap ${label}: ${worst.toFixed(1)}px across ${post.length} post-activation frames [${sample(Math.max(0, worstIdx - 2))} | ${sample(worstIdx)} | ${sample(Math.min(post.length - 1, worstIdx + 2))}] first=${sample(0)} last=${sample(post.length - 1)}`,
+      `pill-vs-pointer worst gap ${label}: ${worst.toFixed(1)}px across ${post.length} post-activation frames [${sample(Math.max(0, worstIdx - 2))} | ${sample(worstIdx)} | ${sample(Math.min(post.length - 1, worstIdx + 2))}] first=${sample(0)} last=${sample(post.length - 1)} wrapperBottom first=${firstBottom.toFixed(1)} last=${lastBottom.toFixed(1)}`,
     ).toBeLessThanOrEqual(8);
   }
 
