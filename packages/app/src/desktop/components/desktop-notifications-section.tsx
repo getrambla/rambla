@@ -140,6 +140,7 @@ export function DesktopNotificationsSection() {
       </View>
       {testNotificationState.status === "success" ? (
         <Alert
+          size="sm"
           variant="success"
           title={t("settings.notifications.sentTitle")}
           description={t("settings.notifications.sentDescription")}
@@ -148,6 +149,7 @@ export function DesktopNotificationsSection() {
       ) : null}
       {testNotificationState.status === "error" ? (
         <Alert
+          size="sm"
           variant="error"
           title={t("settings.notifications.sendFailedTitle")}
           description={testNotificationState.message}
