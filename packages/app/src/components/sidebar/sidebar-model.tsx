@@ -24,6 +24,8 @@ import {
   useWorkspaceLabelProjection,
 } from "@/workspace-labels";
 
+import { filterProjectsByActiveOnly } from "@/stores/sidebar-view-store.rambla";
+
 interface SidebarModel extends SidebarWorkspacesListResult {
   workspaceEntriesByKey: ReadonlyMap<string, SidebarWorkspaceEntry>;
   /**
@@ -58,6 +60,8 @@ export function SidebarModelProvider({
   const groupMode = useSidebarViewStore((state) => state.groupMode);
   const labelFilter = useSidebarViewStore((state) => state.labelFilter);
   const projectFilters = useSidebarViewStore((state) => state.projectFilters);
+  // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: subscribes to the active-projects-only facet.
+  const activeProjectsOnly = useSidebarViewStore((state) => state.activeProjectsOnly);
   const reconcileLabelFilter = useSidebarViewStore((state) => state.reconcileLabelFilter);
   const { hosts: labelHosts } = useWorkspaceLabelProjection();
   const collapsedProjectKeys = useSidebarCollapsedSectionsStore(
@@ -122,6 +126,8 @@ export function SidebarModelProvider({
       const included = new Set(resolvedProjectFilters);
       projects = projects.filter((project) => included.has(project.viewKey));
     }
+    // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: drops workspace-less projects unless allowlisted.
+    projects = filterProjectsByActiveOnly({ projects, activeProjectsOnly, resolvedProjectFilters });
     if (hasActiveLabelFilter) {
       projects = projects.flatMap((project) => {
         const workspaces = project.workspaces.filter((workspace) =>
@@ -132,6 +138,7 @@ export function SidebarModelProvider({
     }
     return projects;
   }, [
+    activeProjectsOnly,
     hasActiveLabelFilter,
     hasActiveProjectFilter,
     resolvedProjectFilters,
