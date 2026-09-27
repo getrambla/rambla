@@ -118,9 +118,11 @@ new-workspace ghost row (`sidebar-workspace-list.tsx`, `NewWorkspaceGhostRow` re
    in `SidebarViewPersistedStateSchema` (~86–93), initial `true` (~179–183), the setter
    next to the other facet setters (~184–223), the field in `partialize` (~230–235), and
    `activeProjectsOnly: true` in `migrateSidebarViewState`'s three return objects
-   (~121–156). Tag each edited block. **Acceptance criteria** the store initial state has
-   `activeProjectsOnly === true`; migrate returns `true` for a parsed document without the
-   field and for a schema-rejected document; existing tests still pass (criterion 9).
+   (~121–156). Tag each edited block. **Acceptance criteria**:
+   - the store initial state has `activeProjectsOnly === true`
+   - migrate returns `true` for a parsed document without the field and for a
+     schema-rejected document
+   - existing tests still pass (criterion 9)
 2. Create `packages/app/src/stores/sidebar-view-store.rambla.ts` with (a) the predicate:
    given projects and a resolved allowlist, drop entries whose `workspaces` array is empty
    unless their `viewKey` is in the allowlist; and (b) the top-row state derivation: given
@@ -140,8 +142,9 @@ new-workspace ghost row (`sidebar-workspace-list.tsx`, `NewWorkspaceGhostRow` re
 
    Create `sidebar-view-store.rambla.test.ts` covering: default drops empty projects;
    allowlisted empty project survives; `false` keeps everything; top row is
-   active/all/none per criterion 2's truth table. **Acceptance criteria** the new tests
-   pass; they assert through the exported functions only.
+   active/all/none per criterion 2's truth table. **Acceptance criteria**:
+   - the new tests pass
+   - they assert through the exported functions only
 
 3. Wire the predicate in `packages/app/src/components/sidebar/sidebar-model.tsx`: inside
    the existing `filteredProjects` memo (~119–140), subscribe to the new facet alongside
@@ -149,9 +152,10 @@ new-workspace ghost row (`sidebar-workspace-list.tsx`, `NewWorkspaceGhostRow` re
    predicate itself carries the allowlist exemption: an empty project whose `viewKey` is
    in the resolved allowlist survives (criterion 6) — no separate exemption mechanism
    exists in the memo today and none is added. One contiguous tagged block.
-   **Acceptance criteria** with the facet true, projects without workspaces are absent
-   from `filteredProjects` unless their `viewKey` is in the resolved allowlist; the memo's
-   dependency array includes the new facet.
+   **Acceptance criteria**:
+   - with the facet true, projects without workspaces are absent from
+     `filteredProjects` unless their `viewKey` is in the resolved allowlist
+   - the memo's dependency array includes the new facet
 4. Rework `ProjectFilterPage` in
    `packages/app/src/components/sidebar/display-preferences/menu.tsx` (~612–652): render
    "Active projects" (new i18n key) and "All projects" as the top block using the existing
@@ -162,16 +166,20 @@ new-workspace ghost row (`sidebar-workspace-list.tsx`, `NewWorkspaceGhostRow` re
    `SidebarDisplayPreferences` (model.ts), which gains the read field and one combined
    select action backed by the `.rambla.` logic — the menu still does not import the view
    store directly. Keep rows open on select
-   (`closeOnSelect={false}`), matching today's filter rows. **Acceptance criteria** the
-   page shows Active/All/separator/projects in order; the checked state matches criterion
-   2's truth table in the running app; a toggle round-trip satisfies criteria 4 and 7.
+   (`closeOnSelect={false}`), matching today's filter rows. **Acceptance criteria**:
+   - the page shows Active/All/separator/projects in order
+   - the checked state matches criterion 2's truth table in the running app
+   - a toggle round-trip satisfies criteria 4 and 7
 5. Add `sidebar.display.projectFilter.active` ("Active projects") to
    `packages/app/src/i18n/resources/en.ts` in the `projectFilter` block (~1133–1136), one
-   contiguous tagged line. **Acceptance criteria** the menu row renders the new string;
-   `npm run lint` and i18n key checks (if any) pass.
+   contiguous tagged line. **Acceptance criteria**:
+   - the menu row renders the new string
+   - `npm run lint` and i18n key checks (if any) pass
 6. Full verification pass and commit on `feat/active-projects-only`.
-   **Acceptance criteria** all plan-level criteria hold; verification commands below
-   pass; status line updated.
+   **Acceptance criteria**:
+   - all plan-level criteria hold
+   - verification commands below pass
+   - status line updated
 
 ## Verification
 
