@@ -61,6 +61,10 @@ interface SidebarViewStoreState {
    */
   projectFilters: string[];
   labelFilter: SidebarLabelFilter;
+  // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: adds the active-projects-only facet.
+  activeProjectsOnly: boolean;
+  // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: adds the facet setter.
+  setActiveProjectsOnly: (activeProjectsOnly: boolean) => void;
   setGroupMode: (mode: SidebarGroupMode) => void;
   toggleHostFilter: (serverId: string) => void;
   clearHostFilters: () => void;
@@ -77,6 +81,8 @@ interface SidebarViewPersistedState {
   hostFilters: string[];
   projectFilters: string[];
   labelFilter: SidebarLabelFilter;
+  // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: persists the active-projects-only facet.
+  activeProjectsOnly?: boolean;
 }
 
 const PersistedSidebarGroupModeSchema = z.enum(["project", "status", "label"]);
@@ -90,6 +96,8 @@ const SidebarViewPersistedStateSchema = z.strictObject({
   projectFilters: z.array(z.string()).optional(),
   groupModeByServerId: z.record(z.string(), PersistedSidebarGroupModeSchema).optional(),
   labelFilter: SidebarLabelFilterSchema.optional(),
+  // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: parses the active-projects-only facet.
+  activeProjectsOnly: z.boolean().optional(),
 });
 
 type SidebarViewStorageState = z.infer<typeof SidebarViewPersistedStateSchema>;
@@ -126,6 +134,8 @@ export function migrateSidebarViewState(persistedState: unknown): SidebarViewPer
       hostFilters: [],
       projectFilters: [],
       labelFilter: emptyLabelFilter(),
+      // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: defaults schema-rejected state to active-only.
+      activeProjectsOnly: true,
     };
   }
   const state = result.data;
@@ -137,6 +147,8 @@ export function migrateSidebarViewState(persistedState: unknown): SidebarViewPer
       hostFilters: [],
       projectFilters: [],
       labelFilter: emptyLabelFilter(),
+      // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: defaults legacy group-mode state to active-only.
+      activeProjectsOnly: true,
     };
   }
 
@@ -147,6 +159,8 @@ export function migrateSidebarViewState(persistedState: unknown): SidebarViewPer
     labelFilter: state.labelFilter
       ? normalizeSidebarLabelFilter(state.labelFilter)
       : emptyLabelFilter(),
+    // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: defaults missing facet to active-only.
+    activeProjectsOnly: state.activeProjectsOnly ?? true,
   };
 }
 
@@ -182,6 +196,8 @@ export const useSidebarViewStore = create<SidebarViewStoreState>()(
       hostFilters: [],
       projectFilters: [],
       labelFilter: emptyLabelFilter(),
+      // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: initial state defaults to active-only.
+      activeProjectsOnly: true,
       setGroupMode: (mode) => set({ groupMode: mode }),
       toggleHostFilter: (serverId) =>
         set((state) => ({ hostFilters: toggleFilterEntry(state.hostFilters, serverId) })),
@@ -189,6 +205,8 @@ export const useSidebarViewStore = create<SidebarViewStoreState>()(
       toggleProjectFilter: (viewKey) =>
         set((state) => ({ projectFilters: toggleFilterEntry(state.projectFilters, viewKey) })),
       clearProjectFilters: () => set({ projectFilters: [] }),
+      // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: adds the facet setter.
+      setActiveProjectsOnly: (activeProjectsOnly) => set({ activeProjectsOnly }),
       toggleLabelFilter: (name) =>
         set((state) => {
           const key = workspaceLabelKey(name);
@@ -232,6 +250,8 @@ export const useSidebarViewStore = create<SidebarViewStoreState>()(
         hostFilters: state.hostFilters,
         projectFilters: state.projectFilters,
         labelFilter: state.labelFilter,
+        // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: persists the facet.
+        activeProjectsOnly: state.activeProjectsOnly,
       }),
       migrate: migrateSidebarViewState,
     },
