@@ -2115,6 +2115,8 @@ const styles = StyleSheet.create((theme: Theme) => ({
   },
   textInputScrollWrapper: {
     flexShrink: 1,
+    // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: the text area fills the wrapper's height above the controls row.
+    flexGrow: 1,
     position: "relative",
   },
   focusHintText: {
@@ -2126,6 +2128,8 @@ const styles = StyleSheet.create((theme: Theme) => ({
     opacity: 0.5,
   },
   textInput: {
+    // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: the input stretches to fill the scroll wrapper so the wrapper height drives the box height.
+    flexGrow: 1,
     // Preserve the controls when an ancestor constrains an overlong draft.
     flexShrink: 1,
     width: "100%",
@@ -2150,6 +2154,8 @@ const styles = StyleSheet.create((theme: Theme) => ({
   },
   buttonRow: {
     flexShrink: 0,
+    // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: controls stay pinned at the wrapper's bottom edge at any height.
+    marginTop: "auto",
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",

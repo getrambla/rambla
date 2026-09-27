@@ -192,16 +192,24 @@ export function ComposerDragHandle({
 
   return (
     <GestureDetector gesture={gesture}>
-      <View collapsable={false} testID={testID} onTouchEnd={handlePress} style={styles.handle} />
+      <View collapsable={false} testID={testID} onTouchEnd={handlePress} style={styles.handle}>
+        <View style={styles.handleIndicator} />
+      </View>
     </GestureDetector>
   );
 }
 
-const styles = StyleSheet.create(() => ({
+const styles = StyleSheet.create((theme) => ({
   handle: {
-    height: 12,
+    height: 8,
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
+  },
+  handleIndicator: {
+    width: 36,
+    height: 4,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.borderAccent,
   },
 }));
