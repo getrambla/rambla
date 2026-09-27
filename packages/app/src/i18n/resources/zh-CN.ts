@@ -1117,6 +1117,8 @@ export const zhCN: TranslationResources = {
       projectFilter: {
         label: "项目",
         all: "所有项目",
+        // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: adds the Active projects filter row label.
+        active: "活跃项目",
       },
     },
     filterEmpty: {

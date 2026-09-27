@@ -1138,6 +1138,8 @@ export const ja: TranslationResources = {
       projectFilter: {
         label: "プロジェクト",
         all: "すべてのプロジェクト",
+        // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: adds the Active projects filter row label.
+        active: "アクティブなプロジェクト",
       },
     },
     filterEmpty: {

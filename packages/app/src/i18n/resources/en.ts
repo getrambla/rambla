@@ -1133,6 +1133,8 @@ export const en = {
       projectFilter: {
         label: "Project",
         all: "All projects",
+        // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: adds the Active projects filter row label.
+        active: "Active projects",
       },
     },
     filterEmpty: {

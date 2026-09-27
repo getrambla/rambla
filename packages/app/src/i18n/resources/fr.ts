@@ -1160,6 +1160,8 @@ export const fr: TranslationResources = {
       projectFilter: {
         label: "Projet",
         all: "Tous les projets",
+        // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: adds the Active projects filter row label.
+        active: "Projets actifs",
       },
     },
     filterEmpty: {

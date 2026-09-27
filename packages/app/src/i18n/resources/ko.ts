@@ -1132,6 +1132,8 @@ export const ko: TranslationResources = {
       projectFilter: {
         label: "프로젝트",
         all: "모든 프로젝트",
+        // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: adds the Active projects filter row label.
+        active: "활성 프로젝트",
       },
     },
     filterEmpty: {
