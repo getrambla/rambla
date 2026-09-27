@@ -146,7 +146,7 @@ plain English either way; don't paste raw git output.
 ```
 git checkout -b merge/<tag>
 just merge-upstream --release      # or --main, per the user's choice
-git commit --no-edit               # the script stages, it does not commit
+# Commit with the step-5 message template — never --no-edit.
 ```
 
 Re-run everything from step 2. Compare against the baseline. Then go to 5.
@@ -212,11 +212,18 @@ is the intended pace.
 
 ### 5. Land it
 
-Once every conflict is resolved:
+Once every conflict is resolved, commit the merge with this message template:
 
 ```
-git commit --no-edit
+git commit -m "Merge upstream-rebrand through upstream <upstream-sha> (<tag>)"
 ```
+
+For example: `Merge upstream-rebrand through upstream 30178c4f5 (v0.10.0-beta.1)`.
+Name the upstream commit the rebrand branch carried and the tag it corresponds
+to. Never accept git's default message (`Merge commit '20f46ddda'`) and never
+name the dated merge branch — the branch is deleted at the end of this step, so
+that name is dead on arrival and tells a reader nothing about where the content
+came from.
 
 Re-run everything from step 2 and compare against the baseline:
 
