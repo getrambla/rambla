@@ -113,21 +113,9 @@ jobs:
           working-directory: packages/app
           bundler-cache: true
 
-      # ccache via compiler shims: the Fastfile points the archive's CC/CXX at
-      # these, so every pod's C/ObjC/C++ unit is cached and a warm run only
-      # recompiles what actually changed. Swift units are not cacheable, but
-      # roughly two-thirds of the ~1100 pod units are C/ObjC (ZXingObjC,
-      # libwebp, SDWebImage, libdav1d, ...).
-      #
-      # Sloppiness set per the ccache 4.x manual's Xcode guidance (research:
-      # Xcode archive speed report, Q2): `modules` or ccache refuses to cache
-      # any -fmodules compile (which pods use); `clang_index_store` and
-      # `ivfsoverlay` strip Xcode-specific argument noise; `pch_defines` covers
-      # pod prefix headers; `include_file_{ctime,mtime}` because fresh
-      # checkouts change timestamps. depend_mode + direct_mode are both
-      # required for -fmodules support. compiler_check=content because runner
-      # image Xcode patch releases change the compiler's mtime. base_dir is
-      # scoped to the runner home so hits are shared across checkouts.
+      # Without sloppiness=modules ccache refuses to cache any -fmodules
+      # compile, which all pods use; depend_mode + direct_mode are required
+      # with it.
       - name: Set up ccache
         run: |
           set -euo pipefail
@@ -147,8 +135,6 @@ jobs:
           ccache --set-config=max_size=8G
           ccache -z
 
-      # restore-keys beat exact keys here: ccache entries are individually
-      # valid, so a partial match still eliminates most compiles.
       - name: Restore ccache
         uses: actions/cache/restore@v4
         with:
@@ -213,10 +199,7 @@ jobs:
             ${{ runner.os }}-pods-
 
       # RCT_USE_PREBUILT_RNCORE downloads React Native core as a prebuilt
-      # XCFramework instead of compiling it from source. Per the CocoaPods
-      # research: invoke through Bundler so the pod version is pinned to the
-      # Gemfile instead of drifting with runner image updates, and never use
-      # --repo-update in CI (Podfile.lock already pins resolutions).
+      # XCFramework instead of compiling it from source.
       - name: Install CocoaPods dependencies
         working-directory: packages/app/ios
         env:
