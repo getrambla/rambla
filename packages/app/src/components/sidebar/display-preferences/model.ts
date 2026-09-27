@@ -34,6 +34,10 @@ export interface SidebarDisplayPreferences {
   projectFilters: readonly string[];
   toggleProjectFilter: (viewKey: string) => void;
   clearProjectFilters: () => void;
+  // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: surfaces the facet and the combined top-row select action.
+  activeProjectsOnly: boolean;
+  selectProjectFilterTopRow: (row: "active" | "all") => void;
+  setActiveProjectsOnly: (activeProjectsOnly: boolean) => void;
   labelFilter: SidebarLabelFilter;
   toggleLabelFilter: (name: string) => void;
   clearLabelFilter: () => void;
@@ -56,6 +60,9 @@ export function useSidebarDisplayPreferences(): SidebarDisplayPreferences {
   const projectFilters = useSidebarViewStore((state) => state.projectFilters);
   const toggleProjectFilter = useSidebarViewStore((state) => state.toggleProjectFilter);
   const clearProjectFilters = useSidebarViewStore((state) => state.clearProjectFilters);
+  // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: subscribes to the facet.
+  const activeProjectsOnly = useSidebarViewStore((state) => state.activeProjectsOnly);
+  const setActiveProjectsOnly = useSidebarViewStore((state) => state.setActiveProjectsOnly);
   const labelFilter = useSidebarViewStore((state) => state.labelFilter);
   const toggleLabelFilter = useSidebarViewStore((state) => state.toggleLabelFilter);
   const clearLabelFilter = useSidebarViewStore((state) => state.clearLabelFilter);
@@ -102,6 +109,15 @@ export function useSidebarDisplayPreferences(): SidebarDisplayPreferences {
     [updateSettings, sidebarWorkspaceTrailing],
   );
 
+  // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: combined top-row select sets the flag and clears the allowlist.
+  const selectProjectFilterTopRow = useCallback(
+    (row: "active" | "all") => {
+      setActiveProjectsOnly(row === "active");
+      clearProjectFilters();
+    },
+    [setActiveProjectsOnly, clearProjectFilters],
+  );
+
   return useMemo(
     () => ({
       grouping,
@@ -120,6 +136,10 @@ export function useSidebarDisplayPreferences(): SidebarDisplayPreferences {
       projectFilters,
       toggleProjectFilter,
       clearProjectFilters,
+      // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: exposes the facet and the combined action.
+      activeProjectsOnly,
+      selectProjectFilterTopRow,
+      setActiveProjectsOnly,
       labelFilter,
       toggleLabelFilter,
       clearLabelFilter,
@@ -141,6 +161,10 @@ export function useSidebarDisplayPreferences(): SidebarDisplayPreferences {
       projectFilters,
       toggleProjectFilter,
       clearProjectFilters,
+      // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: memo dependencies for the new facet and action.
+      activeProjectsOnly,
+      selectProjectFilterTopRow,
+      setActiveProjectsOnly,
       labelFilter,
       toggleLabelFilter,
       clearLabelFilter,

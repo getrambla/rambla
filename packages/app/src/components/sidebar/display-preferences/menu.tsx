@@ -58,6 +58,7 @@ import { SIDEBAR_ROW_ITEMS, type SidebarRowItem } from "./row-items";
 import { useWorkspaceLabelProjection } from "@/workspace-labels";
 import { WorkspaceLabelDot } from "@/workspace-labels/swatch";
 import { WorkspaceLabelManagerModal } from "@/workspace-labels/manager-modal";
+import { resolveProjectFilterTopRow } from "@/stores/sidebar-view-store.rambla";
 
 const mutedIconMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
 
@@ -622,17 +623,48 @@ function ProjectFilterPage({
   const iconTargets = useMemo(() => resolveSidebarProjectIconTargets(projects), [projects]);
   // Shares TanStack's cache with the sidebar's own call, so this subscribes rather than refetches.
   const iconByProjectViewKey = useProjectIcons({ projects: iconTargets });
+  // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: derives the checked top row from the facet and the allowlist.
+  const topRow = resolveProjectFilterTopRow({
+    activeProjectsOnly: preferences.activeProjectsOnly,
+    projectFilterCount: resolvedProjectFilters.length,
+  });
+  // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: memoized handlers for the top rows and the named-row clear.
+  const handleSelectActive = useCallback(
+    () => preferences.selectProjectFilterTopRow("active"),
+    [preferences],
+  );
+  const handleSelectAll = useCallback(
+    () => preferences.selectProjectFilterTopRow("all"),
+    [preferences],
+  );
+  const handleToggleProject = useCallback(
+    (viewKey: string) => {
+      preferences.toggleProjectFilter(viewKey);
+      preferences.setActiveProjectsOnly(false);
+    },
+    [preferences],
+  );
 
   return (
     <>
+      {/* RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: Active/All top block above the named-project list. */}
       <MenuItem
-        selected={resolvedProjectFilters.length === 0}
+        selected={topRow === "active"}
         closeOnSelect={false}
-        onSelect={preferences.clearProjectFilters}
+        onSelect={handleSelectActive}
+        testID="sidebar-project-filter-active"
+      >
+        {t("sidebar.display.projectFilter.active")}
+      </MenuItem>
+      <MenuItem
+        selected={topRow === "all"}
+        closeOnSelect={false}
+        onSelect={handleSelectAll}
         testID="sidebar-project-filter-all"
       >
         {t("sidebar.display.projectFilter.all")}
       </MenuItem>
+      <MenuSeparator />
       {projects.map((project) => (
         <ProjectFilterItem
           key={project.viewKey}
@@ -640,7 +672,7 @@ function ProjectFilterPage({
           label={project.projectName}
           iconDataUri={iconByProjectViewKey.get(project.viewKey) ?? null}
           selected={resolvedProjectFilters.includes(project.viewKey)}
-          onToggle={preferences.toggleProjectFilter}
+          onToggle={handleToggleProject}
         />
       ))}
     </>
