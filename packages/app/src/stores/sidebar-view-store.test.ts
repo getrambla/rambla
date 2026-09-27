@@ -88,6 +88,7 @@ describe("sidebar view store", () => {
       hostFilters: [],
       projectFilters: [],
       labelFilter: { labels: [] },
+      // RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: migrate now defaults the new facet to active-only.
       activeProjectsOnly: true,
     });
   });
