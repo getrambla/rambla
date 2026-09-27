@@ -247,19 +247,15 @@ jobs:
         if: ${{ always() }}
         run: ccache -s
 
-      # Save steps are gated to the default branch: the weekly scheduled
-      # warm-up run is the only cache producer, so feature-branch runs stay
-      # restore-only. Cross-branch sharing is exactly the point: saves are
-      # branch-isolated, but a default-branch cache restores on every branch.
       - name: Save ccache
-        if: ${{ github.ref == 'refs/heads/main' && !inputs.clean_build }}
+        if: ${{ !inputs.clean_build }}
         uses: actions/cache/save@v4
         with:
           path: /Users/runner/Library/Caches/rambla-ccache
           key: ${{ runner.os }}-ccache-${{ hashFiles('package-lock.json', 'packages/app/app.config.js') }}
 
       - name: Save CocoaPods cache
-        if: ${{ github.ref == 'refs/heads/main' && !inputs.clean_build }}
+        if: ${{ !inputs.clean_build }}
         uses: actions/cache/save@v4
         with:
           path: |
