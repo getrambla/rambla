@@ -200,11 +200,12 @@ jobs:
 
       # RCT_USE_PREBUILT_RNCORE downloads React Native core as a prebuilt
       # XCFramework instead of compiling it from source.
+      # Plain `pod install`, not `bundle exec`: CocoaPods is not in the Gemfile.
       - name: Install CocoaPods dependencies
         working-directory: packages/app/ios
         env:
           RCT_USE_PREBUILT_RNCORE: "1"
-        run: bundle exec pod install
+        run: pod install
 
       - name: Build the signed .ipa
         env:
