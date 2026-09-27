@@ -43,6 +43,7 @@ done
 # Then contents, only in tracked text files that actually contain the string.
 git grep -lIi paseo -- . | grep -Ev "$SKIP" | while IFS= read -r f; do
 	sub <"$f" >"$f.rebrand.tmp"
+	chmod --reference="$f" "$f.rebrand.tmp"
 	mv "$f.rebrand.tmp" "$f"
 done
 
