@@ -507,6 +507,7 @@ function createDefaultDeps(): HostRuntimeControllerDeps {
     : undefined;
   const appCapabilities = {
     ...browserAutomationCapabilities,
+    // RAMBLA-FORK: feature: dictation-segments: clients receive one dictation segment per partial instead of the daemon's glued transcript
     [CLIENT_CAPS.dictationSegments]: true,
   };
 

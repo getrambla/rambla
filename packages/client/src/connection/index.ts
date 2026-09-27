@@ -125,6 +125,8 @@ export class ConnectionSubscriptions extends OwnedSubscriptions {
 // Protocol support belongs to the installed client. Only browser hosting needs
 // a resource supplied by the caller. Keep this exhaustive as the protocol evolves.
 export const DEFAULT_CLIENT_CAPABILITIES = {
+  // RAMBLA-FORK: feature: dictation-segments: clients receive one dictation segment per partial instead of the daemon's glued transcript
+  [CLIENT_CAPS.dictationSegments]: true,
   [CLIENT_CAPS.helloRejection]: true,
   [CLIENT_CAPS.ownedSubscriptions]: true,
   [CLIENT_CAPS.allProviders]: true,
@@ -142,7 +144,6 @@ export const DEFAULT_CLIENT_CAPABILITIES = {
   [CLIENT_CAPS.pluginTimelineItems]: true,
   [CLIENT_CAPS.workspaceSetupBlocked]: true,
   [CLIENT_CAPS.explicitEventSubscriptions]: true,
-  [CLIENT_CAPS.dictationSegments]: true,
 } satisfies Record<Exclude<ClientCapability, typeof CLIENT_CAPS.browserHost>, true>;
 
 /** Calling releases demand; ready waits for membership, or local attachment on broadcast hosts. */
