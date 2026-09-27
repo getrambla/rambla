@@ -58,6 +58,8 @@ import { SIDEBAR_ROW_ITEMS, type SidebarRowItem } from "./row-items";
 import { useWorkspaceLabelProjection } from "@/workspace-labels";
 import { WorkspaceLabelDot } from "@/workspace-labels/swatch";
 import { WorkspaceLabelManagerModal } from "@/workspace-labels/manager-modal";
+
+// RAMBLA-FORK: feature: 2026-09-26-feat-active-projects-only.md: imports the active/all top-row resolver.
 import { resolveProjectFilterTopRow } from "@/stores/sidebar-view-store.rambla";
 
 const mutedIconMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
