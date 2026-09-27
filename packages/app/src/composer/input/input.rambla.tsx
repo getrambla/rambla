@@ -22,7 +22,7 @@ import {
   useMemo,
   forwardRef,
 } from "react";
-import { StyleSheet, withUnistyles } from "react-native-unistyles";
+import { StyleSheet, UnistylesRuntime, withUnistyles } from "react-native-unistyles";
 import { useTranslation } from "react-i18next";
 import { ICON_SIZE, type Theme } from "@/styles/theme";
 import { ArrowUp, Mic, MicOff, CornerDownLeft, Plus, Square } from "lucide-react-native";
@@ -89,6 +89,16 @@ import {
 import { DictationRecordingControls } from "./dictation-recording-controls.rambla";
 import { insertDictationAtSelection } from "./dictation-insert.rambla";
 import { useDictationField } from "./use-dictation-field.rambla";
+
+// RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: wires the drag handle, height store, and bounds into the wrapper.
+import { ComposerDragHandle } from "./composer-drag-handle.rambla";
+import {
+  createComposerHeightStore,
+  type ComposerHeightStore,
+} from "./composer-height-store.rambla";
+import { computeComposerHeightBounds } from "./composer-height-bounds.rambla";
+import { useUsableAreaTop } from "./usable-area-geometry.rambla";
+import { inlineUnistylesStyle } from "@/styles/unistyles-inline-style";
 
 const DEFAULT_SEND_KEYS: ShortcutKey[][] = [["Enter"]];
 const COMPOSER_INPUT_DATASET = { composerInput: "" } as const;
@@ -1153,6 +1163,8 @@ function extractErrorMessage(error: unknown): string | null {
 }
 
 export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
+  // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: added height wiring pushes this upstream-near-cap function past the complexity limit.
+  // oxlint-disable-next-line complexity
   function MessageInput(props, ref) {
     const {
       value,
@@ -1218,6 +1230,46 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const hasLiveTextRef = useRef(initialHasLiveText);
     const rootRef = useRef<View | null>(null);
     const inputWrapperRef = useRef<View | null>(null);
+    // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: user-adjustable composer height — store, bounds, drag, and double-tap wiring.
+    const usableAreaTop = useUsableAreaTop();
+    const composerHeightStoreRef = useRef<ComposerHeightStore | null>(null);
+    if (composerHeightStoreRef.current === null) {
+      composerHeightStoreRef.current = createComposerHeightStore({
+        defaultHeight: MIN_INPUT_HEIGHT,
+      });
+    }
+    const composerHeightStore = composerHeightStoreRef.current;
+    const [composerHeightValue, setComposerHeightValue] = useState(composerHeightStore.getHeight());
+    const hasMeasuredRestingHeightRef = useRef(false);
+    const isResizingRef = useRef(false);
+    const [resolvedVerticalPadding, setResolvedVerticalPadding] = useState(0);
+    const [resolvedBorderWidth, setResolvedBorderWidth] = useState(0);
+    // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: min read from the wrapper's resolved style (breakpoint included), never from token tables.
+    const themeForBounds = UnistylesRuntime.getTheme();
+    const composerMinHeight = useMemo(
+      () =>
+        computeComposerHeightBounds({
+          fontSize: themeForBounds.fontSize.content,
+          verticalPadding: resolvedVerticalPadding,
+          borderWidth: resolvedBorderWidth,
+          usableAreaTop: 0,
+        }).min,
+      [themeForBounds, resolvedVerticalPadding, resolvedBorderWidth],
+    );
+    // 0 usable-area top = no header measurement yet: skip clamping rather than clamp to 0.
+    // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: usableAreaTop is a Y-coordinate (header's bottom edge), not a height — max is the distance from there to the wrapper's bottom edge.
+    const [wrapperBottomY, setWrapperBottomY] = useState(0);
+    const composerMaxHeight =
+      wrapperBottomY > 0 && usableAreaTop > 0
+        ? wrapperBottomY - usableAreaTop
+        : Number.MAX_SAFE_INTEGER;
+    const adoptComposerHeight = useCallback(
+      (next: number) => {
+        composerHeightStore.setHeight(next, { min: composerMinHeight, max: composerMaxHeight });
+        setComposerHeightValue(composerHeightStore.getHeight());
+      },
+      [composerHeightStore, composerMinHeight, composerMaxHeight],
+    );
     const textInputRef = useRef<ComposerTextInputHandle | null>(null);
     const isInputFocusedRef = useRef(false);
     const valueRef = useRef(value);
@@ -1239,6 +1291,38 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     const handleComposerLayout = useCallback(
       (event: LayoutChangeEvent) => onHeightChange?.(event.nativeEvent.layout.height),
       [onHeightChange],
+    );
+
+    const handleWrapperLayout = useCallback(
+      (event: LayoutChangeEvent) => {
+        if (isResizingRef.current) return;
+        const measured = event.nativeEvent.layout.height;
+        const hasRestingHeight = hasMeasuredRestingHeightRef.current;
+        hasMeasuredRestingHeightRef.current = true;
+        inputWrapperRef.current?.measureInWindow((_x, y, _w, h) => {
+          setWrapperBottomY(y + h);
+        });
+        // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: reads the wrapper's own resolved padding/border for the min bound — breakpoint included, zero constants.
+        // On web the View ref is the host DOM node (react-native-web merges the forwarded ref onto it).
+        const node = inputWrapperRef.current;
+        if (isWeb && node && typeof window !== "undefined") {
+          const resolved = window.getComputedStyle(node as unknown as Element);
+          setResolvedVerticalPadding(parseFloat(resolved.paddingTop));
+          setResolvedBorderWidth(parseFloat(resolved.borderTopWidth));
+        }
+        if (hasRestingHeight) return;
+        adoptComposerHeight(measured);
+      },
+      [adoptComposerHeight],
+    );
+
+    const handleComposerHandleHeightChange = useCallback(
+      (next: number) => {
+        isResizingRef.current = true;
+        adoptComposerHeight(next);
+        void composerHeightStore.persist();
+      },
+      [adoptComposerHeight, composerHeightStore],
     );
 
     const updateLiveTextPresence = useCallback((text: string) => {
@@ -1783,8 +1867,9 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         readOnly && styles.inputWrapperReadOnly,
         inputWrapperStyle,
         { opacity: surfacePresentation.input.opacity },
+        inlineUnistylesStyle({ height: composerHeightValue }),
       ],
-      [inputWrapperStyle, readOnly, surfacePresentation.input.opacity],
+      [composerHeightValue, inputWrapperStyle, readOnly, surfacePresentation.input.opacity],
     );
     // `withUnistyles` maps this component's `style` into a `.hash > *` child
     // rule, which ties on specificity with react-native-web's own
@@ -1854,7 +1939,17 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
           ref={inputWrapperRef}
           style={inputWrapperCombinedStyle}
           pointerEvents={surfacePresentation.input.pointerEvents}
+          onLayout={handleWrapperLayout}
+          testID="composer-height-wrapper"
         >
+          {/* RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: drag handle row as the wrapper's first child. */}
+          <ComposerDragHandle
+            testID="composer-drag-handle"
+            height={composerHeightValue}
+            minHeight={composerMinHeight}
+            maxHeight={composerMaxHeight}
+            onHeightChange={handleComposerHandleHeightChange}
+          />
           {attachmentSlot}
           {/* Text input */}
           <RenderProfile id="ComposerTextSurface">

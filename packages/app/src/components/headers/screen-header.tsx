@@ -1,5 +1,5 @@
 import { ComposerDockBackground } from "@/composer/dock";
-import { useMemo, type ReactNode } from "react";
+import { useCallback, useMemo, useRef, type ReactNode } from "react";
 import type { LayoutChangeEvent } from "react-native";
 import { View, type StyleProp, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,6 +12,9 @@ import {
 } from "@/constants/layout";
 import { WindowChromeSafeArea } from "@/utils/desktop-window";
 import { TitlebarDragRegion } from "@/components/desktop/titlebar-drag-region";
+
+// RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: reports the header's measured bottom edge into the usable-area store.
+import { reportHeaderBottom } from "@/composer/input/usable-area-geometry.rambla";
 
 interface ScreenHeaderProps {
   left?: ReactNode;
@@ -48,10 +51,17 @@ export function ScreenHeader({
   const rowStyle = useMemo(() => [styles.row, borderless && styles.borderless], [borderless]);
   const leftCombinedStyle = useMemo(() => [styles.left, leftStyle], [leftStyle]);
   const rightCombinedStyle = useMemo(() => [styles.right, rightStyle], [rightStyle]);
+  // RAMBLA-FORK: feature: 2026-09-24-feat-user-adjustable-composer-height.md: reports the header's window-relative bottom edge.
+  const innerRef = useRef<View | null>(null);
+  const onHeaderLayout = useCallback((_event: LayoutChangeEvent) => {
+    innerRef.current?.measureInWindow((x, y, _width, height) => {
+      reportHeaderBottom(y + height);
+    });
+  }, []);
 
   return (
     <ComposerDockBackground style={styles.header} testID="composer-dock-header">
-      <View style={innerStyle}>
+      <View ref={innerRef} style={innerStyle} onLayout={onHeaderLayout}>
         <WindowChromeSafeArea
           placement="inline"
           horizontalPadding={baseHorizontalPadding}
