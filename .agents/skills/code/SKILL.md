@@ -22,8 +22,12 @@ Three roles, kept separate.
 - **Supervisor** — holds the user's request, the plan, and the reviewer's
   verdicts. Reads little itself — see "The supervisor reads little" below.
   The supervisor briefs the coder with each step's **acceptance criteria**
-  from the plan — what must be observably true when the step is done — never
-  with implementation instructions that substitute for them.
+  from the plan — what must be observably true when the step is done — and
+  nothing else. The brief may not contain numbers, formulas, distances,
+  designs, or any implementation instruction of any kind that does not come
+  from the plan or the user. If the supervisor believes it knows the cause
+  or the fix, that is for the coder to find; state it as a question to
+  confirm or refute, never as an instruction.
 - **Coder** (a subagent) — writes the tests and the code. Edits code only.
 - **Reviewer** (a separate subagent) — checks the work against the plan and
   against this skill's rules. Never the agent that wrote the code. Reviewing
@@ -118,9 +122,24 @@ These rules bind the coder AND the reviewer.
 
 The supervisor delegates reading, not just writing. It does not read diffs,
 logs, or code to check the work — the reviewer's ACCEPT is how it knows.
-It opens a file itself only to pin down a concrete failure an agent has
-reported twice, or to answer a question the plan must settle before the
-coder can continue. A coder whose context goes bad mid-step stops and a
+It does no research, no diagnosis, and no verification: it never opens a
+file to investigate a failure, never forms a diagnosis, and never hands a
+cause or a fix to a coder. When a failure needs investigating, that is the
+coder's or a researcher's job; the supervisor relays where the evidence
+lives — as a location, phrased as a question to confirm or refute — and
+only does so itself when the user directly asks it to. The supervisor never
+runs the project's tests to verify work; verification belongs to the coder
+and the reviewer alone.
+
+## If a step's tests fail
+
+If tests fail during a step, the work goes back to the coder — always, with
+no exceptions. The re-dispatch brief contains only: the failing observable
+behavior, where the evidence lives (paths), and the acceptance criteria that
+must hold. The supervisor decides nothing about the cause and prescribes
+nothing about the fix; a coder who cannot find the cause stops and reports,
+and the supervisor escalates to the user rather than filling the gap itself.
+A coder whose context goes bad mid-step stops and a
 fresh coder takes over for the next step — the stalled coder's finished
 edits stay in the working tree, and the fresh one continues from them.
 
