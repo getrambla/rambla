@@ -41,7 +41,7 @@ import {
   Paperclip,
 } from "lucide-react-native";
 import * as Clipboard from "expo-clipboard";
-import { FOOTER_HEIGHT, MAX_CONTENT_WIDTH } from "@/constants/layout";
+import { MAX_CONTENT_WIDTH } from "@/constants/layout";
 import {
   AgentControls,
   DraftAgentControls,
@@ -2531,7 +2531,7 @@ const styles = StyleSheet.create((theme: Theme) => ({
   inputAreaContainer: {
     flexShrink: 1,
     position: "relative",
-    minHeight: FOOTER_HEIGHT,
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: no minHeight — a reserved box below the composer absorbed the first ~20px of every upward drag, so the pill detached from the pointer.
     marginHorizontal: "auto",
     alignItems: "center",
     width: "100%",

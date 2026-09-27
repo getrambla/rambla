@@ -204,7 +204,8 @@ const styles = StyleSheet.create((theme) => ({
     height: 8,
     width: "100%",
     alignItems: "center",
-    justifyContent: "center",
+    // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: pill flush at the wrapper's top edge — the user grabs the pill, so the pill, not the row's middle, is what must ride the pointer.
+    justifyContent: "flex-start",
   },
   handleIndicator: {
     width: 36,

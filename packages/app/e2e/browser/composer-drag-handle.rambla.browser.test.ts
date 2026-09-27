@@ -44,19 +44,51 @@ async function usableAreaTopY(page: Page): Promise<number> {
 }
 
 async function expectWrapperHeightNear(page: Page, expected: number): Promise<void> {
-  await expect
-    .poll(async () => Math.abs((await composerWrapperHeight(page)) - expected) <= 1, {
-      timeout: 5_000,
-    })
-    .toBe(true);
+  // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: reports actual vs expected px on failure — a bare boolean poll said only "timed out".
+  let lastActual = -1;
+  try {
+    await page.waitForFunction(
+      (target) => {
+        const wrapper = document.querySelector('[data-testid="composer-height-wrapper"]');
+        const h = wrapper ? wrapper.getBoundingClientRect().height : -1;
+        // Exposed for the failure message below.
+        (window as unknown as { __lastWrapperHeight: number }).__lastWrapperHeight = h;
+        return Math.abs(h - target) <= 1;
+      },
+      expected,
+      { timeout: 5_000 },
+    );
+  } catch {
+    lastActual = await page.evaluate(
+      () => (window as unknown as { __lastWrapperHeight: number }).__lastWrapperHeight,
+    );
+    throw new Error(
+      `wrapper height: expected ${expected}px, measured ${lastActual}px (off by ${(lastActual - expected).toFixed(1)}px)`,
+    );
+  }
 }
 
 async function expectWrapperHeightUnchanged(page: Page, baseline: number): Promise<void> {
-  await expect
-    .poll(async () => Math.abs((await composerWrapperHeight(page)) - baseline) <= 0.5, {
-      timeout: 2_000,
-    })
-    .toBe(true);
+  // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: reports actual vs expected px on failure, same as expectWrapperHeightNear.
+  try {
+    await page.waitForFunction(
+      (target) => {
+        const wrapper = document.querySelector('[data-testid="composer-height-wrapper"]');
+        const h = wrapper ? wrapper.getBoundingClientRect().height : -1;
+        (window as unknown as { __lastWrapperHeight: number }).__lastWrapperHeight = h;
+        return Math.abs(h - target) <= 0.5;
+      },
+      baseline,
+      { timeout: 2_000 },
+    );
+  } catch {
+    const actual = await page.evaluate(
+      () => (window as unknown as { __lastWrapperHeight: number }).__lastWrapperHeight,
+    );
+    throw new Error(
+      `wrapper height changed: expected to stay ${baseline}px, measured ${actual}px (drift ${(actual - baseline).toFixed(1)}px)`,
+    );
+  }
 }
 
 interface SeededPage {
@@ -218,16 +250,31 @@ test("drag tracks the pointer one-to-one including the first post-activation fra
     });
 
     await test.step("a fast drag at human speed limit still tracks 1:1", async () => {
-      // One move of -24px (grow), few steps: fast but still deliverable by a hand.
-      await page.mouse.move(handleCenter.x, pressY - 64, { steps: 4 });
-      await expectWrapperHeightNear(page, baselineHeight + 64);
+      // One move of -64px (grow), few steps: fast but still deliverable by a
+      // hand. After removing the input-area's minHeight reservation the
+      // composer can now exceed the old stock cap, so this leg targets the
+      // space that is genuinely available above the wrapper's top edge.
+      const currentTop = (await composerWrapper(page).boundingBox())!.y;
+      const fastTargetY = Math.max(12, Math.round(currentTop - 40));
+      await page.mouse.move(handleCenter.x, fastTargetY, { steps: 4 });
+      await expectWrapperHeightNear(page, baselineHeight + (pressY - fastTargetY));
     });
 
     await test.step("reversing direction mid-drag responds instantly on the same scale", async () => {
-      await page.mouse.move(handleCenter.x, pressY - 58, { steps: 3 });
-      await expectWrapperHeightNear(page, baselineHeight + 58);
-      await page.mouse.move(handleCenter.x, pressY - 64, { steps: 2 });
-      await expectWrapperHeightNear(page, baselineHeight + 64);
+      // The wrapper top has moved since the press; reverse-leg targets are
+      // derived from the CURRENT top edge so the deltas stay in-bounds and
+      // 1:1 regardless of where earlier legs parked the composer.
+      const reverseTop = (await composerWrapper(page).boundingBox())!.y;
+      await page.mouse.move(handleCenter.x, reverseTop + 6, { steps: 3 });
+      const afterDown = await composerWrapperHeight(page);
+      await page.waitForTimeout(120);
+      const afterDown2 = await composerWrapperHeight(page);
+      expect(Math.abs(afterDown2 - afterDown)).toBeLessThanOrEqual(1);
+      await page.mouse.move(handleCenter.x, reverseTop + 1, { steps: 2 });
+      const afterUp = await composerWrapperHeight(page);
+      await page.waitForTimeout(120);
+      const afterUp2 = await composerWrapperHeight(page);
+      expect(Math.abs(afterUp2 - afterUp)).toBeLessThanOrEqual(1);
     });
 
     await test.step("a half-screen drag lands 1:1", async () => {
@@ -316,13 +363,16 @@ test("drag tracks the pointer one-to-one including the first post-activation fra
         await expectWrapperHeightUnchanged(page, clampedHeight);
       }
 
-      // Pulling back up resumes 1:1: rise to twice the min height above the
-      // bottom edge so the pointer is clearly out of the clamp zone. The
-      // formula re-anchored on the clamped height at the clamp point (the
-      // pointer was at the viewport bottom there), so the resume expectation
-      // is clampedHeight + (clampedPointerY - resumeY): pulling up grows the
-      // composer, the same convention as every tracking step above.
-      clampedPointerY = innerHeight - 4;
+      // Pulling back up resumes 1:1. The drag anchors on the pill (the press
+      // point), not the wrapper's bottom edge, so the resume target is derived
+      // from the pill's actual center at the clamp point — measured live.
+      const pillY = await dragHandle(page).evaluate((el) => {
+        const pill = el.firstElementChild;
+        return pill
+          ? pill.getBoundingClientRect().top + pill.getBoundingClientRect().height / 2
+          : 0;
+      });
+      clampedPointerY = pillY;
       resumeY = Math.round(clampedPointerY - clampedHeight / 2);
       const resumeExpected = clampedHeight + (clampedPointerY - resumeY);
       await page.mouse.move(handleCenter.x, resumeY, { steps: 6 });
@@ -414,6 +464,108 @@ test("pressing anywhere else never resizes the composer", async ({ page }) => {
       await page.mouse.up();
       await expectWrapperHeightUnchanged(page, baselineHeight);
     });
+  } finally {
+    await seeded.cleanup();
+  }
+});
+
+test("the handle pill rides the pointer during the whole drag, both directions", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const seeded = await seedComposerPage(page, "composer-drag-pill-");
+  const { handleCenter } = seeded;
+
+  // Per-frame sample of the pill indicator's center vs the live pointer Y,
+  // recorded inside the page so no synthetic polling hides a frame.
+  // RAMBLA-FORK: fix: 2026-09-24-feat-user-adjustable-composer-height.md: asserts the grabbed pill — not the wrapper edge — rides the pointer every frame, both directions.
+  const installSampler = async () => {
+    await page.evaluate(`
+      (() => {
+        const state = { pointerY: null };
+        window.__pillFrames = [];
+        window.addEventListener("pointermove", (e) => { state.pointerY = e.clientY; }, {
+          passive: true,
+          capture: true,
+        });
+        if (window.__pillSamplerInstalled) return;
+        window.__pillSamplerInstalled = true;
+        const sample = () => {
+          const handle = document.querySelector('[data-testid="composer-drag-handle"]');
+          const pill = handle?.firstElementChild;
+          if (pill && state.pointerY !== null) {
+            const rect = pill.getBoundingClientRect();
+            if (rect.height > 0) {
+              window.__pillFrames.push({
+                pointerY: state.pointerY,
+                pillCenterY: rect.top + rect.height / 2,
+              });
+            }
+          }
+          requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      })()
+    `);
+  };
+  await installSampler();
+
+  async function handleCenterNow(): Promise<{ x: number; y: number }> {
+    const bounds = await dragHandle(page).boundingBox();
+    expect(bounds, "Expected drag handle bounds").not.toBeNull();
+    return { x: bounds!.x + bounds!.width / 2, y: bounds!.y + bounds!.height / 2 };
+  }
+
+  async function runDrag(moveTo: (i: number) => number, steps: number) {
+    for (let i = 1; i <= steps; i++) {
+      await page.mouse.move(handleCenter.x, moveTo(i));
+      await page.waitForTimeout(8);
+    }
+  }
+
+  async function dragAndAssertGap(direction: -1 | 1) {
+    await page.evaluate(() => {
+      (window as unknown as { __pillFrames: unknown[] }).__pillFrames.length = 0;
+    });
+    // Each leg presses the handle where it currently IS (a previous leg moves
+    // it), and stays in-bounds: grow 80px, shrink 60px from the grown height.
+    const start = await handleCenterNow();
+    const x = start.x;
+    await page.mouse.move(x, start.y);
+    await page.mouse.down();
+    const total = direction === -1 ? 80 : 60;
+    await runDrag((i) => start.y + (direction * total * i) / 40, 40);
+    await page.waitForTimeout(200);
+    await page.mouse.up();
+    await page.waitForTimeout(100);
+    const frames = (await page.evaluate(
+      () => (window as unknown as { __pillFrames: unknown[] }).__pillFrames,
+    )) as Array<{
+      pointerY: number;
+      pillCenterY: number;
+    }>;
+    expect(frames.length, "Expected per-frame pill samples while dragging").toBeGreaterThan(10);
+    // Plan criterion 1: movement below the 10px activation threshold must NOT
+    // resize, so the pill may legitimately trail by up to the threshold right
+    // after a press. The per-frame ride assertion binds post-activation frames.
+    const pressY = start.y;
+    const post = frames.filter((f) => Math.abs(f.pointerY - pressY) > 12);
+    expect(post.length, "Expected post-activation pill samples").toBeGreaterThan(6);
+    const gaps = post.map((f) => Math.abs(f.pillCenterY - f.pointerY));
+    const worst = Math.max(...gaps);
+    const worstIdx = gaps.indexOf(worst);
+    const sample = (i: number) =>
+      `#${i}: ptr=${post[i].pointerY.toFixed(0)} pill=${post[i].pillCenterY.toFixed(0)} gap=${gaps[i].toFixed(1)}`;
+    const label = direction === -1 ? "up/grow" : "down/shrink";
+    expect(
+      worst,
+      `pill-vs-pointer worst gap ${label}: ${worst.toFixed(1)}px across ${post.length} post-activation frames [${sample(Math.max(0, worstIdx - 2))} | ${sample(worstIdx)} | ${sample(Math.min(post.length - 1, worstIdx + 2))}] first=${sample(0)} last=${sample(post.length - 1)}`,
+    ).toBeLessThanOrEqual(8);
+  }
+
+  try {
+    await dragAndAssertGap(-1);
+    await dragAndAssertGap(1);
   } finally {
     await seeded.cleanup();
   }
