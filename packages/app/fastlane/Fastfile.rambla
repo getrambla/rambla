@@ -64,11 +64,35 @@ platform :ios do
       profile_name: profile_name,
     )
 
+    # xcargs routes C/ObjC/C++ compiles through the ccache shims set up by the
+    # workflow, drops the index store (never read in a Release archive;
+    # researcher-recommended as the top xcodebuild-flag win), and pins ARCHS to
+    # arm64 — App Store archives are arm64-only, so this avoids any wasted
+    # x86_64 slice work.
+    xcargs = [
+      "CC=#{ENV.fetch('RAMBLA_CC', 'clang')}",
+      "CXX=#{ENV.fetch('RAMBLA_CXX', 'clang++')}",
+      "CLANG_INDEX_STORE_ENABLE=NO",
+      "ARCHS=arm64",
+      "ONLY_ACTIVE_ARCH=NO",
+    ].join(" ")
+
     # gym writes the dSYM zip as <output_name>.app.dSYM.zip beside the .ipa.
+    # Researcher-backed gym options (fastlane speed report):
+    # - xcodebuild_formatter: xcbeautify explicitly — fastlane can silently
+    #   fall back to xcpretty on some versions, which is slow on 10k+-line
+    #   build logs.
+    # - skip_package_dependencies_resolution: pod install already ran as its
+    #   own cached step; resolving again inside gym is duplicate work.
+    # - export_options.thinning: <none> — Apple re-thins server-side for
+    #   TestFlight, so generating thinning variants locally is pure waste.
     ipa_path = build_app(
       workspace: workspace,
       scheme: scheme,
       configuration: "Release",
+      xcargs: xcargs,
+      xcodebuild_formatter: "xcbeautify",
+      skip_package_dependencies_resolution: true,
       export_method: "app-store",
       include_symbols: true,
       output_directory: File.join(app_dir, RAMBLA_BUILD_DIR),
@@ -77,6 +101,7 @@ platform :ios do
         provisioningProfiles: {
           RAMBLA_APP_IDENTIFIER => profile_name,
         },
+        thinning: "<none>",
       },
     )
 
