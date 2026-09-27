@@ -10,10 +10,10 @@ const daemon = await startTestDaemon({
   env: { RAMBLA_PASSWORD: "shared-secret" },
 });
 
-async function lsError(password: string) {
+async function lsError(password: string, remoteClient = false) {
   const result = await runLocalRambla(["ls", "--json"], {
-    RAMBLA_HOME: daemon.ramblaHome,
-    RAMBLA_HOST: "",
+    RAMBLA_HOME: remoteClient ? "" : daemon.ramblaHome,
+    RAMBLA_HOST: remoteClient ? `127.0.0.1:${daemon.port}` : "",
     RAMBLA_PASSWORD: password,
   });
   assert.notStrictEqual(result.exitCode, 0, "ls should fail without a valid password");
@@ -26,13 +26,13 @@ async function lsError(password: string) {
 
 try {
   {
-    console.log("Test 1: missing password asks for RAMBLA_PASSWORD, not a daemon start");
-    const error = await lsError("");
+    console.log("Test 1: a client outside the daemon home needs RAMBLA_PASSWORD");
+    const error = await lsError("", true);
     assert.strictEqual(error.code, "AUTH_REQUIRED");
     assert.match(error.message, /Password required/);
     assert.match(error.details, /RAMBLA_PASSWORD/);
     assert.doesNotMatch(error.details, /daemon start/);
-    console.log("✓ missing password points at RAMBLA_PASSWORD\n");
+    console.log("✓ client without the local credential is asked for RAMBLA_PASSWORD\n");
   }
 
   {

@@ -1,5 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { hostname, tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -51,8 +51,9 @@ vi.mock("electron-log/main", () => ({
   },
 }));
 
-vi.mock("@getrambla/server/daemon-control", () => ({
-  resolveRamblaHome: vi.fn(() => mocks.ramblaHome),
+vi.mock("@getrambla/server/daemon-control", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  resolveRamblaHome: () => mocks.ramblaHome,
   spawnProcess: mocks.spawnProcess,
 }));
 
@@ -122,5 +123,26 @@ describe("daemon-manager commands", () => {
       platform: process.platform,
       currentVersion: "1.2.3",
     });
+  });
+
+  it("returns a local credential only for its live managed daemon listen", async () => {
+    mkdirSync(mocks.ramblaHome);
+    const token = "a".repeat(43);
+    writeFileSync(path.join(mocks.ramblaHome, "local-credential"), `${token}\n`, { mode: 0o600 });
+    const lock = {
+      pid: process.pid,
+      startedAt: new Date().toISOString(),
+      hostname: hostname(),
+      uid: process.getuid?.() ?? 0,
+      listen: "127.0.0.1:6799",
+      desktopManaged: true,
+    };
+    const lockPath = path.join(mocks.ramblaHome, "rambla.pid");
+    writeFileSync(lockPath, JSON.stringify(lock));
+    const handler = createDaemonCommandHandlers().desktop_local_credential;
+    expect(await handler({ listen: "localhost:6799" })).toBe(token);
+    expect(await handler({ listen: "remote:6799" })).toBeNull();
+    writeFileSync(lockPath, JSON.stringify({ ...lock, desktopManaged: false }));
+    expect(await handler({ listen: "localhost:6799" })).toBeNull();
   });
 });

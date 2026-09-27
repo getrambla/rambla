@@ -28,6 +28,7 @@ const killTree = (pid: number, signal: string): Promise<void> =>
 export { resolveRamblaHome } from "./rambla-home.js";
 export { ensurePrivateDirectory } from "./private-files.js";
 export { daemonLaunchEnvironment } from "./config-environment.js";
+export { readLocalCredentialForTarget } from "./local-credential.js";
 export {
   isSamePidLock as isSameDaemonInstance,
   type PidLockInfo as DaemonInstance,
