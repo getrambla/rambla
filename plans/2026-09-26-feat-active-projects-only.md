@@ -1,12 +1,12 @@
 # feat: active-projects-only filter in the sidebar Project page
 
-Status: unapproved
+Status: approved
 
 ## Provenance
 
-- main: `0d14ce680` — 2026-09-26
-- upstream-rebrand: `7b8f99096` — 2026-09-25
-- upstream/main: `8cd989529` (untagged) — 2026-09-25
+- main: 7c5bffd76 — 2026-09-27
+- upstream-rebrand: 7b8f99096 — 2026-09-25
+- upstream/main: 513f2a9ea — 2026-09-26
 
 ## Scope
 

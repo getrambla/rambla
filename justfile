@@ -76,6 +76,21 @@ uninstall: stop systemctl-reload
     systemctl --user disable rambla.service
     rm -f "{{unit}}"
 
+
+# Print the provenance at HEAD
+[script]
+provenance:
+    # 1. main — what the plan is written against
+    git log -1 --format='- main: %h — %cs' main
+
+    # 2. upstream-rebrand — the rebrand commit main last took
+    r=$(git merge-base main upstream-rebrand)
+    git log -1 --format='- upstream-rebrand: %h — %cs' "$r"
+
+    # 3. upstream/main — the upstream commit that rebrand was made from
+    u=$(git merge-base upstream-rebrand upstream/main)
+    git log -1 --format='- upstream/main: %h — %cs' "$u"
+
 # Clean build outputs.
 [script]
 clean: stop
