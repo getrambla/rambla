@@ -111,6 +111,11 @@ first, each option's cost in 1 line. Wait for the answer before writing.
 - **If the request needs no decision, do not ask and do not invent
   alternatives.** Adding a switch to an existing settings section never means
   proposing a new settings page — that is scope invention.
+- **Git identity is the user's, always.** Never run
+  `git config` (user.email, user.name, or anything else), even for a
+  temporary clone or worktree. Git is already configured globally and
+  inherits everywhere. If identity is ever missing, that is a stop-and-ask,
+  not a default to pick.
 - Anything else this skill does not clearly cover: ask.
 
 ## Scope

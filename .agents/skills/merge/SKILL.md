@@ -37,6 +37,14 @@ create the next merge's conflicts.
   is the whole reason the branch exists.
 - **Never resolve a conflict by deleting our side** because upstream's looks
   cleaner. Every `RAMBLA-FORK:` tag marks something we chose on purpose.
+- **Never set or change git config.** Never `git config user.email`,
+  `user.name`, or any other key — not in this repo, not in a temp clone or
+  worktree, not "just to make a commit work". Git is already configured
+  globally; a fresh clone inherits it. If a commit fails for missing
+  identity, stop and tell the user — do not pick an email for them. (This
+  rule exists because an agent once silently set `tom@rambla.sh` in a
+  `/tmp` clone, which leaked into the shared repo, rewrote 8 commits'
+  authorship, and was pushed.)
 
 ## The run
 

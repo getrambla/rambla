@@ -356,6 +356,10 @@ toggle`, not `Added a toggle for the enabling of notifications`).
 - Upstream already fixed this a different way (say in plain English what
   they did and how it differs).
 - The change needs an identifier rename that upstream also names.
+- **Git complains about missing user.email or user.name** — stop and tell
+  the user. Never set git config, not even in a temp clone; git is already
+  configured globally. (An agent once silently set a wrong email in a
+  `/tmp` clone; it leaked into the repo and rewrote 8 commits.)
 - **Anything else this skill doesn't clearly cover.** Ask rather than pick.
 
 ## The scope is the plan's scope
