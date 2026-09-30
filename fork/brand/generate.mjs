@@ -1,11 +1,7 @@
 #!/usr/bin/env node
 // Render every Rambla brand asset from one source SVG.
 //
-// fork/brand/rambla-logo.svg is the source of truth. Everything this writes
-// lives at a path upstream also owns, so a sync would otherwise drag Paseo's
-// artwork back in. fork/merge-upstream.sh re-runs this inside the
-// upstream-rebrand worktree, which puts our artwork on both sides of the merge
-// and leaves git nothing to conflict over.
+// fork/brand/rambla-logo.svg is the source of truth.
 //
 // Usage: node fork/brand/generate.mjs [source.svg] [--out <repo-root>]
 //

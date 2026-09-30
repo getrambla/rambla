@@ -83,13 +83,14 @@ provenance:
     # 1. main — what the plan is written against
     git log -1 --format='- main: %h — %cs' main
 
-    # 2. upstream-rebrand — the rebrand commit main last took
+    # 2. upstream-rebrand — the rebrand commit main last merged
     r=$(git merge-base main upstream-rebrand)
     git log -1 --format='- upstream-rebrand: %h — %cs' "$r"
 
-    # 3. upstream/main — the upstream commit that rebrand was made from
-    u=$(git merge-base upstream-rebrand upstream/main)
-    git log -1 --format='- upstream/main: %h — %cs' "$u"
+    # 3. upstream/main — the tag it was built from: the second parent of its ours-merge parent
+    u=$(git rev-parse "$r^^2")
+    tag=$(git ls-remote --tags upstream 'refs/tags/v*' | awk -v u="$u" '$1 == u { sub(/^refs\/tags\//, "", $2); sub(/\^\{\}$/, "", $2); print $2 }')
+    git log -1 --format="- upstream/main: %h ($tag) — %cs" "$u"
 
 # Clean build outputs.
 [script]
@@ -375,100 +376,6 @@ daemon-log lines="40":
 logs lines="40":
     journalctl --user -n {{lines}} -u rambla
 
-# Merge the rebranded upstream into a dated branch, commit the merge, verify it, and fast-forward main; --release is upstream's newest stable tag (what CI runs), --main expedites current main. Never merge upstream/main directly. CI runs fork/merge-upstream.sh directly and commits to main itself.
-[script]
-merge-upstream mode="--release":
-    set -euo pipefail
-
-    # The merge stages into whatever is checked out, so require a clean main.
-    [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ] || { echo "not on main; switch first" >&2; exit 1; }
-    [ -z "$(git status --porcelain)" ] || { echo "working tree not clean; commit or stash first" >&2; exit 1; }
-
-    # main only ever moves to a verified result; the work happens on the dated branch.
-    branch="merge-$(date +%F)"
-    git checkout -b "$branch" 2>/dev/null || git checkout "$branch"
-
-    # fork/merge-upstream.sh stages the merge and never commits.
-    bash fork/merge-upstream.sh {{mode}}
-    if ! git rev-parse -q --verify MERGE_HEAD >/dev/null; then
-        git checkout main
-        # -d, not -D: a branch holding an unmerged commit survives on purpose.
-        git branch -d "$branch" 2>/dev/null || echo "kept $branch (holds unmerged commits)"
-        exit 0
-    fi
-
-    # Commit the merge NOW, while MERGE_HEAD exists — that is what makes the
-    # commit two-parent and keeps upstream's history reachable. Committing
-    # later, after the merge state is lost, writes a plain one-parent commit
-    # and the provenance is gone. The branch is disposable, so committing
-    # before the checks is safe: a failed check is fixed or the branch redone,
-    # and main never sees it.
-    git commit --no-edit
-    parents="$(git log -1 --format=%P)"
-    [ "$(echo "$parents" | wc -w)" -eq 2 ] || { echo "FATAL: not a merge commit (parents: $parents); provenance lost" >&2; exit 1; }
-
-    # Provenance: both upstream tips must now be reachable from the merge.
-    # upstream-rebrand is what was merged; upstream/main (the originals) is the
-    # real upstream history it carries. Checking both catches a stale or
-    # rebuilt-from-scratch rebrand branch either way.
-    for ref in upstream-rebrand upstream/main; do
-        tip="$(git rev-parse "$ref")"
-        git merge-base --is-ancestor "$tip" HEAD || { echo "FATAL: $ref ($tip) not reachable from HEAD; provenance lost" >&2; exit 1; }
-        echo "provenance ok: HEAD contains $ref at $tip"
-    done
-
-    # Prove it installs, builds, and typechecks.
-    npm ci
-    npm run build:server
-    npm run typecheck
-
-    git checkout main
-    git merge --ff-only "$branch"
-    git branch -d "$branch"
-    echo "main fast-forwarded to the verified merge; push when ready"
-
-# Advance the standing upstream-rebrand branch to upstream's current main and rebrand it; main is never touched. Safe to run as often as wanted.
-[script]
-sync-upstream-rebrand:
-    bash fork/sync-upstream-rebrand.sh
-
-# Trial merge: rehearse the next upstream merge in a throwaway worktree; auto-syncs the rebrand branch first.
-[script]
-trial-merge action="":
-    set -euo pipefail
-    trial="{{justfile_dir()}}/.trial-merge"
-
-    if [ "{{action}}" = "drop" ]; then
-        if git worktree list --porcelain | grep -q "^worktree $trial$"; then
-            git worktree remove --force "$trial"
-            echo "removed $trial"
-        else
-            echo "no trial worktree at $trial"
-        fi
-        exit 0
-    fi
-    [ -z "{{action}}" ] || { echo "unknown action '{{action}}' (no argument, or 'drop')" >&2; exit 1; }
-
-    # Only the sync; merging for real in the main checkout is exactly what this must not do.
-    bash fork/sync-upstream-rebrand.sh
-
-    base="$(git rev-parse --abbrev-ref HEAD)"
-    echo "trial-merging upstream-rebrand into $base at $trial"
-    if [ -d "$trial" ]; then
-        # Reuse: reset to $base by name, not to the worktree's own detached HEAD.
-        git -C "$trial" merge --abort 2>/dev/null || true
-        git -C "$trial" checkout -q --detach "$base"
-        git -C "$trial" reset --hard -q "$base"
-    else
-        git worktree add --detach "$trial" "$base"
-    fi
-
-    if git -C "$trial" merge upstream-rebrand --no-edit; then
-        echo "trial merge clean — no conflicts with upstream's current main"
-    else
-        conflicts="$(git -C "$trial" diff --name-only --diff-filter=U)"
-        echo "" >&2
-        echo "CONFLICTS — resolve in $trial, or refactor $base to avoid them:" >&2
-        echo "$conflicts" >&2
-        exit 1
-    fi
+# Sync each new upstream release tag onto upstream-rebrand, then land it in the checked-out branch through its own merge branch once the local checks and ci.yml pass.
+sync-upstream:
+    bash fork/sync-upstream.sh

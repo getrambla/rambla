@@ -230,19 +230,20 @@ which files change, and how active upstream is in them, is.
 git log -1 --format='%h — %cs' main
 
 # 2. upstream-rebrand — the rebrand commit main last merged
-m=$(git rev-list --first-parent --merges -1 main)
-git log -1 --format='%h — %cs' "$m^2"
+r=$(git merge-base main upstream-rebrand)
+git log -1 --format='%h — %cs' "$r"
 
-# 3. upstream/main — the upstream commit that rebrand commit was made from.
-#    Its subject reads "rebrand upstream through <short hash>".
-git log -1 --format='%s' "$m^2"
-git log -1 --format='%h — %cs' <that short hash>
+# 3. upstream/main — the tag it was built from: the second parent of its
+#    ours-merge parent, then that commit's tag name.
+u=$(git rev-parse "$r^^2")
+git log -1 --format='%h — %cs' "$u"
+git ls-remote --tags upstream 'refs/tags/v*' |
+  awk -v u="$u" '$1 == u { sub(/^refs\/tags\//, "", $2); sub(/\^\{\}$/, "", $2); print $2 }'
 ```
 
-For the tag on bullet 3: upstream is fetched with `--no-tags`, so
-`git describe` can't name it — `git ls-remote --tags --refs upstream` gets
-it in 1 network call; if nothing contains that commit, write `(untagged)`.
-Never blank, never guessed.
+The tag goes in parentheses on bullet 3. Upstream is fetched with
+`--no-tags`, so `git describe` can't name it; the last command asks upstream
+in 1 network call. Never blank, never guessed.
 
 ## Required output
 

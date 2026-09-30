@@ -1,9 +1,9 @@
 ---
-name: merge
-description: Merge rebranded upstream (getpaseo/paseo) into the Rambla fork's main, resolve any conflicts, and land the result. Checks what main is based on versus upstream's newest tag, rehearses the merge in a throwaway worktree, runs a green-before/red-after test comparison, and walks each conflict past the user in plain English. Use when the user says "merge", "merge upstream", "sync upstream", or "/merge".
+name: sync-upstream
+description: Sync upstream (getpaseo/paseo) release tags into the Rambla fork with `just sync-upstream`, and finish by hand whatever it stops on — a conflict, a failing check, a failing CI job — walking each conflict past the user in plain English. Use when the user says "sync", "sync upstream", "merge upstream", or "/sync-upstream".
 ---
 
-# Merging upstream into the fork
+# Syncing upstream into the fork
 
 **The repo being merged is `rambla/`** — a permanent, terminal fork of
 upstream `getpaseo/paseo`, rebranded by script. Every command in this skill
@@ -31,10 +31,10 @@ create the next merge's conflicts.
 - **Never force-push. Never rebase. Never rewrite main's history.** This
   fork only ever merges.
 - **Never run end-to-end, integration, browser, Playwright, or Maestro
-  suites.** They will freeze the machine. Unit suites only, listed below.
-- **Never merge upstream/main directly.** Only `upstream-rebrand` is ever
-  merged — it carries the rebrand, so the merge base stays rebranded. This
-  is the whole reason the branch exists.
+  suites.** They will freeze the machine. Unit suites only.
+- **Never merge upstream/main directly.** Only a tag's rebrand commit from
+  `upstream-rebrand` is ever merged — it carries the rebrand, so the merge
+  base stays rebranded. This is the whole reason the branch exists.
 - **Never resolve a conflict by deleting our side** because upstream's looks
   cleaner. Every `RAMBLA-FORK:` tag marks something we chose on purpose.
 - **Never set or change git config.** Never `git config user.email`,
@@ -50,123 +50,83 @@ create the next merge's conflicts.
 
 ### 0. Preflight
 
-Work in `rambla/`. Confirm, and say so in one line each:
+Work in `rambla/`, on the branch the sync lands in — normally main. The
+script checks the rest itself: it fetches origin first, and stops, naming
+them, if the branch has uncommitted changes or commits origin lacks.
+
+### 1. Run it
 
 ```
-git status --porcelain          # must be empty
-git fetch origin
-git status -sb                  # main vs origin/main
+just sync-upstream
 ```
 
-- Dirty tree → stop, tell the user what's uncommitted.
-- Main behind origin/main → `git pull --ff-only`. If that isn't a fast
-  forward, stop: main and origin/main have diverged, and that is its own
-  problem to fix before any upstream merge.
+It takes no arguments, and does the whole run:
 
-### 1. Report the three facts, then ask
+1. Syncs every new upstream release tag onto `upstream-rebrand`, oldest
+   first, and pushes it. A release tag is a `v*` tag on upstream main, betas
+   included. Tags on upstream side branches, like hotfix `v0.10.1`, are
+   ignored.
+2. For each tag the branch lacks, oldest first, cuts `merge-<tag>` from the
+   branch, merges that tag's rebrand commit, keeps the branch's copies of
+   the delete list, rebuilds `CHANGELOG.md`, and runs the local checks:
+   `npm ci`, `npm run build:server`, `npm run typecheck` and the unit tests.
+3. Pushes `merge-<tag>`, waits for `ci.yml` on it, fast-forwards the branch
+   on origin to it, and deletes it. The local branch catches up with
+   `git pull --ff-only`, or at the next run.
 
-Refresh upstream and the rebrand branch first:
+`RUN_LOCAL_CHECKS=0 just sync-upstream` skips the local checks. The daily
+`merge-upstream.yml` workflow runs the same script with them off, since
+`ci.yml` runs the same checks.
 
-```
-git fetch upstream --quiet --no-tags
-git fetch origin upstream-rebrand
-```
+Exit 0 → report which tags landed, from its `landed <tag>` lines, and stop.
 
-`upstream-rebrand` has two writers, this machine and the CI bot that syncs
-daily. If local and `origin/upstream-rebrand` differ, reconcile before
-anything else: fast-forward if you can, and if you can't, stop and explain.
-A diverged rebrand branch is how an unrebranded commit gets into the merge
-base, which costs hours.
+### 2. When it stops
 
-Then report exactly these three, in this order:
+The first tag that stops ends the run; the tags before it stay landed. The
+last lines of the output say why:
 
-```
-Main is based on:      <tag or short SHA> — <N days> ago
-Rebrand branch tip:    <tag or "untagged" + short SHA> — <N days> ago
-Upstream's newest tag: <tag> — <N days> ago
-```
+| It stopped on                        | Left behind                    | Next                                                       |
+| ------------------------------------ | ------------------------------ | ---------------------------------------------------------- |
+| a conflict, listing the paths        | nothing; `merge-<tag>` deleted | make the merge branch by hand (step 3)                     |
+| a failing local check, naming it     | nothing; `merge-<tag>` deleted | make the merge branch by hand (step 3), then fix the check |
+| a failing `ci.yml` job, naming it    | `merge-<tag>` on origin        | check it out and fix it (step 5)                           |
+| the branch moving, naming both tips  | `merge-<tag>` on origin        | merge the branch into `merge-<tag>`, resolving conflicts   |
+| another `merge-` branch on origin    | that branch                    | land it or delete it first                                 |
+| a tag out of order, naming both tags | nothing                        | bring it to the user                                       |
 
-Use "3 days ago" style, not dates. Tag names for anything tagged; short SHA
-plus the word "untagged" otherwise.
+Every hand fix ends the same way: ask the user, push `merge-<tag>`, and run
+`just sync-upstream` again. It uses the branch on origin instead of making a
+new one, waits for `ci.yml`, and lands it.
 
-How to get each:
+### 3. Making the merge branch by hand
 
 ```bash
-# What main is based on — newest upstream tag that is an ancestor of main.
-git ls-remote --tags --refs upstream 'refs/tags/v*' | sed 's/-/~/' |
-  sort -V -k2 | sed 's/~/-/' | while read -r sha ref; do
-    git merge-base --is-ancestor "$sha" main 2>/dev/null &&
-      echo "${ref#refs/tags/} $(git log -1 --format='%cr' "$sha")"
-  done | tail -1
-
-# Rebrand branch tip.
-git log -1 --format='%h %cr %s' upstream-rebrand
-
-# Upstream's newest tag, betas included (tilde swap fixes sort -V's
-# backwards ordering of prereleases).
-git ls-remote --tags --refs upstream 'refs/tags/v*' |
-  awk -F'refs/tags/' '{print $2}' | sed 's/-/~/' | sort -V | tail -1 |
-  sed 's/~/-/'
+git fetch origin
+git checkout -b merge-<tag> origin/main
+# The tag's rebrand commit is the one whose subject reads "rebrand upstream <tag>".
+git log --first-parent --format='%h %s' origin/upstream-rebrand
+git merge --no-ff --no-commit <that commit>
 ```
 
-**Then ask the user, and wait.** Recommend the newest tag — betas count as
-releases here; `just merge-upstream --release` picks them up. Offer the tip
-of upstream's main as the second option, and say plainly that untagged main
-fails upstream's CI about a quarter of the time.
+The **delete list** is the block at the top of `fork/sync-upstream.sh`: the
+logos and `nix/npm-deps.hash`, paths upstream also has that the fork owns.
+Rebrand commits never hold them, so the merge deletes ours or conflicts on
+them. Put main's copy of each back:
 
-If the rebrand branch tip is untagged and the user picks a tag, say so —
-`--release` handles it, advancing the branch to the tag itself.
-
-If the newest tag is already an ancestor of main, there is nothing to merge.
-Say that and stop.
-
-### 2. Green baseline — before the merge
-
-Run these from `rambla/`, output to a file, and read the file:
-
-```
-npm run typecheck
-npm run lint
-npm run test:unit --workspace=@getrambla/server
-npm run test:unit --workspace=@getrambla/cli
-npm run test --workspace=@getrambla/protocol
-npm run test --workspace=@getrambla/client
+```bash
+git diff --cached --name-only origin/main -- <each delete-list entry, quoted>
+git checkout origin/main -- <each path it listed>
 ```
 
-- **Typecheck fails → stop. Do not merge.** A broken tree before a merge is
-  a separate problem; merging on top of it makes the cause unfindable.
-- Tests failing → write down exactly which ones. That list is the baseline.
-  A test that was already red is not a regression; a test that goes red
-  after the merge is.
+Resolve every conflict (step 4), then:
 
-### 3. Trial merge
-
-```
-just trial-merge          # throwaway worktree, never touches the checkout
-just trial-merge drop     # clean it up when done
+```bash
+node fork/build-changelog.mjs
+git add CHANGELOG.md
+git commit -m "merge upstream <tag>"
 ```
 
-Clean → go to 4a. Conflicts → go to 4b. Report the conflicted file list in
-plain English either way; don't paste raw git output.
-
-### 4a. Clean path
-
-```
-git checkout -b merge/<tag>
-just merge-upstream --release      # or --main, per the user's choice
-# Commit with the step-5 message template — never --no-edit.
-```
-
-Re-run everything from step 2. Compare against the baseline. Then go to 5.
-
-### 4b. Conflict path
-
-```
-git checkout -b merge/<tag>
-just merge-upstream --release
-```
-
-The merge is now staged with conflicts in the working tree.
+### 4. Conflicts
 
 **Enumerate the conflicts for the user, numbered, in plain English, before
 touching anything.** One entry each:
@@ -218,25 +178,11 @@ four good ones.
 cases listed here are the obvious ones, not the whole list. Slow and asking
 is the intended pace.
 
-### 5. Land it
+### 5. A failing check or job
 
-Once every conflict is resolved, commit the merge with this message template:
+The run names the failing local check or `ci.yml` job:
 
-```
-git commit -m "Merge upstream-rebrand through upstream <upstream-sha> (<tag>)"
-```
-
-For example: `Merge upstream-rebrand through upstream 30178c4f5 (v0.10.0-beta.1)`.
-Name the upstream commit the rebrand branch carried and the tag it corresponds
-to. Never accept git's default message (`Merge commit '20f46ddda'`) and never
-name the dated merge branch — the branch is deleted at the end of this step, so
-that name is dead on arrival and tells a reader nothing about where the content
-came from.
-
-Re-run everything from step 2 and compare against the baseline:
-
-- Same failures as baseline → no regression. Say so.
-- New failures → the merge caused them. **Show the failure before naming a
+- A failing test → **show the failure before naming a
   cause.** In this order: the test's name, what it expected and what it got,
   and the `file.ts:120` the assertion failed on. Then the cause, with its own
   citation. A cause offered without the failure shown first is a guess, and
@@ -246,32 +192,23 @@ Re-run everything from step 2 and compare against the baseline:
   paste the raw test output. It's unreadable with a screen reader, and
   summarizing it is your job.
 
-- Typecheck newly failing → the classic silent break: upstream changed a
+- Typecheck failing → the classic silent break: upstream changed a
   prop or signature in a way git merged cleanly but TypeScript rejects. Fix
   the call site, minimally.
 
-Then fast-forward main and drop the branch — no second merge commit:
-
-```
-git checkout main
-git merge --ff-only merge/<tag>
-git branch -d merge/<tag>
-```
-
-`--ff-only` is the point: the branch tip becomes main's tip, nothing new is
-recorded. If it refuses to fast-forward, main moved underneath you — stop
-and say so.
+Fix it on `merge-<tag>`, never on main.
 
 **Then ask before pushing.** Summarize: what came in, what conflicted, what
 you resolved, anything still uncertain. Wait for a yes.
 
 ```
-git push
+git push origin merge-<tag>
+just sync-upstream
 ```
 
 ### 6. Update the ledger
 
-Before the push, go through `PATCHES.md`:
+Before pushing the merge branch, go through `PATCHES.md`:
 
 - **Entries that drop.** Any divergence where upstream fixed it properly and
   we took theirs — mark it DROPPED with the date and what upstream did.

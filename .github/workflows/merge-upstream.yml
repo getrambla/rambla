@@ -1,9 +1,9 @@
 name: Merge upstream
 
-# Daily sync from getpaseo/paseo. Upstream's tree is rebranded on the standing
-# upstream-rebrand branch and merged from there, so brand strings never show up
-# as a difference. See fork/merge-upstream.sh. The merge must be conflict-free
-# and the server must build, or nothing is pushed. Never rebases.
+# Daily sync from getpaseo/paseo. fork/sync-upstream.sh rebrands each new
+# upstream release tag onto the standing upstream-rebrand branch, then lands it
+# in the branch this runs on through its own merge branch once ci.yml passes
+# there, so brand strings never show up as a difference. Never rebases.
 
 on:
   schedule:
@@ -13,20 +13,24 @@ on:
     - cron: "0 20 * * *"
   workflow_dispatch:
 
-# Shared with gemfile-lock-update.yml so the two bots never race pushes to main.
+# Shared with gemfile-lock-update.yml so the two bots never race pushes.
 concurrency:
   group: main-writer
   cancel-in-progress: false
 
 permissions:
   contents: read
+  # The script waits on ci.yml's run for each merge branch.
+  actions: read
 
 env:
   ONNXRUNTIME_NODE_INSTALL: skip
+  # ci.yml runs the same checks on each merge branch.
+  RUN_LOCAL_CHECKS: "0"
 
 jobs:
-  merge-upstream:
-    name: merge upstream
+  sync-upstream:
+    name: sync upstream
     runs-on: ubuntu-latest
     steps:
       # The default token cannot push .github/workflows, and the rebrand branch
@@ -39,6 +43,8 @@ jobs:
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          # The sync lands in the branch this run was started on.
+          ref: ${{ github.ref }}
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
@@ -47,70 +53,14 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      # oxfmt comes from node_modules; the build gate needs the deps anyway.
+      # oxfmt comes from node_modules.
       - run: npm ci
 
-      - name: Sync upstream-rebrand to upstream main
-        id: sync-rebrand
+      - name: Sync upstream
+        env:
+          # gh reads ci.yml's runs with this; git pushes with the app token checkout stored.
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "rambla-merge-bot"
           git config user.email "rambla-merge-bot@users.noreply.github.com"
-          fork/sync-upstream-rebrand.sh
-
-      - name: Merge (release mode)
-        id: sync
-        run: |
-          # Bails out quietly (exit 0) when no new stable release exists; the
-          # branch was still advanced to upstream main by the step above.
-          fork/merge-upstream.sh --release
-          if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
-            echo "merged=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "merged=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Build server (gate before push)
-        if: steps.sync.outputs.merged == 'true'
-        run: npm run build:server
-
-      - name: Verify provenance before commit
-        if: steps.sync.outputs.merged == 'true'
-        run: |
-          # Before recording anything: the staged merge must still be a merge,
-          # and both upstream tips must be reachable from it — upstream-rebrand
-          # (what was merged) and upstream/main (the originals it carries).
-          # HEAD itself cannot be checked yet; it gains both only when the
-          # merge commit is created in the next step.
-          if [ "$(git rev-parse MERGE_HEAD)" != "$(git rev-parse upstream-rebrand)" ]; then
-            echo "::error::MERGE_HEAD is not the upstream-rebrand tip; refusing to commit" >&2
-            exit 1
-          fi
-          tip="$(git rev-parse upstream/main)"
-          git merge-base --is-ancestor "$tip" MERGE_HEAD || { echo "::error::upstream/main $tip not reachable from MERGE_HEAD; provenance lost" >&2; exit 1; }
-          echo "provenance ok: merge sources contain upstream-rebrand and upstream/main at $tip"
-
-      - name: Commit and push
-        if: steps.sync.outputs.merged == 'true'
-        run: |
-          # Refuse to record anything while the index still holds a conflict,
-          # rather than trusting the previous step to have caught it.
-          if [ -n "$(git ls-files --unmerged)" ]; then
-            echo "::error::unmerged paths in the index; refusing to commit"
-            exit 1
-          fi
-          # Absent when upstream had nothing new and no merge was started.
-          if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
-            git commit --no-edit
-            # Same assertion as the justfile recipe, now against the real
-            # commit: both parents present, both upstream tips reachable.
-            parents="$(git rev-list --parents -n 1 HEAD)"
-            [ "$(echo "$parents" | wc -w)" -eq 3 ] || { echo "::error::not a merge commit: $parents" >&2; exit 1; }
-            for ref in upstream-rebrand upstream/main; do
-              tip="$(git rev-parse "$ref")"
-              git merge-base --is-ancestor "$tip" HEAD || { echo "::error::$ref ($tip) not reachable from HEAD; provenance lost" >&2; exit 1; }
-            done
-          fi
-          # upstream-rebrand was already pushed by the sync step. Gating its
-          # push on a release would throw away every non-release day's advance
-          # and leave origin behind whatever this machine holds.
-          git push origin main
+          fork/sync-upstream.sh

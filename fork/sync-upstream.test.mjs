@@ -3,8 +3,10 @@ import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   realpathSync,
   rmSync,
@@ -1305,4 +1307,208 @@ test("criteria 11, 16: the script never hides or swallows output, never turns on
   assert.doesNotMatch(source, /GIT_TRACE|GIT_CURL_VERBOSE|set -x/);
   assert.doesNotMatch(source, /git push[^\n]*(--force|\s-f\b|\s\+)/);
   assert.doesNotMatch(source, /magick|rsvg|node [^\n]*generate\.mjs/i);
+});
+
+// Criterion 16's ways to hide, swallow or trace output, for the recipes and the workflow.
+const HIDDEN_OUTPUT =
+  /\/dev\/null|\|\|\s*true|2>&1|&>|>&-|(^|\s)(-q|--quiet|--silent)(\s|$)|GIT_TRACE|set -x/m;
+
+/** Runs just on this repo's justfile in cwd and returns its trimmed stdout. */
+function just(args, cwd = repoRoot) {
+  return execFileSync(
+    "just",
+    ["--justfile", path.join(repoRoot, "justfile"), "--working-directory", cwd, ...args],
+    { env: gitEnv, encoding: "utf8" },
+  ).trim();
+}
+
+/** A file in this repo, as text. */
+function repoFile(file) {
+  return readFileSync(path.join(repoRoot, file), "utf8");
+}
+
+/** Whether a path exists in this repo, without following a symlink. */
+function lexists(file) {
+  try {
+    lstatSync(path.join(repoRoot, file));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Every symlink under dir, recursively, without following one. */
+function symlinksUnder(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    if (entry.isSymbolicLink()) return [full];
+    return entry.isDirectory() ? symlinksUnder(full) : [];
+  });
+}
+
+/** The text of a markdown section, from its heading to the next heading of the same level. */
+function section(text, heading) {
+  const start = text.indexOf(`\n${heading}\n`);
+  assert.notEqual(start, -1, heading);
+  const level = heading.match(/^#+ /)[0];
+  const end = text.indexOf(`\n${level}`, start + heading.length + 2);
+  return text.slice(start, end === -1 ? undefined : end);
+}
+
+/** A markdown file's sentences, with line breaks and code fences flattened. */
+function sentences(text) {
+  return text.replace(/\s+/g, " ").split(/(?<=[.!?])\s+/);
+}
+
+const SYNC_SKILL = ".agents/skills/sync-upstream/SKILL.md";
+// The old names criterion 11 retires; merge-upstream.yml is renamed in step 6, so it is stripped before matching.
+const OLD_NAMES = "sync-upstream-rebrand|merge-upstream|trial-merge|MERGE-SKILL|skills/merge";
+const WORKFLOW_NAME = /merge-upstream\\?\.yml/g;
+
+test("criteria 11, 16, 18: just sync-upstream runs the script, with its local checks left on, hiding no output", () => {
+  const recipe = just(["--show", "sync-upstream"]);
+
+  assert.match(recipe, /^\s+bash fork\/sync-upstream\.sh\s*$/m);
+  // The script turns the local checks on unless told otherwise, so the recipe never mentions them.
+  assert.doesNotMatch(recipe, /RUN_LOCAL_CHECKS/);
+  assert.doesNotMatch(recipe, HIDDEN_OUTPUT);
+});
+
+test("criteria 11, 13, 16, 18: merge-upstream.yml runs the script daily and by hand, on the dispatched ref, with the local checks off, naming no main", () => {
+  const workflow = repoFile(".github/workflows/merge-upstream.yml");
+
+  assert.match(workflow, /^ {2}schedule:\n( +#.*\n)* +- cron: "\d+ \d+ \* \* \*"$/m);
+  assert.match(workflow, /^ {2}workflow_dispatch:$/m);
+  assert.match(workflow, /^ +fork\/sync-upstream\.sh$/m);
+  assert.match(workflow, /^ +RUN_LOCAL_CHECKS: "?(0|false)"?$/m);
+  assert.match(workflow, /^ +ref: \$\{\{ github\.ref \}\}$/m);
+  assert.doesNotMatch(workflow.replaceAll("main-writer", ""), /\bmain\b/);
+  // The script does every push; the workflow names no branch to push to or trigger on.
+  assert.doesNotMatch(workflow, /^ +git push|^ +push:|branches:/m);
+  assert.doesNotMatch(workflow, /sync-upstream-rebrand|merge-upstream\.sh/);
+  assert.doesNotMatch(workflow, HIDDEN_OUTPUT);
+});
+
+test("criterion 15: just provenance and the plan skill's Provenance commands name the rebrand commit main last merged and its tag, from git links alone", (t) => {
+  const fx = makeFixture(t);
+  firstRun(fx);
+  const dir = checkout(fx, "provenance");
+  // A local main that merged v0.10.0-beta.2's rebrand commit while upstream-rebrand also holds v0.10.0's.
+  const merged = parents(fx.origin, rev(fx.origin, TARGET))[0];
+  git(dir, ["branch", "main", merged]);
+  const rebrand = parents(fx.origin, merged)[1];
+  const short = (sha) => git(dir, ["rev-parse", "--short", sha]);
+  const tagSha = short(tagCommit(fx, "v0.10.0-beta.2"));
+
+  const skill = section(repoFile(".agents/skills/plan/SKILL.md"), "## Provenance");
+  const commands = skill.match(/```bash\n([\s\S]*?)```/)[1];
+  const fromSkill = execFileSync("bash", ["-eo", "pipefail", "-c", commands], {
+    cwd: dir,
+    env: gitEnv,
+    encoding: "utf8",
+  });
+  const fromJust = just(["provenance"], dir);
+
+  assert.match(fromSkill, new RegExp(`^${short(rebrand)} — `, "m"));
+  assert.match(fromSkill, new RegExp(`^${tagSha} — `, "m"));
+  assert.match(fromSkill, /^v0\.10\.0-beta\.2$/m);
+  assert.match(fromJust, /^- main: /m);
+  assert.match(fromJust, new RegExp(`^- upstream-rebrand: ${short(rebrand)} — `, "m"));
+  assert.match(
+    fromJust,
+    new RegExp(`^- upstream/main: ${tagSha} \\(v0\\.10\\.0-beta\\.2\\) — `, "m"),
+  );
+  // Commit messages are never read.
+  for (const source of [commands, just(["--show", "provenance"])]) {
+    assert.doesNotMatch(source, /%s|%B|--grep/);
+  }
+});
+
+test("criterion 11: no old script, recipe or skill name remains in a tracked file outside plans/, the workflow's own name aside", () => {
+  for (const gone of [
+    "fork/sync-upstream-rebrand.sh",
+    "fork/merge-upstream.sh",
+    ".agents/skills/merge",
+    ".agents/skills/MERGE-SKILL.md",
+    ".claude/skills/merge",
+  ]) {
+    assert.ok(!lexists(gone), `${gone} is gone`);
+  }
+  const grep = spawnSync(
+    "git",
+    [
+      "grep",
+      "-n",
+      "-I",
+      "-E",
+      "-e",
+      OLD_NAMES,
+      "--",
+      ".",
+      ":!plans/",
+      ":!fork/sync-upstream.test.mjs",
+    ],
+    { cwd: repoRoot, env: gitEnv, encoding: "utf8" },
+  );
+  const hits = grep.stdout
+    .split("\n")
+    .filter((line) => new RegExp(OLD_NAMES).test(line.replace(WORKFLOW_NAME, "")));
+  assert.deepEqual(hits, []);
+
+  const recipes = just(["--summary"]).split(/\s+/);
+  assert.ok(recipes.includes("sync-upstream"));
+  for (const old of ["merge-upstream", "sync-upstream-rebrand", "trial-merge"]) {
+    assert.ok(!recipes.includes(old), old);
+  }
+  assert.ok(!repoFile(".gitignore").split("\n").includes(".trial-merge/"));
+});
+
+test("criterion 11: the skill is sync-upstream, reachable from .claude/ and .agents/, and no symlink under either is broken", () => {
+  const links = [".claude", ".agents"].flatMap((dir) => symlinksUnder(path.join(repoRoot, dir)));
+  for (const link of links) {
+    assert.ok(existsSync(link), `${path.relative(repoRoot, link)} is not broken`);
+  }
+  const skill = realpathSync(path.join(repoRoot, SYNC_SKILL));
+  assert.equal(realpathSync(path.join(repoRoot, ".claude/skills/sync-upstream/SKILL.md")), skill);
+  assert.equal(realpathSync(path.join(repoRoot, ".agents/skills/SYNC-UPSTREAM-SKILL.md")), skill);
+
+  const text = repoFile(SYNC_SKILL);
+  assert.match(text, /^---\nname: sync-upstream\n/);
+  assert.match(text, /just sync-upstream/);
+  assert.match(text, /delete list/);
+  assert.doesNotMatch(text.replace(WORKFLOW_NAME, ""), new RegExp(OLD_NAMES));
+});
+
+test("criterion 11: the skill and docs/brand.md never say a sync runs the logo generator, and generate.mjs's comment never mentions a sync", () => {
+  assert.doesNotMatch(repoFile(SYNC_SKILL), /generat|rsvg|magick/i);
+
+  const brand = repoFile("docs/brand.md");
+  for (const sentence of sentences(brand)) {
+    const syncRunsGenerator =
+      /\b(sync|merge)/i.test(sentence) &&
+      /\bgenerat/i.test(sentence) &&
+      /\b(re-?)?run(s|ning)?\b/i.test(sentence);
+    assert.ok(!syncRunsGenerator, sentence);
+  }
+  assert.match(brand, /fork\/sync-upstream\.sh/);
+  assert.match(brand, /delete list/);
+
+  const comment = repoFile("fork/brand/generate.mjs").split("\nimport ")[0];
+  assert.doesNotMatch(comment, /sync|merge/i);
+  assert.match(comment, /^\/\/ fork\/brand\/rambla-logo\.svg is the source of truth\.$/m);
+});
+
+test("criterion 12: the last job in ci.yml runs these tests and carries the fork tag", () => {
+  const lines = repoFile(".github/workflows/ci.yml").trimEnd().split("\n");
+  const start = lines.findLastIndex((line) => /^ {2}[\w-]+:$/.test(line));
+  const job = lines.slice(start).join("\n");
+
+  assert.match(
+    lines[start - 1],
+    /^ {2}# RAMBLA-FORK: fix: 2026-09-29-fix-upstream-sync\.md: [^\n]+\.$/,
+  );
+  assert.match(job, /^ +run: node --test fork\/sync-upstream\.test\.mjs$/m);
+  // The provenance test runs just, and the rebrand formats with oxfmt from node_modules.
+  assert.match(job, /setup-just/);
+  assert.match(job, /npm-retry\.mjs ci|npm ci/);
 });

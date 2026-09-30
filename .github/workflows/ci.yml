@@ -525,3 +525,25 @@ jobs:
       RAMBLA_CLI_TEST_SHARD: "3"
       RAMBLA_CLI_TEST_SHARD_TOTAL: "3"
     steps: *cli_test_steps
+
+  # RAMBLA-FORK: fix: 2026-09-29-fix-upstream-sync.md: runs the upstream sync tests.
+  sync-upstream-tests:
+    name: sync-upstream tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      # The provenance test runs `just provenance`.
+      - uses: extractions/setup-just@v2
+
+      # The sync formats each rebrand commit with oxfmt from node_modules.
+      - name: Install dependencies
+        run: node scripts/npm-retry.mjs ci
+
+      - name: Run the sync tests
+        run: node --test fork/sync-upstream.test.mjs

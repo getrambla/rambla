@@ -46,11 +46,11 @@ Every path the generator writes to is a path upstream owns, so a sync would
 otherwise drag Paseo's artwork back in — and a conflict on a binary icon is one
 nobody can read a diff of.
 
-`fork/merge-upstream.sh` runs the generator against the `upstream-rebrand`
-worktree before that branch is committed, the same way it forces the fork's
-`nix/npm-deps.hash` onto that side. Both sides of the merge then hold identical
-bytes and git has nothing to resolve. Upstream can redraw its logo as often as
-it likes; the merge never notices.
+Those paths are on the delete list at the top of `fork/sync-upstream.sh`, with
+the fork's `nix/npm-deps.hash`. No commit on `upstream-rebrand` holds them, and
+each merge keeps main's copies. Upstream can redraw its logo as often as it
+likes; the merge never notices. A path the generator starts writing goes on the
+delete list too.
 
 `fork/brand/` itself is a path upstream has never had, and `fork/rebrand.sh`
 skips it, so the source design and the generator are outside the collision
