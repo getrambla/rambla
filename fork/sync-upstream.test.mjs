@@ -1,12 +1,25 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { buildChangelog } from "./build-changelog.mjs";
 
 const script = path.join(path.dirname(fileURLToPath(import.meta.url)), "sync-upstream.sh");
+const repoRoot = path.resolve(path.dirname(script), "..");
+// The stand-in npm hands the rebrand's formatting to the real npm.
+const realNpm = execFileSync("sh", ["-c", "command -v npm"], { encoding: "utf8" }).trim();
 
 const TARGET = "fix/sync-target";
 const BRANCH = "upstream-rebrand";
@@ -75,6 +88,103 @@ const UPSTREAM_FILES = {
   ...Object.fromEntries(deleteList.map((file) => [upstreamName(file), "upstream copy\n"])),
 };
 
+const RAMBLA_CHANGELOG = `# Changelog
+
+## Unreleased
+
+### Added
+
+- Added a fork thing
+
+## 0.9.0 - 2026-09-01
+
+### Added
+
+- Added the fork
+`;
+
+/** Upstream's CHANGELOG.md with one Added entry per [version, day], newest first. */
+function upstreamChangelog(...entries) {
+  const lines = entries.flatMap(([version, n]) => [
+    `## ${version} - ${day(n).slice(0, 10)}`,
+    "",
+    "### Added",
+    "",
+    `- Added the ${version} thing`,
+    "",
+  ]);
+  return ["# Changelog", "", ...lines].join("\n");
+}
+
+// Criterion 18's list, written out apart from the script so a changed command fails a test.
+const UNIT_ARGS = ["--", "--exclude", "**/*e2e*", "--exclude", "**/*integration*"];
+const LOCAL_CHECKS = [
+  ["ci"],
+  ["run", "build:server"],
+  ["run", "typecheck"],
+  ["run", "test:unit", "--workspace=packages/server", ...UNIT_ARGS],
+  ["run", "test:unit", "--workspace=packages/cli", ...UNIT_ARGS],
+  ...["desktop", "client", "highlight", "plugin", "protocol", "relay"].map((pkg) =>
+    ["run", "test", `--workspace=packages/${pkg}`].concat(UNIT_ARGS),
+  ),
+  ["run", "test", "--workspace=packages/app", ...UNIT_ARGS, "--project", "unit"],
+];
+
+/** The ci.yml jobs the stand-in gh reports, each with its conclusion; CI_JOBS overrides them. */
+const CI_JOBS = {
+  changes: "success",
+  typecheck: "success",
+  "server-tests-ubuntu": "success",
+  "server-tests-windows": "skipped",
+  "playwright (shard 1/4)": "success",
+  "playwright (shard 2/4)": "success",
+  "playwright (shard 3/4)": "success",
+  "playwright (shard 4/4)": "success",
+  "cli-tests (shard 1/3)": "success",
+};
+
+// Records each call, with where it ran; hands formatting to the real npm and fails the call named by NPM_FAIL.
+const NPM_STANDIN = `#!/usr/bin/env node
+const { appendFileSync } = require("node:fs");
+const { execFileSync, spawnSync } = require("node:child_process");
+const args = process.argv.slice(2);
+const git = (a) => execFileSync("git", a, { encoding: "utf8" }).trim();
+const call = { tool: "npm", args, cwd: process.cwd(), gitDir: git(["rev-parse", "--absolute-git-dir"]), head: git(["rev-parse", "HEAD"]) };
+appendFileSync(process.env.CALL_LOG, JSON.stringify(call) + "\\n");
+if (args[0] === "--prefix") process.exit(spawnSync(process.env.REAL_NPM, args, { stdio: "inherit" }).status ?? 1);
+if (args.join(" ") === process.env.NPM_FAIL) {
+  console.error("stand-in npm: " + args.join(" ") + " failed");
+  process.exit(1);
+}
+console.log("stand-in npm: " + args.join(" "));
+`;
+
+// Records each call and answers run list, watch and view through the caller's own --jq filter; GH_ON_WATCH runs during the watch.
+const GH_STANDIN = `#!/usr/bin/env node
+const { appendFileSync } = require("node:fs");
+const { execSync, spawnSync } = require("node:child_process");
+const args = process.argv.slice(2);
+appendFileSync(process.env.CALL_LOG, JSON.stringify({ tool: "gh", args }) + "\\n");
+function jq(data) {
+  const filter = args[args.indexOf("--jq") + 1];
+  const result = spawnSync("jq", ["-r", filter], { input: JSON.stringify(data), stdio: ["pipe", "inherit", "inherit"] });
+  process.exit(result.status ?? 1);
+}
+const command = args.slice(0, 2).join(" ");
+if (command === "run list") {
+  jq([{ databaseId: 4242 }]);
+} else if (command === "run watch") {
+  if (process.env.GH_ON_WATCH) execSync(process.env.GH_ON_WATCH, { stdio: "inherit" });
+  console.log("stand-in gh: run 4242 completed");
+} else if (command === "run view") {
+  const conclusions = { ...${JSON.stringify(CI_JOBS)}, ...JSON.parse(process.env.CI_JOBS || "{}") };
+  jq({ jobs: Object.entries(conclusions).map(([name, conclusion]) => ({ name, conclusion })) });
+} else {
+  console.error("stand-in gh: unexpected call: " + args.join(" "));
+  process.exit(1);
+}
+`;
+
 // Tests must never touch the real repo or Tom's git config, and must run the same in CI.
 const gitEnv = (() => {
   const env = {
@@ -141,10 +251,26 @@ function oldStyleMerge(repo, sha, n) {
   git(repo, ["commit", "-m", `rebrand upstream through ${sha}`], dated(n));
 }
 
-/** Builds a fixture upstream, an origin holding main, the target branch and an old-style upstream-rebrand. */
+/** Builds a fixture upstream, an origin holding main, the target branch and an old-style upstream-rebrand, plus the stand-in npm and gh; asserts main never moves (criteria 1, 13). */
 function makeFixture(t) {
   const root = mkdtempSync(path.join(tmpdir(), "sync-upstream-test-"));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
+  let main;
+  t.after(() => {
+    try {
+      if (main) assert.equal(rev(origin, "main"), main, "main never moves");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+  const standins = path.join(root, "standins");
+  mkdirSync(standins);
+  for (const [name, source] of [
+    ["npm", NPM_STANDIN],
+    ["gh", GH_STANDIN],
+  ]) {
+    writeFileSync(path.join(standins, name), source);
+    chmodSync(path.join(standins, name), 0o755);
+  }
   const up = path.join(root, "upstream");
   const origin = path.join(root, "origin.git");
   const seed = path.join(root, "seed");
@@ -161,13 +287,22 @@ function makeFixture(t) {
     {
       "version.txt": "0.10.0-beta.2\n",
       "packages/paseo-core/src/beta2.ts": "export const beta = 2;\n",
+      "CHANGELOG.md": upstreamChangelog(["0.10.0-beta.2", 3]),
     },
     3,
     "0.10.0-beta.2",
   );
   tag(up, "v0.10.0-beta.2", c.beta2, 3);
   c.untagged = commit(up, { "version.txt": "between\n" }, 4, "untagged");
-  c.v0100 = commit(up, { "version.txt": "0.10.0\n" }, 5, "0.10.0");
+  c.v0100 = commit(
+    up,
+    {
+      "version.txt": "0.10.0\n",
+      "CHANGELOG.md": upstreamChangelog(["0.10.0", 5], ["0.10.0-beta.2", 3]),
+    },
+    5,
+    "0.10.0",
+  );
   tag(up, "v0.10.0", c.v0100, 5);
   c.after = commit(up, { "untagged.txt": "never synced\n" }, 6, "after 0.10.0");
   git(up, ["checkout", "-b", "release/0.10", c.v0100]);
@@ -183,9 +318,22 @@ function makeFixture(t) {
   oldStyleMerge(seed, c.beta2, 3);
   oldStyleMerge(seed, c.untagged, 4);
   git(seed, ["checkout", "-b", "fork-main"]);
-  commit(seed, { "fork-only.txt": "ours\n", "nix/npm-deps.hash": "main-hash\n" }, 5, "fork change");
+  // The changelog builder and its inputs, as main carries them; main's copy of the nix hash differs from upstream's.
+  const forkFiles = {
+    "fork-only.txt": "ours\n",
+    "nix/npm-deps.hash": "main-hash\n",
+    "RAMBLA-CHANGELOG.md": RAMBLA_CHANGELOG,
+    "CHANGELOG.md": "# Changelog\n",
+    ...Object.fromEntries(
+      ["fork/build-changelog.mjs", "scripts/changelog-utils.mjs", "scripts/is-main-module.mjs"].map(
+        (file) => [file, readFileSync(path.join(repoRoot, file), "utf8")],
+      ),
+    ),
+  };
+  commit(seed, forkFiles, 5, "fork change");
   git(root, ["init", "--bare", "-b", "main", origin]);
   git(seed, ["push", origin, `${BRANCH}:${BRANCH}`, "fork-main:main", `fork-main:${TARGET}`]);
+  main = rev(origin, "main");
 
   return { root, up, origin, c };
 }
@@ -199,14 +347,36 @@ function checkout(fx, name) {
   return dir;
 }
 
-/** Runs the sync script in a checkout and returns its exit status and combined output. */
+let runs = 0;
+
+/** Runs the sync script in a checkout with the stand-in npm and gh first on PATH; returns its exit status, combined output, and every stand-in call in order. */
 function sync(dir, env = {}) {
+  const root = path.dirname(dir);
+  runs += 1;
+  const log = path.join(root, `calls-${runs}.jsonl`);
+  writeFileSync(log, "");
   const result = spawnSync("bash", [script], {
     cwd: dir,
-    env: { ...gitEnv, ...env },
+    env: {
+      ...gitEnv,
+      PATH: `${path.join(root, "standins")}${path.delimiter}${process.env.PATH}`,
+      REAL_NPM: realNpm,
+      CALL_LOG: log,
+      ...env,
+    },
     encoding: "utf8",
   });
-  return { status: result.status, output: `${result.stdout}${result.stderr}` };
+  const calls = readFileSync(log, "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+  return {
+    status: result.status,
+    output: `${result.stdout}${result.stderr}`,
+    calls,
+    npm: calls.filter((call) => call.tool === "npm"),
+    gh: calls.filter((call) => call.tool === "gh"),
+  };
 }
 
 /** Every branch on the fixture origin with its commit, one per line. */
@@ -367,6 +537,7 @@ test("criteria 5, 6, 7: a rebrand commit is the tag's tree minus the delete list
 
   assert.deepEqual(filesOf(fx.origin, v0100), [
     ".github/workflows/ci.yml",
+    "PASEO-CHANGELOG.md",
     "PASEO-README.md",
     "packages/app/src/thing.paseo.test.ts",
     "packages/rambla-core/src/beta2.ts",
@@ -586,12 +757,13 @@ test("criterion 14: the local target branch fast-forwards to origin's tip", (t) 
   const pusher = checkout(fx, "pusher");
   commit(pusher, { "later.txt": "later\n" }, 9, "later on target");
   git(pusher, ["push", "origin", TARGET]);
+  const pushed = rev(fx.origin, TARGET);
 
   const run = sync(dir);
 
   assert.equal(run.status, 0, run.output);
-  assert.equal(rev(dir, TARGET), rev(fx.origin, TARGET));
-  assert.equal(rev(dir, "HEAD"), rev(fx.origin, TARGET));
+  assert.equal(rev(dir, TARGET), pushed);
+  assert.equal(rev(dir, "HEAD"), pushed);
 });
 
 test("criterion 10: an error while building rebrand commits leaves origin, local branches and worktrees as they were", (t) => {
@@ -669,4 +841,468 @@ test("criteria 4, 10: among the release tags one run syncs, a higher version tag
   assert.match(run.output, /v0\.12\.0 \(version 0\.12\.0, tagged 2026-09-09/);
   assert.match(run.output, /v0\.11\.0 \(version 0\.11\.0, tagged 2026-09-10/);
   assertNothingChanged(fx, dir, before);
+});
+
+/** A file's exact content at a commit. */
+function show(repo, sha, file) {
+  return execFileSync("git", ["show", `${sha}:${file}`], {
+    cwd: repo,
+    env: gitEnv,
+    encoding: "utf8",
+  });
+}
+
+/** Commits files on the target branch in a fresh checkout and pushes them; returns the checkout, level with origin. */
+function pushToTarget(fx, name, files, n) {
+  const dir = checkout(fx, name);
+  commit(dir, files, n, `${name} on ${TARGET}`);
+  git(dir, ["push", "origin", TARGET]);
+  return dir;
+}
+
+/** Commits files on upstream main and tags the commit as a release on the given day. */
+function release(fx, name, files, n) {
+  const sha = commit(fx.up, files, n, name);
+  tag(fx.up, name, sha, n);
+  return sha;
+}
+
+/** The ci.yml runs a sync looked up, in order, as { workflow, branch, commit }. */
+function ciLookups(run) {
+  const opt = (args, name) => args[args.indexOf(name) + 1];
+  return run.gh
+    .filter(({ args }) => args[0] === "run" && args[1] === "list")
+    .map(({ args }) => ({
+      workflow: opt(args, "--workflow"),
+      branch: opt(args, "--branch"),
+      commit: opt(args, "--commit"),
+    }));
+}
+
+/** Every npm call but the rebrand's formatting: the local checks. */
+function checkCalls(run) {
+  return run.npm.filter(({ args }) => args[0] !== "--prefix");
+}
+
+/** The merge branches in a repo. */
+function mergeBranches(repo) {
+  return branchNames(repo).filter((name) => name.startsWith("merge-"));
+}
+
+/** Makes the target branch rewrite rambla.ts and tags an upstream release rewriting it too, so merging that release conflicts; returns the checkout. */
+function conflictingRelease(fx, name, n) {
+  const ours = pushToTarget(
+    fx,
+    "ours",
+    { "packages/rambla-core/src/rambla.ts": 'export const ramblaName = "Ours";\n' },
+    n,
+  );
+  release(
+    fx,
+    name,
+    { "packages/paseo-core/src/paseo.ts": 'export const paseoName = "Theirs";\n' },
+    n + 1,
+  );
+  return ours;
+}
+
+test("criteria 8, 11: each release tag the target branch lacks lands through its own merge branch, oldest first, as a fast-forward once ci.yml passes", (t) => {
+  const fx = makeFixture(t);
+  const dir = checkout(fx, "checkout");
+  const oldTip = rev(fx.origin, BRANCH);
+  const before = rev(fx.origin, TARGET);
+
+  const run = sync(dir);
+
+  assert.equal(run.status, 0, run.output);
+  const [beta2, v0100] = assertSynced(fx, oldTip, ["v0.10.0-beta.2", "v0.10.0"]);
+  const second = rev(fx.origin, TARGET);
+  const first = parents(fx.origin, second)[0];
+  // Each merge takes only its own tag's rebrand commit, on the target branch's tip once the tag before it landed.
+  assert.deepEqual(parents(fx.origin, first), [before, beta2]);
+  assert.deepEqual(parents(fx.origin, second), [first, v0100]);
+  // The target branch's new tips are the very commits ci.yml ran on: fast-forwards, no merge commit of its own.
+  assert.deepEqual(ciLookups(run), [
+    { workflow: "ci.yml", branch: "merge-v0.10.0-beta.2", commit: first },
+    { workflow: "ci.yml", branch: "merge-v0.10.0", commit: second },
+  ]);
+  assert.match(run.output, /stand-in gh: run 4242 completed/);
+  assert.deepEqual(mergeBranches(fx.origin), []);
+  assert.deepEqual(mergeBranches(dir), []);
+  assert.equal(rev(dir, TARGET), before, "the local target branch is not touched");
+  assert.equal(rev(dir, BRANCH), rev(fx.origin, BRANCH));
+  assert.equal(worktreeCount(dir), 1);
+});
+
+test("criterion 8: the merge keeps the target branch's delete-list files, whether main changed them or they match upstream-rebrand", (t) => {
+  const fx = makeFixture(t);
+  firstRun(fx);
+  const landed = rev(fx.origin, TARGET);
+
+  // The logos on main match the old upstream-rebrand's; main changed the nix hash.
+  for (const file of logoPaths) {
+    assert.equal(show(fx.origin, landed, upstreamName(file)), "upstream copy\n", file);
+  }
+  assert.equal(show(fx.origin, landed, "nix/npm-deps.hash"), "main-hash\n");
+
+  const ours = pushToTarget(fx, "ours", { "nix/npm-deps.hash": "main-hash-2\n" }, 9);
+  release(
+    fx,
+    "v0.11.0",
+    { "nix/npm-deps.hash": "upstream-hash-2\n", "version.txt": "0.11.0\n" },
+    10,
+  );
+
+  const run = sync(ours);
+
+  assert.equal(run.status, 0, run.output);
+  const tip = rev(fx.origin, TARGET);
+  assert.equal(show(fx.origin, tip, "version.txt"), "0.11.0\n");
+  assert.equal(show(fx.origin, tip, "nix/npm-deps.hash"), "main-hash-2\n");
+});
+
+test("criterion 8: each merge regenerates CHANGELOG.md with fork/build-changelog.mjs", (t) => {
+  const fx = makeFixture(t);
+  firstRun(fx);
+  const second = rev(fx.origin, TARGET);
+  const first = parents(fx.origin, second)[0];
+
+  for (const sha of [first, second]) {
+    assert.equal(
+      show(fx.origin, sha, "CHANGELOG.md"),
+      buildChangelog(
+        show(fx.origin, sha, "RAMBLA-CHANGELOG.md"),
+        show(fx.origin, sha, "PASEO-CHANGELOG.md"),
+      ),
+    );
+  }
+  assert.match(show(fx.origin, first, "CHANGELOG.md"), /Added the 0\.10\.0-beta\.2 thing/);
+  assert.doesNotMatch(show(fx.origin, first, "CHANGELOG.md"), /Added the 0\.10\.0 thing/);
+  assert.match(show(fx.origin, second, "CHANGELOG.md"), /Added the 0\.10\.0 thing/);
+});
+
+test("criterion 9: with every release tag synced and landed, a run changes nothing, makes no merge branch and exits 0", (t) => {
+  const fx = makeFixture(t);
+  firstRun(fx);
+  const dir = checkout(fx, "second");
+  const before = originBranches(fx);
+
+  const run = sync(dir);
+
+  assert.equal(run.status, 0, run.output);
+  assert.equal(originBranches(fx), before);
+  assert.deepEqual(run.gh, []);
+  assert.deepEqual(run.npm, []);
+  assert.deepEqual(mergeBranches(dir), []);
+  assert.equal(rev(dir, TARGET), rev(fx.origin, TARGET));
+  assert.equal(rev(dir, BRANCH), rev(fx.origin, BRANCH));
+  assert.equal(worktreeCount(dir), 1);
+});
+
+test("criteria 10, 16: a conflict stops the run listing its paths; upstream-rebrand is pushed, the merge branch is deleted unpushed, the target branch is unchanged", (t) => {
+  const fx = makeFixture(t);
+  const synced = firstRun(fx);
+  const ours = conflictingRelease(fx, "v0.11.0", 9);
+  const target = rev(fx.origin, TARGET);
+
+  const run = sync(ours);
+
+  assert.notEqual(run.status, 0, run.output);
+  assert.match(run.output, /CONFLICT \(content\)/, "git's own output is shown");
+  assert.match(run.output, /merge-v0\.11\.0/);
+  assert.match(run.output, /^packages\/rambla-core\/src\/rambla\.ts$/m);
+  assertSynced(fx, synced, ["v0.11.0"]);
+  assert.equal(rev(ours, BRANCH), rev(fx.origin, BRANCH));
+  assert.equal(rev(fx.origin, TARGET), target);
+  assert.equal(rev(ours, TARGET), target);
+  assert.deepEqual(mergeBranches(fx.origin), []);
+  assert.deepEqual(mergeBranches(ours), []);
+  assert.deepEqual(run.gh, []);
+  assert.deepEqual(checkCalls(run), []);
+  assert.equal(worktreeCount(ours), 1);
+});
+
+test("criterion 10: upstream deleting a file main changed is a conflict, listed", (t) => {
+  const fx = makeFixture(t);
+  firstRun(fx);
+  const ours = pushToTarget(
+    fx,
+    "ours",
+    { "packages/rambla-core/src/beta2.ts": "export const beta = 3;\n" },
+    9,
+  );
+  release(
+    fx,
+    "v0.11.0",
+    { "packages/paseo-core/src/beta2.ts": null, "version.txt": "0.11.0\n" },
+    10,
+  );
+  const target = rev(fx.origin, TARGET);
+
+  const run = sync(ours);
+
+  assert.notEqual(run.status, 0, run.output);
+  assert.match(run.output, /CONFLICT \(modify\/delete\)/);
+  assert.match(run.output, /^packages\/rambla-core\/src\/beta2\.ts$/m);
+  assert.equal(rev(fx.origin, TARGET), target);
+  assert.deepEqual(mergeBranches(fx.origin), []);
+  assert.equal(worktreeCount(ours), 1);
+});
+
+test("criteria 8, 10: of two new release tags, the first lands and the second conflicts; the first stays landed and each got its own merge branch", (t) => {
+  const fx = makeFixture(t);
+  const synced = firstRun(fx);
+  const ours = pushToTarget(
+    fx,
+    "ours",
+    { "packages/rambla-core/src/rambla.ts": 'export const ramblaName = "Ours";\n' },
+    9,
+  );
+  release(fx, "v0.11.0", { "version.txt": "0.11.0\n" }, 10);
+  release(
+    fx,
+    "v0.12.0",
+    { "packages/paseo-core/src/paseo.ts": 'export const paseoName = "Theirs";\n' },
+    11,
+  );
+  const before = rev(fx.origin, TARGET);
+
+  const run = sync(ours);
+
+  assert.notEqual(run.status, 0, run.output);
+  const [v0110] = assertSynced(fx, synced, ["v0.11.0", "v0.12.0"]);
+  const landed = rev(fx.origin, TARGET);
+  assert.deepEqual(parents(fx.origin, landed), [before, v0110]);
+  assert.deepEqual(ciLookups(run), [
+    { workflow: "ci.yml", branch: "merge-v0.11.0", commit: landed },
+  ]);
+  assert.match(run.output, /merge-v0\.12\.0/);
+  assert.match(run.output, /^packages\/rambla-core\/src\/rambla\.ts$/m);
+  assert.deepEqual(
+    checkCalls(run).map(({ head }) => head),
+    LOCAL_CHECKS.map(() => landed),
+  );
+  assert.deepEqual(mergeBranches(fx.origin), []);
+  assert.deepEqual(mergeBranches(ours), []);
+  assert.equal(worktreeCount(ours), 1);
+});
+
+test("criteria 10, 16, 18: a failing local check stops the run naming it; the merge branch is never pushed, upstream-rebrand is", (t) => {
+  const fx = makeFixture(t);
+  const dir = checkout(fx, "checkout");
+  const oldTip = rev(fx.origin, BRANCH);
+  const target = rev(fx.origin, TARGET);
+
+  const run = sync(dir, { NPM_FAIL: "run typecheck" });
+
+  assert.notEqual(run.status, 0, run.output);
+  assert.match(run.output, /stand-in npm: run typecheck failed/, "the check's own output is shown");
+  assert.match(run.output, /^error: .*npm run typecheck/m);
+  assert.deepEqual(
+    checkCalls(run).map(({ args }) => args),
+    LOCAL_CHECKS.slice(0, 3),
+  );
+  assertSynced(fx, oldTip, ["v0.10.0-beta.2", "v0.10.0"]);
+  assert.equal(rev(fx.origin, TARGET), target);
+  assert.deepEqual(mergeBranches(fx.origin), []);
+  assert.deepEqual(mergeBranches(dir), []);
+  assert.deepEqual(run.gh, []);
+  assert.equal(worktreeCount(dir), 1);
+});
+
+test("criterion 18: the local checks run in the temporary worktree, in order, after each clean merge and before ci.yml is looked up", (t) => {
+  const fx = makeFixture(t);
+  const dir = checkout(fx, "checkout");
+
+  const run = sync(dir);
+
+  assert.equal(run.status, 0, run.output);
+  const second = rev(fx.origin, TARGET);
+  const first = parents(fx.origin, second)[0];
+  const [format1, format2, ...checks] = run.npm;
+  for (const call of [format1, format2]) {
+    assert.deepEqual([call.args[0], ...call.args.slice(2, 4)], ["--prefix", "run", "format:files"]);
+  }
+  assert.deepEqual(
+    checks.map(({ args }) => args),
+    [...LOCAL_CHECKS, ...LOCAL_CHECKS],
+  );
+  const worktrees = `${path.join(realpathSync(dir), ".git", "worktrees")}${path.sep}`;
+  checks.forEach((call, i) => {
+    assert.ok(call.gitDir.startsWith(worktrees), call.gitDir);
+    assert.ok(!existsSync(call.cwd), `${call.cwd} is removed after the run`);
+    assert.equal(call.head, i < LOCAL_CHECKS.length ? first : second);
+  });
+  // Each merge's checks all come before its ci.yml lookup, which follows its push.
+  const order = run.calls.map((call) => (call.tool === "npm" ? call.head : call.args[1]));
+  assert.ok(order.lastIndexOf(first) < order.indexOf("list"));
+  assert.ok(order.lastIndexOf(second) < order.lastIndexOf("list"));
+});
+
+test("criterion 18: no test file named e2e or integration runs or is passed to a test run, and no end-to-end, integration, browser or Playwright script runs", (t) => {
+  const fx = makeFixture(t);
+
+  const run = sync(checkout(fx, "checkout"));
+
+  assert.equal(run.status, 0, run.output);
+  const testRuns = checkCalls(run).filter(
+    ({ args }) => args[0] === "run" && args[1].startsWith("test"),
+  );
+  assert.equal(testRuns.length, 2 * 9);
+  for (const { args } of checkCalls(run)) {
+    assert.ok(
+      ["ci", "build:server", "typecheck", "test", "test:unit"].includes(args[1] ?? args[0]),
+      args.join(" "),
+    );
+    assert.doesNotMatch(args.join(" "), /playwright|browser|test:e2e|test:integration/);
+    args.forEach((arg, i) => {
+      if (/e2e|integration/.test(arg)) assert.equal(args[i - 1], "--exclude", arg);
+    });
+  }
+  for (const { args } of testRuns) {
+    const excluded = args.filter((_, i) => args[i - 1] === "--exclude");
+    const willRun = (file) => !excluded.some((glob) => path.matchesGlob(file, glob));
+    for (const file of [
+      "src/server/daemon.e2e.test.ts",
+      "src/db.integration.test.ts",
+      "tests/e2e.test.ts",
+      "src/terminal-integration.test.ts",
+    ]) {
+      assert.ok(!willRun(file), `${file} must not run: ${args.join(" ")}`);
+    }
+    assert.ok(willRun("src/server/session.test.ts"), args.join(" "));
+  }
+});
+
+test("criterion 18: RUN_LOCAL_CHECKS set to 0 or false skips the local checks", (t) => {
+  for (const value of ["0", "false"]) {
+    const fx = makeFixture(t);
+
+    const run = sync(checkout(fx, "checkout"), { RUN_LOCAL_CHECKS: value });
+
+    assert.equal(run.status, 0, run.output);
+    assert.deepEqual(checkCalls(run), [], value);
+    assert.equal(ciLookups(run).length, 2, value);
+    assert.deepEqual(mergeBranches(fx.origin), [], value);
+  }
+});
+
+test("criterion 11: a merge branch already on origin, fixed by hand after a stop, is used instead of a new one", (t) => {
+  const fx = makeFixture(t);
+  const synced = firstRun(fx);
+  const ours = conflictingRelease(fx, "v0.11.0", 9);
+  const stopped = sync(ours);
+  assert.notEqual(stopped.status, 0, stopped.output);
+  const [v0110] = assertSynced(fx, synced, ["v0.11.0"]);
+  const hand = checkout(fx, "hand");
+  git(hand, ["checkout", "-b", "merge-v0.11.0"]);
+  git(hand, ["merge", "-X", "ours", "--no-edit", v0110]);
+  git(hand, ["push", "origin", "merge-v0.11.0"]);
+  const fixed = rev(hand, "merge-v0.11.0");
+
+  const run = sync(ours);
+
+  assert.equal(run.status, 0, run.output);
+  assert.deepEqual(checkCalls(run), []);
+  assert.deepEqual(ciLookups(run), [
+    { workflow: "ci.yml", branch: "merge-v0.11.0", commit: fixed },
+  ]);
+  assert.equal(rev(fx.origin, TARGET), fixed);
+  assert.deepEqual(mergeBranches(fx.origin), []);
+  assert.equal(worktreeCount(ours), 1);
+});
+
+test("criterion 11: a merge- branch for an older tag on origin stops the merge step with an error naming it, while upstream-rebrand still syncs", (t) => {
+  const fx = makeFixture(t);
+  const synced = firstRun(fx);
+  const dir = checkout(fx, "checkout");
+  git(dir, ["push", "origin", `${TARGET}:refs/heads/merge-v0.10.0`]);
+  const stray = rev(fx.origin, "merge-v0.10.0");
+  release(fx, "v0.11.0", { "version.txt": "0.11.0\n" }, 10);
+  const target = rev(fx.origin, TARGET);
+
+  const run = sync(dir);
+
+  assert.notEqual(run.status, 0, run.output);
+  assert.match(
+    run.output,
+    /^error: merge-v0\.10\.0 .*must land in fix\/sync-target or be deleted first/m,
+  );
+  assertSynced(fx, synced, ["v0.11.0"]);
+  assert.equal(rev(fx.origin, TARGET), target);
+  assert.deepEqual(mergeBranches(fx.origin), ["merge-v0.10.0"]);
+  assert.equal(rev(fx.origin, "merge-v0.10.0"), stray);
+  assert.deepEqual(run.gh, []);
+  assert.deepEqual(checkCalls(run), []);
+  assert.equal(worktreeCount(dir), 1);
+});
+
+test("criteria 11, 16: a failing ci.yml job stops the run naming it and leaves the merge branch and the target branch", (t) => {
+  const fx = makeFixture(t);
+  const dir = checkout(fx, "checkout");
+  const target = rev(fx.origin, TARGET);
+
+  const run = sync(dir, { CI_JOBS: JSON.stringify({ "server-tests-ubuntu": "failure" }) });
+
+  assert.notEqual(run.status, 0, run.output);
+  assert.match(run.output, /stand-in gh: run 4242 completed/, "gh's own output is shown");
+  assert.match(run.output, /^server-tests-ubuntu$/m);
+  const lookups = ciLookups(run);
+  assert.equal(lookups.length, 1);
+  assert.deepEqual(mergeBranches(fx.origin), ["merge-v0.10.0-beta.2"]);
+  assert.equal(rev(fx.origin, "merge-v0.10.0-beta.2"), lookups[0].commit);
+  assert.equal(rev(fx.origin, TARGET), target);
+  assert.equal(worktreeCount(dir), 1);
+});
+
+test("criterion 11: the target branch moving during the ci.yml wait stops the run naming both tips, with no fast-forward and the merge branch left", (t) => {
+  const fx = makeFixture(t);
+  const dir = checkout(fx, "checkout");
+  const pusher = checkout(fx, "pusher");
+  const moved = commit(pusher, { "later.txt": "later\n" }, 9, "later on target");
+
+  const run = sync(dir, { GH_ON_WATCH: `git -C '${pusher}' push origin ${TARGET}` });
+
+  assert.notEqual(run.status, 0, run.output);
+  const [lookup] = ciLookups(run);
+  assert.match(run.output, new RegExp(`^error: .*${moved}.*${lookup.commit}`, "m"));
+  assert.equal(rev(fx.origin, TARGET), moved);
+  assert.deepEqual(mergeBranches(fx.origin), ["merge-v0.10.0-beta.2"]);
+  assert.equal(rev(fx.origin, "merge-v0.10.0-beta.2"), lookup.commit);
+  assert.equal(worktreeCount(dir), 1);
+});
+
+test("criterion 11: a Playwright-only failure lands while IGNORE_PLAYWRIGHT_TESTS is on, its default, and stops the run when it is false or 0", (t) => {
+  const jobs = JSON.stringify({ "playwright (shard 2/4)": "failure" });
+  for (const env of [{}, { IGNORE_PLAYWRIGHT_TESTS: "1" }]) {
+    const fx = makeFixture(t);
+
+    const run = sync(checkout(fx, "checkout"), { CI_JOBS: jobs, ...env });
+
+    assert.equal(run.status, 0, run.output);
+    assert.equal(ciLookups(run).length, 2);
+    assert.deepEqual(mergeBranches(fx.origin), []);
+  }
+  for (const value of ["false", "0"]) {
+    const fx = makeFixture(t);
+    const target = rev(fx.origin, TARGET);
+
+    const run = sync(checkout(fx, "checkout"), { CI_JOBS: jobs, IGNORE_PLAYWRIGHT_TESTS: value });
+
+    assert.notEqual(run.status, 0, run.output);
+    assert.match(run.output, /^playwright \(shard 2\/4\)$/m, value);
+    assert.deepEqual(mergeBranches(fx.origin), ["merge-v0.10.0-beta.2"], value);
+    assert.equal(rev(fx.origin, TARGET), target, value);
+  }
+});
+
+test("criteria 11, 16: the script never hides or swallows output, never turns on git tracing, never force-pushes, and needs no ImageMagick or librsvg", () => {
+  const source = readFileSync(script, "utf8");
+
+  assert.doesNotMatch(source, /\/dev\/null/);
+  assert.doesNotMatch(source, /(^|\s)(-q|--quiet|--silent)(\s|$)/m);
+  assert.doesNotMatch(source, /\|\|\s*true|2>&1|&>|>&-/);
+  assert.doesNotMatch(source, /GIT_TRACE|GIT_CURL_VERBOSE|set -x/);
+  assert.doesNotMatch(source, /git push[^\n]*(--force|\s-f\b|\s\+)/);
+  assert.doesNotMatch(source, /magick|rsvg|node [^\n]*generate\.mjs/i);
 });
