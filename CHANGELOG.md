@@ -6,6 +6,7 @@ Rambla is a fork of Paseo. Each release lists Rambla's own changes first, follow
 
 ### Rambla — Added
 
+- 2026-09-27 - [4ea2f8514](https://github.com/getrambla/rambla/commit/4ea2f8514) - [2026-09-26-feat-active-projects-only.md](plans/2026-09-26-feat-active-projects-only.md) - Added an Active projects default filter to the sidebar Project page.
 - 2026-09-24 - [**\_\_\_**](https://github.com/getrambla/rambla/commit/**___**) - [2026-09-24-feat-user-adjustable-composer-height.md](plans/2026-09-24-feat-user-adjustable-composer-height.md) - Gave the composer a fixed, user-defined height: drag the top handle to resize (2-line floor, window-top ceiling), release to pin, double-tap to restore the 3-line default; content auto-grow removed.
 - 2026-09-24 - [2f02b83](https://github.com/getrambla/rambla/commit/2f02b8312) - [2026-09-22-feat-os-notification-toggle.md](plans/2026-09-22-feat-os-notification-toggle.md) - Added a settings switch that turns OS notifications off, hides the notifications card, and removes the refresh button.
 
@@ -18,7 +19,7 @@ Rambla is a fork of Paseo. Each release lists Rambla's own changes first, follow
 
 ### From Paseo — Added
 
-- Added OpenCode v2 support, selected automatically from the installed `opencode` version ([#5198](https://github.com/getpaseo/paseo/pull/5198) by [@karrots](https://github.com/karrots), [@dsingal0](https://github.com/dsingal0))
+- Added OpenCode v2 support, selected automatically from the installed `opencode` version ([#5198](https://github.com/getpaseo/paseo/pull/5198), [#5526](https://github.com/getpaseo/paseo/pull/5526) by [@karrots](https://github.com/karrots), [@dsingal0](https://github.com/dsingal0), [@gszep](https://github.com/gszep))
 - Added task lists from rpiv-todo, pi-goal-x, and Pi's example todo extension to Pi chats ([#5309](https://github.com/getpaseo/paseo/pull/5309))
 - Added subagent runs from pi-subagents, Tintinweb pi-subagents, and Gotgenes pi-subagents to the Subagents track ([#5309](https://github.com/getpaseo/paseo/pull/5309))
 - Added rpiv-ask-user-question dialogs to Pi chats as one question form ([#5309](https://github.com/getpaseo/paseo/pull/5309))
