@@ -119,7 +119,15 @@ function upstreamChangelog(...entries) {
 }
 
 // Criterion 18's list, written out apart from the script so a changed command fails a test.
-const UNIT_ARGS = ["--", "--exclude", "**/*e2e*", "--exclude", "**/*integration*"];
+const UNIT_ARGS = [
+  "--",
+  "--exclude",
+  "**/*e2e*",
+  "--exclude",
+  "**/*integration*",
+  "--exclude",
+  "**/generic-acp-agent.commands.test.ts",
+];
 const LOCAL_CHECKS = [
   ["ci"],
   ["run", "build:server"],

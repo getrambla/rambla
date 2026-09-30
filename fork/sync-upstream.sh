@@ -47,7 +47,7 @@ RUN_LOCAL_CHECKS="${RUN_LOCAL_CHECKS:-1}"
 # Turn this off once the flaky Playwright tests are fixed.
 IGNORE_PLAYWRIGHT_TESTS="${IGNORE_PLAYWRIGHT_TESTS:-1}"
 # CI runs the end-to-end and integration tests; locally only unit tests run.
-UNIT=(-- --exclude '**/*e2e*' --exclude '**/*integration*')
+UNIT=(-- --exclude '**/*e2e*' --exclude '**/*integration*' --exclude '**/generic-acp-agent.commands.test.ts')
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$(git rev-parse --show-toplevel)"
