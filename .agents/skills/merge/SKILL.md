@@ -42,7 +42,7 @@ create the next merge's conflicts.
   worktree, not "just to make a commit work". Git is already configured
   globally; a fresh clone inherits it. If a commit fails for missing
   identity, stop and tell the user — do not pick an email for them. (This
-  rule exists because an agent once silently set `tom@rambla.sh` in a
+  rule exists because an agent once silently set an invalid email in a
   `/tmp` clone, which leaked into the shared repo, rewrote 8 commits'
   authorship, and was pushed.)
 
