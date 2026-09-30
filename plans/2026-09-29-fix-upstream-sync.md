@@ -4,7 +4,7 @@ Status: unapproved
 
 ## Provenance
 
-- main: `a8d62ddf1` — 2026-09-28
+- main: `edf8fd7a0` — 2026-09-29
 - upstream-rebrand: `20f46ddda` — 2026-09-27
 - upstream/main: `30178c4f5` (untagged) — 2026-09-27
 
@@ -13,8 +13,8 @@ Status: unapproved
 **In scope:**
 
 1. New workspace `packages/generated` (`@getrambla/generated`) for generated build inputs; protocol's build writes the 2 blobs to its git-ignored `dist/`.
-2. `.ignore` and a CI blob-shape check.
-3. A tested `fork/sync-upstream.sh` replaces the 3 old scripts; `just sync-upstream`, `just sync-upstream-preview` (was `trial-merge`), `sync-upstream.yml`, skill `sync-upstream`.
+2. A CI blob-shape check; the generated outputs keep the `*.gen.ts` suffix so the existing oxfmt `ignorePatterns` cover them (no `.ignore` file).
+3. A tested `fork/sync-upstream.sh` replaces the 2 old scripts and the old just recipes; `just sync-upstream`, `just sync-upstream-preview` (was `trial-merge`), `sync-upstream.yml`, skill `sync-upstream`.
 4. Merge upstream v0.10.1 into main from CI.
 5. A rebranded branch per upstream hotfix tag, for the user to review and merge by hand.
 
@@ -54,23 +54,24 @@ Sync works again; blobs leave `src/`.
 
 | File                                                                                                                                                                                | Edit                                                                                                 | Upstream activity                 | Tag                 |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------- | ------------------- |
-| `packages/app/src/components/markdown/fence/mermaid/build-runtime.mjs`, `packages/app/scripts/build-terminal-webview-html.mjs`                                                      | output `.js` and `.d.ts` into `packages/generated/dist/`; delete old output                          | 1-2 touches each                  | `RAMBLA-FORK: fix:` |
+| `packages/app/src/components/markdown/fence/mermaid/build-runtime.mjs`, `packages/app/scripts/build-terminal-webview-html.mjs`                                                      | output `.js` and `.d.ts` into `packages/generated/dist/` under `*.gen.ts` names; delete old output   | 1-2 touches each                  | `RAMBLA-FORK: fix:` |
 | `packages/generated/package.json`                                                                                                                                                   | `exports` `./*` → `dist/`                                                                            | new                               | none (ours)         |
 | root `package.json`, `package-lock.json`                                                                                                                                            | 1 `workspaces` line; lockfile regenerated                                                            | 324 and 465 touches               | none (JSON)         |
 | the 6 files importing the blobs                                                                                                                                                     | 1 import line each                                                                                   | quiet, 1-4 touches                | `RAMBLA-FORK: fix:` |
 | `packages/app/package.json`, `packages/protocol/package.json`                                                                                                                       | app: `build:webview-bundles` and the dependency; protocol: `postbuild` runs it                       | 300+ and 95 touches               | none (JSON)         |
-| `.gitignore`                                                                                                                                                                        | `.trial-merge/` renamed for the preview                                                              | 29 touches                        | `RAMBLA-FORK: fix:` |
-| `.ignore`                                                                                                                                                                           | `thinking-tone.native-pcm.ts`                                                                        | new                               | none (ours)         |
+| `.gitignore`                                                                                                                                                                        | `packages/generated/dist/`; `.trial-merge/` renamed for the preview                                  | 29 touches                        | `RAMBLA-FORK: fix:` |
+| `.ignore`                                                                                                                                                                           | not created; generated paths excluded via the existing oxfmt/oxlint `ignorePatterns`                 | n/a                               | n/a                 |
 | the 2 tracked blobs                                                                                                                                                                 | `git rm`                                                                                             | 3 and 16 touches                  | none                |
 | `.github/workflows/ci.yml`, `.github/workflows/nix.yml`                                                                                                                             | ci: blob-shape check, sync test in a job that installs dependencies; nix: 1 `workflow_dispatch` line | 65 and 10 touches                 | `RAMBLA-FORK: fix:` |
-| `fork/sync-upstream.sh`, `fork/sync-upstream.test.mjs`; the 3 old scripts                                                                                                           | script with delete list, and tests; old scripts deleted                                              | new                               | none (ours)         |
+| `fork/sync-upstream.sh`, `fork/sync-upstream.test.mjs`; the 2 old scripts `fork/sync-upstream-rebrand.sh`, `fork/merge-upstream.sh`                                                 | script with delete list, and tests; old scripts deleted                                              | new                               | none (ours)         |
+| `CHANGELOG.md` (generated), `RAMBLA-CHANGELOG.md`, `PASEO-CHANGELOG.md` (inputs)                                                                                                    | changelog regenerated by `fork/build-changelog.mjs` in the merge step                                | 202 / ours / 5 touches            | none (generated)    |
 | `justfile`, `.github/workflows/merge-upstream.yml` → `sync-upstream.yml`                                                                                                            | call the script; old recipes dropped; `provenance` reads main's last sync merge                      | ours                              | none                |
 | `.agents/skills/merge/`, symlinks `.agents/skills/MERGE-SKILL.md` and `.claude/skills/merge`                                                                                        | renamed `sync-upstream`; skill covers the delete list, commands, conflicts, hotfix branches          | ours                              | none                |
 | `CLAUDE.md` (our block), `docs/brand.md`, `fork/build-changelog.mjs`, `fork/brand/generate.mjs`, `.agents/skills/plan/SKILL.md` (provenance), and every other file naming old names | new names                                                                                            | 76 touches (CLAUDE.md); rest ours | none                |
 
 **Why this shape:** upstream source files change by 1 import line each.
 
-**Branch:** `fix/upstream-sync` — required, 16 upstream files edited and 2 removed.
+**Branch:** `fix/upstream-sync` — required, 15 upstream files edited and 2 removed.
 
 ## Cause
 
@@ -86,20 +87,22 @@ The sync ([sync-upstream-rebrand.sh:138](../fork/sync-upstream-rebrand.sh#L138))
 ## Steps
 
 0. Read the `code` skill before writing anything. If a step below turns out to be wrong, stop and report back to the supervisor — do not amend this plan and do not re-decide placement while coding.
-1. **Blobs.** Create `packages/generated`; both generators write into it (`mermaid-runtime`, `terminal-webview`) from protocol's build; switch the 6 importers; remove the tracked blobs.
-   **Acceptance criteria**: criterion 10; 2 runs give identical output. The user checks a mermaid diagram and a terminal in the app.
-2. **`.ignore` and the CI blob-shape check.**
-   **Acceptance criteria**: criterion 11.
-3. **Sync onto upstream-rebrand.** The delete list: the 30 logo paths `fork/brand/generate.mjs` writes (by pattern where names differ), `nix/npm-deps.hash`, and the 2 tracked blobs.
-   **Acceptance criteria**: criteria 1-4, including a beta tag on a side branch and an already-synced tag.
-4. **Merge into main as a local candidate.** Update `CHANGELOG.md` with `fork/build-changelog.mjs`.
-   **Acceptance criteria**: criteria 5 and 6, including upstream deleting a file main changed, and main changing `nix/npm-deps.hash`.
-5. **Hotfix branch.**
-   **Acceptance criteria**: criterion 12; a second run creates nothing.
-6. **Commands, names, docs.** The skill keeps its uncommitted edits through the rename.
-   **Acceptance criteria**: criteria 7 and 8; no broken symlink under `.claude/` or `.agents/`; the skill and `docs/brand.md` never say a sync walks tags or runs the logo generator.
-7. **Land and run live.** The user merges the branch, then runs `sync-upstream.yml`.
-   **Acceptance criteria**: criterion 9. The user reviews the result.
+1. **`packages/generated` workspace.** Create `packages/generated` (`@getrambla/generated`, `exports` `./*` → `dist/`); add it to root `workspaces`; regenerate the lockfile.
+   **Acceptance criteria**: criterion 17's first clause — the package exists as a workspace and `npm ci` resolves it.
+2. **Generators write into `packages/generated/dist`.** Both generators write `mermaid-runtime` and `terminal-webview` blobs into `packages/generated/dist/` at build time; protocol's `postbuild` runs them; switch the 6 importer files to the new import paths; `git rm` the 2 tracked blobs.
+   **Acceptance criteria**: criterion 17 — a fresh `npm ci` + build produces the blobs in `dist/`, they survive a later `npm ci`, and `git ls-files` shows no generated blob tracked. The user checks a mermaid diagram and a terminal in the app.
+3. **Blob-shape CI check.** A job in `ci.yml` fails on a `.ts`/`.tsx` file in `packages/*/src` over 200 KB and under 10 lines, printing its path; the generated outputs keep the `*.gen.ts` suffix so the existing oxfmt `ignorePatterns` cover them; no `.ignore` file is created; 1 `workflow_dispatch` line in `nix.yml`.
+   **Acceptance criteria**: criterion 18 — a planted file fails the check with the path printed; the generated paths are ignored.
+4. **`fork/sync-upstream.sh` onto upstream-rebrand, release tags.** New script, no arguments, delete list (the 30 logo paths `fork/brand/generate.mjs` writes, `nix/npm-deps.hash`, the 2 former blob paths) in 1 block at the top; classification (criterion 2), first run from `v0.10.0-beta.1` (criterion 3), incremental runs oldest first (criterion 4), 2 commits per tag (criterion 5); tests in `fork/sync-upstream.test.mjs` following `fork/build-changelog.test.mjs` (`node:test`).
+   **Acceptance criteria**: criteria 1-5, 9 and 10 — including a beta tag on a side branch, an already-synced tag, a no-op run (criterion 12), and conflict/error exits (criterion 13).
+5. **Hotfix branch.** The one-time bootstrap creating `upstream-hotfix-rebrand` from the base release commit, and the script's hotfix mode.
+   **Acceptance criteria**: criteria 6-8 — including a second run creating nothing and a merge of a hotfix sync commit bringing only the hotfix's changes.
+6. **Merge into main as a local candidate.** Update `CHANGELOG.md` with `fork/build-changelog.mjs`; the merge keeps main's copies of deleted files.
+   **Acceptance criteria**: criteria 11 and 12 — including upstream deleting a file main changed, and main changing `nix/npm-deps.hash`.
+7. **Commands, names, docs.** `just sync-upstream`, `just sync-upstream-preview` (keeps `drop`), `merge-upstream.yml` → `sync-upstream.yml` (no hardcoded main ref or push context), skill renamed `sync-upstream` keeping its uncommitted edits through the rename, symlinks updated, all old names removed (the files in the table's last row).
+   **Acceptance criteria**: criterion 14 — both recipes and the workflow run the script from origin's branches; no broken symlink under `.claude/` or `.agents/`; no old script, recipe, workflow or skill name remains; the skill and `docs/brand.md` never say a sync walks tags or runs the logo generator. A manual `gh workflow run sync-upstream.yml` on this branch completes green (criterion 16).
+8. **Land and run live.** The user merges the branch, then runs `sync-upstream.yml`.
+   **Acceptance criteria**: criterion 15 — every automated test green in CI. The user reviews the result.
 
 ## Verification
 
