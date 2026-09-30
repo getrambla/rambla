@@ -282,13 +282,6 @@ Then:
 - Branch: decided at the starting gates — a multi-step plan works on
   `fix/<slug>` or `feat/<slug>`; main takes only a user-approved one-step
   plan.
-- **Always run `just trial-merge` from `rambla/` after the review passes** —
-  every job, branched or not. It rehearses the weekly upstream merge in a
-  throwaway copy and never touches the real repo; `just trial-merge drop`
-  cleans up. If it reports conflicts: do not resolve them in place, do not
-  move our code, do not create modules the plan never named. Study the
-  conflict, propose the resolution, and report it to the supervisor for
-  the user — work stops until the user decides.
 - **Commit each step as the reviewer accepts it**, on the working branch —
   never to main. Stage only files in the table — never another agent's
   files. The final step's commit is the final commit the changelog cites.
