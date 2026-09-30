@@ -10,6 +10,7 @@ const script = path.join(path.dirname(fileURLToPath(import.meta.url)), "sync-ups
 
 const TARGET = "fix/sync-target";
 const BRANCH = "upstream-rebrand";
+const HOTFIX = "upstream-hotfix";
 
 // Criterion 10 allows "paseo" only under fork/rebrand.sh's skip paths.
 const rebrandSkip =
@@ -289,6 +290,88 @@ function assertNothingChanged(fx, dir, before) {
 /** The origin branches and the checkout's local branches, for assertNothingChanged. */
 function snapshot(fx, dir) {
   return { origin: originBranches(fx), local: rev(dir, BRANCH), target: rev(dir, TARGET) };
+}
+
+/** Commits files on an upstream side branch cut at `from`, tags the commit on tagDay (default: the commit's day), and returns the commit. */
+function sideTag(fx, branch, from, name, files, n, tagDay = n) {
+  git(fx.up, ["checkout", "-B", branch, from]);
+  const sha = commit(fx.up, files, n, name);
+  tag(fx.up, name, sha, tagDay);
+  git(fx.up, ["checkout", "main"]);
+  return sha;
+}
+
+/** Adds hotfix v0.10.2 on release/0.10, built on hotfix v0.10.1 and changing a paseo-named file, tagged on tagDay. */
+function addV0102(fx, tagDay = 9) {
+  const files = {
+    "version.txt": "0.10.2\n",
+    "packages/paseo-core/src/paseo.ts": 'export const paseoName  =  "Paseo 0.10.2"\n',
+  };
+  return sideTag(fx, "release/0.10", fx.c.hotfix, "v0.10.2", files, 9, tagDay);
+}
+
+/** Each hotfix branch in repo with its commit, one per line. */
+function hotfixRefs(repo) {
+  return git(repo, [
+    "for-each-ref",
+    "--format=%(refname:strip=2) %(objectname)",
+    `refs/heads/${HOTFIX}/`,
+  ]);
+}
+
+/** The tags that have a hotfix branch on the fixture origin. */
+function hotfixTags(fx) {
+  return git(fx.origin, ["for-each-ref", "--format=%(refname:strip=3)", `refs/heads/${HOTFIX}/`])
+    .split("\n")
+    .filter(Boolean);
+}
+
+/** Asserts origin's hotfix branch for a tag is its ours-merge and rebrand commits on baseRebrand; returns the rebrand commit. */
+function assertHotfix(fx, name, baseRebrand) {
+  const commits = git(fx.origin, [
+    "rev-list",
+    "--first-parent",
+    "--reverse",
+    `${HOTFIX}/${name}`,
+    `^${baseRebrand}`,
+  ])
+    .split("\n")
+    .filter(Boolean);
+  assert.equal(commits.length, 2, `${name}: an ours-merge and a rebrand commit on its base`);
+  const [merge, rebrand] = commits;
+  assert.deepEqual(parents(fx.origin, merge), [baseRebrand, tagCommit(fx, name)], name);
+  assert.equal(rev(fx.origin, `${merge}^{tree}`), rev(fx.origin, `${baseRebrand}^{tree}`), name);
+  assert.deepEqual(parents(fx.origin, rebrand), [merge], name);
+  assert.equal(
+    git(fx.origin, ["merge-base", rebrand, baseRebrand]),
+    baseRebrand,
+    `${name}: criterion 7`,
+  );
+  return rebrand;
+}
+
+/** An env whose stand-in npm runs git args against origin, as another writer would between a run's fetch and its push. */
+function duringRun(fx, args) {
+  const bin = path.join(fx.root, "bin");
+  mkdirSync(bin);
+  writeFileSync(path.join(bin, "npm"), `#!/bin/sh\ngit --git-dir="${fx.origin}" ${args}\n`);
+  chmodSync(path.join(bin, "npm"), 0o755);
+  return { PATH: `${bin}${path.delimiter}${process.env.PATH}` };
+}
+
+/** Cuts a branch at base, commits a fork change on it, merges `from`, and returns what the merge changed. */
+function mergeInto(dir, base, from, name) {
+  git(dir, ["checkout", "-b", name, base]);
+  commit(dir, { [`${name}.txt`]: "fork change\n" }, 10, `fork change on ${name}`);
+  git(dir, ["merge", "--no-edit", from], dated(11));
+  return git(dir, ["diff", "--name-status", "HEAD^1", "HEAD"]);
+}
+
+/** Asserts a run failed on v0.10.2 being tagged before v0.10.1, naming both tags, versions and dates. */
+function assertV0102DateError(run) {
+  assert.notEqual(run.status, 0, run.output);
+  assert.match(run.output, /v0\.10\.2 \(version 0\.10\.2, tagged 2026-09-06/);
+  assert.match(run.output, /v0\.10\.1 \(version 0\.10\.1, tagged 2026-09-07/);
 }
 
 test("criteria 2, 3, 4, 5: the first run syncs every release tag after v0.10.0-beta.1, oldest first, 2 commits each", (t) => {
@@ -589,4 +672,212 @@ test("criterion 13: an error while building rebrand commits leaves origin, local
   assert.notEqual(run.status, 0, run.output);
   assert.match(run.output, /stand-in npm failing/);
   assertNothingChanged(fx, dir, before);
+});
+
+test("criteria 3, 4, 6, 7, 9: the first run cuts a branch for each hotfix tag from its base tag's rebrand commit, base first", (t) => {
+  const fx = makeFixture(t);
+  // Tagged after v0.11.0-beta.1, a higher version: hotfix tags are not compared across major.minor versions.
+  addV0102(fx);
+  const dir = checkout(fx, "checkout");
+  const oldTip = rev(fx.origin, BRANCH);
+  const main = rev(fx.origin, "main");
+
+  const run = sync(dir);
+
+  assert.equal(run.status, 0, run.output);
+  const [, v0100] = assertSynced(fx, oldTip, ["v0.10.0-beta.2", "v0.10.0"]);
+  assert.deepEqual(hotfixTags(fx), ["v0.10.1", "v0.10.2", "v0.11.0-beta.1"]);
+  // Built on a release: cut from the rebrand commit upstream-rebrand gained earlier in this run.
+  const v0101 = assertHotfix(fx, "v0.10.1", v0100);
+  const beta = assertHotfix(fx, "v0.11.0-beta.1", v0100);
+  // Built on another hotfix: cut from that hotfix's rebrand commit, on its own branch.
+  const v0102 = assertHotfix(fx, "v0.10.2", v0101);
+  assert.equal(rev(fx.origin, `${HOTFIX}/v0.10.1`), v0101);
+  assert.equal(
+    git(fx.origin, ["show", `${v0102}:packages/rambla-core/src/rambla.ts`]),
+    'export const ramblaName = "Rambla 0.10.2";',
+  );
+  for (const rebrand of [v0101, v0102, beta]) {
+    const files = filesOf(fx.origin, rebrand);
+    for (const file of deleteList) {
+      assert.ok(!files.includes(file), `${file} is on the delete list`);
+      assert.ok(!files.includes(upstreamName(file)), `${upstreamName(file)} is on the delete list`);
+    }
+    assert.ok(!files.includes("fork-only.txt"), "nothing from main");
+    assert.ok(!files.includes("untagged.txt"), "an untagged upstream commit is never synced");
+  }
+  assert.equal(hotfixRefs(dir), hotfixRefs(fx.origin));
+  assert.equal(rev(fx.origin, "main"), main);
+  assert.equal(worktreeCount(dir), 1);
+});
+
+test("criteria 4, 6, 17: a new hotfix tag is cut from its base's branch on origin, which never moves, from a stale checkout", (t) => {
+  const fx = makeFixture(t);
+  const stale = checkout(fx, "stale");
+  const localOnly = git(stale, [
+    "commit-tree",
+    "-p",
+    BRANCH,
+    "-m",
+    "local only",
+    `${BRANCH}^{tree}`,
+  ]);
+  git(stale, ["branch", `${HOTFIX}/v0.10.1`, localOnly]);
+  firstRun(fx);
+  const rebrandTip = rev(fx.origin, BRANCH);
+  const before = hotfixRefs(fx.origin);
+  addV0102(fx);
+
+  const run = sync(stale);
+
+  assert.equal(run.status, 0, run.output);
+  assert.equal(rev(fx.origin, BRANCH), rebrandTip);
+  assertHotfix(fx, "v0.10.2", rev(fx.origin, `${HOTFIX}/v0.10.1`));
+  const others = hotfixRefs(fx.origin)
+    .split("\n")
+    .filter((line) => !line.startsWith(`${HOTFIX}/v0.10.2 `));
+  assert.equal(others.join("\n"), before);
+  assert.equal(hotfixRefs(stale), hotfixRefs(fx.origin));
+  assert.ok(!isAncestor(stale, localOnly, `${HOTFIX}/v0.10.1`), "the local-only commit is dropped");
+});
+
+test("criteria 4, 12: a second run creates no hotfix branch and leaves origin unchanged", (t) => {
+  const fx = makeFixture(t);
+  addV0102(fx);
+  firstRun(fx);
+  assert.deepEqual(hotfixTags(fx), ["v0.10.1", "v0.10.2", "v0.11.0-beta.1"]);
+  const dir = checkout(fx, "second");
+  const before = originBranches(fx);
+
+  const run = sync(dir);
+
+  assert.equal(run.status, 0, run.output);
+  assert.equal(originBranches(fx), before);
+  assert.equal(hotfixRefs(dir), hotfixRefs(fx.origin));
+  assert.equal(worktreeCount(dir), 1);
+});
+
+test("criterion 6: a hotfix branch never moves, even when upstream moves its tag", (t) => {
+  const fx = makeFixture(t);
+  firstRun(fx);
+  git(fx.up, ["checkout", "release/0.10"]);
+  const moved = commit(fx.up, { "moved.txt": "moved\n" }, 9, "moved v0.10.1");
+  git(fx.up, ["tag", "-f", "-a", "v0.10.1", "-m", "v0.10.1", moved], dated(9));
+  git(fx.up, ["checkout", "main"]);
+  const before = originBranches(fx);
+
+  const run = sync(checkout(fx, "second"));
+
+  assert.equal(run.status, 0, run.output);
+  assert.equal(originBranches(fx), before);
+});
+
+test("criteria 3, 4: a hotfix tag whose base tag has no rebrand commit gets no branch", (t) => {
+  const fx = makeFixture(t);
+  // An old hotfix, built on a tag only upstream-rebrand's old, unrebranded history reaches.
+  sideTag(fx, "release/0.9", fx.c.v090, "v0.9.1", { "version.txt": "0.9.1\n" }, 1);
+  // Above v0.10.0-beta.1 but built on it, and v0.10.0-beta.1 has no rebrand commit.
+  const onFloor = { "version.txt": "0.10.0-beta.1.1\n" };
+  sideTag(fx, "release/0.10.0-beta.1", fx.c.floor, "v0.10.0-beta.1.1", onFloor, 2);
+
+  const run = sync(checkout(fx, "checkout"));
+
+  assert.equal(run.status, 0, run.output);
+  assert.doesNotMatch(run.output, /error/);
+  assert.deepEqual(hotfixTags(fx), ["v0.10.1", "v0.11.0-beta.1"]);
+});
+
+test("criteria 4, 13: a hotfix tag newer by version but older by date fails the first run before anything is built", (t) => {
+  const fx = makeFixture(t);
+  addV0102(fx, 6);
+  const dir = checkout(fx, "checkout");
+  const before = snapshot(fx, dir);
+
+  const run = sync(dir);
+
+  assertV0102DateError(run);
+  assertNothingChanged(fx, dir, before);
+  assert.equal(hotfixRefs(dir), "");
+});
+
+test("criteria 4, 13: a new hotfix tag tagged before a lower version that has its branch fails the run", (t) => {
+  const fx = makeFixture(t);
+  firstRun(fx);
+  addV0102(fx, 6);
+  const dir = checkout(fx, "second");
+  const before = snapshot(fx, dir);
+
+  const run = sync(dir);
+
+  assertV0102DateError(run);
+  assertNothingChanged(fx, dir, before);
+  assert.deepEqual(hotfixTags(fx), ["v0.10.1", "v0.11.0-beta.1"]);
+});
+
+test("criterion 8: merging a hotfix's rebrand commit into a branch cut from its base's rebrand commit brings only the hotfix's changes", (t) => {
+  const fx = makeFixture(t);
+  addV0102(fx);
+  const oldTip = rev(fx.origin, BRANCH);
+  firstRun(fx);
+  const [, v0100] = assertSynced(fx, oldTip, ["v0.10.0-beta.2", "v0.10.0"]);
+  const v0101 = rev(fx.origin, `${HOTFIX}/v0.10.1`);
+  const v0102 = rev(fx.origin, `${HOTFIX}/v0.10.2`);
+  const dir = checkout(fx, "merges");
+
+  // Built on a release: v0.10.0 to v0.10.1 changed only version.txt; upstream main's later commit stays out.
+  assert.equal(mergeInto(dir, v0100, v0101, "on-release"), "M\tversion.txt");
+  assert.equal(git(dir, ["show", "HEAD:version.txt"]), "0.10.1");
+  assert.equal(git(dir, ["show", "HEAD:on-release.txt"]), "fork change");
+
+  // Built on a hotfix: v0.10.1 to v0.10.2 changed version.txt and a paseo-named file, which arrives rebranded.
+  assert.equal(
+    mergeInto(dir, v0101, v0102, "on-hotfix"),
+    "M\tpackages/rambla-core/src/rambla.ts\nM\tversion.txt",
+  );
+  assert.equal(
+    git(dir, ["show", "HEAD:packages/rambla-core/src/rambla.ts"]),
+    'export const ramblaName = "Rambla 0.10.2";',
+  );
+  assert.equal(git(dir, ["show", "HEAD:on-hotfix.txt"]), "fork change");
+});
+
+test("criteria 13, 17: a hotfix branch made on origin during the run fails the one atomic push, and nothing changes", (t) => {
+  const fx = makeFixture(t);
+  const dir = checkout(fx, "checkout");
+  const other = git(dir, ["commit-tree", "-p", BRANCH, "-m", "other writer", `${BRANCH}^{tree}`]);
+  git(dir, ["push", "origin", `${other}:refs/heads/other-writer`]);
+  const before = snapshot(fx, dir);
+
+  const run = sync(dir, duringRun(fx, `update-ref refs/heads/${HOTFIX}/v0.10.1 ${other}`));
+
+  assert.notEqual(run.status, 0, run.output);
+  assert.match(run.output, /rejected/);
+  const expected = [...before.origin.split("\n"), `refs/heads/${HOTFIX}/v0.10.1 ${other}`];
+  assert.equal(originBranches(fx), expected.sort().join("\n"));
+  assert.equal(rev(dir, BRANCH), before.local);
+  assert.equal(hotfixRefs(dir), "");
+  assert.equal(worktreeCount(dir), 1);
+});
+
+test("criteria 13, 17: upstream-rebrand changing on origin during a run that only adds a hotfix branch fails the push", (t) => {
+  const fx = makeFixture(t);
+  firstRun(fx);
+  addV0102(fx);
+  const dir = checkout(fx, "second");
+  const other = git(dir, ["commit-tree", "-p", BRANCH, "-m", "other writer", `${BRANCH}^{tree}`]);
+  git(dir, ["push", "origin", `${other}:refs/heads/other-writer`]);
+  const before = snapshot(fx, dir);
+
+  const run = sync(dir, duringRun(fx, `update-ref refs/heads/${BRANCH} ${other}`));
+
+  assert.notEqual(run.status, 0, run.output);
+  assert.match(run.output, /rejected/);
+  assert.equal(
+    originBranches(fx),
+    before.origin.replace(new RegExp(`(refs/heads/${BRANCH}) \\w+`), `$1 ${other}`),
+  );
+  assert.deepEqual(hotfixTags(fx), ["v0.10.1", "v0.11.0-beta.1"]);
+  assert.equal(rev(dir, BRANCH), before.local);
+  assert.doesNotMatch(hotfixRefs(dir), /v0\.10\.2/);
+  assert.equal(worktreeCount(dir), 1);
 });

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Sync each new upstream release tag onto upstream-rebrand as an ours-merge commit, then a rebrand commit. No arguments.
+# Each new hotfix tag gets its own upstream-hotfix/<tag> branch the same way, cut from the rebrand commit for the tag it was built on.
 
 set -euo pipefail
 
@@ -40,6 +41,7 @@ DELETE_LIST=(
 
 UPSTREAM_URL="https://github.com/getpaseo/paseo.git"
 BRANCH="upstream-rebrand"
+HOTFIX="upstream-hotfix"
 # The newest tag the old sync reached; tags at or below it are never synced or checked.
 FLOOR="v0.10.0-beta.1"
 
@@ -80,10 +82,32 @@ require_later() {
 	exit 1
 }
 
+# Fails the run unless tag $1 and every other tag of its major.minor version are tagged in version order.
+check_minor() {
+	local other
+	for other in "${TAGS[@]}"; do
+		if [ "$other" = "$1" ] || [ "${MINOR[$other]}" != "${MINOR[$1]}" ]; then continue; fi
+		if newer "$other" "$1"; then require_later "$1" "$other"; else require_later "$other" "$1"; fi
+	done
+}
+
+# Prints the tag hotfix tag $1 was built on: the nearest tag below it in upstream history, the higher version on a tie.
+base_of() {
+	local best="" best_count="" other count
+	for other in "$FLOOR" "${TAGS[@]}"; do
+		if [ "${COMMIT[$other]}" = "${COMMIT[$1]}" ] || ! git merge-base --is-ancestor "${COMMIT[$other]}" "${COMMIT[$1]}"; then continue; fi
+		count="$(git rev-list --count "${COMMIT[$other]}..${COMMIT[$1]}")"
+		if [ -z "$best" ] || [ "$count" -lt "$best_count" ] || { [ "$count" -eq "$best_count" ] && newer "$other" "$best"; }; then
+			best="$other" best_count="$count"
+		fi
+	done
+	echo "$best"
+}
+
 TARGET="$(git symbolic-ref --short HEAD)"
 
 git config remote.upstream.url || git remote add upstream "$UPSTREAM_URL"
-git fetch --no-tags origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH" "+refs/heads/$TARGET:refs/remotes/origin/$TARGET"
+git fetch --no-tags --prune origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH" "+refs/heads/$TARGET:refs/remotes/origin/$TARGET" "+refs/heads/$HOTFIX/*:refs/remotes/origin/$HOTFIX/*"
 
 DIRTY="$(git status --porcelain --untracked-files=no)"
 if [ -n "$DIRTY" ]; then
@@ -97,6 +121,12 @@ if [ -n "$AHEAD" ]; then
 fi
 git merge --ff-only "origin/$TARGET"
 git branch -f "$BRANCH" "origin/$BRANCH"
+
+declare -A BRANCHED=()
+while read -r hotfix; do
+	git branch -f "$HOTFIX/$hotfix" "origin/$HOTFIX/$hotfix"
+	BRANCHED[$hotfix]=1
+done < <(git for-each-ref --format='%(refname:strip=4)' "refs/remotes/origin/$HOTFIX/")
 
 declare -A OBJ=()
 while read -r obj ref; do
@@ -116,48 +146,68 @@ done < <(printf '%s\n' "${!OBJ[@]}" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Z
 
 git fetch --no-tags upstream "+refs/heads/main:refs/remotes/upstream/main" "refs/tags/$FLOOR" "${TAGS[@]/#/refs/tags/}"
 
-declare -A COMMIT=() DATE=() MINOR=()
+declare -A COMMIT=() DATE=() MINOR=() RELEASE=()
 for tag in "$FLOOR" "${TAGS[@]}"; do
 	COMMIT[$tag]="$(git rev-parse "${OBJ[$tag]}^{commit}")"
 	DATE[$tag]="$(tag_date "${OBJ[$tag]}")"
 	[[ $tag =~ ^v[0-9]+\.[0-9]+ ]]
 	MINOR[$tag]="${BASH_REMATCH[0]}"
+	if git merge-base --is-ancestor "${COMMIT[$tag]}" upstream/main; then RELEASE[$tag]=1; fi
 done
 
 # Commit messages are never trusted: only an ours-merge link on the first-parent history marks a tag as synced.
 declare -A REBRAND_OF=()
 child="" merge="" merge_tree="" merge_second=""
+# Reads upstream-rebrand, then each hotfix branch, a blank line apart so no commit is read as another branch's parent.
 while read -r commit tree _ second _; do
 	# Newest first, so this commit is the first parent of the one read before it.
 	if [ -n "$merge_second" ] && [ -n "$child" ] && [ "$tree" = "$merge_tree" ]; then
 		REBRAND_OF[$merge_second]="$child"
 	fi
 	child="$merge" merge="$commit" merge_tree="$tree" merge_second="${second:-}"
-done < <(git log --first-parent --format='%H %T %P' "$BRANCH")
+done < <(
+	git log --first-parent --format='%H %T %P' "$BRANCH"
+	for hotfix in "${!BRANCHED[@]}"; do
+		echo
+		git log --first-parent --format='%H %T %P' "$HOTFIX/$hotfix"
+	done
+)
 
 NEWEST="$FLOOR"
 for tag in "${TAGS[@]}"; do
-	if [ -n "${REBRAND_OF[${COMMIT[$tag]}]:-}" ]; then NEWEST="$tag"; fi
+	if [ -n "${RELEASE[$tag]:-}" ] && [ -n "${REBRAND_OF[${COMMIT[$tag]}]:-}" ]; then NEWEST="$tag"; fi
 done
 
 # Every check runs before the first commit, so a bad tag stops the run with nothing built.
 PLAN=()
 for tag in "${TAGS[@]}"; do
 	newer "$tag" "$NEWEST" || continue
-	git merge-base --is-ancestor "${COMMIT[$tag]}" upstream/main || continue
+	[ -n "${RELEASE[$tag]:-}" ] || continue
 	require_later "$NEWEST" "$tag"
-	for other in "${TAGS[@]}"; do
-		if [ "$other" = "$tag" ] || [ "${MINOR[$other]}" != "${MINOR[$tag]}" ]; then continue; fi
-		if newer "$other" "$tag"; then require_later "$tag" "$other"; else require_later "$other" "$tag"; fi
-	done
+	check_minor "$tag"
 	NEWEST="$tag"
 	if [ -n "${REBRAND_OF[${COMMIT[$tag]}]:-}" ]; then continue; fi
 	REBRAND_OF[${COMMIT[$tag]}]=planned
 	PLAN+=("$tag")
 done
 
-if [ ${#PLAN[@]} -eq 0 ]; then
-	echo "$BRANCH already holds every release tag through $NEWEST"
+declare -A BASE=()
+HOTFIX_PLAN=()
+# Fewest reachable commits first: a base tag is an ancestor of every hotfix tag built on it, so it is handled before them.
+while read -r _ tag; do
+	if [ -n "${BRANCHED[$tag]:-}" ]; then continue; fi
+	base="$(base_of "$tag")"
+	if [ -z "$base" ] || [ -z "${REBRAND_OF[${COMMIT[$base]}]:-}" ]; then continue; fi
+	check_minor "$tag"
+	BASE[$tag]="$base"
+	REBRAND_OF[${COMMIT[$tag]}]=planned
+	HOTFIX_PLAN+=("$tag")
+done < <(for tag in "${TAGS[@]}"; do
+	if [ -z "${RELEASE[$tag]:-}" ]; then echo "$(git rev-list --count "${COMMIT[$tag]}") $tag"; fi
+done | sort -n)
+
+if [ ${#PLAN[@]} -eq 0 ] && [ ${#HOTFIX_PLAN[@]} -eq 0 ]; then
+	echo "$BRANCH already holds every release tag through $NEWEST, and every hotfix tag on a synced base has its $HOTFIX branch"
 	exit 0
 fi
 
@@ -165,7 +215,9 @@ WT="$(mktemp -d)"
 trap 'git worktree remove --force "$WT" || rm -rf "$WT"' EXIT
 git worktree add --detach "$WT" "$BRANCH"
 
-for tag in "${PLAN[@]}"; do
+# Adds tag $1's ours-merge commit and rebrand commit on top of the worktree's HEAD, for branch $2.
+build() {
+	local tag="$1" merge rebrand
 	merge="$(git -C "$WT" commit-tree -p HEAD -p "${COMMIT[$tag]}" -m "merge upstream $tag with -s ours" 'HEAD^{tree}')"
 	git -C "$WT" read-tree -u --reset "${COMMIT[$tag]}"
 	# -f because read-tree just staged the tag's copies, which git rm otherwise refuses to drop.
@@ -175,9 +227,20 @@ for tag in "${PLAN[@]}"; do
 	git -C "$WT" add -A
 	rebrand="$(git -C "$WT" commit-tree -p "$merge" -m "rebrand upstream $tag" "$(git -C "$WT" write-tree)")"
 	git -C "$WT" reset --soft "$rebrand"
-	echo "synced $tag onto $BRANCH"
+	REBRAND_OF[${COMMIT[$tag]}]="$rebrand"
+	echo "synced $tag onto $2"
+}
+
+for tag in "${PLAN[@]}"; do build "$tag" "$BRANCH"; done
+TIP="$(git -C "$WT" rev-parse HEAD)"
+
+PUSH=("$TIP:refs/heads/$BRANCH")
+for tag in "${HOTFIX_PLAN[@]}"; do
+	git -C "$WT" reset --soft "${REBRAND_OF[${COMMIT[${BASE[$tag]}]}]}"
+	build "$tag" "$HOTFIX/$tag"
+	PUSH+=("${REBRAND_OF[${COMMIT[$tag]}]}:refs/heads/$HOTFIX/$tag")
 done
 
-TIP="$(git -C "$WT" rev-parse HEAD)"
-git push --atomic origin "$TIP:refs/heads/$BRANCH"
+git push --atomic origin "${PUSH[@]}"
 git branch -f "$BRANCH" "$TIP"
+for tag in "${HOTFIX_PLAN[@]}"; do git branch -f "$HOTFIX/$tag" "${REBRAND_OF[${COMMIT[$tag]}]}"; done
