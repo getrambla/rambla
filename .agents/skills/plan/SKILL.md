@@ -258,7 +258,7 @@ Status: unapproved
 
 - main: `d89926e8a` — 2026-09-22
 - upstream-rebrand: `61b044d8b` — 2026-09-21
-- upstream/main: `135a3b4c9` (untagged) — 2026-09-21
+- upstream/main: `135a3b4c9` (v0.10.0-beta.1) — 2026-09-21
 
 ## Scope
 

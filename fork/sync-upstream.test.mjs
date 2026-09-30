@@ -1422,6 +1422,10 @@ test("criterion 15: just provenance and the plan skill's Provenance commands nam
   for (const source of [commands, just(["--show", "provenance"])]) {
     assert.doesNotMatch(source, /%s|%B|--grep/);
   }
+  // Every sync lands on a tag, so the plan template's upstream/main bullet always names one.
+  const planSkill = repoFile(".agents/skills/plan/SKILL.md");
+  assert.doesNotMatch(planSkill, /untagged/);
+  assert.match(planSkill, /^- upstream\/main: `[0-9a-f]{7,40}` \(v\d+\.\d+\.\d+[^)]*\) — /m);
 });
 
 test("criterion 11: no old script, recipe or skill name remains in a tracked file outside plans/, the workflow's own name aside", () => {
