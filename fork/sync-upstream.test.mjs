@@ -1395,7 +1395,7 @@ function sentences(text) {
 }
 
 const SYNC_SKILL = ".agents/skills/sync-upstream/SKILL.md";
-// The old names criterion 11 retires; merge-upstream.yml is renamed in step 6, so it is stripped before matching.
+// The old names criterion 11 retires; merge-upstream.yml is renamed in step 7, so it is stripped before matching.
 const OLD_NAMES = "sync-upstream-rebrand|merge-upstream|trial-merge|MERGE-SKILL|skills/merge";
 const WORKFLOW_NAME = /merge-upstream\\?\.yml/g;
 
