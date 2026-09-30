@@ -262,6 +262,7 @@ for tag in "${MERGES[@]}"; do
 		if on "$RUN_LOCAL_CHECKS"; then
 			check npm ci
 			check npm run build:server
+			check npm run build:app-deps
 			check npm run typecheck
 			check npm run test:unit --workspace=packages/server "${UNIT[@]}"
 			check npm run test:unit --workspace=packages/cli "${UNIT[@]}"

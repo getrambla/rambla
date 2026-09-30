@@ -123,6 +123,7 @@ const UNIT_ARGS = ["--", "--exclude", "**/*e2e*", "--exclude", "**/*integration*
 const LOCAL_CHECKS = [
   ["ci"],
   ["run", "build:server"],
+  ["run", "build:app-deps"],
   ["run", "typecheck"],
   ["run", "test:unit", "--workspace=packages/server", ...UNIT_ARGS],
   ["run", "test:unit", "--workspace=packages/cli", ...UNIT_ARGS],
@@ -1103,7 +1104,7 @@ test("criteria 10, 16, 18: a failing local check stops the run naming it; the me
   const checks = checkCalls(run);
   assert.deepEqual(
     checks.map(({ args }) => args),
-    LOCAL_CHECKS.slice(0, 3),
+    LOCAL_CHECKS.slice(0, 4),
   );
   const [beta2] = assertSynced(fx, oldTip, ["v0.10.0-beta.2", "v0.10.0"]);
   // The branch left on origin is the very merge the checks ran on.
@@ -1187,7 +1188,9 @@ test("criterion 18: no test file named e2e or integration runs or is passed to a
   assert.equal(testRuns.length, 2 * 9);
   for (const { args } of checkCalls(run)) {
     assert.ok(
-      ["ci", "build:server", "typecheck", "test", "test:unit"].includes(args[1] ?? args[0]),
+      ["ci", "build:server", "build:app-deps", "typecheck", "test", "test:unit"].includes(
+        args[1] ?? args[0],
+      ),
       args.join(" "),
     );
     assert.doesNotMatch(args.join(" "), /playwright|browser|test:e2e|test:integration/);
