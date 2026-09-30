@@ -101,10 +101,11 @@ worktree_at() {
 	fi
 }
 
-# Runs one local check in the temporary worktree; a failure stops the run before the merge branch is pushed.
+# Runs one local check in the temporary worktree; a failure pushes the merge branch, left on origin to fix, and stops the run.
 check() {
 	if ! (cd "$WT" && "$@"); then
-		echo "error: local check failed: $*; $MB was deleted, never pushed" >&2
+		git push origin "$(git -C "$WT" rev-parse HEAD):refs/heads/$MB"
+		echo "error: local check failed: $*; $MB is left on origin to fix by hand, then run again" >&2
 		exit 1
 	fi
 }

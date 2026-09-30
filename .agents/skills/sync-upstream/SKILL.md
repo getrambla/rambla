@@ -85,14 +85,14 @@ Exit 0 → report which tags landed, from its `landed <tag>` lines, and stop.
 The first tag that stops ends the run; the tags before it stay landed. The
 last lines of the output say why:
 
-| It stopped on                        | Left behind                    | Next                                                       |
-| ------------------------------------ | ------------------------------ | ---------------------------------------------------------- |
-| a conflict, listing the paths        | nothing; `merge-<tag>` deleted | make the merge branch by hand (step 3)                     |
-| a failing local check, naming it     | nothing; `merge-<tag>` deleted | make the merge branch by hand (step 3), then fix the check |
-| a failing `ci.yml` job, naming it    | `merge-<tag>` on origin        | check it out and fix it (step 5)                           |
-| the branch moving, naming both tips  | `merge-<tag>` on origin        | merge the branch into `merge-<tag>`, resolving conflicts   |
-| another `merge-` branch on origin    | that branch                    | land it or delete it first                                 |
-| a tag out of order, naming both tags | nothing                        | bring it to the user                                       |
+| It stopped on                        | Left behind                    | Next                                                     |
+| ------------------------------------ | ------------------------------ | -------------------------------------------------------- |
+| a conflict, listing the paths        | nothing; `merge-<tag>` deleted | make the merge branch by hand (step 3)                   |
+| a failing local check, naming it     | `merge-<tag>` on origin        | check it out and fix it (step 5)                         |
+| a failing `ci.yml` job, naming it    | `merge-<tag>` on origin        | check it out and fix it (step 5)                         |
+| the branch moving, naming both tips  | `merge-<tag>` on origin        | merge the branch into `merge-<tag>`, resolving conflicts |
+| another `merge-` branch on origin    | that branch                    | land it or delete it first                               |
+| a tag out of order, naming both tags | nothing                        | bring it to the user                                     |
 
 Every hand fix ends the same way: ask the user, push `merge-<tag>`, and run
 `just sync-upstream` again. It uses the branch on origin instead of making a

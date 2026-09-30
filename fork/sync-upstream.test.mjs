@@ -1089,7 +1089,7 @@ test("criteria 8, 10: of two new release tags, the first lands and the second co
   assert.equal(worktreeCount(ours), 1);
 });
 
-test("criteria 10, 16, 18: a failing local check stops the run naming it; the merge branch is never pushed, upstream-rebrand is", (t) => {
+test("criteria 10, 16, 18: a failing local check stops the run naming it; the merge branch is pushed and left on origin, upstream-rebrand is pushed, the target branch is unchanged", (t) => {
   const fx = makeFixture(t);
   const dir = checkout(fx, "checkout");
   const oldTip = rev(fx.origin, BRANCH);
@@ -1099,16 +1099,50 @@ test("criteria 10, 16, 18: a failing local check stops the run naming it; the me
 
   assert.notEqual(run.status, 0, run.output);
   assert.match(run.output, /stand-in npm: run typecheck failed/, "the check's own output is shown");
-  assert.match(run.output, /^error: .*npm run typecheck/m);
+  assert.match(run.output, /^error: .*npm run typecheck.*merge-v0\.10\.0-beta\.2 .*on origin/m);
+  const checks = checkCalls(run);
   assert.deepEqual(
-    checkCalls(run).map(({ args }) => args),
+    checks.map(({ args }) => args),
     LOCAL_CHECKS.slice(0, 3),
   );
-  assertSynced(fx, oldTip, ["v0.10.0-beta.2", "v0.10.0"]);
+  const [beta2] = assertSynced(fx, oldTip, ["v0.10.0-beta.2", "v0.10.0"]);
+  // The branch left on origin is the very merge the checks ran on.
+  assert.deepEqual(mergeBranches(fx.origin), ["merge-v0.10.0-beta.2"]);
+  const left = rev(fx.origin, "merge-v0.10.0-beta.2");
+  assert.deepEqual(parents(fx.origin, left), [target, beta2]);
+  for (const call of checks) assert.equal(call.head, left);
   assert.equal(rev(fx.origin, TARGET), target);
-  assert.deepEqual(mergeBranches(fx.origin), []);
+  assert.equal(rev(dir, TARGET), target);
   assert.deepEqual(mergeBranches(dir), []);
   assert.deepEqual(run.gh, []);
+  assert.equal(worktreeCount(dir), 1);
+});
+
+test("criteria 10, 11: a re-run after the merge branch a failing local check left is fixed on origin uses that branch and lands it", (t) => {
+  const fx = makeFixture(t);
+  const dir = checkout(fx, "checkout");
+  const stopped = sync(dir, { NPM_FAIL: "run typecheck" });
+  assert.notEqual(stopped.status, 0, stopped.output);
+  const hand = checkout(fx, "hand");
+  git(hand, ["checkout", "-b", "merge-v0.10.0-beta.2", "origin/merge-v0.10.0-beta.2"]);
+  const fixed = commit(hand, { "fix.txt": "fixed by hand\n" }, 9, "fix the typecheck");
+  git(hand, ["push", "origin", "merge-v0.10.0-beta.2"]);
+
+  const run = sync(dir);
+
+  assert.equal(run.status, 0, run.output);
+  const tip = rev(fx.origin, TARGET);
+  assert.deepEqual(ciLookups(run), [
+    { workflow: "ci.yml", branch: "merge-v0.10.0-beta.2", commit: fixed },
+    { workflow: "ci.yml", branch: "merge-v0.10.0", commit: tip },
+  ]);
+  assert.equal(parents(fx.origin, tip)[0], fixed);
+  // Only v0.10.0's fresh merge runs the local checks; the fixed branch goes straight to ci.yml.
+  assert.deepEqual(
+    checkCalls(run).map(({ args, head }) => [args, head]),
+    LOCAL_CHECKS.map((args) => [args, tip]),
+  );
+  assert.deepEqual(mergeBranches(fx.origin), []);
   assert.equal(worktreeCount(dir), 1);
 });
 
@@ -1481,6 +1515,25 @@ test("criterion 11: the skill is sync-upstream, reachable from .claude/ and .age
   assert.match(text, /just sync-upstream/);
   assert.match(text, /delete list/);
   assert.doesNotMatch(text.replace(WORKFLOW_NAME, ""), new RegExp(OLD_NAMES));
+});
+
+test("criterion 10: the skill's stop table says a failing local check leaves merge-<tag> on origin to fix on that branch, and a conflict deletes it", () => {
+  const table = section(repoFile(SYNC_SKILL), "### 2. When it stops");
+  const row = (start) => {
+    const line = table.split("\n").find((l) => l.startsWith(`| ${start}`));
+    assert.ok(line, start);
+    return line
+      .split("|")
+      .slice(1, -1)
+      .map((cell) => cell.trim());
+  };
+
+  const [, checkLeft, checkNext] = row("a failing local check");
+  assert.equal(checkLeft, "`merge-<tag>` on origin");
+  assert.match(checkNext, /fix it/);
+  assert.doesNotMatch(checkNext, /by hand/);
+  const [, conflictLeft] = row("a conflict");
+  assert.match(conflictLeft, /`merge-<tag>` deleted/);
 });
 
 test("criterion 11: the skill and docs/brand.md never say a sync runs the logo generator, and generate.mjs's comment never mentions a sync", () => {
