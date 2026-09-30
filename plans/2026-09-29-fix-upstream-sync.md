@@ -25,22 +25,24 @@ Status: unapproved
 
 ## Acceptance criteria
 
-1. A release tag is an upstream `v*` tag reachable from upstream main, betas included. Every other upstream `v*` tag is a hotfix tag.
-2. upstream-rebrand is never reset. Its first run syncs every release tag after `v0.10.0-beta.1`, the newest tag it contains.
-3. Each run syncs every release tag newer than the newest one on upstream-rebrand, and every hotfix tag newer than the newest one on upstream-hotfix-rebrand, oldest first. It reads no older tags and never syncs an untagged upstream commit.
-4. Each sync adds 2 commits to its branch: a `-s ours` merge of the tag, then the tag's tree minus the list, renamed and formatted.
-5. Each hotfix sync commit has as an ancestor the upstream-rebrand commit for the release tag the hotfix started from; `git merge-base` of the two is that release commit.
-6. Merging a hotfix sync commit into a branch cut from its base release commit brings only the hotfix's changes.
-7. Neither branch holds a file from main or anything matching the list.
-8. After the rename, no "paseo" in any case remains outside today's skipped paths.
-9. The merge into main, and the preview's merge, keep the target branch's copy of listed files.
-10. The script takes no arguments. When both branches hold every upstream tag and main contains upstream-rebrand, a run changes nothing and exits 0.
-11. On a merge conflict, upstream-rebrand is still pushed, main is unchanged, and the script exits non-zero listing the conflicted paths. On any other error, no branch changes and the script exits non-zero. No temporary worktree is left.
-12. `just sync-upstream` and `sync-upstream.yml` run the script from origin's branches. It pushes only the 2 upstream branches and leaves merged main as a local candidate, which they build and typecheck in a temporary worktree, then push; the push fails if main moved. Main merges only upstream-rebrand. `just sync-upstream-preview` syncs, then merges upstream-rebrand into a throwaway copy of the current branch even if main's merge would conflict; `drop` stays. No ImageMagick or librsvg. No old script, recipe, workflow or skill name remains.
-13. The test covers 1 and 3-11, and runs in CI.
-14. A manual `sync-upstream.yml` run puts v0.10.1 on upstream-hotfix-rebrand; after the user merges it into main, `nix-update-hash.yml` regenerates the hash and its `nix build` passes.
-15. From a fresh clone, after `npm ci` and `npm run build:app-deps`, app typecheck, the blob tests, `expo export --platform web` and `nix build .#desktop` pass. The blobs survive a later `npm install` or `npm ci`.
-16. CI fails on a `.ts`/`.tsx` file in `packages/*/src` over 200 KB and under 10 lines, printing its path. `.ignore` covers `thinking-tone.native-pcm.ts`.
+1. The entire plan is implemented on a single new branch created from main; main is untouched until final merge-back.
+2. A release tag is an upstream `v*` tag reachable from upstream main, betas included. Every other upstream `v*` tag is a hotfix tag. A tag's classification is decided once, the first time it is seen; a tag already absorbed by one branch is never re-absorbed by the other.
+3. upstream-rebrand is never reset. Its first run syncs every release tag after `v0.10.0-beta.1`, the newest tag it contains.
+4. Each run syncs every release tag newer than the newest one on upstream-rebrand, and every hotfix tag newer than the newest one on upstream-hotfix-rebrand, oldest first. In every run, upstream-rebrand is synced before upstream-hotfix-rebrand. It reads no older tags and never syncs an untagged upstream commit.
+5. Each run adds 2 commits per tag to its branch: a `-s ours` merge of the tag, then the tag's tree minus the delete list, renamed and formatted.
+6. upstream-hotfix-rebrand exists, created by a separate one-time bootstrap (script or justfile recipe, never the recurring script) from the upstream-rebrand commit for the hotfix's base release tag — the newest release tag that is an ancestor of the hotfix tag in upstream history.
+7. Each hotfix sync commit's `git merge-base` with the upstream-rebrand commit for its base release tag is that release commit.
+8. Merging a hotfix sync commit into a branch cut from its base release commit brings only the hotfix's changes.
+9. Neither branch holds a file from main or anything on the delete list (enumerated in the plan body: logo paths, `nix/npm-deps.hash`, the tracked blobs). Nothing from our main is ever copied into the rebrand branches.
+10. After the rename, no "paseo" in any case remains outside the rebrand skip paths (enumerated in the plan body).
+11. The merge into main, and the preview's merge, keep the target branch's copies of the deleted files.
+12. The script takes no arguments. When each branch holds every tag of its class — upstream-rebrand holds every release tag and upstream-hotfix-rebrand every hotfix tag — and main contains upstream-rebrand, a run changes nothing and exits 0.
+13. On a merge conflict, upstream-rebrand is still pushed, main is unchanged, and the script exits non-zero listing the conflicted paths. On any other error, no branch changes and the script exits non-zero. No temporary worktree is left.
+14. `just sync-upstream` and `sync-upstream.yml` run the script from origin's branches. It pushes only the 2 upstream branches and leaves merged main as a local candidate, which they build and typecheck in a temporary worktree, then push; the push fails if main moved. Main merges only upstream-rebrand. `just sync-upstream-preview` syncs, then merges upstream-rebrand into a throwaway copy of the current branch even if main's merge would conflict; its `drop` action (removing that throwaway copy) stays. No ImageMagick or librsvg. No old script, recipe, workflow or skill name remains (old set enumerated in the plan body).
+15. Every criterion in this section has an automated test, and the tests run in CI. A criterion that cannot be automated is not silently exempted: it is decomposed into testable parts, and any remainder is negotiated with the user before implementation.
+16. A manual `sync-upstream.yml` (workflow_dispatch) run works on the feature branch, dispatched via the `gh` CLI (`gh workflow run sync-upstream.yml`); the run completes green (`gh run view` reports success), and the workflow does not hardcode main as its checkout ref or push context.
+17. `packages/generated` exists as a workspace package (`@getrambla/generated`); all generated blobs are generated at build time into its git-ignored `dist/`; a fresh clone, `npm ci` and build produce them; they survive a later `npm install` or `npm ci`; no generated blob is git-tracked anywhere.
+18. CI fails on a `.ts`/`.tsx` file in `packages/*/src` over 200 KB and under 10 lines, printing its path. Generated paths are excluded via the existing oxfmt/oxlint `ignorePatterns`; no `.ignore` file is created.
 
 ## Goal
 
