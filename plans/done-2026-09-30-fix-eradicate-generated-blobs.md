@@ -1,6 +1,6 @@
 # fix: move generated webview blobs out of src
 
-Status: approved
+Status: done
 
 ## Provenance
 
