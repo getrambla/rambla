@@ -10,10 +10,13 @@ function installed(): InstalledPlugin {
     clientBundle: "bundle",
     lifetime: new AbortController(),
     queryClient: new QueryClient(),
+    rambla: {} as InstalledPlugin["rambla"],
+    invoke: async () => undefined,
     cleanup: () => {},
     settingsScreens: [],
     surfaces: [],
-    sidebarItems: [],
+    sidebarItems: { header: [], footer: [] },
+    legacySidebarItems: [],
     workspacePanels: [
       {
         id: "details",

@@ -24,7 +24,6 @@ import type {
   ProjectPlacementPayload,
   WorkspaceProjectDescriptorPayload,
   RefreshProvidersSnapshotResponseMessage,
-  SendAgentMessageRequest,
   SessionOutboundMessage,
   WorkspaceDescriptorPayload,
   WorkspaceCreateRequest,
@@ -55,6 +54,7 @@ import type {
   FetchAgentTimelineDirection,
   FetchAgentTimelinePayload,
   FetchAgentTimelineProjection,
+  SendMessageOptions,
   WaitForFinishResult,
 } from "./daemon-client.js";
 
@@ -276,11 +276,7 @@ export interface RamblaAgentTimelineRefetchOptions {
   requestId?: string;
 }
 
-export interface RamblaAgentSendOptions {
-  messageId?: string;
-  images?: Array<{ data: string; mimeType: string }>;
-  attachments?: SendAgentMessageRequest["attachments"];
-}
+export type RamblaAgentSendOptions = SendMessageOptions;
 
 export interface RamblaAgentRunOptions extends RamblaAgentSendOptions {
   timeoutMs?: number;

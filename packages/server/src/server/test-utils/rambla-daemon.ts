@@ -1,3 +1,4 @@
+import { BuiltinPluginLoader } from "../plugins/builtin/index.js";
 import os from "node:os";
 import path from "node:path";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
@@ -20,6 +21,7 @@ interface TestRamblaDaemonOptions {
   downloadTokenTtlMs?: number;
   corsAllowedOrigins?: string[];
   listen?: string;
+  listenPort?: number;
   logger?: Parameters<typeof createRamblaDaemon>[1];
   mcpEnabled?: boolean;
   mcpDebug?: boolean;
@@ -49,6 +51,7 @@ interface TestRamblaDaemonOptions {
   agentProfiles?: AgentProfile[];
   autoArchiveAfterMerge?: boolean;
   pluginsEnabled?: RamblaDaemonConfig["pluginsEnabled"];
+  builtinPlugins?: BuiltinPluginLoader;
   plugins?: RamblaDaemonConfig["plugins"];
 }
 
@@ -97,10 +100,11 @@ export async function createTestRamblaDaemon(
   let lastError: unknown;
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const { config, ramblaHomeRoot, ramblaHome, staticDir } =
+    const { config, ramblaHomeRoot, ramblaHome, staticDir, createdDirs } =
       await prepareTestDaemonConfig(options);
     const logger = options.logger ?? pino({ level: "silent" });
     const daemon = await createRamblaDaemon(config, logger, {
+      builtinPlugins: options.builtinPlugins ?? new BuiltinPluginLoader(undefined, []),
       serverFeatureOverrides: {
         daemonStatusRpc: options.daemonStatusRpcCapability,
         relayConfig: options.relayConfigCapability,
@@ -118,10 +122,7 @@ export async function createTestRamblaDaemon(
         await daemon.agentManager.flush().catch(() => undefined);
         if (options.cleanup ?? true) {
           await new Promise((r) => setTimeout(r, 50));
-          await Promise.all([
-            rm(ramblaHomeRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }),
-            rm(staticDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }),
-          ]);
+          await removeDirs([ramblaHomeRoot, staticDir]);
         }
       };
 
@@ -136,10 +137,8 @@ export async function createTestRamblaDaemon(
     } catch (error) {
       lastError = error;
       await daemon.stop().catch(() => undefined);
-      await Promise.all([
-        rm(ramblaHomeRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }),
-        rm(staticDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }),
-      ]);
+      // A failed attempt removes only what it created: a caller-supplied home keeps its serverId.
+      await removeDirs(createdDirs);
 
       if (
         (!isAddressInUseError(error) && !isStartupTimeoutError(error)) ||
@@ -158,19 +157,34 @@ interface PreparedTestDaemonConfig {
   ramblaHomeRoot: string;
   ramblaHome: string;
   staticDir: string;
+  createdDirs: string[];
+}
+
+async function removeDirs(dirs: string[]): Promise<void> {
+  await Promise.all(
+    dirs.map((dir) => rm(dir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 })),
+  );
+}
+
+async function createTempDir(prefix: string, createdDirs: string[]): Promise<string> {
+  const dir = await mkdtemp(path.join(os.tmpdir(), prefix));
+  createdDirs.push(dir);
+  return dir;
 }
 
 async function prepareTestDaemonConfig(
   options: TestRamblaDaemonOptions,
 ): Promise<PreparedTestDaemonConfig> {
+  const createdDirs: string[] = [];
   const ramblaHomeRoot =
-    options.ramblaHomeRoot ?? (await mkdtemp(path.join(os.tmpdir(), "rambla-home-")));
+    options.ramblaHomeRoot ?? (await createTempDir("rambla-home-", createdDirs));
   const ramblaHome = path.join(ramblaHomeRoot, ".rambla");
   await mkdir(ramblaHome, { recursive: true });
-  const staticDir = options.staticDir ?? (await mkdtemp(path.join(os.tmpdir(), "rambla-static-")));
+  const staticDir = options.staticDir ?? (await createTempDir("rambla-static-", createdDirs));
   const listenHost = options.listen ?? "127.0.0.1";
+  const listenPort = options.listenPort ?? 0;
   const config: RamblaDaemonConfig = {
-    listen: `${listenHost}:0`,
+    listen: `${listenHost}:${listenPort}`,
     ramblaHome,
     daemonVersion: options.daemonVersion,
     desktopManaged: options.desktopManaged,
@@ -205,7 +219,7 @@ async function prepareTestDaemonConfig(
     pluginsEnabled: options.pluginsEnabled,
     plugins: options.plugins,
   };
-  return { config, ramblaHomeRoot, ramblaHome, staticDir };
+  return { config, ramblaHomeRoot, ramblaHome, staticDir, createdDirs };
 }
 
 function isAddressInUseError(error: unknown): boolean {

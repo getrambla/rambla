@@ -1,6 +1,5 @@
 import { createPluginHosts } from "./hosts";
 import { afterEach, expect, it } from "vitest";
-import { createRamblaApi } from "@getrambla/client";
 import { DaemonClient } from "@getrambla/client/internal/daemon-client";
 import { PluginRegistry } from "./registry";
 
@@ -23,13 +22,14 @@ function registry(version: string) {
           },
           installation.lifetime.signal,
         ),
-        rambla: createRamblaApi(client),
+        rambla: installation.rambla,
         rpc: async () => {
           throw new Error("No RPC in this plugin");
         },
         openSettings() {
           cleanups++;
         },
+        openScreen() {},
         openSurface() {},
         openPanel() {},
         addComposerPill: () => ({ update() {}, remove() {} }),
