@@ -1,6 +1,6 @@
 # fix: close a chat link's path tooltip when the link is clicked
 
-Status: approved
+Status: done
 
 ## Provenance
 
