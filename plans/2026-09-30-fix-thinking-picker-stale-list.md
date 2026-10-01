@@ -52,7 +52,8 @@ Status: approved
    thinking levels; the default model keeps the probe session's levels.
    Cursor, Kimi, Kiro, and Trae behave exactly as before the change.
 4. All behavior covered by a new `*.rambla.test.ts`; no upstream test file
-   edited.
+   edited except the `resolveKimiCatalogModels` export added to
+   `provider-registry.test.ts`'s Kimi stub.
 
 ## Goal
 
@@ -70,6 +71,7 @@ which already does that config round-trip.
 | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------- | ------------------- |
 | `packages/server/src/server/agent/provider-registry.ts`                          | 1 import + `catalogModelResolver:` entry in the generic `acpOptions` literal | last touched 2026-09-27 by upstream rebrand `20f46ddda` | `RAMBLA-FORK: fix:` |
 | `packages/server/src/server/agent/provider-registry-acp-thinking.rambla.test.ts` | generic ACP client's per-model ladders, criteria 1 and 3                     | new                                                     | `RAMBLA-FORK: fix:` |
+| `packages/server/src/server/agent/provider-registry.test.ts`                     | add `resolveKimiCatalogModels` to the `kimi-acp-agent.js` stub               | upstream                                                | `RAMBLA-FORK: fix:` |
 
 **Why this shape:** upstream's `resolveKimiCatalogModels`
 ([kimi-acp-agent.ts:23-81](../packages/server/src/server/agent/providers/kimi-acp-agent.ts#L23))
@@ -104,13 +106,14 @@ the spec requires in every `setSessionConfigOption` response
 
 ## Constraints
 
-- Only the 2 files in the mitigation table may change.
+- Only the 3 files in the mitigation table may change.
 - acp-agent.ts, kimi-acp-agent.ts, generic-acp-agent.ts,
   provider-snapshot-manager.ts, the app, and glm-acp-agent may not change.
 - No new options, feature flags, or provider-id gates; the resolver applies
   to the generic ACP path uniformly.
 - Upstream tests (including `acp-agent.test.ts`,
-  `cursor-acp-catalog.test.ts`) may not be edited.
+  `cursor-acp-catalog.test.ts`) may not be edited, except the Kimi stub in
+  `provider-registry.test.ts`.
 - No refactoring of `deriveModelDefinitionsFromACP` or the snapshot
   manager, even where they look wrong.
 
