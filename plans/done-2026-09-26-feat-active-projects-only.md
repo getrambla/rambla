@@ -1,6 +1,6 @@
 # feat: active-projects-only filter in the sidebar Project page
 
-Status: approved
+Status: done
 
 ## Provenance
 

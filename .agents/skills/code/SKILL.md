@@ -23,7 +23,7 @@ Three roles, kept separate.
   verdicts. Reads little itself — see "The supervisor reads little" below.
   The supervisor briefs the coder with each step's **acceptance criteria**
   from the plan — what must be observably true when the step is done — and
-  nothing else. The brief may not contain numbers, formulas, distances,
+  the worktree's path, and nothing else. The brief may not contain numbers, formulas, distances,
   designs, or any implementation instruction of any kind that does not come
   from the plan or the user. If the supervisor believes it knows the cause
   or the fix, that is for the coder to find; state it as a question to
@@ -72,7 +72,8 @@ coder's call.
    the complete list of files that may be created or edited — a contract,
    not a suggestion. Its Provenance section
    says which commit of main the plan was written against — if main has moved
-   since, every line number in it is suspect, so say so before starting.
+   since in any file outside `plans/`, every line number in it is suspect, so
+   say so before starting. Commits that touch only `plans/` don't count.
 2. **The `plan` skill**, sections "What a plan is" (the citation rule) and
    "How git decides conflicts — do not relitigate this". This skill is how
    you apply them while coding, and does not repeat the reasoning behind
@@ -85,20 +86,34 @@ Before the first line of code, pass all three, in order:
 1. **The plan is approved.** The plan's `Status:` line reads `approved`.
    Anything else — **STOP and tell the user.** Nothing is coded against an
    unapproved plan.
-2. **The approved plan is committed.** If the plan file sits uncommitted in
-   the working tree, commit the plan file itself as part of the coding
-   work, before the first code step. That commit records the user's
-   approval; it is not an edit, and the plan stays read-only after it.
+2. **The approved plan is committed.** If the plan file sits uncommitted,
+   commit the plan file alone to the branch you are on — main or the
+   `fixes-YYYY-MM-DD` branch. On any other branch it is already committed
+   and there is nothing to do. That commit records the user's approval; it
+   is not an edit, and the plan stays read-only after it.
 3. **The branch is right.**
    - On a `fixes-YYYY-MM-DD` branch — parallel work with other agents:
      ask the user to confirm they want this plan done in parallel with the
      others, and include the plan's complexity in the message — whether it
      is a one-step simple plan or a multi-step complex plan. Start only
-     after they confirm.
-   - On main: check out a new `feat/<feature-name>` or `fix/<fix-name>`
-     branch, named from the plan's title. **Never work directly on main.**
-     The single exception: a one-step plan may stay on main, and only
-     after the user has been asked and has approved it.
+     after they confirm. Work in this checkout; never create a worktree.
+   - On main: the supervisor creates a new `feat/<feature-name>` or
+     `fix/<fix-name>` branch, named from the plan's title, in its own
+     worktree, after the plan commit from gate 2. From `rambla/`:
+
+     ```
+     mkdir -p .work
+     git worktree add .work/<branch-name-slug> -b <branch>
+     ```
+
+     `rambla/.work/` is git-ignored, skipped by Vitest, and survives
+     reboots — never put a worktree under `/tmp`. The supervisor owns the worktree: it runs
+     `npm ci` there before the first step, gives every coder and reviewer
+     the worktree's path in their brief, and makes sure they work inside
+     it. From here on, every `rambla/` path and command in this skill means
+     the worktree. Leave the worktree in place when done; the user tests
+     from it.
+     **Never work directly on main**, however small the plan.
 
 ## Reading rules
 
@@ -279,9 +294,8 @@ Then:
 
 - `git grep "RAMBLA-FORK:" -- <each upstream file you edited>` — every one
   must show a tag. An untagged divergence is one we lose at the next merge.
-- Branch: decided at the starting gates — a multi-step plan works on
-  `fix/<slug>` or `feat/<slug>`; main takes only a user-approved one-step
-  plan.
+- Branch: decided at the starting gates — `fix/<slug>` or `feat/<slug>` in
+  its worktree, or the `fixes-YYYY-MM-DD` branch. Never main.
 - **Commit each step as the reviewer accepts it**, on the working branch —
   never to main. Stage only files in the table — never another agent's
   files. The final step's commit is the final commit the changelog cites.

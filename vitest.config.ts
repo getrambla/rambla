@@ -61,6 +61,7 @@ export default defineConfig({
     env: {
       RAMBLA_GIT_MAX_PROCESSES_PER_SECOND: "10000",
     },
-    exclude: [...configDefaults.exclude, "**/.claude/**", "**/.dev/**"],
+    // RAMBLA-FORK: feature: (no plan): skips worktrees under .work.
+    exclude: [...configDefaults.exclude, "**/.claude/**", "**/.dev/**", "**/.work/**"],
   },
 });
