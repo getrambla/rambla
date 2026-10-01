@@ -225,6 +225,7 @@ systemctl-reload:
     systemctl --user daemon-reload
 
 restart:
+    systemctl --user stop rambla-dev-server || true
     systemctl --user enable rambla
     systemctl --user restart rambla
 
