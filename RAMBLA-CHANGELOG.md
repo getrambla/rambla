@@ -10,6 +10,7 @@
 
 ### Fixed
 
+- 2026-09-30 - [71e5a20](https://github.com/getrambla/rambla/commit/71e5a20) - [2026-09-30-fix-thinking-picker-stale-list.md](plans/2026-09-30-fix-thinking-picker-stale-list.md) - Fixed thinking picker offering levels the custom ACP model doesn't support.
 - 2026-09-30 - [c1a6be8](https://github.com/getrambla/rambla/commit/c1a6be8) - [2026-09-30-fix-eradicate-generated-blobs.md](plans/2026-09-30-fix-eradicate-generated-blobs.md) - Moved generated mermaid and terminal webview blobs out of app sources into a build-time package.
 - 2026-09-26 - [de47f4f](https://github.com/getrambla/rambla/commit/de47f4fb8) - [2026-09-26-fix-composer-ios-bottom-spacing.md](plans/2026-09-26-fix-composer-ios-bottom-spacing.md) - Slimmed the composer's bottom spacing on iOS: smaller gap under the panel and above the controls, keyboard alignment kept.
 - 2026-09-24 - [73aa827](https://github.com/getrambla/rambla/commit/73aa827) - [2026-09-24-fix-subagent-default-provider-model.md](plans/2026-09-24-fix-subagent-default-provider-model.md) - Fixed create_agent requiring a provider name: a subagent now inherits the caller's provider and model when none is named.

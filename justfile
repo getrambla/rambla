@@ -215,6 +215,7 @@ e2e-desktop:
     npm run test:e2e:renderer -w @getrambla/desktop
 
 start:
+    systemctl --user stop rambla-dev-server || true
     systemctl --user start rambla
 
 stop:
@@ -229,6 +230,26 @@ restart:
 
 status:
     systemctl --user status rambla
+# Build this checkout's server, then stop the installed daemon and run this one detached; the installed daemon restarts when it exits or fails. Logs: just dev-server-logs.
+[script]
+dev-server log_level="info":
+    set -euo pipefail
+    eval "$(mise env -C "{{justfile_dir()}}" -s bash)"
+    npm run build:server
+    systemd-run --user --collect --unit=rambla-dev-server \
+        --working-directory="{{justfile_dir()}}" \
+        --setenv=PATH="$PATH" --setenv=RAMBLA_LOG_LEVEL={{log_level}} \
+        --property=ExecStopPost="systemctl --user start rambla" \
+        "$(command -v just)" _dev-server-run
+[script]
+_dev-server-run:
+    set -euo pipefail
+    systemctl --user stop rambla
+    cd packages/server
+    exec ../cli/bin/rambla daemon run
+# Show the dev server's logs; extra args go to journalctl, e.g. -f or -n 100.
+dev-server-logs *args:
+    journalctl --user -u rambla-dev-server {{args}}
 
 # Reinstall the stable daemon and desktop app under stable_dir.
 install: install-daemon install-app

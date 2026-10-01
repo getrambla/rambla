@@ -476,6 +476,8 @@ vi.mock("./providers/trae-acp-agent.js", () => ({
 }));
 
 vi.mock("./providers/kimi-acp-agent.js", () => ({
+  // RAMBLA-FORK: fix: 2026-09-30-fix-thinking-picker-stale-list.md: stubs the resolver the registry now imports.
+  resolveKimiCatalogModels: vi.fn(),
   KimiACPAgentClient: class KimiACPAgentClient {
     readonly capabilities = {
       supportsStreaming: true,

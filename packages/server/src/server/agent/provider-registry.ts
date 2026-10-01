@@ -61,6 +61,8 @@ import {
   type AgentProviderDefinition,
 } from "@getrambla/protocol/provider-manifest";
 
+// RAMBLA-FORK: fix: 2026-09-30-fix-thinking-picker-stale-list.md: imports the per-model ladder resolver.
+import { resolveKimiCatalogModels } from "./providers/kimi-acp-agent.js";
 function isNonEmptyStringArray(value: string[]): value is [string, ...string[]] {
   return value.length > 0;
 }
@@ -795,6 +797,8 @@ function addDerivedProviders(
         createBaseClient: (logger) => {
           const acpOptions = {
             logger,
+            // RAMBLA-FORK: fix: 2026-09-30-fix-thinking-picker-stale-list.md: reads each model's own thinking ladder.
+            catalogModelResolver: resolveKimiCatalogModels,
             command,
             env: override.env,
             providerId,
