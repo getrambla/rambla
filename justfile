@@ -231,6 +231,13 @@ restart:
 
 status:
     systemctl --user status rambla
+
+# Build and run Rambla Debug desktop
+dev-desktop:
+    npm ci
+    npm run build:desktop -- --dir
+    npm run dev:desktop
+
 # Build this checkout's server, then stop the installed daemon and run this one detached; the installed daemon restarts when it exits or fails. Logs: just dev-server-logs.
 [script]
 dev-server log_level="info":
@@ -242,6 +249,7 @@ dev-server log_level="info":
         --setenv=PATH="$PATH" --setenv=RAMBLA_LOG_LEVEL={{log_level}} \
         --property=ExecStopPost="systemctl --user start rambla" \
         "$(command -v just)" _dev-server-run
+
 [script]
 _dev-server-run:
     set -euo pipefail
