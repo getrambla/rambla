@@ -1,6 +1,7 @@
 import { router, usePathname } from "expo-router";
 import { useCallback } from "react";
-import { SidebarHeaderRow } from "@/components/sidebar/sidebar-header-row";
+// RAMBLA-FORK: fix: 2026-09-30-fix-sidebar-shortcut-hover-wrap.md: uses our row that never wraps.
+import { RamblaSidebarHeaderRow as SidebarHeaderRow } from "@/components/sidebar/sidebar-header-row.rambla";
 import { resolvePluginIcon } from "./icons";
 import { buildPluginSurfaceRoute, hostIdFromPathname } from "./routes";
 import {
