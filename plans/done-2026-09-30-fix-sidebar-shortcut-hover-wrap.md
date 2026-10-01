@@ -1,6 +1,6 @@
 # fix: top sidebar rows truncate and fade into their shortcut on hover
 
-Status: approved
+Status: done
 
 ## Provenance
 
