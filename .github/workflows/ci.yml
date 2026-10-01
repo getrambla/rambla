@@ -102,6 +102,16 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # RAMBLA-FORK: fix: 2026-09-30-fix-eradicate-generated-blobs.md: fails on a generated one-line blob in package sources.
+      - name: Reject generated blobs in package sources
+        run: |
+          blobs=$(find packages/*/src -type f \( -name '*.ts' -o -name '*.tsx' \) -size +200k -exec awk 'END { if (NR < 10) print FILENAME }' {} \;)
+          if [ -n "$blobs" ]; then
+            echo "Over 200 KB and under 10 lines; generate these into packages/generated/dist/ instead:"
+            echo "$blobs"
+            exit 1
+          fi
+
   typecheck:
     name: typecheck
     needs: changes
