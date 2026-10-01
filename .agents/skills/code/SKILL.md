@@ -7,10 +7,7 @@ description: Implement a fix or feature in the Rambla fork of upstream Paseo, fo
 
 ## Where the code is
 
-**All of it is in `rambla/`** — a permanent, terminal fork of upstream
-`getpaseo/paseo`, rebranded by script. Every package, test, and npm script
-lives there, and that is where commands run. The outer repo holds plans,
-research, notes, and tooling only — no application code.
+All code lives in the "**rambla folder**" containing the `packages` folder in this workspace: either the current folder, or the `rambla/` subfolder, depending on the user's workspace.
 
 Nothing is ever contributed upstream and the fork is never rebased. Upstream
 is merged in, roughly weekly, forever.
@@ -68,7 +65,7 @@ coder's call.
 
 ## Step 0 — read these first
 
-1. **The plan** for this work, in `rambla/plans/`. Its mitigation table is
+1. **The plan** for this work, in `plans/`. Its mitigation table is
    the complete list of files that may be created or edited — a contract,
    not a suggestion. Its Provenance section
    says which commit of main the plan was written against — if main has moved
@@ -97,22 +94,20 @@ Before the first line of code, pass all three, in order:
      others, and include the plan's complexity in the message — whether it
      is a one-step simple plan or a multi-step complex plan. Start only
      after they confirm. Work in this checkout; never create a worktree.
-   - On main: the supervisor creates a new `feat/<feature-name>` or
+   - On `main`: the supervisor creates a new `feat/<feature-name>` or
      `fix/<fix-name>` branch, named from the plan's title, in its own
-     worktree, after the plan commit from gate 2. From `rambla/`:
+     worktree, after the plan commit from gate 2:
 
      ```
-     mkdir -p .work
-     git worktree add .work/<branch-name-slug> -b <branch>
+     mkdir -p ~/worktrees/rambla
+     git worktree add ~/worktrees/rambla/<branch-name-slug> -b <branch>
      ```
 
-     `rambla/.work/` is git-ignored, skipped by Vitest, and survives
-     reboots — never put a worktree under `/tmp`. The supervisor owns the worktree: it runs
+     The supervisor owns the worktree: it runs
      `npm ci` there before the first step, gives every coder and reviewer
      the worktree's path in their brief, and makes sure they work inside
-     it. From here on, every `rambla/` path and command in this skill means
-     the worktree. Leave the worktree in place when done; the user tests
-     from it.
+     it.
+
      **Never work directly on main**, however small the plan.
 
 ## Reading rules

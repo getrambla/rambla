@@ -95,22 +95,20 @@ if (acIdx !== -1) {
   }
 }
 
-// Steps: every numbered step (not the fixed step 0) carries acceptance criteria.
+// Steps: in a multi-step plan, every numbered step carries acceptance criteria.
 const stepsIdx = headings.indexOf("Steps");
 if (stepsIdx !== -1) {
   const start = lines.indexOf("## Steps");
   const end = lines.indexOf("## Verification", start + 1);
   const stepLines = lines.slice(start + 1, end === -1 ? lines.length : end);
   const steps = stepLines.filter((l) => /^\d+\. /.test(l.trim()));
-  if (steps.length > 2) {
-    // steps[0] is the fixed "read the code skill" step; a multi-step plan
-    // (3+ lines) numbers its work steps, and each needs criteria. A 1- or
-    // 2-line Steps section is a single-step plan — the plan-level criteria
-    // serve as that step's criteria.
+  if (steps.length > 1) {
+    // A single-step plan numbers nothing; its plan-level criteria serve as
+    // the step's criteria.
     const criteria = stepLines.filter((l) => /\*\*Acceptance criteria\*\*/.test(l));
-    if (criteria.length < steps.length - 1) {
+    if (criteria.length < steps.length) {
       problems.push(
-        `${file}  ${steps.length - 1} work steps but ${criteria.length} acceptance-criteria lines — every work step needs its own`,
+        `${file}  ${steps.length} work steps but ${criteria.length} acceptance-criteria lines — every work step needs its own`,
       );
     }
   }

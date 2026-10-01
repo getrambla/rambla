@@ -5,7 +5,7 @@ description: Plan a fix, feature, or refactor in Rambla. Every plan opens with a
 
 # Planning work on Rambla
 
-Rambla is its own product, permanently forked from upstream Paseo. Continual merges come from upstream, nothing goes back, so every line we touch in an upstream file can conflict on every future merge. All code lives in the `rambla/` subfolder of this workspace.
+Rambla is its own product, permanently forked from upstream Paseo. Continual merges come from upstream, nothing goes back, so every line we touch in an upstream file can conflict on every future merge. All code lives in the "**rambla folder**" containing the `packages` folder in this workspace: either the current folder, or the `rambla/` subfolder, depending on the user's workspace.
 
 ## When rules conflict
 
@@ -32,7 +32,7 @@ Past ~500 words of your own prose on a routine plan, you are implementing inside
 - **Citations only for load-bearing facts.** A claim about this repo's code
   that a placement or scope decision rests on is a `file.ts:120` link.
   Nothing else gets a citation; no unverified claim goes in.
-- **Public record.** Written to `rambla/plans/YYYY-MM-DD-fix-<slug>.md` (or
+- **Public record.** Written to `plans/YYYY-MM-DD-fix-<slug>.md` (or
   `feat-`), 1 file, nothing else in it. The plan never links outside the
   fork repo.
 
@@ -223,7 +223,7 @@ which files change, and how active upstream is in them, is.
 
 ## Provenance
 
-3 bullets, no prose — everything below is predicated on this state. From `rambla/`:
+3 bullets, no prose — everything below is predicated on this state. From the **rambla folder**:
 
 ```bash
 # 1. main — what the plan is written against
@@ -368,7 +368,7 @@ You are reviewing a plan for the Rambla fork. Do not trust it.
 
 The user's request, verbatim: <REQUEST>
 
-The plan: rambla/plans/<FILE>
+The plan: plans/<FILE>
 
 Read the plan, then open every file in its mitigation table — created or
 edited, all rows. Never
@@ -380,8 +380,7 @@ never asked; 2. a claim the code does not support; 3. a file the edit needs
 that the mitigation table misses; 4. scope beyond the request; 5. a
 described edit that cannot fit the current code — a name already taken, a
 function not where the plan says; 6. a step without acceptance criteria,
-or criteria too vague for a test to assert; 7. a status line that is not
-`approved`. "Does it compile" is not your job — the
+or criteria too vague for a test to assert. "Does it compile" is not your job — the
 code does not exist yet. Style, wording, and link format are not your
 job. Reply ACCEPT, or REJECT with a numbered list, each item backed by
 file.ts:120 evidence you opened yourself.
@@ -398,17 +397,14 @@ Use these exactly. They are the only thing the user gets between rounds.
 it for review, when the reviewer rejects, and when the reviewer accepts.
 Change reports never link it.
 
-The link is chat, so the target starts with `rambla/`, and the link text is
-the filename:
-
 ```markdown
-Sent [2026-09-22-feat-os-notification-toggle.md](rambla/plans/2026-09-22-feat-os-notification-toggle.md) for review.
+Sent [plans/2026-09-22-feat-os-notification-toggle.md](plans/2026-09-22-feat-os-notification-toggle.md) for review.
 ```
 
 **Reviewer rejected:**
 
 ```markdown
-The reviewer rejected [2026-09-22-feat-os-notification-toggle.md](rambla/plans/2026-09-22-feat-os-notification-toggle.md).
+The reviewer rejected [plans/2026-09-22-feat-os-notification-toggle.md](plans/2026-09-22-feat-os-notification-toggle.md).
 
 Accepted 6 of 7 items. Rejected:
 
@@ -422,14 +418,14 @@ Don't say what happens next — going back for a fix is understood.
 **Reviewer accepted:**
 
 ```markdown
-The reviewer accepted [2026-09-22-feat-os-notification-toggle.md](rambla/plans/2026-09-22-feat-os-notification-toggle.md), all 7 items:
+The reviewer accepted [plans/2026-09-22-feat-os-notification-toggle.md](plans/2026-09-22-feat-os-notification-toggle.md), all 7 items:
 
 1. <what the item is — 25 words maximum>
 2. ...
 
 Files to change:
 
-- [settings-screen.tsx:120](rambla/packages/app/src/screens/settings-screen.tsx#L120) — <what changes there>
+- [packages/app/src/screens/settings-screen.tsx:120](packages/app/src/screens/settings-screen.tsx#L120) — <what changes there>
 - ...
 
 Conflict mitigation: <the approach in 25 words or less>
