@@ -1,6 +1,6 @@
 # fix: thinking picker offers levels the active model doesn't support
 
-Status: approved
+Status: done
 
 ## Provenance
 
