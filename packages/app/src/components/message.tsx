@@ -345,10 +345,10 @@ const userMessageStylesheet = StyleSheet.create((theme) => ({
   containerLastInGroup: {
     marginBottom: theme.spacing[4],
   },
+  // RAMBLA-FORK: fix: 2026-10-01-fix-user-bubble-top-right-radius.md: removes the top-right radius override so all four bubble corners are uniform.
   bubble: {
     backgroundColor: theme.colors.surface3,
     borderRadius: theme.borderRadius["2xl"],
-    borderTopRightRadius: theme.borderRadius.sm,
     paddingHorizontal: theme.spacing[4],
     paddingVertical: theme.spacing[4],
     minWidth: 0,
