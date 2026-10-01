@@ -63,7 +63,12 @@ const logoPaths = [
   "packages/website/public/favicon.svg",
   "packages/website/public/logo.svg",
 ];
-const deleteList = [...logoPaths, "nix/npm-deps.hash"];
+// RAMBLA-FORK: fix: 2026-09-30-fix-eradicate-generated-blobs.md: lists the generated webview blobs the fork no longer tracks.
+const blobPaths = [
+  "packages/app/src/components/markdown/fence/mermaid/runtime/html.gen.ts",
+  "packages/app/src/terminal/webview/terminal-emulator-webview-html.ts",
+];
+const deleteList = [...logoPaths, "nix/npm-deps.hash", ...blobPaths];
 /** A delete-list path under upstream's name. */
 const upstreamName = (file) => file.replace("rambla", "paseo");
 
@@ -88,6 +93,8 @@ const UPSTREAM_FILES = {
   "packages/app/src/thing.paseo.test.ts": "// paseo stays\n",
   ".github/workflows/ci.yml": CI_YML,
   ...Object.fromEntries(deleteList.map((file) => [upstreamName(file), "upstream copy\n"])),
+  // RAMBLA-FORK: fix: 2026-09-30-fix-eradicate-generated-blobs.md: real blobs are valid TypeScript, so the rebrand's formatter accepts them.
+  ...Object.fromEntries(blobPaths.map((file) => [file, 'export const html = "upstream copy";\n'])),
 };
 
 const RAMBLA_CHANGELOG = `# Changelog
@@ -970,6 +977,38 @@ test("criterion 8: the merge keeps the target branch's delete-list files, whethe
   const tip = rev(fx.origin, TARGET);
   assert.equal(show(fx.origin, tip, "version.txt"), "0.11.0\n");
   assert.equal(show(fx.origin, tip, "nix/npm-deps.hash"), "main-hash-2\n");
+});
+
+// RAMBLA-FORK: fix: 2026-09-30-fix-eradicate-generated-blobs.md: an upstream tag modifying the removed blobs lands clean.
+test("a release tag modifying the generated webview blobs main removed lands with no conflict, and neither blob is tracked afterward", (t) => {
+  const fx = makeFixture(t);
+  firstRun(fx);
+  const ours = pushToTarget(
+    fx,
+    "ours",
+    Object.fromEntries(blobPaths.map((file) => [file, null])),
+    9,
+  );
+  release(
+    fx,
+    "v0.11.0",
+    {
+      ...Object.fromEntries(
+        blobPaths.map((file) => [file, 'export const html = "upstream copy 2";\n']),
+      ),
+      "version.txt": "0.11.0\n",
+    },
+    10,
+  );
+
+  const run = sync(ours);
+
+  assert.equal(run.status, 0, run.output);
+  assert.doesNotMatch(run.output, /CONFLICT/);
+  const tip = rev(fx.origin, TARGET);
+  assert.equal(show(fx.origin, tip, "version.txt"), "0.11.0\n");
+  const files = filesOf(fx.origin, tip);
+  for (const file of blobPaths) assert.ok(!files.includes(file), `${file} is not tracked`);
 });
 
 test("criterion 8: each merge regenerates CHANGELOG.md with fork/build-changelog.mjs", (t) => {

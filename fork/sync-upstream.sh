@@ -29,6 +29,9 @@ DELETE_LIST=(
 	"packages/app/public/pwa-icon-512.png"
 	"packages/app/src/components/icons/*-logo-mask.ts"
 	"packages/app/src/components/icons/*-logo.tsx"
+	# RAMBLA-FORK: fix: 2026-09-30-fix-eradicate-generated-blobs.md: keeps upstream's generated webview blobs out of the fork.
+	"packages/app/src/components/markdown/fence/mermaid/runtime/html.gen.ts"
+	"packages/app/src/terminal/webview/terminal-emulator-webview-html.ts"
 	"packages/desktop/assets/icon-dev.png"
 	"packages/desktop/assets/icon.icns"
 	"packages/desktop/assets/icon.ico"
