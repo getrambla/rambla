@@ -1,6 +1,6 @@
 # feat: user-adjustable composer height
 
-Status: approved
+Status: unapproved
 
 **Revision 7**
 
