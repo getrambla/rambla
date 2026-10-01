@@ -36,6 +36,7 @@
     "profile:workspace-tabs": "node ./scripts/profile-workspace-tabs.mjs",
     "deploy:web": "npm run build:web && wrangler pages deploy dist --project-name rambla-app --branch main",
     "build:terminal-webview": "node ./scripts/build-terminal-webview-html.mjs",
+    "build:webview-bundles": "npm run build:mermaid-runtime && npm run build:terminal-webview",
     "build:mermaid-runtime": "node ./src/components/markdown/fence/mermaid/build-runtime.mjs"
   },
   "dependencies": {
@@ -50,6 +51,7 @@
     "@floating-ui/react-native": "^0.10.7",
     "@getrambla/client": "*",
     "@getrambla/expo-two-way-audio": "*",
+    "@getrambla/generated": "*",
     "@getrambla/highlight": "*",
     "@getrambla/plugin": "*",
     "@getrambla/protocol": "*",

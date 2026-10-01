@@ -27,6 +27,7 @@
     "generate:validators": "node scripts/generate-validation-aot.mjs",
     "watch": "concurrently --kill-others --names validation,tsc --prefix-colors green,yellow \"node scripts/watch-validation-aot.mjs\" \"tsc -p tsconfig.json --watch --preserveWatchOutput\"",
     "prebuild": "npm run generate:validators",
+    "postbuild": "npm --prefix ../app run build:webview-bundles",
     "pretypecheck": "npm run generate:validators",
     "pretest": "npm run generate:validators"
   },

@@ -1,6 +1,7 @@
 import type { Terminal } from "@xterm/xterm";
 import { afterEach, expect, test } from "vitest";
-import { terminalEmulatorWebViewHtml } from "./terminal-emulator-webview-html";
+// RAMBLA-FORK: fix: 2026-09-30-fix-eradicate-generated-blobs.md: imports the build-time terminal webview.
+import { terminalEmulatorWebViewHtml } from "@getrambla/generated/terminal-emulator-webview-html";
 
 interface Message {
   type: string;

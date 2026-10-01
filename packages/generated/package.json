@@ -1,0 +1,13 @@
+{
+  "name": "@getrambla/generated",
+  "version": "0.10.0",
+  "private": true,
+  "description": "Rambla app webview bundles generated at build time",
+  "type": "module",
+  "exports": {
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  }
+}

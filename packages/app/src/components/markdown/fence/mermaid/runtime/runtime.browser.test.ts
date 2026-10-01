@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { mermaidRuntimeHtml } from "./html.gen";
+// RAMBLA-FORK: fix: 2026-09-30-fix-eradicate-generated-blobs.md: imports the build-time mermaid runtime.
+import { mermaidRuntimeHtml } from "@getrambla/generated/mermaid-runtime-html";
 import { parseMermaidRuntimeMessage, type MermaidRuntimeMessage } from "./messages";
 
 const mountedFrames: HTMLIFrameElement[] = [];

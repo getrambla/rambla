@@ -27,7 +27,8 @@ import type {
   TerminalLocalFileLinkSource,
   TerminalLocalFileLinkTarget,
 } from "../terminal/local-links/terminal-local-link-provider";
-import { terminalEmulatorWebViewHtml } from "../terminal/webview/terminal-emulator-webview-html";
+// RAMBLA-FORK: fix: 2026-09-30-fix-eradicate-generated-blobs.md: imports the build-time terminal webview.
+import { terminalEmulatorWebViewHtml } from "@getrambla/generated/terminal-emulator-webview-html";
 import type { PendingTerminalModifiers } from "../utils/terminal-keys";
 import { openExternalUrl } from "../utils/open-external-url";
 import type { TerminalEmulatorHandle, TerminalEmulatorProps } from "./terminal-emulator-contract";

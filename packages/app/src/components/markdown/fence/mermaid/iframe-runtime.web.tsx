@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { DiagramColorScheme, MermaidRenderRequest } from "./render-model";
-import { mermaidRuntimeHtml } from "./runtime/html.gen";
+// RAMBLA-FORK: fix: 2026-09-30-fix-eradicate-generated-blobs.md: imports the build-time mermaid runtime.
+import { mermaidRuntimeHtml } from "@getrambla/generated/mermaid-runtime-html";
 import { parseMermaidRuntimeMessage, type MermaidRuntimeRenderMessage } from "./runtime/messages";
 import { MermaidRuntimeRequestDriver } from "./runtime/request-driver";
 
