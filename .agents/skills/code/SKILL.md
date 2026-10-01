@@ -287,9 +287,6 @@ npm run lint
 fix it and rerun. It fails on any other file: stop and report —
 that is not yours to fix.**
 
-Never format code — that is the commit machinery's job, and you never
-run it.
-
 Then:
 
 - `git grep "RAMBLA-FORK:" -- <each upstream file you edited>` — every one
