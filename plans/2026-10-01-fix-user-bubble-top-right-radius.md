@@ -19,6 +19,7 @@ Status: approved
 - Assistant/agent message bubbles — they are separate styles in the same file and were not reported broken.
 - Grouping-driven corner variation (e.g. flattening corners between consecutive user messages) — grouping currently only affects container spacing and stays that way.
 - Any radius token changes in the theme; any refactor of `message.tsx`.
+- Exempt from automated testing. This is purely a style change so no tests are written.
 
 ## Acceptance criteria
 
@@ -61,10 +62,11 @@ The user-message bubble style in [message.tsx:347](../packages/app/src/component
 
 ## Verification
 
+- No automated tests are written.
 - `npm run typecheck`
 - `npm run lint`
 - `git grep "RAMBLA-FORK:" -- packages/app/src/components/message.tsx` — must show the tag.
-- Open the chat view with at least two consecutive user messages: the user bubble shows four rounded corners, and grouped messages keep their spacing.
+- The user opens the chat view with at least two consecutive user messages: the user bubble shows four rounded corners, and grouped messages keep their spacing.
 
 ## Risks
 
