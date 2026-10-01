@@ -10,6 +10,7 @@
 
 ### Fixed
 
+- 2026-09-30 - [b048cc0](https://github.com/getrambla/rambla/commit/b048cc02c) - [2026-09-30-fix-link-tooltip-stuck-on-click.md](plans/2026-09-30-fix-link-tooltip-stuck-on-click.md) - Fixed clicking a chat file link leaving its path tooltip stuck on screen.
 - 2026-09-30 - [862f159](https://github.com/getrambla/rambla/commit/862f159) - [2026-09-30-fix-sidebar-shortcut-hover-wrap.md](plans/2026-09-30-fix-sidebar-shortcut-hover-wrap.md) - Fixed top sidebar rows wrapping: labels truncate, fade into the shortcut on hover, and screen readers hear the shortcut.
 - 2026-09-30 - [71e5a20](https://github.com/getrambla/rambla/commit/71e5a20) - [2026-09-30-fix-thinking-picker-stale-list.md](plans/2026-09-30-fix-thinking-picker-stale-list.md) - Fixed thinking picker offering levels the custom ACP model doesn't support.
 - 2026-09-30 - [c1a6be8](https://github.com/getrambla/rambla/commit/c1a6be8) - [2026-09-30-fix-eradicate-generated-blobs.md](plans/2026-09-30-fix-eradicate-generated-blobs.md) - Moved generated mermaid and terminal webview blobs out of app sources into a build-time package.

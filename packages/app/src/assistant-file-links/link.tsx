@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { useMemo, type CSSProperties, type MouseEvent, type ReactNode, useState } from "react";
 import { Platform, Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import { StyleSheet } from "react-native-unistyles";
 import { isNative, isWeb } from "@/constants/platform";
@@ -11,6 +11,8 @@ import { markdownCopyDataSet } from "@/assistant-selection-copy/markup";
 import { useAssistantFileLinkResolverContext } from "./provider";
 import type { AssistantFileLinkSource } from "./resolver";
 import { useFileLink } from "./use-file-link";
+// RAMBLA-FORK: fix: 2026-09-30-fix-link-tooltip-stuck-on-click.md: closes the path tooltip when the link is clicked.
+import { useCallback } from "react";
 
 interface AssistantMarkdownLinkProps {
   source: AssistantFileLinkSource;
@@ -206,13 +208,19 @@ function FileLinkHoverTooltip({
   filePath: string | null;
   children: ReactNode;
 }) {
+  // RAMBLA-FORK: fix: 2026-09-30-fix-link-tooltip-stuck-on-click.md: closes the path tooltip when the link is clicked.
+  const [tooltipOpen, setTooltipOpen] = useState(false);
+  const handleOpenChange = useCallback((open: boolean) => setTooltipOpen(open), []);
+  const handleMouseUp = useCallback(() => setTooltipOpen(false), []);
   if (!isWeb) {
     return children;
   }
   return (
-    <Tooltip delayDuration={400}>
+    <Tooltip delayDuration={400} open={tooltipOpen} onOpenChange={handleOpenChange}>
       <TooltipTrigger asChild>
-        <View style={FILE_LINK_TOOLTIP_TRIGGER_STYLE}>{children}</View>
+        <View onPointerUp={handleMouseUp} style={FILE_LINK_TOOLTIP_TRIGGER_STYLE}>
+          {children}
+        </View>
       </TooltipTrigger>
       {filePath ? (
         <TooltipContent side="top" align="start" maxWidth={520}>
