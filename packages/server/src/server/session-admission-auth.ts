@@ -14,15 +14,12 @@ export async function resolveSessionAdmission(input: {
   localCredential: string | null;
   transport: "direct" | "relay";
 }): Promise<AdmissionResolution> {
-  const { credential, passwordHash, localCredential, transport } = input;
+  const { credential, passwordHash, localCredential } = input;
   if (!passwordHash) {
     return { admission: { principalId: "owner", permissions: OWNER_PERMISSIONS } };
   }
   if (!credential) {
-    // COMPAT(relayPasswordOptional): added in v0.9.1, remove once release N mobile builds are live on App Store and Play.
-    if (transport === "relay") {
-      return { admission: { principalId: "owner", permissions: OWNER_PERMISSIONS } };
-    }
+    // RAMBLA-FORK: fix: security: (no-plan) remove COMPAT password bypass
     return { rejection: "password_required" };
   }
   if (credential.kind === "localCredential") {

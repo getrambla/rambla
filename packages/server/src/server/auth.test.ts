@@ -184,7 +184,8 @@ describe("hello admission", () => {
       });
       expect(
         await resolveSessionAdmission({ ...input, transport: "relay", credential: undefined }),
-      ).toMatchObject({ admission: { principalId: "owner" } });
+        // RAMBLA-FORK: fix: security: (no-plan) remove COMPAT password bypass
+      ).toEqual({ rejection: "password_required" });
     } finally {
       await deleteLocalCredential(home);
       await rm(home, { recursive: true, force: true });
