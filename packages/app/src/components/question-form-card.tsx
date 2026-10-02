@@ -84,11 +84,18 @@ function QuestionOptionRow({
     () => [
       styles.optionLabel,
       { color: isSelected ? theme.colors.foreground : theme.colors.foregroundMuted },
+      // RAMBLA-FORK: fix: 2026-10-02-fix-question-card-text-selection.md: enable question card text selection on web.
+      ...(IS_WEB ? [{ userSelect: "text" as const }] : []),
     ],
     [isSelected, theme.colors.foreground, theme.colors.foregroundMuted],
   );
   const optionDescriptionStyle = useMemo(
-    () => [styles.optionDescription, { color: theme.colors.foregroundMuted }],
+    () => [
+      styles.optionDescription,
+      { color: theme.colors.foregroundMuted },
+      // RAMBLA-FORK: fix: 2026-10-02-fix-question-card-text-selection.md: enable question card text selection on web.
+      ...(IS_WEB ? [{ userSelect: "text" as const }] : []),
+    ],
     [theme.colors.foregroundMuted],
   );
   const accessibilityState = useMemo(() => ({ checked: isSelected }), [isSelected]);
@@ -497,7 +504,12 @@ export function QuestionFormCard({ permission, onRespond, isResponding }: Questi
     [theme.colors.surface1, theme.colors.border],
   );
   const questionTextStyle = useMemo(
-    () => [styles.questionText, { color: theme.colors.foreground }],
+    () => [
+      styles.questionText,
+      { color: theme.colors.foreground },
+      // RAMBLA-FORK: fix: 2026-10-02-fix-question-card-text-selection.md: enable question card text selection on web.
+      ...(IS_WEB ? [{ userSelect: "text" as const }] : []),
+    ],
     [theme.colors.foreground],
   );
   // Single-select radios need a group; checkboxes are valid standalone.
