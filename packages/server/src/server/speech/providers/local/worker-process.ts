@@ -18,6 +18,9 @@ import type {
 } from "./worker-protocol.js";
 import { bufferToWorkerBytes, workerBytesToBuffer } from "./worker-bytes.js";
 
+// RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: imports the Silero session class to build the clip-check kind.
+import { SherpaSileroVadSession } from "./sherpa/silero-vad-session.js";
+
 process.title = "Rambla Voice";
 
 type LocalSttEngine = SherpaOfflineRecognizerEngine;
@@ -198,7 +201,8 @@ async function createSession(
   message: Extract<LocalSpeechWorkerRequest, { type: "session.create" }>,
 ) {
   cleanupSession(message.sessionId);
-  if (message.kind === "vad") {
+  // RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: the clip-check kind shares the vad branch and builds Silero with a 100 ms confirm window and speech-on-flush reporting.
+  if (message.kind === "vad" || message.kind === "vadClipCheck") {
     let vadModelPath: string | undefined;
     try {
       vadModelPath = await ensureSileroVadModel(message.config.modelsDir, logger);
@@ -207,10 +211,18 @@ async function createSession(
     }
     const provider = new SherpaSileroTurnDetectionProvider({ modelPath: vadModelPath }, logger);
     const session = provider.createSession({ logger });
-    trackTurnDetectionSession(message.sessionId, session);
-    await session.connect();
-    sessions.set(message.sessionId, session);
-    return { requiredSampleRate: session.requiredSampleRate };
+    // RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: clip-check kind builds Silero with a 100 ms confirm window and speech-on-flush reporting.
+    let vadSession: TurnDetectionSession = session;
+    if (message.kind === "vadClipCheck") {
+      vadSession = new SherpaSileroVadSession({
+        logger,
+        config: { modelPath: vadModelPath, confirmMs: 100, reportUnconfirmedSpeechOnFlush: true },
+      });
+    }
+    trackTurnDetectionSession(message.sessionId, vadSession);
+    await vadSession.connect();
+    sessions.set(message.sessionId, vadSession);
+    return { requiredSampleRate: vadSession.requiredSampleRate };
   }
 
   const model = message.kind === "voiceStt" ? "voice" : "dictation";

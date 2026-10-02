@@ -25,6 +25,9 @@ import type {
 } from "./worker-protocol.js";
 import { bufferToWorkerBytes, workerBytesToBuffer } from "./worker-bytes.js";
 
+// RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: resamples clip audio to the VAD session's sample rate.
+import { Pcm16MonoResampler } from "../../../agent/pcm16-resampler.js";
+
 const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
 const DEFAULT_IDLE_TTL_MS = 5 * 60 * 1000;
 const DEFAULT_LOCAL_SAMPLE_RATE = 16000;
@@ -270,6 +273,35 @@ export class LocalSpeechWorkerClient {
     void this.sendRequest({ type: "session.flush", sessionId }).catch((err) => {
       this.emitSessionError(sessionId, err);
     });
+  }
+
+  // RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: awaitable flush that resolves once the worker has finished the flush.
+  flushSessionAwaited(sessionId: string): Promise<void> {
+    return this.sendRequest({ type: "session.flush", sessionId }).then(() => undefined);
+  }
+
+  // RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: clip check over its own worker connection — appends the clip to a vadClipCheck session and counts flush-reported speech.
+  async runClipCheck(pcm16le: Buffer): Promise<boolean> {
+    const emitter = new EventEmitter();
+    let speechStoppedCount = 0;
+    emitter.on("speech_stopped", () => {
+      speechStoppedCount += 1;
+    });
+    const { sessionId, requiredSampleRate } = await this.createSession("vadClipCheck", emitter);
+    try {
+      const pcmForSession =
+        requiredSampleRate === DEFAULT_LOCAL_SAMPLE_RATE
+          ? pcm16le
+          : new Pcm16MonoResampler({
+              inputRate: DEFAULT_LOCAL_SAMPLE_RATE,
+              outputRate: requiredSampleRate,
+            }).processChunk(pcm16le);
+      this.appendSessionAudio(sessionId, pcmForSession);
+      await this.flushSessionAwaited(sessionId);
+    } finally {
+      this.closeSession(sessionId);
+    }
+    return speechStoppedCount > 0;
   }
 
   resetSession(sessionId: string): void {
@@ -688,6 +720,20 @@ class WorkerBackedTranscriptionSession
     if (sessionId) {
       this.client.clearSession(sessionId);
     }
+  }
+
+  // RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: runs a clip check over this session's own worker client, returning whether speech is present.
+  clipHasSpeech(pcm16le: Buffer): Promise<boolean> {
+    return this.client.runClipCheck(pcm16le);
+  }
+
+  // RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: flush that the caller can await, so finalize waits for the engine to settle.
+  flushAwaited(): Promise<void> {
+    const sessionId = this.connectedSessionId;
+    if (!sessionId) {
+      return Promise.resolve();
+    }
+    return this.client.flushSessionAwaited(sessionId);
   }
 
   close(): void {

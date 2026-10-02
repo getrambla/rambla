@@ -14,7 +14,8 @@ export interface LocalSpeechWorkerConfig {
   voiceTtsSpeed?: number;
 }
 
-export type LocalSpeechSessionKind = "voiceStt" | "dictationStt" | "vad";
+// RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: adds the clip-check session kind.
+export type LocalSpeechSessionKind = "voiceStt" | "dictationStt" | "vad" | "vadClipCheck";
 
 export type LocalSpeechWorkerRequest =
   | {

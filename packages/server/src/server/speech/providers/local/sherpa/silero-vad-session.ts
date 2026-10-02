@@ -53,6 +53,8 @@ export interface SherpaSileroVadSessionConfig {
   bufferSizeInSeconds?: number;
   confirmMs?: number;
   silenceMs?: number;
+  // RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: off-by-default option that reports unconfirmed speech on flush.
+  reportUnconfirmedSpeechOnFlush?: boolean;
 }
 
 type VadPhase =
@@ -70,6 +72,8 @@ export class SherpaSileroVadSession extends EventEmitter implements TurnDetectio
   private readonly msPerWindow: number;
   private readonly confirmMs: number;
   private readonly silenceMs: number;
+  // RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: off-by-default option that reports unconfirmed speech on flush.
+  private readonly reportUnconfirmedSpeechOnFlush: boolean;
   private connected = false;
   private phase: VadPhase = { state: "idle" };
   private windowTimestamp = 0;
@@ -87,6 +91,8 @@ export class SherpaSileroVadSession extends EventEmitter implements TurnDetectio
     this.msPerWindow = (this.windowSize / this.requiredSampleRate) * 1000;
     this.confirmMs = config.confirmMs ?? DEFAULT_CONFIRM_MS;
     this.silenceMs = config.silenceMs ?? DEFAULT_SILENCE_MS;
+    // RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: off-by-default option that reports unconfirmed speech on flush.
+    this.reportUnconfirmedSpeechOnFlush = config.reportUnconfirmedSpeechOnFlush ?? false;
 
     const threshold = config.threshold ?? DEFAULT_SILERO_THRESHOLD;
 
@@ -170,8 +176,15 @@ export class SherpaSileroVadSession extends EventEmitter implements TurnDetectio
         this.phase = { state: "idle" };
         this.emit("speech_stopped");
       } else if (this.phase.state === "confirming") {
-        this.logger.debug("[VAD] Discarding unconfirmed speech on flush");
-        this.phase = { state: "idle" };
+        // RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: in clip-check mode, speech still being confirmed counts as speech.
+        if (this.reportUnconfirmedSpeechOnFlush) {
+          this.logger.debug("[VAD] Reporting unconfirmed speech on flush");
+          this.phase = { state: "idle" };
+          this.emit("speech_stopped");
+        } else {
+          this.logger.debug("[VAD] Discarding unconfirmed speech on flush");
+          this.phase = { state: "idle" };
+        }
       }
     } catch (error) {
       this.emit("error", error instanceof Error ? error : new Error(String(error)));
