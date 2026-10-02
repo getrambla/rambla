@@ -141,6 +141,35 @@ only does so itself when the user directly asks it to. The supervisor never
 runs the project's tests to verify work; verification belongs to the coder
 and the reviewer alone.
 
+## Standup rounds
+
+**The coder works in rounds of 10–20 turns, then stops.** Count tool
+calls. At turn 10, stop starting new work: finish the edit or test in
+flight and wind down. By turn 20 at the latest, write one line, exactly
+this shape, as your last output — then stop the run and wait:
+
+    STANDUP: done: <finished this round, or "nothing yet"> | now: <what you were on> | blockers: <blocker or "none">
+
+Never start new work after the standup line; stopping is the point —
+the supervisor continues the run. Losing count is expected: when unsure
+of the count, wind down and stand up early. Blockers and failed
+verification commands don't wait for the round — stand up and stop the
+moment one appears.
+
+**The supervisor reads every standup, judges drift, then continues the
+run.** Check the coder's activity feed between notifications; do not
+let a stopped coder sit idle. On each standup ask three questions: are
+the named files all inside the plan's table; is the work advancing the
+current step's acceptance criteria or looping (same failure twice,
+refactors, repo-wide reading); does a blocker need me now? Then nudge
+with one short message — "continue", plus the redirect if one is
+earned. Two consecutive "nothing yet" standups, any out-of-table file,
+or a loop earns one redirect naming the plan step and its acceptance
+criteria; still off track after that, stop the run and take a fresh
+coder for the remaining work (its finished edits stay in the tree). A
+run found stopped with no recent standup is treated as failed — re-brief
+a fresh coder rather than assume the edits are sound.
+
 ## If a step's tests fail
 
 If tests fail during a step, the work goes back to the coder — always, with

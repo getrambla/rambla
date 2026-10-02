@@ -11,7 +11,7 @@
 
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { basename } from "node:path";
+import { basename, dirname, relative, resolve } from "node:path";
 
 const file = process.argv[2];
 if (!file) {
@@ -117,12 +117,23 @@ if (stepsIdx !== -1) {
 // Links. Inside a plan the target is relative to the plan, so it must not
 // start with rambla/ or a slash, and a line reference uses #L.
 const linkRe = /\[[^\]]*\]\(([^)]+)\)/g;
+const repoRoot = git("-C", dirname(file), "rev-parse", "--show-toplevel");
+const linkRule = "plans never link private repos or research files";
 lines.forEach((line, i) => {
   for (const m of line.matchAll(linkRe)) {
     const target = m[1];
     if (/^https?:/i.test(target)) {
-      at(i, `link target "${target}" leaves the fork repo — plans never link outside it`);
+      if (/^https?:\/\/(www\.)?github\.com\/getrambla\/getrambla([/?#]|$)/i.test(target)) {
+        at(i, `link target "${target}" is in the private getrambla repo — ${linkRule}`);
+      }
       continue;
+    }
+    const targetPath = target.split("#")[0];
+    if (/(^|\/)research(\/|$)/.test(targetPath)) {
+      at(i, `link target "${target}" is a research file — ${linkRule}`);
+    }
+    if (/^\.\.(\/|$)/.test(relative(repoRoot, resolve(dirname(file), targetPath)))) {
+      at(i, `link target "${target}" leaves the fork repo — ${linkRule}`);
     }
     if (target.startsWith("rambla/")) {
       at(i, `link target "${target}" starts with rambla/ — inside a plan use ../ instead`);

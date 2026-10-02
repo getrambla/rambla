@@ -33,8 +33,9 @@ Past ~500 words of your own prose on a routine plan, you are implementing inside
   that a placement or scope decision rests on is a `file.ts:120` link.
   Nothing else gets a citation; no unverified claim goes in.
 - **Public record.** Written to `plans/YYYY-MM-DD-fix-<slug>.md` (or
-  `feat-`), 1 file, nothing else in it. The plan never links outside the
-  fork repo.
+  `feat-`), 1 file, nothing else in it. The plan never links private repos
+  or research files. A fact about anything outside the repo cites its
+  primary public source, never a research file.
 
 ## Who does what
 
@@ -191,6 +192,14 @@ First match wins.
    helper, called in 1 line at the upstream site.
 4. **At most 5 changed lines** (a guard clause, a wrong default) → edit in
    place, minimally.
+
+Rules 1–5 are placement rules, not a line budget — a multi-line upstream
+edit is normal. A helper's import and wiring are upstream edits too, so
+extracting anything small adds conflict surface. Extract only when the body
+is large or alive: a whole function, the majority of a large function, or
+evolving logic at many sites that each collapse to a one-line call. Static
+literals never qualify. If the helper doesn't shrink upstream's touched
+lines, edit in place.
 
 Before deciding, ask the researcher how this app already does this kind of
 thing, and say so in the plan with a citation when it drives the placement.
