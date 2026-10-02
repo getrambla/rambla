@@ -21,6 +21,9 @@ import {
   type TranscriptEvent,
 } from "./dictation-segment-partial.rambla.js";
 
+// RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: the submit tail check.
+import { holdDictationTailForCheck } from "./dictation-tail-vad.rambla.js";
+
 const PCM_CHANNELS = 1;
 const PCM_BITS_PER_SAMPLE = 16;
 const DEFAULT_DICTATION_FINAL_TIMEOUT_MS = 10000;
@@ -828,6 +831,20 @@ export class DictationStreamManager {
       return;
     }
     if (state.finishSealed) {
+      return;
+    }
+    // RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: holds finalize while the new module checks the tail, then commits or drops it.
+    if (
+      holdDictationTailForCheck({
+        dictationId,
+        state,
+        logger: this.logger,
+        isActive: () => this.streams.get(dictationId) === state,
+        reseal: () => this.maybeSealDictationStreamFinish(dictationId),
+        finalize: () => this.maybeFinalizeDictationStream(dictationId),
+        emitPartial: (text, event) => this.emitDictationPartial(dictationId, text, event),
+      })
+    ) {
       return;
     }
 
