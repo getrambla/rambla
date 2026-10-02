@@ -214,8 +214,13 @@ e2e-app:
 e2e-desktop:
     npm run test:e2e:renderer -w @getrambla/desktop
 
-start:
-    systemctl --user stop rambla-dev-server || true
+[script]
+stop-dev-server:
+    if systemctl --user is-active rambla-dev-server; then
+        systemctl --user stop rambla-dev-server
+    fi
+
+start: stop-dev-server
     systemctl --user start rambla
 
 stop:
@@ -224,8 +229,7 @@ stop:
 systemctl-reload:
     systemctl --user daemon-reload
 
-restart:
-    systemctl --user stop rambla-dev-server || true
+restart: stop-dev-server
     systemctl --user enable rambla
     systemctl --user restart rambla
 
@@ -240,7 +244,7 @@ dev-desktop:
 
 # Build this checkout's server, then stop the installed daemon and run this one detached; the installed daemon restarts when it exits or fails. Logs: just dev-server-logs.
 [script]
-dev-server log_level="info":
+dev-server log_level="debug":
     set -euo pipefail
     eval "$(mise env -C "{{justfile_dir()}}" -s bash)"
     npm run build:server
@@ -265,14 +269,9 @@ install: install-daemon install-app
 
 # Build the daemon from the dedicated stable clone and reinstall+restart the systemd user unit. ref: "" = current branch tip (must be pushed), or a SHA/branch/tag. mode: "soft" (default) waits for running turns, "immediate" restarts now. fresh=true wipes node_modules.
 [script]
-install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-service
+install-daemon ref="" fresh="false": && install-systemd-unit
     set -euo pipefail
     command -v mise >/dev/null 2>&1 || { echo "missing mise" >&2; exit 1; }
-
-    if [ "{{mode}}" != "soft" ] && [ "{{mode}}" != "immediate" ]; then
-        echo "unknown mode '{{mode}}' (use soft or immediate)" >&2
-        exit 1
-    fi
 
     # Dedicated build clone (clone into a sibling, rename only on success); origin is the dev repo itself.
     mkdir -p "{{stable_dir}}"
@@ -301,21 +300,17 @@ install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-ser
     fi
     npm run build:server
 
-    if [ "{{mode}}" = "soft" ]; then
-        # Worker drains gracefully on SIGTERM (finishes turns) — give it room before systemd SIGKILLs.
-        TIMEOUT_STOP_SEC=2400
-    else
-        TIMEOUT_STOP_SEC=90
-    fi
+    echo "installed daemon to {{stable_dir}}/daemon"
 
-    # The daemon runs from the clone it was built in (like remote-deploy.sh); packages keep node_modules alongside dist/.
+# Reload systemd and enable+restart the unit (own recipe because install-daemon's script attribute eats dependencies).
+[script]
+install-systemd-unit: && systemctl-reload restart
+    set -x
     # Render to a temp file then rename, so a failed render never leaves a truncated unit.
     mkdir -p "$(dirname "{{unit}}")"
     tmp_unit="$(mktemp "{{unit}}.XXXXXX")"
 
-    # The user manager starts this unit before the session PATH is imported, so bake PATH (with mise's node) into the unit.
-
-    # AGENTS: ExecStart MUST be exactly `rambla daemon run` with NO FLAGS. Do NOT add --foreground; it crashes the daemon (removed flag; REMOVED_LAUNCH_FLAGS in packages/cli/src/commands/daemon/local-daemon.ts). If you touch this line, run `just install-daemon` to prove the daemon starts.
+    echo "writing unit file"
     cat > "$tmp_unit" <<EOF
     [Unit]
     Description=Rambla daemon
@@ -323,9 +318,12 @@ install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-ser
     [Service]
     Type=simple
     WorkingDirectory={{stable_repo}}/packages/server
-    Environment="RAMBLA_LOG_LEVEL={{log_level}}"
+    Environment="RAMBLA_LOG_LEVEL=info"
     Environment="PATH=$HOME/.local/bin:$PATH"
-    TimeoutStopSec=$TIMEOUT_STOP_SEC
+    EnvironmentFile=-%h/.rambla/daemon.env
+    TimeoutStopSec=15
+    # AGENTS: ExecStart MUST be exactly "rambla daemon run" with NO FLAGS. Do NOT add --foreground; it crashes the daemon (removed flag; REMOVED_LAUNCH_FLAGS in packages/cli/src/commands/daemon/local-daemon.ts).
+    # If you touch this line, run "just install-systemd-unit" to prove the daemon starts.
     ExecStart={{stable_repo}}/packages/cli/bin/rambla daemon run
     Restart=always
     RestartSec=5
@@ -333,15 +331,12 @@ install-daemon ref="" log_level="info" mode="soft" fresh="false": && install-ser
     [Install]
     WantedBy=graphical-session.target
     EOF
+    echo "wrote unit file"
+
 
     # Disable (reads the OLD unit's [Install]) before the mv, or the old symlink is orphaned.
     systemctl --user disable rambla >/dev/null 2>&1 || true
     mv "$tmp_unit" "{{unit}}"
-
-    echo "installed daemon to {{stable_dir}}/daemon"
-
-# Reload systemd and enable+restart the unit (own recipe because install-daemon's script attribute eats dependencies).
-install-service: systemctl-reload && restart
 
 # Build the desktop app from the stable clone into stable_dir/app; --dir with output redirected so the dev tree's release/ is never involved.
 [script]
