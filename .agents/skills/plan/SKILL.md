@@ -195,8 +195,9 @@ First match wins.
 Before deciding, ask the researcher how this app already does this kind of
 thing, and say so in the plan with a citation when it drives the placement.
 
-Inside upstream files: our edits in 1 contiguous block per file; new imports
-at the END of the import block; every diverging site tagged with the one-line
+Inside upstream files: minimize fragmentation — as few contiguous blocks as
+the work allows, never scattered through upstream's lines; new imports at the
+END of the import block; every diverging site tagged with the one-line
 fork tag (format in the `code` skill — category and plan file name are
 decided here, so write the tag into the plan's step for that edit); never
 reformat, rename, or move upstream code you are not changing. If upstream
@@ -207,10 +208,6 @@ Upstream activity for the table comes from
 `git log upstream-rebrand -- <path>`. **Always `upstream-rebrand`, never
 `upstream/main`** — main is unrebranded, so the diff shows every rebrand
 line as a change, or is empty.
-
-**Branch:** 4 or more upstream files edited (rows with `.rambla.` in the
-name never count) → `feat/<slug>` or `fix/<slug>`.
-1-3 files → work on main.
 
 ## How git decides conflicts — do not relitigate this
 
@@ -305,9 +302,6 @@ writes the full tag (category, plan file name, one clause) per block.
 reviewer can disagree with it. What we'd lose by copying more, what we'd risk
 by editing more.>
 
-**Branch:** `fix/<slug>` — required, N upstream files edited.
-<or: "none — N upstream files edited, work on main.">
-
 ## Cause
 
 <Only for a fix. Two to four sentences, in prose, never as a code quote:
@@ -361,14 +355,18 @@ reviewer's job and never the user's:
 node fork/check-plan.mjs plans/YYYY-MM-DD-fix-slug.md
 ```
 
-### Reviewer prompt — fill the 2 blanks, change nothing
+### Reviewer prompt — fill the blank, change nothing
 
 ```markdown
 You are reviewing a plan for the Rambla fork. Do not trust it.
 
-The user's request, verbatim: <REQUEST>
-
 The plan: plans/<FILE>
+
+The user approved its `## Acceptance criteria` section; judge the plan
+against those criteria and the code you open, nothing else.
+
+You are not a researcher and not a designer. Point out problems only.
+Never propose a fix, an option, or a design, not even as a hint.
 
 Read the plan, then open every file in its mitigation table — created or
 edited, all rows. Never
@@ -377,17 +375,22 @@ regions plus the edit sites, not the whole file. Judge errors in this order: 0. 
 pasteable snippets; the only allowed sketch is a type or signature of at
 most 5 lines; 1. a placement decision the user was
 never asked; 2. a claim the code does not support; 3. a file the edit needs
-that the mitigation table misses; 4. scope beyond the request; 5. a
+that the mitigation table misses; 4. scope beyond the acceptance criteria; 5. a
 described edit that cannot fit the current code — a name already taken, a
 function not where the plan says; 6. a step without acceptance criteria,
 or criteria too vague for a test to assert. "Does it compile" is not your job — the
 code does not exist yet. Style, wording, and link format are not your
-job. Reply ACCEPT, or REJECT with a numbered list, each item backed by
-file.ts:120 evidence you opened yourself.
+job. Reply ACCEPT, or REJECT with a numbered list, each item a problem
+backed by file.ts:120 evidence you opened yourself, with no fix.
 ```
 
-**Fix and re-review, at most 2 rounds.** Still rejected after that: stop and
-bring both positions to the user to decide.
+**Fix and re-review until the reviewer accepts.** Two rejections in a row
+with no user decision between them: stop and bring the open problems to the
+user. This limits the rounds you run on your own, not the whole plan; after
+the user decides, the count starts over and review continues without asking.
+
+When a fix changes scope, a plan-level criterion, or a step's criteria, show
+the user the new wording and get approval before the next review.
 
 ## Review round templates
 
