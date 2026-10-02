@@ -173,6 +173,9 @@ import type {
   BrowserAutomationExecuteResponse,
 } from "@getrambla/protocol/browser-automation/rpc-schemas";
 
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: chunker over the relay E2EE transport.
+import { createChunkerTransportFactory } from "@getrambla/relay/e2ee";
+
 export interface Logger {
   debug(obj: object, msg?: string): void;
   info(obj: object, msg?: string): void;
@@ -1373,6 +1376,8 @@ export class DaemonClient {
           daemonPublicKeyB64,
           logger: this.logger,
         });
+        // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: chunks app messages once the direct carrier negotiates.
+        transportFactory = createChunkerTransportFactory(transportFactory);
       }
       const transportUrl = this.resolveTransportUrlForAttempt();
       const transport = transportFactory({

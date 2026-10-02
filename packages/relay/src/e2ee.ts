@@ -20,3 +20,5 @@ export type {
   DirectCarrierTransport,
   DirectCarrierTransportFactory,
 } from "./direct-carrier.rambla.js";
+export { createChunkerTransportFactory, createDaemonChunkerSocket } from "./chunker.rambla.js";
+export type { ChunkerSocket } from "./chunker.rambla.js";

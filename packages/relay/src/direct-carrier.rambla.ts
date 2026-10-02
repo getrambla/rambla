@@ -158,6 +158,16 @@ export function createDaemonDirectCarrier(
   };
 }
 
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: records each client carrier transport for the chunker to pair with.
+let createdTransport: DirectCarrierTransport | null = null;
+
+/** Returns and forgets the carrier transport made since the last call. */
+export function takeCreatedDirectCarrierTransport(): DirectCarrierTransport | null {
+  const transport = createdTransport;
+  createdTransport = null;
+  return transport;
+}
+
 /** Wraps a client transport factory so each relay transport it makes runs over the direct carrier. */
 export function createDirectCarrierTransportFactory(options: {
   baseFactory: DirectCarrierBaseFactory;
@@ -166,7 +176,7 @@ export function createDirectCarrierTransportFactory(options: {
   return (transportOptions) => {
     const base = options.baseFactory(transportOptions);
     const core = new DirectCarrierCore(options.offer);
-    return {
+    const transport: DirectCarrierTransport = {
       get negotiated() {
         return core.negotiated;
       },
@@ -181,5 +191,7 @@ export function createDirectCarrierTransportFactory(options: {
       onClose: (handler) => base.onClose(handler),
       onError: (handler) => base.onError(handler),
     };
+    createdTransport = transport;
+    return transport;
   };
 }

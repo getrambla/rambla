@@ -2,13 +2,19 @@
 import { afterEach, describe, expect, test } from "vitest";
 import type pino from "pino";
 import {
+  createChunkerTransportFactory,
   createClientChannel,
   createDirectCarrierTransportFactory,
   type DirectCarrierTransport,
+  type EncryptedChannel,
   type Transport,
 } from "@getrambla/relay/e2ee";
 import { exportPublicKey, generateKeyPair } from "@getrambla/relay";
 import { startRelayTransport } from "./relay-transport";
+import {
+  MAX_PHYSICAL_SOCKET_BUFFERED_BYTES,
+  sendBoundedPhysicalFrameAndWait,
+} from "./websocket/physical-socket.js";
 
 type Frame = string | Uint8Array | ArrayBuffer;
 type Listener = (...args: unknown[]) => void;
@@ -86,6 +92,8 @@ class FakeRelayWebSocket {
 }
 
 interface AttachedSocket {
+  readonly readyState: number;
+  readonly bufferedAmount?: number;
   send: (data: string | Uint8Array | ArrayBuffer) => void | Promise<void>;
   on: (event: "message", listener: Listener) => void;
 }
@@ -283,21 +291,149 @@ describe("relay-transport with the direct carrier, un-negotiated", () => {
   });
 });
 
-describe("relay-transport with the direct carrier, new client", () => {
-  test("a new client connects, negotiates the carrier on the relay, and messages flow", async () => {
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: chunking over the relay and the 64 MiB high-water close.
+/** New client with its chunker over the E2EE channel, stacked as daemon-client stacks them. */
+async function connectChunkedClient(harness: Harness) {
+  let channel: EncryptedChannel | null = null;
+  let client: ReturnType<typeof newClientTransport> | null = null;
+  const handlers = new Set<(data: unknown, isBinary: boolean) => void>();
+  const factory = createChunkerTransportFactory(() => {
+    client = newClientTransport(harness.dataSocket);
+    return {
+      send: (data) => {
+        void channel?.send(data instanceof Uint8Array ? data.slice().buffer : data);
+      },
+      close: () => undefined,
+      onMessage: (handler) => {
+        handlers.add(handler);
+        return () => handlers.delete(handler);
+      },
+      onOpen: () => () => undefined,
+      onClose: () => () => undefined,
+      onError: () => () => undefined,
+    };
+  });
+  const app = factory({ url: harness.dataSocket.url });
+  const clientReceived: unknown[] = [];
+  app.onMessage((data) => clientReceived.push(data));
+  const { carrier, transport } = client as unknown as ReturnType<typeof newClientTransport>;
+  let resolveOpen: (() => void) | undefined;
+  const opened = new Promise<void>((resolve) => {
+    resolveOpen = resolve;
+  });
+  channel = await createClientChannel(transport, harness.daemonPublicKeyB64, {
+    onopen: () => resolveOpen?.(),
+    onmessage: (data) => {
+      for (const handler of handlers) handler(data, data instanceof ArrayBuffer);
+    },
+  });
+  await opened;
+  const attached = await harness.attached;
+  const daemonReceived: unknown[] = [];
+  attached.on("message", (data) => daemonReceived.push(data));
+  return { app, attached, carrier, clientReceived, daemonReceived };
+}
+
+function patterned(length: number, seed: number): Uint8Array {
+  const out = new Uint8Array(length);
+  for (let i = 0; i < length; i += 1) out[i] = (i * 31 + seed) & 0xff;
+  return out;
+}
+
+/** Byte-for-byte comparison; `toEqual` on multi-MiB arrays outlasts the test timeout. */
+function sameBytes(data: unknown, expected: Uint8Array): boolean {
+  const actual = new Uint8Array(data as ArrayBuffer);
+  if (actual.byteLength !== expected.byteLength) return false;
+  for (let i = 0; i < actual.byteLength; i += 1) if (actual[i] !== expected[i]) return false;
+  return true;
+}
+
+function wireBytes(frame: Frame): number {
+  return typeof frame === "string" ? Buffer.byteLength(frame) : frame.byteLength;
+}
+
+describe("relay-transport with the chunker, negotiated", () => {
+  test("a new client negotiates the carrier on the relay, and messages flow through both chunkers", async () => {
     const harness = startHarness();
-    const client = newClientTransport(harness.dataSocket);
-    const { channel, attached, clientReceived, daemonReceived } = await connectClient(
-      harness,
-      client.transport,
-    );
+    const { app, attached, carrier, clientReceived, daemonReceived } =
+      await connectChunkedClient(harness);
 
-    expect(client.carrier.negotiated).toBe(true);
+    expect(carrier.negotiated).toBe(true);
 
-    await channel.send("client 1");
+    app.send("client 1");
     await attached.send("daemon 1");
     await settle();
     expect(daemonReceived).toEqual(["client 1"]);
     expect(clientReceived).toEqual(["daemon 1"]);
+  });
+
+  test("a 5 MiB message crosses the relay in chunks of at most 64 KiB, in both directions", async () => {
+    const harness = startHarness();
+    const { app, attached, clientReceived, daemonReceived } = await connectChunkedClient(harness);
+    const fromClient = patterned(5 * 1024 * 1024, 11);
+    const fromDaemon = patterned(5 * 1024 * 1024, 5);
+
+    const clientFrames: Frame[] = [];
+    const deliver = harness.dataSocket.message.bind(harness.dataSocket);
+    harness.dataSocket.message = (data, isBinary) => {
+      clientFrames.push(data as Frame);
+      deliver(data, isBinary);
+    };
+    app.send(fromClient);
+    app.send("after client");
+    const sentBefore = harness.dataSocket.sent.length;
+    await attached.send(fromDaemon);
+    await attached.send("after daemon");
+    await settle();
+
+    const daemonFrames = harness.dataSocket.sent.slice(sentBefore);
+    expect(clientFrames.length).toBeGreaterThan(80);
+    expect(daemonFrames.length).toBeGreaterThan(80);
+    for (const frame of [...clientFrames, ...daemonFrames]) {
+      expect(wireBytes(frame)).toBeLessThanOrEqual(64 * 1024);
+    }
+    expect(daemonReceived).toHaveLength(2);
+    expect(sameBytes(daemonReceived[0], fromClient)).toBe(true);
+    expect(daemonReceived[1]).toBe("after client");
+    expect(clientReceived).toHaveLength(2);
+    expect(sameBytes(clientReceived[0], fromDaemon)).toBe(true);
+    expect(clientReceived[1]).toBe("after daemon");
+  });
+
+  test("a relay socket over 64 MiB buffered fails the daemon's capacity check, which closes it", async () => {
+    const harness = startHarness();
+    const { attached } = await connectChunkedClient(harness);
+
+    harness.dataSocket.bufferedAmount = MAX_PHYSICAL_SOCKET_BUFFERED_BYTES + 1;
+    let highWater = 0;
+    const sent = await sendBoundedPhysicalFrameAndWait({
+      socket: attached,
+      frame: "status",
+      onHighWater: () => {
+        highWater += 1;
+      },
+    });
+    expect(sent).toBe(false);
+    expect(highWater).toBe(1);
+  });
+
+  test("a large message that crosses 64 MiB buffered mid-transfer closes the relay socket", async () => {
+    const harness = startHarness();
+    const { attached } = await connectChunkedClient(harness);
+    const sentBefore = harness.dataSocket.sent.length;
+    const send = harness.dataSocket.send.bind(harness.dataSocket);
+    // A relay that never drains: every frame sent stays buffered.
+    harness.dataSocket.send = (data, callback) => {
+      harness.dataSocket.bufferedAmount += wireBytes(data);
+      send(data, callback);
+    };
+
+    harness.dataSocket.bufferedAmount = MAX_PHYSICAL_SOCKET_BUFFERED_BYTES - 100 * 1024;
+    await expect(attached.send(patterned(5 * 1024 * 1024, 1))).rejects.toThrow(/high-water/);
+
+    expect(harness.dataSocket.readyState).toBe(3);
+    expect(attached.readyState).toBe(3);
+    expect(harness.dataSocket.sent.length - sentBefore).toBeGreaterThan(0);
+    expect(harness.dataSocket.sent.length - sentBefore).toBeLessThan(3);
   });
 });
