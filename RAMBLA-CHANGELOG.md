@@ -10,6 +10,7 @@
 
 ### Fixed
 
+- 2026-10-02 - [df21a6a](https://github.com/getrambla/rambla/commit/df21a6af5) - [2026-10-02-fix-question-card-text-selection.md](plans/2026-10-02-fix-question-card-text-selection.md) - Fixed agent question card text being unselectable on web: question, options, and descriptions can now be drag-selected and read by screen readers.
 - 2026-10-01 - [6b82063](https://github.com/getrambla/rambla/commit/6b8206396) - [2026-10-01-fix-user-bubble-top-right-radius.md](plans/2026-10-01-fix-user-bubble-top-right-radius.md) - Fixed the user message bubble's square top-right corner; all four corners now share the same radius.
 - 2026-09-30 - [b048cc0](https://github.com/getrambla/rambla/commit/b048cc02c) - [2026-09-30-fix-link-tooltip-stuck-on-click.md](plans/2026-09-30-fix-link-tooltip-stuck-on-click.md) - Fixed clicking a chat file link leaving its path tooltip stuck on screen.
 - 2026-09-30 - [862f159](https://github.com/getrambla/rambla/commit/862f159) - [2026-09-30-fix-sidebar-shortcut-hover-wrap.md](plans/2026-09-30-fix-sidebar-shortcut-hover-wrap.md) - Fixed top sidebar rows wrapping: labels truncate, fade into the shortcut on hover, and screen readers hear the shortcut.
