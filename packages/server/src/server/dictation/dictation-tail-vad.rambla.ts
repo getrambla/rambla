@@ -64,7 +64,12 @@ function dropTail(params: TailCheckParams): void {
       continue;
     }
     state.transcriptsBySegmentId.delete(segmentId);
-    params.emitPartial(committedText(state), { segmentId, transcript: "", isFinal: true });
+    params.emitPartial(committedText(state), {
+      segmentId,
+      transcript: "",
+      isFinal: true,
+      index: state.committedSegmentIds.length + state.inFlightCommitCount,
+    });
   }
 }
 

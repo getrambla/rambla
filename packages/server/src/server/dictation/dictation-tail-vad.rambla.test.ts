@@ -60,7 +60,7 @@ function settle(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve));
 }
 
-async function submit(session: FakeSession, preview?: string) {
+async function submit(session: FakeSession, preview?: string, segments = false) {
   const emitted: DictationStreamOutboundMessage[] = [];
   const stt: SpeechToTextProvider = { id: "fake", createSession: () => session };
   const manager = new DictationStreamManager({
@@ -69,6 +69,7 @@ async function submit(session: FakeSession, preview?: string) {
     sessionId: "s-tail",
     stt,
     autoCommitSeconds: 0,
+    supportsSegments: () => segments,
     finalTimeoutMs: 5000,
   });
   await manager.handleStart("d-tail", FORMAT);
@@ -96,6 +97,37 @@ function finals(emitted: DictationStreamOutboundMessage[]) {
 }
 
 describe("dictation-tail-vad.rambla: the submit tail through the manager", () => {
+  it("on drop, sends a segment-capable app an empty final for the tail's segment id and index", async () => {
+    const session = new FakeClipSession();
+    const { manager, emitted } = await submit(session, "Yeah.", true);
+    try {
+      const before = emitted.length;
+      session.release(false);
+      await settle();
+      const erase = emitted
+        .slice(before)
+        .find(
+          (message) =>
+            message.type === "dictation_stream_partial" &&
+            message.payload.segment?.id === "seg-tail",
+        );
+      expect(erase).toEqual({
+        type: "dictation_stream_partial",
+        payload: {
+          dictationId: "d-tail",
+          text: "",
+          segment: { id: "seg-tail", index: 1, text: "", isFinal: true },
+        },
+      });
+      expect(
+        erase?.type === "dictation_stream_partial" &&
+          Number.isInteger(erase.payload.segment?.index),
+      ).toBe(true);
+    } finally {
+      manager.cleanupAll();
+    }
+  });
+
   it("drops a no-speech tail: cleared, never committed, preview erased, not reported as lost", async () => {
     const session = new FakeClipSession();
     const { manager, emitted } = await submit(session, "Yeah.");
