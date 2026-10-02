@@ -4,7 +4,7 @@ Status: approved
 
 ## Provenance
 
-- main: `b2df6979b` — 2026-10-01
+- main: `16c54c44e` — 2026-10-02
 - upstream-rebrand: `bdc3888cf` — 2026-09-30
 - upstream/main: `c481ecf3e` (v0.10.0) — 2026-09-28
 
@@ -15,7 +15,7 @@ Status: approved
 1. On submit, Silero VAD checks the leftover tail (audio since the last auto-commit) before it is committed. No speech: the tail is not decoded, and any preview text it showed is erased. Speech: it is committed as today.
 2. Dictation reuses the existing speech worker and Silero wrapper over its own worker connection: a new clip-check session kind with a 100 ms confirm window, and a flush the caller can await.
 3. In the clip-check kind only, speech still being confirmed when the clip ends counts as speech.
-4. Four tail fixtures cut from real recordings.
+4. Four tail fixtures, already written to `packages/server/src/server/dictation/fixtures/` by the planner from the replays' tail dumps. The source recordings no longer exist.
 5. Tests for the approved criteria.
 
 **Not in scope:**
@@ -65,10 +65,10 @@ Stop Parakeet from inventing a word from a no-speech tail at submit: Silero deci
 | `packages/server/src/server/dictation/dictation-segment-partial.rambla.ts`       | the dropped tail's empty final, if the emit needs it                                                                   | existing                    | `RAMBLA-FORK: fix:` |
 | `packages/server/src/server/dictation/dictation-tail-vad.rambla.test.ts`         | fake session: criteria 3, 4, 5, 8, keep and drop paths, non-worker path                                                | new                         | `RAMBLA-FORK: fix:` |
 | `packages/server/src/server/dictation/dictation-tail-vad.rambla.e2e.test.ts`     | real worker, Silero, and Parakeet: criteria 1, 2, 6, 7                                                                 | new                         | `RAMBLA-FORK: fix:` |
-| `packages/server/src/server/dictation/fixtures/silent-tail-mm.wav`               | "Mm." tail                                                                                                             | new                         | none                |
-| `packages/server/src/server/dictation/fixtures/silent-tail-yeah.wav`             | "Yeah." tail                                                                                                           | new                         | none                |
-| `packages/server/src/server/dictation/fixtures/silent-tail-mm-hmm.wav`           | "Mm-hmm." tail                                                                                                         | new                         | none                |
-| `packages/server/src/server/dictation/fixtures/silent-tail-yeah-loud.wav`        | second "Yeah." tail, peak 4253                                                                                         | new                         | none                |
+| `packages/server/src/server/dictation/fixtures/silent-tail-mm.wav`               | already written, do not change: "Mm." tail, 0.196 s, peak 60, cut at 19.004 s                                          | new                         | none                |
+| `packages/server/src/server/dictation/fixtures/silent-tail-yeah.wav`             | already written, do not change: "Yeah." tail, 0.727 s, peak 104, cut at 15.060 s                                       | new                         | none                |
+| `packages/server/src/server/dictation/fixtures/silent-tail-mm-hmm.wav`           | already written, do not change: "Mm-hmm." tail, 0.379 s, peak 136, cut at 176.720 s                                    | new                         | none                |
+| `packages/server/src/server/dictation/fixtures/silent-tail-yeah-loud.wav`        | already written, do not change: "Yeah." tail, 0.908 s, peak 4253, cut at 77.620 s                                      | new                         | none                |
 
 **Why this shape:** the user chose to reuse the existing worker and Silero wrapper over a second worker or a new request type, so no Silero handling, worker lifecycle, or crash handling is duplicated. The confirm window is already a session option ([silero-vad-session.ts:19](../packages/server/src/server/speech/providers/local/sherpa/silero-vad-session.ts#L19)); a separate session kind keeps voice chat's 800 ms window. The user chose to reach the check through dictation's own worker connection ([worker-client.ts:633](../packages/server/src/server/speech/providers/local/worker-client.ts#L633)), so it works whatever voice chat is set to and no voice chat or setup file changes. The manager already keeps every forwarded chunk ([dictation-stream-manager.ts:499](../packages/server/src/server/dictation/dictation-stream-manager.ts#L499)) and the tail's length ([dictation-stream-manager.ts:500](../packages/server/src/server/dictation/dictation-stream-manager.ts#L500)), so the chunk path is untouched. The drop sits where upstream still drops silent tails, which the fork removed in `b517a6e24`. When the session is not a local worker session, finish behaves as today, so upstream's manager tests, which use fake sessions, do not change.
 
@@ -89,11 +89,11 @@ At submit, the manager commits whatever arrived since the last auto-commit as it
 
 ## Steps
 
-0. Read the `code` skill before writing anything. If a step below turns out to be wrong, stop and report back to the supervisor. Do not amend this plan, and do not re-decide placement while coding.
+0. Read the `code` skill before writing anything. If a step below turns out to be wrong, stop and report back. Do not amend this plan, and do not re-decide placement while coding.
    **Acceptance criteria**: none. This step writes nothing.
-1. Clip check in the worker. Add the clip-check session kind ([worker-protocol.ts:17](../packages/server/src/server/speech/providers/local/worker-protocol.ts#L17)), build it with a 100 ms confirm window in the worker's vad branch ([worker-process.ts:201](../packages/server/src/server/speech/providers/local/worker-process.ts#L201)), let the dictation transcription session run a clip check over its own client and make flush awaitable ([worker-client.ts:269](../packages/server/src/server/speech/providers/local/worker-client.ts#L269)), and add the off-by-default option that reports unconfirmed speech on flush ([silero-vad-session.ts:172](../packages/server/src/server/speech/providers/local/sherpa/silero-vad-session.ts#L172)). Test first, in the e2e file, against the real worker.
+1. Clip check in the worker. Add the clip-check session kind ([worker-protocol.ts:17](../packages/server/src/server/speech/providers/local/worker-protocol.ts#L17)), build it with a 100 ms confirm window in the worker's vad branch ([worker-process.ts:201](../packages/server/src/server/speech/providers/local/worker-process.ts#L201)), let the dictation transcription session run a clip check over its own client and make flush awaitable ([worker-client.ts:269](../packages/server/src/server/speech/providers/local/worker-client.ts#L269)), and add the off-by-default option that reports unconfirmed speech on flush ([silero-vad-session.ts:172](../packages/server/src/server/speech/providers/local/sherpa/silero-vad-session.ts#L172)). Test first, in the e2e file, against the real worker. The 4 tail fixtures in the table already exist as 16 kHz PCM16 mono WAV, byte-identical to the tails the replays decoded. Use them as they are. The source recordings are deleted, so do not look for them or regenerate the fixtures.
    **Acceptance criteria**: each of the 4 tail fixtures, fed to a clip-check session and flushed, reports no speech; generated speech, including a short word at the very end of the clip, reports speech; a "vad" session still discards unconfirmed speech on flush (criterion 6).
-2. Drop no-speech tails at submit. Cut the 4 tails from the end of each recording's `combined.wav` (16 kHz PCM16 mono): "Mm." from 19.004 s, "Yeah." from 15.060 s, "Mm-hmm." from 176.720 s, loud "Yeah." from 77.620 s. The supervisor gives you the recording paths. Write the tests first, then the tail module and the manager block. Generate speech the way [dictation-retention.rambla.e2e.test.ts:93](../packages/server/src/server/dictation/dictation-retention.rambla.e2e.test.ts#L93) does, and skip when models are missing the same way. Tag every upstream edit in both steps `RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: <clause>`. The user tries live dictation on a build before the plan is done.
+2. Drop no-speech tails at submit, using the same 4 fixtures. Write the tests first, then the tail module and the manager block. Generate speech the way [dictation-retention.rambla.e2e.test.ts:93](../packages/server/src/server/dictation/dictation-retention.rambla.e2e.test.ts#L93) does, and skip when models are missing the same way. Tag every upstream edit in both steps `RAMBLA-FORK: fix: 2026-10-01-fix-dictation-tail-hallucination.md: <clause>`. The user tries live dictation on a build before the plan is done.
    **Acceptance criteria**: 1-8.
 
 ## Verification
