@@ -9,3 +9,14 @@ export {
   importSecretKey,
 } from "./crypto.js";
 export type { KeyPair, SharedKey } from "./crypto.js";
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: exports the direct carrier.
+export {
+  createDaemonDirectCarrier,
+  createDirectCarrierTransportFactory,
+} from "./direct-carrier.rambla.js";
+export type {
+  DaemonDirectCarrier,
+  DirectCarrierSocket,
+  DirectCarrierTransport,
+  DirectCarrierTransportFactory,
+} from "./direct-carrier.rambla.js";

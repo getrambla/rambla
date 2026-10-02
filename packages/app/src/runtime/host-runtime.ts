@@ -84,6 +84,9 @@ import { nativePerformanceTrace } from "@/performance/native-trace";
 import { revokePushNotifications } from "@/push-notifications";
 import { createAppWebSocketFactory } from "./websocket-factory";
 
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: direct carrier wrapper for relay clients.
+import { relayDirectCarrierConfig } from "./direct-carrier.rambla";
+
 export type HostRuntimeConnectionStatus = "idle" | "connecting" | "online" | "offline" | "error";
 export type PairingNavigationTarget = "openProject" | "hostRoot" | "hostSettings";
 export type HostRegistryStatus = "loading" | "ready";
@@ -573,6 +576,13 @@ function createDefaultDeps(): HostRuntimeControllerDeps {
           enabled: true,
           daemonPublicKeyB64: connection.daemonPublicKeyB64,
         },
+        // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: runs the relay leg over the direct carrier.
+        ...relayDirectCarrierConfig({
+          serverId: host.serverId,
+          connectionId: connection.id,
+          relayEndpoint: connection.relayEndpoint,
+          webSocketFactory: webSocketConfig.webSocketFactory,
+        }),
       });
     },
     connectToDaemon: ({ host, connection, timeoutMs }) =>

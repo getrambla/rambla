@@ -19,6 +19,10 @@ import {
 } from "@/desktop/daemon/desktop-daemon-transport";
 import type { DesktopDaemonTransportTarget } from "@/desktop/daemon/desktop-daemon";
 
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: direct carrier wrapper for relay probe and pairing clients.
+import { relayDirectCarrierConfig } from "@/runtime/direct-carrier.rambla";
+import { defaultWebSocketFactory } from "@getrambla/client/internal/daemon-client-websocket-transport";
+
 export interface DaemonProbeClient {
   readonly lastError: string | null;
   readonly authFailureReason?: DaemonAuthFailureReason | null;
@@ -201,6 +205,13 @@ export async function buildClientConfig(
       serverId,
     }),
     e2ee: { enabled: true, daemonPublicKeyB64: connection.daemonPublicKeyB64 },
+    // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: runs the relay leg over the direct carrier.
+    ...relayDirectCarrierConfig({
+      serverId,
+      connectionId: connection.id,
+      relayEndpoint: connection.relayEndpoint,
+      webSocketFactory: defaultWebSocketFactory,
+    }),
   };
 }
 

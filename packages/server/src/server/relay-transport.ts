@@ -11,6 +11,9 @@ import { buildRelayWebSocketUrl } from "@getrambla/protocol/daemon-endpoints";
 import type { ExternalSocketMetadata } from "./websocket-server.js";
 import { createEncryptedRelaySocket } from "./websocket/encrypted-relay-socket.js";
 
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: direct carrier under the relay E2EE channel.
+import { createDaemonDirectCarrier } from "@getrambla/relay/e2ee";
+
 export interface RelayTransportOptions {
   logger: pino.Logger;
   attachSocket: (ws: RelaySocketLike, metadata?: ExternalSocketMetadata) => Promise<void>;
@@ -380,8 +383,10 @@ export function startRelayTransport({
         relayConnectionId: connectionId,
       };
       if (daemonKeyPair) {
+        // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: feeds the E2EE channel through the direct carrier.
+        const carrierSocket = createDaemonDirectCarrier(socket, { offer: true });
         void attachEncryptedSocket(
-          socket,
+          carrierSocket,
           daemonKeyPair,
           relayLogger.child({ connectionId }),
           attachSocket,

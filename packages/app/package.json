@@ -55,6 +55,7 @@
     "@getrambla/highlight": "*",
     "@getrambla/plugin": "*",
     "@getrambla/protocol": "*",
+    "@getrambla/relay": "*",
     "@gorhom/bottom-sheet": "^5.2.14",
     "@gorhom/portal": "^1.0.14",
     "@marijn/find-cluster-break": "^1.0.2",
