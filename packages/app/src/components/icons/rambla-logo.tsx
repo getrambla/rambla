@@ -15,7 +15,7 @@ export function RamblaLogo({ size = 64, color }: RamblaLogoProps) {
     <Svg width={size} height={size} viewBox="0 0 700 700" fill="none">
       <Mask id="rambla-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="700">
         <Rect width="700" height="700" fill="#fff" />
-        <Circle cx="256" cy="204" r="13" fill="#000" />
+        <Circle cx="264" cy="213" r="24" fill="#000" />
         <Path
           d="M337 234 C402 246 443 278 464 316
       C430 293 386 272 337 261
@@ -41,7 +41,7 @@ export function RamblaLogo({ size = 64, color }: RamblaLogoProps) {
       C198 202 240 166 300 166
       L320 180 L306 434 L274 434 L274 600 Z"
         />
-        <Path d="M204 206 L136 220 L206 248 Z" />
+        <Path d="M203 199 L88 223 L207 271 Z" />
         <Path
           d="M300 166 C428 166 512 238 512 312
       C512 390 430 436 300 436 Z"

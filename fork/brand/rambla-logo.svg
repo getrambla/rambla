@@ -1,18 +1,9 @@
 <svg width="700" height="700" viewBox="0 0 700 700" fill="none" xmlns="http://www.w3.org/2000/svg">
   <title>Rambla</title>
   <desc>A perched songbird, drawn as the letter R.</desc>
-  <!-- Rambla brand mark. Colour #5E2CC0.
-       The body is the bowl of the R and the tail is its leg. The folded wing is
-       three identical feathers cut out of the body; they are one shape repeated,
-       so keep them congruent if you move them. See
-       research/logo/rambla-logo-history.md for the derivation.
-       Stem and leg weight: version 2. Earlier and heavier variants are kept
-       beside this file's history as design/logo/rambla-logo-v1.svg (the
-       original thinner stem and leg) and design/logo/rambla-logo-v3.svg. -->
   <mask id="rambla-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="700">
     <rect width="700" height="700" fill="#fff"/>
-    <circle cx="256" cy="204" r="13" fill="#000"/>
-    <!-- wing: one feather, repeated three times at an even pitch -->
+    <circle cx="264" cy="213" r="24" fill="#000"/>
     <path d="M337 234 C402 246 443 278 464 316
              C430 293 386 272 337 261
              C326 255 328 236 337 234 Z" fill="#000"/>
@@ -24,19 +15,12 @@
              C326 343 328 324 337 322 Z" fill="#000"/>
   </mask>
   <g mask="url(#rambla-cut)" fill="#5E2CC0">
-    <!-- breast and stem, from the head down to the foot.
-         The top-right corner runs inside the body on purpose: abutting the two
-         shapes edge to edge leaves a hairline seam when the mark is rasterised
-         small. -->
     <path d="M198 600 L198 268
              C198 202 240 166 300 166
              L320 180 L306 434 L274 434 L274 600 Z"/>
-    <!-- beak -->
-    <path d="M204 206 L136 220 L206 248 Z"/>
-    <!-- body: the bowl of the R -->
+    <path d="M203 199 L88 223 L207 271 Z"/>
     <path d="M300 166 C428 166 512 238 512 312
              C512 390 430 436 300 436 Z"/>
-    <!-- tail: the leg of the R -->
     <path d="M320 402 C412 434 508 500 574 578
              L522 622 C448 545 368 493 286 462 Z"/>
   </g>
