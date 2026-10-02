@@ -8,7 +8,10 @@ import {
 import {
   createDirectCarrierTransportFactory,
   type DirectCarrierBaseTransport,
+  type DirectCarrierControl,
   type DirectCarrierTransport,
+  type DirectPeerEvents,
+  type DirectPeerSignal,
 } from "./direct-carrier.rambla.js";
 import { base64EncryptedWireByteLength } from "./encrypted-channel.js";
 
@@ -50,26 +53,45 @@ function createBaseTransport() {
 /** Client chunker over a carrier transport; `negotiate` settles the carrier as the daemon would. */
 function createClient(options: { negotiate: boolean }) {
   const base = createBaseTransport();
+  const peer = {
+    events: null as DirectPeerEvents | null,
+    signals: [] as DirectPeerSignal[],
+    sent: [] as Frame[],
+  };
   const carrierFactory = createDirectCarrierTransportFactory({
     offer: true,
     baseFactory: () => base.transport,
+    direct: {
+      relayEndpoint: "relay.test:443",
+      createPeer: (_config, events) => {
+        peer.events = events;
+        return {
+          bufferedAmount: 0,
+          signal: (signal) => peer.signals.push(signal),
+          send: (data) => peer.sent.push(data),
+          close: () => undefined,
+        };
+      },
+    },
   });
   const carriers: DirectCarrierTransport[] = [];
   const factory = createChunkerTransportFactory((transportOptions) => {
     const carrier = carrierFactory(transportOptions);
     carriers.push(carrier);
-    return carrier;
+    // Stands in for the E2EE channel, which consumes the handshake frame before the chunker.
+    return {
+      ...carrier,
+      onMessage: (handler) =>
+        carrier.onMessage((data, isBinary) => {
+          if (data !== READY_WITH_CAPABILITY) handler(data, isBinary);
+        }),
+    };
   });
   const transport = factory({ url: "wss://relay.test/ws?serverId=srv&role=client" });
-  if (options.negotiate) {
-    // In the real stack the E2EE channel, not the chunker, consumes the handshake frame.
-    const unsubscribe = carriers[0].onMessage(() => undefined);
-    base.push(READY_WITH_CAPABILITY, false);
-    unsubscribe();
-  }
+  if (options.negotiate) base.push(READY_WITH_CAPABILITY, false);
   const received: Array<{ data: unknown; isBinary: boolean }> = [];
   transport.onMessage((data, isBinary) => received.push({ data, isBinary }));
-  return { base, transport, received };
+  return { base, transport, received, peer };
 }
 
 /** Fake plaintext socket in the shape the daemon hands to `attachSocket`. */
@@ -106,10 +128,24 @@ class FakePlaintextSocket implements ChunkerSocket {
 /** Daemon chunker over a fake plaintext socket, collecting the messages it delivers. */
 function createDaemon(options: { negotiated: boolean }) {
   const socket = new FakePlaintextSocket();
-  const chunked = createDaemonChunkerSocket(socket, { negotiated: options.negotiated });
+  const controls: DirectCarrierControl[] = [];
+  let sendControl: (message: DirectCarrierControl) => void = () => undefined;
+  const chunked = createDaemonChunkerSocket(socket, {
+    negotiated: options.negotiated,
+    bindControl: (send) => {
+      sendControl = send;
+      return (message) => controls.push(message);
+    },
+  });
   const received: unknown[] = [];
   chunked.on("message", (data) => received.push(data));
-  return { socket, chunked, received };
+  return {
+    socket,
+    chunked,
+    received,
+    controls,
+    sendControl: (message: DirectCarrierControl) => sendControl(message),
+  };
 }
 
 function bytesOf(data: Frame): Uint8Array {
@@ -264,5 +300,53 @@ describe("chunker pairing on the client", () => {
 
     expect(typeof negotiated.base.sent[0]).not.toBe("string");
     expect(plain.base.sent[0]).toBe("hello");
+  });
+});
+
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: signaling and cutover messages stay inside the chunker.
+describe("chunker control messages", () => {
+  const answer: DirectPeerSignal = { type: "description", sdp: "v=0 answer", sdpType: "answer" };
+  const candidate: DirectPeerSignal = { type: "candidate", candidate: "a=candidate:1", mid: "0" };
+
+  test("daemon to client: signaling and cutover never reach the message handler, and every app message arrives unchanged", () => {
+    const client = createClient({ negotiate: true });
+    const daemon = createDaemon({ negotiated: true });
+    const bytes = patterned(200 * 1024, 5);
+
+    daemon.chunked.send("app 1");
+    daemon.sendControl({ type: "signal", signal: answer });
+    daemon.chunked.send(bytes);
+    daemon.sendControl({ type: "cutover" });
+    daemon.chunked.send("app 2");
+    for (const frame of daemon.socket.sent) client.base.push(frame, true);
+
+    expect(client.received).toHaveLength(3);
+    expect(client.received[0]).toEqual({ data: "app 1", isBinary: false });
+    expect(client.received[1].isBinary).toBe(true);
+    expect(sameBytes(client.received[1].data, bytes)).toBe(true);
+    expect(client.received[2]).toEqual({ data: "app 2", isBinary: false });
+    expect(client.peer.signals).toEqual([answer]);
+  });
+
+  test("client to daemon: signaling and cutover never reach the message handler, and every app message arrives unchanged", () => {
+    const client = createClient({ negotiate: true });
+    const daemon = createDaemon({ negotiated: true });
+    const bytes = patterned(200 * 1024, 9);
+
+    client.transport.send("app 1");
+    client.peer.events?.signal(candidate);
+    client.transport.send(bytes);
+    client.peer.events?.open();
+    client.transport.send("app 2");
+    for (const frame of [...client.base.sent, ...client.peer.sent]) {
+      daemon.socket.emit("message", frame);
+    }
+
+    expect(client.peer.sent.length).toBeGreaterThan(0);
+    expect(daemon.received).toHaveLength(3);
+    expect(daemon.received[0]).toBe("app 1");
+    expect(sameBytes(daemon.received[1], bytes)).toBe(true);
+    expect(daemon.received[2]).toBe("app 2");
+    expect(daemon.controls).toEqual([{ type: "signal", signal: candidate }, { type: "cutover" }]);
   });
 });

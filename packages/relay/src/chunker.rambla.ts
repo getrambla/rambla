@@ -3,6 +3,8 @@
 import {
   takeCreatedDirectCarrierTransport,
   type DirectCarrierBaseFactory,
+  type DirectCarrierControl,
+  type DirectCarrierLink,
 } from "./direct-carrier.rambla.js";
 import { maxBase64EncryptedPlaintextByteLength } from "./encrypted-channel.js";
 
@@ -20,12 +22,27 @@ export interface ChunkerSocket {
   once: (event: "close" | "error", listener: Listener) => void;
 }
 
-export interface ChunkerCarrier {
-  readonly negotiated: boolean;
-}
+export type ChunkerCarrier = DirectCarrierLink;
 
 const FINAL = 0x01;
 const TEXT = 0x02;
+const CONTROL = 0x04;
+
+/** Encodes a direct-link control message as one final chunk frame. */
+function controlFrame(message: DirectCarrierControl): ArrayBuffer {
+  const payload = new TextEncoder().encode(JSON.stringify(message));
+  const chunk = new Uint8Array(1 + payload.byteLength);
+  chunk[0] = CONTROL | FINAL;
+  chunk.set(payload, 1);
+  return chunk.buffer;
+}
+
+/** Returns the control message a chunk frame carries, or null for an app chunk. */
+function readControl(frame: unknown): DirectCarrierControl | null {
+  const bytes = chunkBytes(frame);
+  if ((bytes[0] & CONTROL) === 0) return null;
+  return JSON.parse(new TextDecoder().decode(bytes.subarray(1))) as DirectCarrierControl;
+}
 // Sized for base64 ciphertext so a chunk fits 64 KiB in either E2EE ciphertext mode.
 const MAX_CHUNK_PAYLOAD_BYTES = maxBase64EncryptedPlaintextByteLength(64 * 1024) - 1;
 
@@ -82,6 +99,25 @@ export function createDaemonChunkerSocket(
   socket: ChunkerSocket,
   carrier: ChunkerCarrier,
 ): ChunkerSocket {
+  const listeners: Listener[] = [];
+  const receiveControl = carrier.bindControl((message) => {
+    void Promise.resolve(socket.send(controlFrame(message))).catch(() => undefined);
+  });
+  const joiner = new ChunkJoiner();
+  socket.on("message", (...args) => {
+    if (!carrier.negotiated) {
+      for (const listener of listeners) listener(...args);
+      return;
+    }
+    const control = readControl(args[0]);
+    if (control) {
+      receiveControl(control);
+      return;
+    }
+    const message = joiner.push(args[0]);
+    if (message === null) return;
+    for (const listener of listeners) listener(message);
+  });
   return {
     get readyState() {
       return socket.readyState;
@@ -99,19 +135,8 @@ export function createDaemonChunkerSocket(
     close: (code, reason) => socket.close(code, reason),
     terminate: () => socket.terminate?.(),
     on: (event, listener) => {
-      if (event !== "message") {
-        socket.on(event, listener);
-        return;
-      }
-      const joiner = new ChunkJoiner();
-      socket.on("message", (...args) => {
-        if (!carrier.negotiated) {
-          listener(...args);
-          return;
-        }
-        const message = joiner.push(args[0]);
-        if (message !== null) listener(message);
-      });
+      if (event === "message") listeners.push(listener);
+      else socket.on(event, listener);
     },
     once: (event, listener) => socket.once(event, listener),
   };
@@ -126,6 +151,23 @@ export function createChunkerTransportFactory(
     const transport = baseFactory(options);
     const carrier = takeCreatedDirectCarrierTransport();
     if (!carrier) return transport;
+    const handlers = new Set<(data: unknown, isBinary: boolean) => void>();
+    const receiveControl = carrier.bindControl((message) => transport.send(controlFrame(message)));
+    const joiner = new ChunkJoiner();
+    transport.onMessage((data, isBinary) => {
+      if (!carrier.negotiated) {
+        for (const handler of handlers) handler(data, isBinary);
+        return;
+      }
+      const control = readControl(data);
+      if (control) {
+        receiveControl(control);
+        return;
+      }
+      const message = joiner.push(data);
+      if (message === null) return;
+      for (const handler of handlers) handler(message, typeof message !== "string");
+    });
     return {
       send: (data) => {
         if (!carrier.negotiated) {
@@ -136,15 +178,8 @@ export function createChunkerTransportFactory(
       },
       close: (code, reason) => transport.close(code, reason),
       onMessage: (handler) => {
-        const joiner = new ChunkJoiner();
-        return transport.onMessage((data, isBinary) => {
-          if (!carrier.negotiated) {
-            handler(data, isBinary);
-            return;
-          }
-          const message = joiner.push(data);
-          if (message !== null) handler(message, typeof message !== "string");
-        });
+        handlers.add(handler);
+        return () => handlers.delete(handler);
       },
       onOpen: (handler) => transport.onOpen(handler),
       onClose: (handler) => transport.onClose(handler),

@@ -4,8 +4,49 @@
 type Frame = string | Uint8Array | ArrayBuffer;
 type Listener = (...args: unknown[]) => void;
 
+export type DirectPeerSignal =
+  | { type: "description"; sdp: string; sdpType: string }
+  | { type: "candidate"; candidate: string; mid: string };
+
+export type DirectCarrierControl =
+  | { type: "signal"; signal: DirectPeerSignal }
+  | { type: "cutover" };
+
+export interface DirectPeerConfig {
+  iceServers: string[];
+  initiator: boolean;
+}
+
+export interface DirectPeerEvents {
+  signal: (signal: DirectPeerSignal) => void;
+  open: () => void;
+  message: (data: string | ArrayBuffer, isBinary: boolean) => void;
+  close: () => void;
+}
+
+export interface DirectPeer {
+  signal: (signal: DirectPeerSignal) => void;
+  send: (data: Frame) => void;
+  readonly bufferedAmount: number;
+  close: () => void;
+}
+
+export type DirectPeerFactory = (config: DirectPeerConfig, events: DirectPeerEvents) => DirectPeer;
+
 export interface DirectCarrierOptions {
   offer: boolean;
+  direct?: {
+    createPeer: DirectPeerFactory;
+    relayEndpoint: string;
+    onCutover?: () => void;
+  };
+}
+
+export interface DirectCarrierLink {
+  readonly negotiated: boolean;
+  bindControl: (
+    send: (message: DirectCarrierControl) => void,
+  ) => (message: DirectCarrierControl) => void;
 }
 
 // Mirrors the server's RelayWebSocketLike; packages/relay takes no workspace dependency.
@@ -20,9 +61,7 @@ export interface DirectCarrierSocket {
   once: (event: "close" | "error", listener: Listener) => void;
 }
 
-export interface DaemonDirectCarrier extends DirectCarrierSocket {
-  readonly negotiated: boolean;
-}
+export type DaemonDirectCarrier = DirectCarrierSocket & DirectCarrierLink;
 
 // Mirrors the client's DaemonTransport and DaemonTransportFactory.
 export interface DirectCarrierBaseTransport {
@@ -44,9 +83,7 @@ export type DirectCarrierBaseFactory = (
   options: DirectCarrierTransportOptions,
 ) => DirectCarrierBaseTransport;
 
-export interface DirectCarrierTransport extends DirectCarrierBaseTransport {
-  readonly negotiated: boolean;
-}
+export type DirectCarrierTransport = DirectCarrierBaseTransport & DirectCarrierLink;
 
 export type DirectCarrierTransportFactory = (
   options: DirectCarrierTransportOptions,
@@ -54,6 +91,17 @@ export type DirectCarrierTransportFactory = (
 
 const CAPABILITY = "directCarrier";
 const OPEN_BRACE = 0x7b;
+const ICE_TIMEOUT_MS = 15_000;
+const STUN_PORT = 3478;
+const CUTOVER_CLOSE_REASON = "Moved to direct link";
+
+/** Returns the STUN URL at the relay host of a `host:port` relay endpoint. */
+export function directCarrierStunUrl(relayEndpoint: string): string {
+  const host = relayEndpoint.startsWith("[")
+    ? relayEndpoint.slice(0, relayEndpoint.indexOf("]") + 1)
+    : relayEndpoint.split(":")[0];
+  return `stun:${host}:${STUN_PORT}`;
+}
 
 type HandshakeFrame = Record<string, unknown> & { type: "e2ee_hello" | "e2ee_ready" };
 
@@ -91,16 +139,174 @@ function offersCapability(frame: HandshakeFrame): boolean {
   return isRecord(frame.capabilities) && frame.capabilities[CAPABILITY] === true;
 }
 
-/** Negotiation state shared by the daemon and client carriers. */
+interface DirectCarrierHooks {
+  deliver: (data: unknown, isBinary: boolean) => void;
+  closeRelay: () => void;
+  closeConnection: (code: number, reason: string) => void;
+}
+
+/** Negotiation, signaling, and cutover state shared by the daemon and client carriers. */
 class DirectCarrierCore {
   negotiated = false;
+  ended = false;
   private peerOffered = false;
+  private peer: DirectPeer | null = null;
+  private peerGeneration = 0;
+  private started = false;
+  private iceTimer: ReturnType<typeof setTimeout> | null = null;
+  private sendControl: ((message: DirectCarrierControl) => void) | null = null;
+  private sentCutover = false;
+  private receivedCutover = false;
+  private readonly directQueue: Array<[string | ArrayBuffer, boolean]> = [];
 
-  constructor(private readonly offer: boolean) {}
+  constructor(
+    private readonly options: DirectCarrierOptions,
+    private readonly initiator: boolean,
+    private readonly hooks: DirectCarrierHooks,
+  ) {}
+
+  /** True once this end sends over the DataChannel, which alone then decides when the connection ends. */
+  get onDirect(): boolean {
+    return this.sentCutover;
+  }
+
+  /** Returns the DataChannel's buffered amount. */
+  get directBufferedAmount(): number {
+    return this.peer?.bufferedAmount ?? 0;
+  }
+
+  /** Connects the chunker's control sender and returns the receiver for control messages. */
+  bindControl(
+    send: (message: DirectCarrierControl) => void,
+  ): (message: DirectCarrierControl) => void {
+    this.sendControl = send;
+    return (message) => this.receiveControl(message);
+  }
+
+  /** Starts the initiator's peer once the carrier has negotiated. */
+  startIfReady(): void {
+    if (this.initiator && this.negotiated) this.openPeer();
+  }
+
+  /** Sends a frame over the DataChannel after cutover; returns false while frames go over relay. */
+  sendDirect(data: Frame): boolean {
+    if (!this.sentCutover) return false;
+    if (!this.ended) this.peer?.send(data);
+    return true;
+  }
+
+  /** Handles the relay leg closing; returns whether the close reaches the E2EE channel. */
+  relayClosed(): boolean {
+    if (this.sentCutover || this.ended) return false;
+    this.stopPeer();
+    return true;
+  }
+
+  /** Closes the connection on whichever leg carries it. */
+  close(code: number | undefined, reason: string | undefined, closeRelay: () => void): void {
+    if (this.sentCutover) {
+      this.end(code ?? 1000, reason ?? "");
+      return;
+    }
+    this.stopPeer();
+    closeRelay();
+  }
+
+  /** Ends a connection that has moved, on either end, to the DataChannel. */
+  end(code: number, reason: string): void {
+    if (this.ended) return;
+    this.ended = true;
+    this.stopPeer();
+    this.hooks.closeRelay();
+    this.hooks.closeConnection(code, reason);
+  }
+
+  /** Creates this end's peer, once, when signaling can run. */
+  private openPeer(): void {
+    const direct = this.options.direct;
+    if (this.started || !direct || !this.sendControl) return;
+    this.started = true;
+    const generation = ++this.peerGeneration;
+    const live = () => generation === this.peerGeneration;
+    this.iceTimer = setTimeout(() => this.dropPeer(), ICE_TIMEOUT_MS);
+    this.peer = direct.createPeer(
+      { iceServers: [directCarrierStunUrl(direct.relayEndpoint)], initiator: this.initiator },
+      {
+        signal: (signal) => {
+          if (live()) this.sendControl?.({ type: "signal", signal });
+        },
+        open: () => {
+          if (live()) this.cutover();
+        },
+        message: (data, isBinary) => {
+          if (live()) this.receiveDirect(data, isBinary);
+        },
+        close: () => {
+          if (live()) this.dropPeer();
+        },
+      },
+    );
+  }
+
+  /** Falls back to relay before cutover; once either end has cut over, losing the peer ends the connection. */
+  private dropPeer(): void {
+    if (this.sentCutover || this.receivedCutover) {
+      this.end(1006, "Direct link closed");
+      return;
+    }
+    this.stopPeer();
+  }
+
+  /** Closes the peer for good and ignores anything it emits afterwards. */
+  private stopPeer(): void {
+    this.started = true;
+    this.peerGeneration += 1;
+    if (this.iceTimer) clearTimeout(this.iceTimer);
+    this.iceTimer = null;
+    this.peer?.close();
+    this.peer = null;
+  }
+
+  /** Marks the end of this side's relay frames, then sends everything else over the DataChannel. */
+  private cutover(): void {
+    if (this.sentCutover || this.ended) return;
+    if (this.iceTimer) clearTimeout(this.iceTimer);
+    this.iceTimer = null;
+    this.sendControl?.({ type: "cutover" });
+    this.sentCutover = true;
+    this.options.direct?.onCutover?.();
+    this.finishIfDone();
+  }
+
+  /** Handles a control message the chunker received on the relay leg. */
+  private receiveControl(message: DirectCarrierControl): void {
+    if (message.type === "signal") {
+      if (!this.initiator && this.negotiated) this.openPeer();
+      this.peer?.signal(message.signal);
+      return;
+    }
+    this.receivedCutover = true;
+    for (const [data, isBinary] of this.directQueue.splice(0)) this.hooks.deliver(data, isBinary);
+    this.finishIfDone();
+  }
+
+  /** Delivers a DataChannel frame, holding it until the other end's relay frames have all arrived. */
+  private receiveDirect(data: string | ArrayBuffer, isBinary: boolean): void {
+    if (this.receivedCutover) {
+      this.hooks.deliver(data, isBinary);
+      return;
+    }
+    this.directQueue.push([data, isBinary]);
+  }
+
+  /** Closes the relay leg once both directions have moved to the DataChannel. */
+  private finishIfDone(): void {
+    if (this.sentCutover && this.receivedCutover) this.hooks.closeRelay();
+  }
 
   /** Returns the frame to send, adding the capability to an outgoing handshake frame when offered. */
   outgoing(data: Frame): Frame {
-    if (!this.offer || typeof data !== "string") return data;
+    if (!this.options.offer || typeof data !== "string") return data;
     const frame = readHandshake(data);
     if (!frame) return data;
     if (frame.type === "e2ee_ready") {
@@ -120,7 +326,7 @@ class DirectCarrierCore {
       this.peerOffered = offersCapability(frame);
       return;
     }
-    this.negotiated = this.offer && offersCapability(frame);
+    this.negotiated = this.options.offer && offersCapability(frame);
   }
 }
 
@@ -129,32 +335,68 @@ export function createDaemonDirectCarrier(
   socket: DirectCarrierSocket,
   options: DirectCarrierOptions,
 ): DaemonDirectCarrier {
-  const core = new DirectCarrierCore(options.offer);
+  const listeners = new Map<string, Listener[]>();
+  const listen = (event: string, listener: Listener) =>
+    listeners.set(event, [...(listeners.get(event) ?? []), listener]);
+  const emit = (event: string, ...args: unknown[]) => {
+    for (const listener of listeners.get(event) ?? []) listener(...args);
+  };
+  const core = new DirectCarrierCore(options, false, {
+    deliver: (data, isBinary) => emit("message", data, isBinary),
+    closeRelay: () => socket.close(1000, CUTOVER_CLOSE_REASON),
+    closeConnection: (code, reason) => emit("close", code, reason),
+  });
+  socket.on("message", (...args) => {
+    core.incoming(args[0], args[1] === true);
+    emit("message", ...args);
+  });
+  socket.on("close", (...args) => {
+    if (core.relayClosed()) emit("close", ...args);
+  });
+  socket.on("error", (...args) => {
+    if (!core.onDirect) emit("error", ...args);
+  });
   return {
     get readyState() {
-      return socket.readyState;
+      if (!core.onDirect) return socket.readyState;
+      return core.ended ? 3 : 1;
     },
     get bufferedAmount() {
-      return socket.bufferedAmount;
+      return core.onDirect ? core.directBufferedAmount : socket.bufferedAmount;
     },
     get negotiated() {
       return core.negotiated;
     },
-    send: (data, callback) => socket.send(core.outgoing(data), callback),
-    close: (code, reason) => socket.close(code, reason),
-    terminate: () => socket.terminate(),
-    ping: () => socket.ping(),
-    on: (event, listener) => {
-      if (event !== "message") {
-        socket.on(event, listener);
+    bindControl: (send) => core.bindControl(send),
+    send: (data, callback) => {
+      if (core.sendDirect(data)) {
+        callback?.();
         return;
       }
-      socket.on("message", (...args) => {
-        core.incoming(args[0], args[1] === true);
-        listener(...args);
-      });
+      socket.send(core.outgoing(data), callback);
     },
-    once: (event, listener) => socket.once(event, listener),
+    close: (code, reason) => core.close(code, reason, () => socket.close(code, reason)),
+    terminate: () => {
+      if (core.onDirect) core.end(1006, "Terminated");
+      else socket.terminate();
+    },
+    ping: () => {
+      if (!core.onDirect) socket.ping();
+    },
+    on: (event, listener) => {
+      if (event === "message" || event === "close" || event === "error") listen(event, listener);
+      else socket.on(event, listener);
+    },
+    once: (event, listener) => {
+      const once: Listener = (...args) => {
+        listeners.set(
+          event,
+          (listeners.get(event) ?? []).filter((candidate) => candidate !== once),
+        );
+        listener(...args);
+      };
+      listen(event, once);
+    },
   };
 }
 
@@ -169,27 +411,58 @@ export function takeCreatedDirectCarrierTransport(): DirectCarrierTransport | nu
 }
 
 /** Wraps a client transport factory so each relay transport it makes runs over the direct carrier. */
-export function createDirectCarrierTransportFactory(options: {
-  baseFactory: DirectCarrierBaseFactory;
-  offer: boolean;
-}): DirectCarrierTransportFactory {
+export function createDirectCarrierTransportFactory(
+  options: DirectCarrierOptions & { baseFactory: DirectCarrierBaseFactory },
+): DirectCarrierTransportFactory {
   return (transportOptions) => {
     const base = options.baseFactory(transportOptions);
-    const core = new DirectCarrierCore(options.offer);
+    const messageHandlers = new Set<(data: unknown, isBinary: boolean) => void>();
+    const closeHandlers = new Set<(event?: unknown) => void>();
+    const errorHandlers = new Set<(event?: unknown) => void>();
+    const core = new DirectCarrierCore(options, true, {
+      deliver: (data, isBinary) => {
+        for (const handler of messageHandlers) handler(data, isBinary);
+      },
+      closeRelay: () => base.close(1000, CUTOVER_CLOSE_REASON),
+      closeConnection: (code, reason) => {
+        for (const handler of closeHandlers) handler({ code, reason });
+      },
+    });
+    base.onMessage((data, isBinary) => {
+      core.incoming(data, isBinary);
+      for (const handler of messageHandlers) handler(data, isBinary);
+      core.startIfReady();
+    });
+    base.onClose((event) => {
+      if (!core.relayClosed()) return;
+      for (const handler of closeHandlers) handler(event);
+    });
+    base.onError((event) => {
+      if (core.onDirect) return;
+      for (const handler of errorHandlers) handler(event);
+    });
     const transport: DirectCarrierTransport = {
       get negotiated() {
         return core.negotiated;
       },
-      send: (data) => base.send(core.outgoing(data)),
-      close: (code, reason) => base.close(code, reason),
-      onMessage: (handler) =>
-        base.onMessage((data, isBinary) => {
-          core.incoming(data, isBinary);
-          handler(data, isBinary);
-        }),
+      bindControl: (send) => core.bindControl(send),
+      send: (data) => {
+        if (!core.sendDirect(data)) base.send(core.outgoing(data));
+      },
+      close: (code, reason) => core.close(code, reason, () => base.close(code, reason)),
+      onMessage: (handler) => {
+        messageHandlers.add(handler);
+        return () => messageHandlers.delete(handler);
+      },
       onOpen: (handler) => base.onOpen(handler),
-      onClose: (handler) => base.onClose(handler),
-      onError: (handler) => base.onError(handler),
+      onClose: (handler) => {
+        closeHandlers.add(handler);
+        return () => closeHandlers.delete(handler);
+      },
+      onError: (handler) => {
+        errorHandlers.add(handler);
+        return () => errorHandlers.delete(handler);
+      },
     };
     createdTransport = transport;
     return transport;

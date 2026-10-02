@@ -1,11 +1,18 @@
 // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: carrier negotiation and un-negotiated pass-through (criterion 3).
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createDaemonDirectCarrier,
   createDirectCarrierTransportFactory,
+  directCarrierStunUrl,
   type DirectCarrierBaseTransport,
+  type DirectCarrierControl,
   type DirectCarrierSocket,
   type DirectCarrierTransport,
+  type DirectPeer,
+  type DirectPeerConfig,
+  type DirectPeerEvents,
+  type DirectPeerFactory,
+  type DirectPeerSignal,
 } from "./direct-carrier.rambla.js";
 import { createClientChannel, createDaemonChannel, type Transport } from "./encrypted-channel.js";
 import { exportPublicKey, generateKeyPair } from "./crypto.js";
@@ -46,8 +53,9 @@ class FakeDaemonSocket {
     this.pendingCallbacks.shift()?.();
   }
 
-  close(): void {
+  close(code?: number, reason?: string): void {
     this.readyState = 3;
+    this.emit("close", code ?? 1005, reason ?? "");
   }
 
   terminate(): void {
@@ -65,14 +73,19 @@ class FakeDaemonSocket {
 class FakeClientBase implements DirectCarrierBaseTransport {
   sent: Frame[] = [];
   peer: FakeDaemonSocket | null = null;
+  closed = false;
   private readonly messageHandlers = new Set<(data: unknown, isBinary: boolean) => void>();
+  private readonly closeHandlers = new Set<(event?: unknown) => void>();
 
   send(data: Frame): void {
     this.sent.push(data);
     this.peer?.emit("message", data, typeof data !== "string");
   }
 
-  close(): void {}
+  close(code?: number, reason?: string): void {
+    this.closed = true;
+    for (const handler of this.closeHandlers) handler({ code, reason });
+  }
 
   onMessage(handler: (data: unknown, isBinary: boolean) => void): () => void {
     this.messageHandlers.add(handler);
@@ -85,8 +98,11 @@ class FakeClientBase implements DirectCarrierBaseTransport {
     return () => {};
   }
 
-  onClose(): () => void {
-    return () => {};
+  onClose(handler: (event?: unknown) => void): () => void {
+    this.closeHandlers.add(handler);
+    return () => {
+      this.closeHandlers.delete(handler);
+    };
   }
 
   onError(): () => void {
@@ -119,6 +135,8 @@ function daemonTransport(socket: DirectCarrierSocket): Transport {
   socket.on("message", (data, isBinary) => {
     transport.onmessage?.({ data: toChannelData(data), isBinary: isBinary === true });
   });
+  socket.on("close", (code, reason) => transport.onclose?.(Number(code), String(reason)));
+  socket.on("error", (error) => transport.onerror?.(error as Error));
   return transport;
 }
 
@@ -134,6 +152,8 @@ function clientTransport(base: DirectCarrierBaseTransport): Transport {
   base.onMessage((data, isBinary) => {
     transport.onmessage?.({ data: toChannelData(data), isBinary });
   });
+  base.onClose(() => transport.onclose?.(1006, ""));
+  base.onError((error) => transport.onerror?.(error as Error));
   return transport;
 }
 
@@ -149,12 +169,17 @@ function wire(clientBase: FakeClientBase, daemonSocket: FakeDaemonSocket): void 
 }
 
 async function settle(): Promise<void> {
+  if (vi.isFakeTimers()) {
+    await vi.advanceTimersByTimeAsync(20);
+    return;
+  }
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 
 interface Pair {
   clientReceived: Array<string | ArrayBuffer>;
   daemonReceived: Array<string | ArrayBuffer>;
+  channelEvents: string[];
   clientSend: (data: string | ArrayBuffer) => Promise<void>;
   daemonSend: (data: string | ArrayBuffer) => Promise<void>;
 }
@@ -164,8 +189,11 @@ async function connectPair(client: Transport, daemon: Transport): Promise<Pair> 
   const daemonKeyPair = generateKeyPair();
   const clientReceived: Array<string | ArrayBuffer> = [];
   const daemonReceived: Array<string | ArrayBuffer> = [];
+  const channelEvents: string[] = [];
   const daemonChannelPromise = createDaemonChannel(daemon, daemonKeyPair, {
     onmessage: (data) => daemonReceived.push(data),
+    onclose: () => channelEvents.push("daemon close"),
+    onerror: () => channelEvents.push("daemon error"),
   });
   let resolveOpen: (() => void) | undefined;
   const clientOpen = new Promise<void>((resolve) => {
@@ -174,13 +202,19 @@ async function connectPair(client: Transport, daemon: Transport): Promise<Pair> 
   const clientChannel = await createClientChannel(
     client,
     exportPublicKey(daemonKeyPair.publicKey),
-    { onopen: () => resolveOpen?.(), onmessage: (data) => clientReceived.push(data) },
+    {
+      onopen: () => resolveOpen?.(),
+      onmessage: (data) => clientReceived.push(data),
+      onclose: () => channelEvents.push("client close"),
+      onerror: () => channelEvents.push("client error"),
+    },
   );
   const daemonChannel = await daemonChannelPromise;
   await clientOpen;
   return {
     clientReceived,
     daemonReceived,
+    channelEvents,
     clientSend: (data) => clientChannel.send(data),
     daemonSend: (data) => daemonChannel.send(data),
   };
@@ -385,5 +419,172 @@ describe("old and new pairs connect", () => {
     );
     expect(client.transport.negotiated).toBe(false);
     expect(carrier.negotiated).toBe(false);
+  });
+});
+
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: STUN URL, ICE timeout, ICE failure, and cutover over fake peers (criteria 2 and 11).
+/** Fake DataChannel peer that records its config and lets a test drive its events. */
+class FakePeer implements DirectPeer {
+  bufferedAmount = 0;
+  sent: Frame[] = [];
+  signals: DirectPeerSignal[] = [];
+  closed = false;
+  remote: FakePeer | null = null;
+
+  constructor(
+    readonly config: DirectPeerConfig,
+    readonly events: DirectPeerEvents,
+  ) {}
+
+  signal(signal: DirectPeerSignal): void {
+    this.signals.push(signal);
+  }
+
+  send(data: Frame): void {
+    this.sent.push(data);
+    this.remote?.events.message(toChannelData(data), typeof data !== "string");
+  }
+
+  close(): void {
+    this.closed = true;
+  }
+}
+
+const OFFER_SIGNAL: DirectPeerSignal = { type: "description", sdp: "v=0 offer", sdpType: "offer" };
+
+/** Client and daemon carriers with fake peers over a real E2EE handshake, control links joined as the chunkers join them. */
+async function connectDirectPair(relayEndpoint = "relay.example.com:443") {
+  const clientPeers: FakePeer[] = [];
+  const daemonPeers: FakePeer[] = [];
+  const peerFactory =
+    (peers: FakePeer[]): DirectPeerFactory =>
+    (config, events) => {
+      const peer = new FakePeer(config, events);
+      peers.push(peer);
+      return peer;
+    };
+  const socket = new FakeDaemonSocket();
+  const base = new FakeClientBase();
+  wire(base, socket);
+  const clientCarrier = createDirectCarrierTransportFactory({
+    baseFactory: () => base,
+    offer: true,
+    direct: { createPeer: peerFactory(clientPeers), relayEndpoint },
+  })({ url: "wss://relay.example/ws" });
+  const daemonCarrier = createDaemonDirectCarrier(socket, {
+    offer: true,
+    direct: { createPeer: peerFactory(daemonPeers), relayEndpoint },
+  });
+  let receiveOnDaemon: (message: DirectCarrierControl) => void = () => undefined;
+  const receiveOnClient = clientCarrier.bindControl((message) => receiveOnDaemon(message));
+  receiveOnDaemon = daemonCarrier.bindControl((message) => receiveOnClient(message));
+  const pair = await connectPair(clientTransport(clientCarrier), daemonTransport(daemonCarrier));
+  return { pair, socket, base, clientCarrier, daemonCarrier, clientPeers, daemonPeers };
+}
+
+/** Signals the daemon peer into being, links the two fake peers, and opens both DataChannels. */
+function cutOver(link: Awaited<ReturnType<typeof connectDirectPair>>): [FakePeer, FakePeer] {
+  link.clientPeers[0].events.signal(OFFER_SIGNAL);
+  const [clientPeer] = link.clientPeers;
+  const [daemonPeer] = link.daemonPeers;
+  clientPeer.remote = daemonPeer;
+  daemonPeer.remote = clientPeer;
+  clientPeer.events.open();
+  daemonPeer.events.open();
+  return [clientPeer, daemonPeer];
+}
+
+describe("direct link", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("derives the STUN URL from the relay host, on port 3478, keeping IPv6 brackets", () => {
+    expect(directCarrierStunUrl("relay.example.com:443")).toBe("stun:relay.example.com:3478");
+    expect(directCarrierStunUrl("203.0.113.5:443")).toBe("stun:203.0.113.5:3478");
+    expect(directCarrierStunUrl("[::1]:443")).toBe("stun:[::1]:3478");
+  });
+
+  it("gives every peer only the relay host's STUN URL and no TURN", async () => {
+    const link = await connectDirectPair("[::1]:443");
+    link.clientPeers[0].events.signal(OFFER_SIGNAL);
+
+    expect(link.daemonPeers).toHaveLength(1);
+    expect(link.daemonPeers[0].signals).toEqual([OFFER_SIGNAL]);
+    expect(link.clientPeers[0].config).toStrictEqual({
+      iceServers: ["stun:[::1]:3478"],
+      initiator: true,
+    });
+    expect(link.daemonPeers[0].config).toStrictEqual({
+      iceServers: ["stun:[::1]:3478"],
+      initiator: false,
+    });
+  });
+
+  it("with no ICE success, gives up on the DataChannel at 15 s and stays on relay", async () => {
+    vi.useFakeTimers();
+    const link = await connectDirectPair();
+    link.clientPeers[0].events.signal(OFFER_SIGNAL);
+
+    await vi.advanceTimersByTimeAsync(14_999);
+    expect(link.clientPeers[0].closed).toBe(false);
+    expect(link.daemonPeers[0].closed).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(link.clientPeers[0].closed).toBe(true);
+    expect(link.daemonPeers[0].closed).toBe(true);
+
+    link.clientPeers[0].events.open();
+    link.daemonPeers[0].events.open();
+    const relayFrames = link.socket.sent.length + link.base.sent.length;
+    await expectMessagesFlow(link.pair);
+    expect(link.socket.sent.length + link.base.sent.length).toBe(relayFrames + 5);
+    expect(link.clientPeers[0].sent).toEqual([]);
+    expect(link.daemonPeers[0].sent).toEqual([]);
+    expect(link.pair.channelEvents).toEqual([]);
+  });
+
+  it("when ICE fails, the transport stays open on relay and no error or close reaches the E2EE channel", async () => {
+    const link = await connectDirectPair();
+    link.clientPeers[0].events.signal(OFFER_SIGNAL);
+
+    link.clientPeers[0].events.close();
+    link.daemonPeers[0].events.close();
+
+    expect(link.clientPeers[0].closed).toBe(true);
+    expect(link.daemonPeers[0].closed).toBe(true);
+    const relayFrames = link.socket.sent.length + link.base.sent.length;
+    await expectMessagesFlow(link.pair);
+    expect(link.socket.sent.length + link.base.sent.length).toBe(relayFrames + 5);
+    expect(link.base.closed).toBe(false);
+    expect(link.socket.readyState).toBe(1);
+    expect(link.daemonCarrier.readyState).toBe(1);
+    expect(link.pair.channelEvents).toEqual([]);
+  });
+
+  it("cuts over to the DataChannel and closes the relay leg on both ends without the E2EE channel seeing it", async () => {
+    const link = await connectDirectPair();
+    const [clientPeer, daemonPeer] = cutOver(link);
+
+    expect(link.base.closed).toBe(true);
+    expect(link.socket.readyState).toBe(3);
+    expect(link.daemonCarrier.readyState).toBe(1);
+    const relayFrames = link.socket.sent.length + link.base.sent.length;
+    await expectMessagesFlow(link.pair);
+    expect(link.socket.sent.length + link.base.sent.length).toBe(relayFrames);
+    expect(clientPeer.sent).toHaveLength(3);
+    expect(daemonPeer.sent).toHaveLength(2);
+    expect(link.pair.channelEvents).toEqual([]);
+  });
+
+  it("a DataChannel drop after cutover closes the E2EE channel on both ends", async () => {
+    const link = await connectDirectPair();
+    const [clientPeer, daemonPeer] = cutOver(link);
+
+    clientPeer.events.close();
+    daemonPeer.events.close();
+    await settle();
+
+    expect([...link.pair.channelEvents].sort()).toEqual(["client close", "daemon close"]);
+    expect(link.daemonCarrier.readyState).toBe(3);
   });
 });
