@@ -53,10 +53,10 @@ the question and the answers; clicks still answer.
 
 **Files this work changes:**
 
-| File                                                            | Edit                                                                                                                                             | Upstream activity                                                           | Tag                 |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- | ------------------- |
-| `packages/app/src/components/question-form-card.tsx`            | three one-line `userSelect` additions inside existing style compositions (`questionText`, `optionLabel`, `optionDescription`), fork tag per site | last touched 2026-09-23; upstream PRs #5320, #4587, #3517 in recent history | `RAMBLA-FORK: fix:` |
-| `packages/app/src/components/question-form-card.rambla.test.ts` | new fork test: styles present on web, absent off-web                                                                                             | new                                                                         | `RAMBLA-FORK: fix:` |
+| File                                                             | Edit                                                                                                                                             | Upstream activity                                                           | Tag                 |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- | ------------------- |
+| `packages/app/src/components/question-form-card.tsx`             | three one-line `userSelect` additions inside existing style compositions (`questionText`, `optionLabel`, `optionDescription`), fork tag per site | last touched 2026-09-23; upstream PRs #5320, #4587, #3517 in recent history | `RAMBLA-FORK: fix:` |
+| `packages/app/src/components/question-form-card.rambla.test.tsx` | new fork test: styles present on web, absent off-web                                                                                             | new                                                                         | `RAMBLA-FORK: fix:` |
 
 **Why this shape:** three static style literals in the file's own web-gating
 idiom (`IS_WEB` at
