@@ -1,0 +1,87 @@
+# RAMBLA-FORK: feature: 2026-10-02-feat-rambla-server-image.md: builds and pushes the daemon-only rambla-server image to GHCR.
+name: Rambla server image
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: "Platforms to build."
+        required: false
+        default: "linux/amd64"
+        type: choice
+        options:
+          - "linux/amd64"
+          - "linux/arm64"
+          - "linux/amd64,linux/arm64"
+
+concurrency:
+  group: fork-rambla-server-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - id: values
+        env:
+          INPUT_PLATFORMS: ${{ inputs.platforms }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          owner="$(printf '%s' "${REPO_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          image="ghcr.io/${owner}/rambla-server"
+          tags="${image}:sha-${GITHUB_SHA::12}"
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            platforms="${INPUT_PLATFORMS}"
+            tags="${tags}"$'\n'"${image}:dev"
+          else
+            platforms="linux/amd64,linux/arm64"
+            tags="${tags}"$'\n'"${image}:${REF_NAME#v}"
+            if [[ "${REF_NAME}" == *-* ]]; then
+              tags="${tags}"$'\n'"${image}:beta"
+            else
+              tags="${tags}"$'\n'"${image}:latest"
+            fi
+          fi
+
+          {
+            echo "platforms=${platforms}"
+            echo "tags<<EOF"
+            echo "${tags}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Resolved platforms=${platforms} tags=${tags//$'\n'/ }"
+
+      - if: contains(steps.values.outputs.platforms, 'linux/arm64')
+        uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: fork/docker/rambla-server.Dockerfile
+          platforms: ${{ steps.values.outputs.platforms }}
+          tags: ${{ steps.values.outputs.tags }}
+          push: true
+          provenance: false
+          cache-from: type=gha,scope=rambla-server
+          cache-to: type=gha,scope=rambla-server,mode=max
