@@ -83,5 +83,3 @@ jobs:
           tags: ${{ steps.values.outputs.tags }}
           push: true
           provenance: false
-          cache-from: type=gha,scope=rambla-server
-          cache-to: type=gha,scope=rambla-server,mode=max
