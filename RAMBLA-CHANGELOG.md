@@ -11,6 +11,7 @@
 
 ### Fixed
 
+- 2026-10-03 - [04379061](https://github.com/getrambla/rambla/commit/04379061b) - [2026-10-01-fix-dictation-tail-hallucination.md](plans/2026-10-01-fix-dictation-tail-hallucination.md) - Fixed dictation inventing a word at the end when you submit: a quiet ending is now checked by voice detection and dropped instead of decoded into "Mm" or "Yeah".
 - 2026-10-02 - [df21a6a](https://github.com/getrambla/rambla/commit/df21a6af5) - [2026-10-02-fix-question-card-text-selection.md](plans/2026-10-02-fix-question-card-text-selection.md) - Fixed agent question card text being unselectable on web: question, options, and descriptions can now be drag-selected and read by screen readers.
 - 2026-10-01 - [6b82063](https://github.com/getrambla/rambla/commit/6b8206396) - [2026-10-01-fix-user-bubble-top-right-radius.md](plans/2026-10-01-fix-user-bubble-top-right-radius.md) - Fixed the user message bubble's square top-right corner; all four corners now share the same radius.
 - 2026-09-30 - [b048cc0](https://github.com/getrambla/rambla/commit/b048cc02c) - [2026-09-30-fix-link-tooltip-stuck-on-click.md](plans/2026-09-30-fix-link-tooltip-stuck-on-click.md) - Fixed clicking a chat file link leaving its path tooltip stuck on screen.
