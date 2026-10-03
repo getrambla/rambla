@@ -37,7 +37,7 @@ The daemon owns its tool list and installs tools on its own host at user level t
 - Pruning old tool versions from mise's data dir.
 - Agent auto-update control (later plan).
 - Multi-user, per-principal tool sets, and new permissions.
-- Any Dockerfile, including `fork/docker/rambla-server.Dockerfile`; the prerequisite plan owns it.
+- Any Dockerfile, including `fork/docker/Dockerfile.server`; the prerequisite plan owns it.
 - The `justfile`.
 - `package.json`, upstream's `docker/base/Dockerfile`, `docs/docker.md`, and `docker/Dockerfile.agents.example`.
 - glab, tea, python, and other tools not listed above.

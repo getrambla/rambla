@@ -78,7 +78,7 @@ jobs:
       - uses: docker/build-push-action@v7
         with:
           context: .
-          file: fork/docker/rambla-server.Dockerfile
+          file: fork/docker/Dockerfile.server
           platforms: ${{ steps.values.outputs.platforms }}
           tags: ${{ steps.values.outputs.tags }}
           push: true

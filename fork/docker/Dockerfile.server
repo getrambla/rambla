@@ -13,7 +13,6 @@ RUN set -eux; \
     node -e 'const fs=require("node:fs"); const pkg=JSON.parse(fs.readFileSync("package.json","utf8")); delete pkg.scripts.prepare; fs.writeFileSync("package.json", `${JSON.stringify(pkg)}\n`);'; \
     npm ci
 
-# The server's prepack builds the web UI, so build first and pack with scripts off.
 RUN set -eux; \
     npm run build:server; \
     mkdir -p /tmp/rambla-packs; \
@@ -22,7 +21,8 @@ RUN set -eux; \
     npm pack --ignore-scripts --workspace=@getrambla/protocol --pack-destination /tmp/rambla-packs; \
     npm pack --ignore-scripts --workspace=@getrambla/client --pack-destination /tmp/rambla-packs; \
     npm pack --ignore-scripts --workspace=@getrambla/plugin --pack-destination /tmp/rambla-packs; \
-    npm pack --ignore-scripts --workspace=@getrambla/server --pack-destination /tmp/rambla-packs
+    npm pack --ignore-scripts --workspace=@getrambla/server --pack-destination /tmp/rambla-packs; \
+    npm pack --ignore-scripts --workspace=@getrambla/cli --pack-destination /tmp/rambla-packs
 
 FROM ${NODE_IMAGE}
 
