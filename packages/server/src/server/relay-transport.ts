@@ -12,8 +12,16 @@ import type { ExternalSocketMetadata } from "./websocket-server.js";
 import { createEncryptedRelaySocket } from "./websocket/encrypted-relay-socket.js";
 
 // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: direct carrier under the relay E2EE channel, chunker above it.
-import { createDaemonChunkerSocket, createDaemonDirectCarrier } from "@getrambla/relay/e2ee";
-import { daemonDirectCarrierOptions } from "./direct-peer.rambla.js";
+import {
+  createDaemonChunkerSocket,
+  createDaemonDirectCarrier,
+  type DaemonDirectCarrier,
+} from "@getrambla/relay/e2ee";
+import {
+  closeDirectConnections,
+  daemonDirectCarrierOptions,
+  trackDirectConnection,
+} from "./direct-peer.rambla.js";
 
 export interface RelayTransportOptions {
   logger: pino.Logger;
@@ -126,6 +134,8 @@ export function startRelayTransport({
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   let reconnectAttempt = 0;
   const dataSockets = new Map<string, RelayWebSocketLike>(); // connectionId -> ws
+  // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: this transport's connections on the DataChannel.
+  const directConnections = new Map<string, DaemonDirectCarrier>();
   let controlKeepaliveInterval: ReturnType<typeof setInterval> | null = null;
   let controlReadyTimeout: ReturnType<typeof setTimeout> | null = null;
   let controlLastSeenAt = 0;
@@ -161,6 +171,8 @@ export function startRelayTransport({
       }
     }
     dataSockets.clear();
+    // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: turning the relay off disconnects clients on the DataChannel.
+    closeDirectConnections(directConnections);
   };
 
   const connectControl = (): void => {
@@ -347,6 +359,8 @@ export function startRelayTransport({
   };
 
   const ensureClientDataSocket = (connectionId: string): void => {
+    // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: a connection on the DataChannel gets no relay leg.
+    if (directConnections.has(connectionId)) return;
     if (stopped) return;
     if (!connectionId) return;
     if (dataSockets.has(connectionId)) return;
@@ -385,9 +399,11 @@ export function startRelayTransport({
       };
       if (daemonKeyPair) {
         // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: feeds the E2EE channel through the direct carrier and attaches its plaintext side through the chunker.
-        const carrierSocket = createDaemonDirectCarrier(
+        const carrierSocket: DaemonDirectCarrier = createDaemonDirectCarrier(
           socket,
-          daemonDirectCarrierOptions(relayEndpoint, relayLogger.child({ connectionId })),
+          daemonDirectCarrierOptions(relayEndpoint, relayLogger.child({ connectionId }), () =>
+            trackDirectConnection(directConnections, connectionId, carrierSocket),
+          ),
         );
         const attachChunkedSocket: typeof attachSocket = (ws, metadata) =>
           attachSocket(createDaemonChunkerSocket(ws, carrierSocket), metadata);

@@ -13,6 +13,8 @@ import {
   type DirectPeerEvents,
   type DirectPeerFactory,
   type DirectPeerSignal,
+  DIRECT_DRAIN_THRESHOLD_BYTES,
+  DIRECT_SEND_CEILING_BYTES,
 } from "./direct-carrier.rambla.js";
 import { createClientChannel, createDaemonChannel, type Transport } from "./encrypted-channel.js";
 import { exportPublicKey, generateKeyPair } from "./crypto.js";
@@ -453,13 +455,16 @@ class FakePeer implements DirectPeer {
 const OFFER_SIGNAL: DirectPeerSignal = { type: "description", sdp: "v=0 offer", sdpType: "offer" };
 
 /** Client and daemon carriers with fake peers over a real E2EE handshake, control links joined as the chunkers join them. */
-async function connectDirectPair(relayEndpoint = "relay.example.com:443") {
+async function connectDirectPair(
+  relayEndpoint = "relay.example.com:443",
+  Peer: typeof FakePeer = FakePeer,
+) {
   const clientPeers: FakePeer[] = [];
   const daemonPeers: FakePeer[] = [];
   const peerFactory =
     (peers: FakePeer[]): DirectPeerFactory =>
     (config, events) => {
-      const peer = new FakePeer(config, events);
+      const peer = new Peer(config, events);
       peers.push(peer);
       return peer;
     };
@@ -586,5 +591,91 @@ describe("direct link", () => {
 
     expect([...link.pair.channelEvents].sort()).toEqual(["client close", "daemon close"]);
     expect(link.daemonCarrier.readyState).toBe(3);
+  });
+});
+
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: DataChannel backpressure and the carrier's bufferedAmount.
+function frameBytes(frame: Frame): number {
+  return typeof frame === "string" ? new TextEncoder().encode(frame).byteLength : frame.byteLength;
+}
+
+/** Fake DataChannel that holds sent frames in its buffered amount until the test drains them to the remote peer. */
+class BufferingPeer extends FakePeer {
+  maxBufferedAmount = 0;
+  delivered = 0;
+  private readonly inFlight: Frame[] = [];
+
+  override send(data: Frame): void {
+    this.sent.push(data);
+    this.inFlight.push(data);
+    this.bufferedAmount += frameBytes(data);
+    this.maxBufferedAmount = Math.max(this.maxBufferedAmount, this.bufferedAmount);
+  }
+
+  /** Delivers frames until the buffered amount falls to the low threshold, then fires the low-buffer event as a DataChannel does. */
+  drainToThreshold(): void {
+    while (this.inFlight.length > 0 && this.bufferedAmount > DIRECT_DRAIN_THRESHOLD_BYTES) {
+      const data = this.inFlight.shift() as Frame;
+      this.bufferedAmount -= frameBytes(data);
+      this.delivered += frameBytes(data);
+      this.remote?.events.message(toChannelData(data), typeof data !== "string");
+    }
+    this.events.drain();
+  }
+
+  /** Delivers every buffered frame. */
+  drainAll(): void {
+    for (const data of this.inFlight.splice(0)) {
+      this.bufferedAmount -= frameBytes(data);
+      this.delivered += frameBytes(data);
+      this.remote?.events.message(toChannelData(data), typeof data !== "string");
+    }
+    this.events.drain();
+  }
+}
+
+function patterned(length: number, seed: number): Uint8Array {
+  const out = new Uint8Array(length);
+  for (let i = 0; i < length; i += 1) out[i] = (i * 31 + seed) & 0xff;
+  return out;
+}
+
+describe("DataChannel backpressure", () => {
+  it("keeps the ceiling under Chromium's 16 MiB send-queue limit", () => {
+    expect(DIRECT_SEND_CEILING_BYTES).toBeLessThan(16 * 1024 * 1024);
+    expect(DIRECT_DRAIN_THRESHOLD_BYTES).toBeLessThan(DIRECT_SEND_CEILING_BYTES);
+  });
+
+  it("a 20 MiB burst never pushes the DataChannel past the ceiling, arrives whole, and the carrier's bufferedAmount counts its queue", async () => {
+    const link = await connectDirectPair("relay.example.com:443", BufferingPeer);
+    const [, daemonPeer] = cutOver(link) as [BufferingPeer, BufferingPeer];
+    const messageBytes = 64 * 1024;
+    const messages = Array.from({ length: 320 }, (_, index) => patterned(messageBytes, index));
+
+    await Promise.all(messages.map((message) => link.pair.daemonSend(message.slice().buffer)));
+    await settle();
+
+    const total = link.daemonCarrier.bufferedAmount ?? 0;
+    expect(total).toBeGreaterThan(20 * 1024 * 1024);
+    expect(daemonPeer.bufferedAmount).toBeLessThanOrEqual(DIRECT_SEND_CEILING_BYTES);
+    expect(daemonPeer.bufferedAmount).toBeGreaterThan(DIRECT_DRAIN_THRESHOLD_BYTES);
+    expect(total).toBeGreaterThan(daemonPeer.bufferedAmount);
+
+    for (let round = 0; round < 100 && link.daemonCarrier.bufferedAmount !== 0; round += 1) {
+      daemonPeer.drainToThreshold();
+      expect(link.daemonCarrier.bufferedAmount).toBe(total - daemonPeer.delivered);
+      expect(daemonPeer.bufferedAmount).toBeLessThanOrEqual(DIRECT_SEND_CEILING_BYTES);
+      if (daemonPeer.bufferedAmount <= DIRECT_DRAIN_THRESHOLD_BYTES) daemonPeer.drainAll();
+    }
+    await settle();
+
+    expect(link.daemonCarrier.bufferedAmount).toBe(0);
+    expect(daemonPeer.delivered).toBe(total);
+    expect(daemonPeer.maxBufferedAmount).toBeLessThanOrEqual(DIRECT_SEND_CEILING_BYTES);
+    expect(link.pair.clientReceived).toHaveLength(messages.length);
+    link.pair.clientReceived.forEach((received, index) => {
+      expect(Buffer.compare(Buffer.from(received as ArrayBuffer), messages[index])).toBe(0);
+    });
+    expect(link.pair.channelEvents).toEqual([]);
   });
 });

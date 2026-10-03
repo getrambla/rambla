@@ -16,6 +16,7 @@ import {
   createDirectCarrierTransportFactory,
   type DirectCarrierTransport,
   type DirectPeerFactory,
+  type DirectPeerSignal,
 } from "@getrambla/relay/e2ee";
 import { buildRelayWebSocketUrl } from "@getrambla/protocol/daemon-endpoints";
 import { parseConnectionOfferFromUrl } from "@getrambla/protocol/connection-offer";
@@ -28,6 +29,49 @@ type Frame = string | Uint8Array | ArrayBuffer;
 const nodeMajor = Number((process.versions.node ?? "0").split(".")[0] ?? "0");
 const shouldRunRelayE2e = process.env.FORCE_RELAY_E2E === "1" || nodeMajor < 25;
 const relayDir = fileURLToPath(new URL("../../../relay", import.meta.url));
+
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: a client DataChannel peer that never reads, run in a child process.
+const serverDir = fileURLToPath(new URL("../..", import.meta.url));
+
+type UnreadPeerCommand =
+  | { type: "create"; iceServers: string[] }
+  | { type: "signal"; signal: DirectPeerSignal }
+  | { type: "send"; text?: string; binary?: string };
+
+type UnreadPeerEvent = { type: "signal"; signal: DirectPeerSignal } | { type: "open" | "close" };
+
+// Never sets onMessage, so libdatachannel's receive queue fills and SCTP stops acknowledging.
+const UNREAD_PEER_SCRIPT = `
+const { PeerConnection } = require("node-datachannel");
+let connection = null;
+let channel = null;
+process.on("message", (message) => {
+  if (message.type === "create") {
+    connection = new PeerConnection("unread", { iceServers: message.iceServers });
+    connection.onLocalDescription((sdp, sdpType) =>
+      process.send({ type: "signal", signal: { type: "description", sdp, sdpType } }));
+    connection.onLocalCandidate((candidate, mid) =>
+      process.send({ type: "signal", signal: { type: "candidate", candidate, mid } }));
+    connection.onStateChange((state) => {
+      if (state === "failed" || state === "closed") process.send({ type: "close" });
+    });
+    channel = connection.createDataChannel("rambla");
+    channel.onOpen(() => process.send({ type: "open" }));
+    channel.onClosed(() => process.send({ type: "close" }));
+  } else if (message.type === "signal") {
+    const signal = message.signal;
+    if (signal.type === "description") connection.setRemoteDescription(signal.sdp, signal.sdpType);
+    else connection.addRemoteCandidate(signal.candidate, signal.mid);
+  } else {
+    try {
+      if (message.text !== undefined) channel.sendMessage(message.text);
+      else channel.sendMessageBinary(Buffer.from(message.binary, "base64"));
+    } catch {
+      // A send after the daemon closed the channel fails; the close event reports it.
+    }
+  }
+});
+`;
 
 function createCapturingLogger() {
   const lines: string[] = [];
@@ -130,8 +174,9 @@ interface DirectClient {
   let relayProcess: ChildProcess | null = null;
   let relayEndpoint = "";
   let createPeer: DirectPeerFactory;
-  let daemon: TestRamblaDaemon | null = null;
-  let direct: DirectClient | null = null;
+  const daemons: TestRamblaDaemon[] = [];
+  const directs: DirectClient[] = [];
+  const unreadPeerProcesses: ChildProcess[] = [];
   let relayOutput = "";
   const tempDirs: string[] = [];
 
@@ -175,10 +220,9 @@ interface DirectClient {
   }, 90_000);
 
   afterEach(async () => {
-    await direct?.client.close().catch(() => undefined);
-    direct = null;
-    await daemon?.close();
-    daemon = null;
+    for (const child of unreadPeerProcesses.splice(0)) child.kill("SIGKILL");
+    for (const link of directs.splice(0)) await link.client.close().catch(() => undefined);
+    await Promise.all(daemons.splice(0).map((target) => target.close()));
     await Promise.all(tempDirs.map((dir) => rm(dir, { recursive: true, force: true })));
   });
 
@@ -190,14 +234,15 @@ interface DirectClient {
     create: typeof createTestRamblaDaemon = createTestRamblaDaemon,
   ): Promise<{ daemon: TestRamblaDaemon; lines: string[] }> {
     const { logger, lines } = createCapturingLogger();
-    daemon = await create({ listen: "127.0.0.1", logger, relayEnabled: true, relayEndpoint });
-    return { daemon, lines };
+    const target = await create({ listen: "127.0.0.1", logger, relayEnabled: true, relayEndpoint });
+    daemons.push(target);
+    return { daemon: target, lines };
   }
 
   /** Connects a real DaemonClient over the relay, through the relay package's client factory over a node-datachannel peer. */
   async function connectDirectClient(
     target: TestRamblaDaemon,
-    options: { dropClientSignals?: boolean } = {},
+    options: { dropClientSignals?: boolean; createClientPeer?: DirectPeerFactory } = {},
   ): Promise<DirectClient> {
     const pairing = await generateLocalPairingOffer({
       ramblaHome: target.ramblaHome,
@@ -242,7 +287,7 @@ interface DirectClient {
       };
     };
     const recordingPeer: DirectPeerFactory = (config, events) => {
-      const peer = createPeer(config, {
+      const peer = (options.createClientPeer ?? createPeer)(config, {
         ...events,
         signal: (signal) => {
           if (!options.dropClientSignals) events.signal(signal);
@@ -297,7 +342,7 @@ interface DirectClient {
     });
     record.client = client;
     client.subscribeConnectionStatus((status) => record.statuses.push(status.status));
-    direct = record;
+    directs.push(record);
     await client.connect();
     return record;
   }
@@ -421,6 +466,118 @@ interface DirectClient {
     expect(link.statuses).not.toContain("disconnected");
     expect(link.client.lastError).toBeNull();
     expect(link.directFrames).toHaveLength(0);
+  }, 60_000);
+
+  // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: the 64 MiB close on the DataChannel and turning the relay off (criterion 16).
+  /** Client peer over node-datachannel that never reads its DataChannel, in a child process because a stalled receiver blocks libdatachannel's threads. */
+  function unreadClientPeer(): DirectPeerFactory {
+    return (config, events) => {
+      const child = spawn(process.execPath, ["-e", UNREAD_PEER_SCRIPT], {
+        cwd: serverDir,
+        stdio: ["ignore", "ignore", "inherit", "ipc"],
+      });
+      unreadPeerProcesses.push(child);
+      let closed = false;
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        events.close();
+      };
+      const send = (message: UnreadPeerCommand) => {
+        if (child.connected) child.send(message);
+      };
+      child.on("error", () => undefined);
+      child.on("exit", close);
+      child.on("message", (message: UnreadPeerEvent) => {
+        if (message.type === "signal") events.signal(message.signal);
+        else if (message.type === "open") events.open();
+        else close();
+      });
+      send({ type: "create", iceServers: config.iceServers });
+      return {
+        signal: (signal) => send({ type: "signal", signal }),
+        send: (data) => {
+          if (typeof data === "string") send({ type: "send", text: data });
+          else send({ type: "send", binary: Buffer.from(new Uint8Array(data)).toString("base64") });
+        },
+        bufferedAmount: 0,
+        close: () => child.kill("SIGKILL"),
+      };
+    };
+  }
+
+  /** Waits until a daemon has cut its connection over and both relay legs have closed. */
+  async function waitForCutover(lines: string[]): Promise<void> {
+    await waitFor(
+      () => logRecords(lines, "relay_direct_cutover").length > 0,
+      10_000,
+      "the cutover",
+    );
+    const connectionId = String(logRecords(lines, "relay_direct_cutover")[0].connectionId);
+    // The relay may close the daemon's leg as "Client disconnected" once the client's leg goes first.
+    await waitFor(
+      () =>
+        relayLegClosedAtCutover("client", connectionId) &&
+        relayOutput.includes(`v2:server(${connectionId}) disconnected`),
+      5000,
+      "both relay legs to close",
+    );
+  }
+
+  test("a client that stops reading after cutover is closed by the 64 MiB high-water close", async () => {
+    const { daemon: target, lines } = await startDaemon();
+    const link = await connectDirectClient(target, { createClientPeer: unreadClientPeer() });
+    await waitForCutover(lines);
+    const dir = await mkdtemp(path.join(os.tmpdir(), "rambla-direct-peer-"));
+    tempDirs.push(dir);
+    await writeFile(path.join(dir, "large.bin"), patterned(8 * 1024 * 1024));
+
+    // The unread receiver absorbs about 1024 messages before SCTP stalls, so the burst is well past 2 x 64 MiB.
+    for (let index = 0; index < 24; index += 1) {
+      void link.client.readFile(dir, "large.bin").catch(() => undefined);
+    }
+
+    await waitFor(
+      () => logRecords(lines, "Closing physical WebSocket at outbound high-water mark").length > 0,
+      30_000,
+      "the daemon's high-water close",
+    );
+    const [highWater] = logRecords(lines, "Closing physical WebSocket at outbound high-water mark");
+    // Above Chromium's 16 MiB DataChannel limit, so the carrier's queue is counted.
+    expect(Number(highWater.bufferedAmount)).toBeGreaterThan(16 * 1024 * 1024);
+    // The stalled receiver's libdatachannel threads are blocked, so it learns of the close slowly.
+    await waitFor(() => link.statuses.includes("disconnected"), 60_000, "the client to be closed");
+  }, 120_000);
+
+  test("turning the relay off on one daemon after cutover disconnects its client and leaves another daemon's DataChannel client connected", async () => {
+    const first = await startDaemon();
+    const second = await startDaemon();
+    const firstLink = await connectDirectClient(first.daemon);
+    const secondLink = await connectDirectClient(second.daemon);
+    await waitForCutover(first.lines);
+    await waitForCutover(second.lines);
+
+    const admin = new DaemonClient({
+      url: `ws://127.0.0.1:${first.daemon.port}/ws`,
+      clientId: `clid_admin_${Math.random().toString(36).slice(2)}`,
+      clientType: "cli",
+    });
+    await admin.connect();
+    try {
+      await admin.patchDaemonConfig({ relay: { enabled: false } });
+    } finally {
+      await admin.close();
+    }
+
+    await waitFor(
+      () => firstLink.statuses.includes("disconnected"),
+      10_000,
+      "the first client to be disconnected",
+    );
+    expect(firstLink.peers[0].closed).toBe(true);
+    await secondLink.client.ping({ requestId: "other-transport" });
+    expect(secondLink.statuses).not.toContain("disconnected");
+    expect(secondLink.peers[0].closed).toBe(false);
   }, 60_000);
 
   test("a daemon that cannot load node-datachannel logs it, offers no capability, and works on relay", async () => {

@@ -13,6 +13,7 @@ export type { KeyPair, SharedKey } from "./crypto.js";
 export {
   createDaemonDirectCarrier,
   createDirectCarrierTransportFactory,
+  DIRECT_DRAIN_THRESHOLD_BYTES,
 } from "./direct-carrier.rambla.js";
 export type {
   DaemonDirectCarrier,

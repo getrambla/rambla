@@ -1,11 +1,15 @@
 // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: relay-transport runs the direct carrier; un-negotiated pass-through and old/new pairs (criterion 3).
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import type pino from "pino";
 import {
   createChunkerTransportFactory,
   createClientChannel,
   createDirectCarrierTransportFactory,
+  type DirectCarrierOptions,
   type DirectCarrierTransport,
+  type DirectPeer,
+  type DirectPeerFactory,
+  type DirectPeerSignal,
   type EncryptedChannel,
   type Transport,
 } from "@getrambla/relay/e2ee";
@@ -15,6 +19,7 @@ import {
   MAX_PHYSICAL_SOCKET_BUFFERED_BYTES,
   sendBoundedPhysicalFrameAndWait,
 } from "./websocket/physical-socket.js";
+import { loadNodeDirectPeerFactory } from "./direct-peer.rambla.js";
 
 type Frame = string | Uint8Array | ArrayBuffer;
 type Listener = (...args: unknown[]) => void;
@@ -99,6 +104,8 @@ interface AttachedSocket {
 }
 
 interface Harness {
+  sockets: FakeRelayWebSocket[];
+  control: FakeRelayWebSocket;
   dataSocket: FakeRelayWebSocket;
   daemonPublicKeyB64: string;
   attached: Promise<AttachedSocket>;
@@ -141,6 +148,8 @@ function startHarness(): Harness {
   const dataSocket = sockets[1];
   dataSocket.open();
   return {
+    sockets,
+    control,
     dataSocket,
     daemonPublicKeyB64: exportPublicKey(daemonKeyPair.publicKey),
     attached,
@@ -169,13 +178,17 @@ function oldClientTransport(dataSocket: FakeRelayWebSocket, clientSent: Frame[])
 }
 
 /** Client transport over the relay package's carrier factory, as a new client has. */
-function newClientTransport(dataSocket: FakeRelayWebSocket): {
+function newClientTransport(
+  dataSocket: FakeRelayWebSocket,
+  direct?: DirectCarrierOptions["direct"],
+): {
   transport: Transport;
   carrier: DirectCarrierTransport;
 } {
   const handlers = new Set<(data: unknown, isBinary: boolean) => void>();
   const factory = createDirectCarrierTransportFactory({
     offer: true,
+    direct,
     baseFactory: () => ({
       send: (data) => dataSocket.message(data, typeof data !== "string"),
       close: () => undefined,
@@ -293,12 +306,12 @@ describe("relay-transport with the direct carrier, un-negotiated", () => {
 
 // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: chunking over the relay and the 64 MiB high-water close.
 /** New client with its chunker over the E2EE channel, stacked as daemon-client stacks them. */
-async function connectChunkedClient(harness: Harness) {
+async function connectChunkedClient(harness: Harness, direct?: DirectCarrierOptions["direct"]) {
   let channel: EncryptedChannel | null = null;
   let client: ReturnType<typeof newClientTransport> | null = null;
   const handlers = new Set<(data: unknown, isBinary: boolean) => void>();
   const factory = createChunkerTransportFactory(() => {
-    client = newClientTransport(harness.dataSocket);
+    client = newClientTransport(harness.dataSocket, direct);
     return {
       send: (data) => {
         void channel?.send(data instanceof Uint8Array ? data.slice().buffer : data);
@@ -435,5 +448,111 @@ describe("relay-transport with the chunker, negotiated", () => {
     expect(attached.readyState).toBe(3);
     expect(harness.dataSocket.sent.length - sentBefore).toBeGreaterThan(0);
     expect(harness.dataSocket.sent.length - sentBefore).toBeLessThan(3);
+  });
+});
+
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: a connection on the DataChannel gets no relay data socket until its DataChannel closes.
+const daemonPeerOverride = vi.hoisted(() => ({ factory: null as DirectPeerFactory | null }));
+
+vi.mock("./direct-peer.rambla.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./direct-peer.rambla.js")>();
+  return {
+    ...actual,
+    daemonDirectCarrierOptions: (
+      ...args: Parameters<typeof actual.daemonDirectCarrierOptions>
+    ): DirectCarrierOptions => {
+      const options = actual.daemonDirectCarrierOptions(...args);
+      const createPeer = daemonPeerOverride.factory;
+      if (!createPeer || !options.direct) return options;
+      return { ...options, direct: { ...options.direct, createPeer } };
+    },
+  };
+});
+
+/** Fake DataChannel peer that hands each frame straight to its remote peer. */
+class LinkedPeer implements DirectPeer {
+  bufferedAmount = 0;
+  remote: LinkedPeer | null = null;
+  closed = false;
+
+  constructor(readonly events: Parameters<DirectPeerFactory>[1]) {}
+
+  signal(): void {}
+
+  send(data: Frame): void {
+    const payload = data instanceof Uint8Array ? data.slice().buffer : data;
+    this.remote?.events.message(payload, typeof data !== "string");
+  }
+
+  close(): void {
+    this.closed = true;
+  }
+}
+
+const OFFER_SIGNAL: DirectPeerSignal = { type: "description", sdp: "v=0 offer", sdpType: "offer" };
+
+/** Starts a harness whose daemon carriers create fake peers. */
+function startDirectHarness(): { harness: Harness; daemonPeers: LinkedPeer[] } {
+  const daemonPeers: LinkedPeer[] = [];
+  daemonPeerOverride.factory = (_config, events) => {
+    const peer = new LinkedPeer(events);
+    daemonPeers.push(peer);
+    return peer;
+  };
+  return { harness: startHarness(), daemonPeers };
+}
+
+/** Connects a chunked client with fake peers on both ends and moves the connection to the DataChannel. */
+async function connectOnDataChannel(harness: Harness, daemonPeers: LinkedPeer[]) {
+  const clientPeers: LinkedPeer[] = [];
+  const client = await connectChunkedClient(harness, {
+    relayEndpoint: "relay.rambla.sh:443",
+    createPeer: (_config, events) => {
+      const peer = new LinkedPeer(events);
+      clientPeers.push(peer);
+      return peer;
+    },
+  });
+  await settle();
+  clientPeers[0].events.signal(OFFER_SIGNAL);
+  await settle();
+  const [clientPeer] = clientPeers;
+  const [daemonPeer] = daemonPeers;
+  clientPeer.remote = daemonPeer;
+  daemonPeer.remote = clientPeer;
+  clientPeer.events.open();
+  daemonPeer.events.open();
+  await settle();
+  return { ...client, clientPeer, daemonPeer };
+}
+
+describe("relay-transport with a connection on the DataChannel", () => {
+  afterEach(() => {
+    daemonPeerOverride.factory = null;
+  });
+
+  test("a sync or connected naming it opens no relay data socket until its DataChannel closes", async () => {
+    expect(await loadNodeDirectPeerFactory()).not.toBeNull();
+    const { harness, daemonPeers } = startDirectHarness();
+    const { app, attached, daemonReceived, daemonPeer } = await connectOnDataChannel(
+      harness,
+      daemonPeers,
+    );
+    expect(harness.dataSocket.readyState).toBe(3);
+    const socketsAtCutover = harness.sockets.length;
+
+    harness.control.message(JSON.stringify({ type: "sync", connectionIds: ["clt_test"] }), false);
+    harness.control.message(JSON.stringify({ type: "connected", connectionId: "clt_test" }), false);
+    expect(harness.sockets).toHaveLength(socketsAtCutover);
+    app.send("on the DataChannel");
+    await settle();
+    expect(daemonReceived).toEqual(["on the DataChannel"]);
+    expect(attached.readyState).toBe(1);
+
+    daemonPeer.events.close();
+    await settle();
+    harness.control.message(JSON.stringify({ type: "connected", connectionId: "clt_test" }), false);
+    expect(harness.sockets).toHaveLength(socketsAtCutover + 1);
+    expect(harness.sockets.at(-1)?.url).toContain("clt_test");
   });
 });

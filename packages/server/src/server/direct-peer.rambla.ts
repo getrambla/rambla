@@ -2,7 +2,12 @@
 import type pino from "pino";
 import type * as NodeDataChannel from "node-datachannel";
 import type { DataChannel, DescriptionType } from "node-datachannel";
-import type { DirectCarrierOptions, DirectPeerFactory } from "@getrambla/relay/e2ee";
+import {
+  DIRECT_DRAIN_THRESHOLD_BYTES,
+  type DaemonDirectCarrier,
+  type DirectCarrierOptions,
+  type DirectPeerFactory,
+} from "@getrambla/relay/e2ee";
 
 let nodeDataChannel: typeof NodeDataChannel | null = null;
 let loadError: unknown = null;
@@ -41,6 +46,8 @@ function createNodeDirectPeer(module: typeof NodeDataChannel): DirectPeerFactory
         if (typeof message === "string") events.message(message, false);
         else events.message(toArrayBuffer(message), true);
       });
+      dataChannel.setBufferedAmountLowThreshold(DIRECT_DRAIN_THRESHOLD_BYTES);
+      dataChannel.onBufferedAmountLow(() => events.drain());
       dataChannel.onClosed(close);
       dataChannel.onError(close);
       if (dataChannel.isOpen()) events.open();
@@ -85,10 +92,29 @@ export async function loadNodeDirectPeerFactory(): Promise<DirectPeerFactory | n
   return nodeDataChannel ? createNodeDirectPeer(nodeDataChannel) : null;
 }
 
+/** Adds a relay connection to its transport's DataChannel connections until its DataChannel closes. */
+export function trackDirectConnection(
+  connections: Map<string, DaemonDirectCarrier>,
+  connectionId: string,
+  carrier: DaemonDirectCarrier,
+): void {
+  connections.set(connectionId, carrier);
+  carrier.once("close", () => {
+    if (connections.get(connectionId) === carrier) connections.delete(connectionId);
+  });
+}
+
+/** Closes every DataChannel connection of a relay transport that is stopping. */
+export function closeDirectConnections(connections: Map<string, DaemonDirectCarrier>): void {
+  for (const carrier of connections.values()) carrier.close(1001, "Relay stopped");
+  connections.clear();
+}
+
 /** Returns the direct carrier options for one relay connection, logging once whether node-datachannel loaded. */
 export function daemonDirectCarrierOptions(
   relayEndpoint: string,
   logger: pino.Logger,
+  onCutover: () => void,
 ): DirectCarrierOptions {
   if (!loadLogged && (nodeDataChannel || loadError)) {
     loadLogged = true;
@@ -101,7 +127,10 @@ export function daemonDirectCarrierOptions(
     direct: {
       createPeer: createNodeDirectPeer(nodeDataChannel),
       relayEndpoint,
-      onCutover: () => logger.info("relay_direct_cutover"),
+      onCutover: () => {
+        logger.info("relay_direct_cutover");
+        onCutover();
+      },
     },
   };
 }

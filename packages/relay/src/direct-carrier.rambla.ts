@@ -21,6 +21,8 @@ export interface DirectPeerEvents {
   signal: (signal: DirectPeerSignal) => void;
   open: () => void;
   message: (data: string | ArrayBuffer, isBinary: boolean) => void;
+  /** Fires when the buffered amount falls to `DIRECT_DRAIN_THRESHOLD_BYTES`. */
+  drain: () => void;
   close: () => void;
 }
 
@@ -94,6 +96,15 @@ const OPEN_BRACE = 0x7b;
 const ICE_TIMEOUT_MS = 15_000;
 const STUN_PORT = 3478;
 const CUTOVER_CLOSE_REASON = "Moved to direct link";
+// Half of Chromium's 16 MiB DataChannel send-queue limit, which closes the channel when exceeded.
+export const DIRECT_SEND_CEILING_BYTES = 8 * 1024 * 1024;
+export const DIRECT_DRAIN_THRESHOLD_BYTES = 4 * 1024 * 1024;
+
+/** Returns a frame's size on the DataChannel. */
+function frameBytes(data: Frame): number {
+  // Text ciphertext frames are base64, one byte per character.
+  return typeof data === "string" ? data.length : data.byteLength;
+}
 
 /** Returns the STUN URL at the relay host of a `host:port` relay endpoint. */
 export function directCarrierStunUrl(relayEndpoint: string): string {
@@ -158,6 +169,8 @@ class DirectCarrierCore {
   private sentCutover = false;
   private receivedCutover = false;
   private readonly directQueue: Array<[string | ArrayBuffer, boolean]> = [];
+  private readonly sendQueue: Frame[] = [];
+  private sendQueueBytes = 0;
 
   constructor(
     private readonly options: DirectCarrierOptions,
@@ -170,9 +183,9 @@ class DirectCarrierCore {
     return this.sentCutover;
   }
 
-  /** Returns the DataChannel's buffered amount. */
+  /** Returns the DataChannel's buffered amount plus the frames queued behind its ceiling. */
   get directBufferedAmount(): number {
-    return this.peer?.bufferedAmount ?? 0;
+    return (this.peer?.bufferedAmount ?? 0) + this.sendQueueBytes;
   }
 
   /** Connects the chunker's control sender and returns the receiver for control messages. */
@@ -191,8 +204,24 @@ class DirectCarrierCore {
   /** Sends a frame over the DataChannel after cutover; returns false while frames go over relay. */
   sendDirect(data: Frame): boolean {
     if (!this.sentCutover) return false;
-    if (!this.ended) this.peer?.send(data);
+    if (this.ended) return true;
+    this.sendQueue.push(data);
+    this.sendQueueBytes += frameBytes(data);
+    this.flushDirect();
     return true;
+  }
+
+  /** Hands queued frames to the DataChannel, in order, while they fit under the ceiling. */
+  private flushDirect(): void {
+    const peer = this.peer;
+    if (!peer) return;
+    while (this.sendQueue.length > 0) {
+      const size = frameBytes(this.sendQueue[0]);
+      if (peer.bufferedAmount + size > DIRECT_SEND_CEILING_BYTES) return;
+      const data = this.sendQueue.shift() as Frame;
+      this.sendQueueBytes -= size;
+      peer.send(data);
+    }
   }
 
   /** Handles the relay leg closing; returns whether the close reaches the E2EE channel. */
@@ -240,6 +269,9 @@ class DirectCarrierCore {
         },
         message: (data, isBinary) => {
           if (live()) this.receiveDirect(data, isBinary);
+        },
+        drain: () => {
+          if (live()) this.flushDirect();
         },
         close: () => {
           if (live()) this.dropPeer();
