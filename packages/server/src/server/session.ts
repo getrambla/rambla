@@ -271,6 +271,9 @@ import { runGitCommand } from "../utils/run-git-command.js";
 import { CreateAgentLifecycleDispatch } from "./agent/create-agent-lifecycle-dispatch.js";
 import { resolveWorktreeSourceCwd } from "./workspace-source.js";
 
+// RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: imports the daemon.tools dispatcher.
+import { dispatchToolsMessage } from "./tools/tools-session.rambla.js";
+
 type ProviderSubagentManagerEvent = Extract<
   AgentManagerEvent,
   { type: "provider_subagent" }
@@ -3061,6 +3064,11 @@ export class Session {
           payload: { requestId: msg.requestId },
         });
         return;
+      // RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: dispatches the daemon.tools RPCs.
+      default:
+        await dispatchToolsMessage(msg, this.providerSnapshotManager, (message) =>
+          this.emit(message),
+        );
     }
   }
 

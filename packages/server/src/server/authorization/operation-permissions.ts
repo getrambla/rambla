@@ -211,6 +211,11 @@ const INBOUND_PERMISSION = {
   workspace_setup_status_request: "workspace.read",
   "workspace.setup.run.request": "workspace.write",
   write_project_config_request: "workspace.write",
+  // RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: permissions for the daemon.tools requests.
+  "daemon.tools.list.request": "daemon.read",
+  "daemon.tools.install.request": "daemon.manage",
+  "daemon.tools.upgrade.request": "daemon.manage",
+  "daemon.tools.uninstall.request": "daemon.manage",
 } as const satisfies Record<InboundOperation, PermissionRequirement>;
 
 const OUTBOUND_PERMISSION = {
@@ -436,6 +441,11 @@ const OUTBOUND_PERMISSION = {
   "workspace.setup.run.response": "workspace.write",
   workspace_update: ["workspace.read", "hub.execute"],
   write_project_config_response: "workspace.write",
+  // RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: permissions for the daemon.tools responses.
+  "daemon.tools.list.response": "daemon.read",
+  "daemon.tools.install.response": "daemon.manage",
+  "daemon.tools.upgrade.response": "daemon.manage",
+  "daemon.tools.uninstall.response": "daemon.manage",
 } as const satisfies Record<OutboundOperation, PermissionRequirement>;
 
 export function requiredPermissionForInbound(operation: InboundOperation): PermissionRequirement {
