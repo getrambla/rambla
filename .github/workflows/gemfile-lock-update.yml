@@ -12,7 +12,7 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Shared with merge-upstream.yml so the two bots never race pushes to main.
+# Shared with sync-upstream.rambla.yml so the two bots never race pushes to main.
 concurrency:
   group: main-writer
   cancel-in-progress: false

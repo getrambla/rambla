@@ -75,7 +75,7 @@ It takes no arguments, and does the whole run:
    `git pull --ff-only`, or at the next run.
 
 `RUN_LOCAL_CHECKS=0 just sync-upstream` skips the local checks. The daily
-`merge-upstream.yml` workflow runs the same script with them off, since
+`sync-upstream.rambla.yml` workflow runs the same script with them off, since
 `ci.yml` runs the same checks.
 
 Exit 0 → report which tags landed, from its `landed <tag>` lines, and stop.

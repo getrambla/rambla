@@ -1445,7 +1445,7 @@ function sentences(text) {
 }
 
 const SYNC_SKILL = ".agents/skills/sync-upstream/SKILL.md";
-// The old names criterion 11 retires; merge-upstream.yml is renamed in step 7, so it is stripped before matching.
+// The old names criterion 11 retires; sync-upstream.rambla.yml is renamed in step 7, so it is stripped before matching.
 const OLD_NAMES = "sync-upstream-rebrand|merge-upstream|trial-merge|MERGE-SKILL|skills/merge";
 const WORKFLOW_NAME = /merge-upstream\\?\.yml/g;
 
@@ -1458,8 +1458,8 @@ test("criteria 11, 16, 18: just sync-upstream runs the script, with its local ch
   assert.doesNotMatch(recipe, HIDDEN_OUTPUT);
 });
 
-test("criteria 11, 13, 16, 18: merge-upstream.yml runs the script daily and by hand, on the dispatched ref, with the local checks off, naming no main", () => {
-  const workflow = repoFile(".github/workflows/merge-upstream.yml");
+test("criteria 11, 13, 16, 18: sync-upstream.rambla.yml runs the script daily and by hand, on the dispatched ref, with the local checks off, naming no main", () => {
+  const workflow = repoFile(".github/workflows/sync-upstream.rambla.yml");
 
   assert.match(workflow, /^ {2}schedule:\n( +#.*\n)* +- cron: "\d+ \d+ \* \* \*"$/m);
   assert.match(workflow, /^ {2}workflow_dispatch:$/m);

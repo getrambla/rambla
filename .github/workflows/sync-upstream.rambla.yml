@@ -1,4 +1,4 @@
-name: Merge upstream
+name: Sync upstream
 
 # Daily sync from getpaseo/paseo. fork/sync-upstream.sh rebrands each new
 # upstream release tag onto the standing upstream-rebrand branch, then lands it

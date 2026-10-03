@@ -1,5 +1,5 @@
 # RAMBLA-FORK: feature: 2026-10-02-feat-rambla-server-image.md: builds and pushes the daemon-only rambla-server image to GHCR.
-name: Rambla server image
+name: Docker Server
 
 on:
   push:
