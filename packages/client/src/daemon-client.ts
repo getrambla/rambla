@@ -5413,48 +5413,48 @@ export class DaemonClient {
     return payload.plugins;
   }
 
-  // RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: daemon.tools client methods, each gated on toolsInstall.
-  private requireToolsInstall(): void {
-    // COMPAT(toolsInstall): added in v0.10.0, remove gate after 2027-04-03.
-    if (this.getLastServerInfoMessage()?.features?.toolsInstall !== true)
+  // RAMBLA-FORK: feature: 2026-10-02-feat-server-tool-install.md: daemon.tool client methods, each gated on toolInstall.
+  private requireToolInstall(): void {
+    // COMPAT(toolInstall): added in v0.10.0, remove gate after 2027-04-03.
+    if (this.getLastServerInfoMessage()?.features?.toolInstall !== true)
       throw new Error("Update the host to manage server tools.");
   }
 
   /** Lists the daemon's catalog tools with their pins and installed versions. */
   async listDaemonTools() {
-    this.requireToolsInstall();
+    this.requireToolInstall();
     return this.sendCorrelatedSessionRequest({
-      message: { type: "daemon.tools.list.request" },
-      responseType: "daemon.tools.list.response",
+      message: { type: "daemon.tool.list.request" },
+      responseType: "daemon.tool.list.response",
     });
   }
 
   /** Installs catalog tools or groups on the daemon host through mise. */
   async installDaemonTools(input: { names: string[]; version?: string; latest?: boolean }) {
-    this.requireToolsInstall();
+    this.requireToolInstall();
     return this.sendCorrelatedSessionRequest({
-      message: { type: "daemon.tools.install.request", ...input },
-      responseType: "daemon.tools.install.response",
+      message: { type: "daemon.tool.install.request", ...input },
+      responseType: "daemon.tool.install.response",
       timeout: 5 * 60 * 1000,
     });
   }
 
   /** Moves installed catalog tools to their pins, or to the newest with latest. */
   async upgradeDaemonTools(input: { names: string[]; latest?: boolean }) {
-    this.requireToolsInstall();
+    this.requireToolInstall();
     return this.sendCorrelatedSessionRequest({
-      message: { type: "daemon.tools.upgrade.request", ...input },
-      responseType: "daemon.tools.upgrade.response",
+      message: { type: "daemon.tool.upgrade.request", ...input },
+      responseType: "daemon.tool.upgrade.response",
       timeout: 5 * 60 * 1000,
     });
   }
 
   /** Removes catalog tools or groups from the daemon host's global mise config. */
   async uninstallDaemonTools(names: string[]) {
-    this.requireToolsInstall();
+    this.requireToolInstall();
     return this.sendCorrelatedSessionRequest({
-      message: { type: "daemon.tools.uninstall.request", names },
-      responseType: "daemon.tools.uninstall.response",
+      message: { type: "daemon.tool.uninstall.request", names },
+      responseType: "daemon.tool.uninstall.response",
     });
   }
 

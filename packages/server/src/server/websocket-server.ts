@@ -1937,9 +1937,9 @@ export class VoiceAssistantWebSocketServer {
         agentProfiles: true,
         // COMPAT(agentConfigApply): added in v0.3.2, remove gate after 2027-02-11.
         agentConfigApply: true,
-        // RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: advertises the daemon.tools RPCs.
-        // COMPAT(toolsInstall): added in v0.10.0, remove gate after 2027-04-03.
-        toolsInstall: true,
+        // RAMBLA-FORK: feature: 2026-10-02-feat-server-tool-install.md: advertises the daemon.tool RPCs.
+        // COMPAT(toolInstall): added in v0.10.0, remove gate after 2027-04-03.
+        toolInstall: true,
       },
     };
   }

@@ -1,4 +1,4 @@
-// RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: runs mise as the daemon user to list, install, upgrade, and uninstall catalog tools.
+// RAMBLA-FORK: feature: 2026-10-02-feat-server-tool-install.md: runs mise as the daemon user to list, install, upgrade, and uninstall catalog tools.
 import { findExecutable } from "../../executable-resolution/executable-resolution.js";
 import { spawnProcess } from "../../utils/spawn.js";
 import { type CatalogTool, TOOL_CATALOG, resolveToolNames } from "./tool-catalog.rambla.js";

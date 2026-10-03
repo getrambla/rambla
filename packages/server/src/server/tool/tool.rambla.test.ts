@@ -1,4 +1,4 @@
-// RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: tests the tool catalog and the mise wrapper against a stand-in mise.
+// RAMBLA-FORK: feature: 2026-10-02-feat-server-tool-install.md: tests the tool catalog and the mise wrapper against a stand-in mise.
 import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -18,7 +18,7 @@ import {
   requiredPermissionForInbound,
   requiredPermissionForOutbound,
 } from "../authorization/operation-permissions.js";
-import { dispatchToolsMessage } from "./tools-session.rambla.js";
+import { dispatchToolMessage } from "./tool-session.rambla.js";
 
 const AGENTS = ["claude", "codex", "copilot", "opencode", "pi"];
 
@@ -79,7 +79,7 @@ function installed(version: string): unknown[] {
 }
 
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), "rambla-tools-"));
+  dir = mkdtempSync(join(tmpdir(), "rambla-tool-"));
   logPath = join(dir, "calls.log");
   originalPath = process.env.PATH;
   // Only the stand-in dir: the host's real mise must never be found.
@@ -240,7 +240,7 @@ describe("mise wrapper", () => {
   });
 });
 
-// RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: tests the daemon.tools handlers, snapshot refresh, and permissions.
+// RAMBLA-FORK: feature: 2026-10-02-feat-server-tool-install.md: tests the daemon.tool handlers, snapshot refresh, and permissions.
 /** Dispatches tools messages, logging each snapshot refresh and emitted message in order. */
 function handlerHarness() {
   const events: string[] = [];
@@ -251,21 +251,21 @@ function handlerHarness() {
     },
   };
   const dispatch = (msg: SessionInboundMessage) =>
-    dispatchToolsMessage(msg, snapshots, (message) => {
+    dispatchToolMessage(msg, snapshots, (message) => {
       events.push(message.type);
       emitted.push(message);
     });
   return { events, emitted, dispatch };
 }
 
-describe("tools handlers", () => {
+describe("daemon.tool handlers", () => {
   test("list returns the mise listing", async () => {
     writeStandIn({ globalList: { claude: installed("2.0.0") } });
     const { emitted, events, dispatch } = handlerHarness();
-    await dispatch({ type: "daemon.tools.list.request", requestId: "r1" });
+    await dispatch({ type: "daemon.tool.list.request", requestId: "r1" });
     expect(emitted).toEqual([
       {
-        type: "daemon.tools.list.response",
+        type: "daemon.tool.list.response",
         payload: {
           requestId: "r1",
           ok: true,
@@ -280,15 +280,15 @@ describe("tools handlers", () => {
         },
       },
     ]);
-    expect(events).toEqual(["daemon.tools.list.response"]);
+    expect(events).toEqual(["daemon.tool.list.response"]);
   });
 
   test("list without mise returns the not-found result", async () => {
     const { emitted, dispatch } = handlerHarness();
-    await dispatch({ type: "daemon.tools.list.request", requestId: "r1" });
+    await dispatch({ type: "daemon.tool.list.request", requestId: "r1" });
     expect(emitted).toEqual([
       {
-        type: "daemon.tools.list.response",
+        type: "daemon.tool.list.response",
         payload: { requestId: "r1", ok: false, output: MISE_NOT_FOUND_MESSAGE, tools: [] },
       },
     ]);
@@ -298,7 +298,7 @@ describe("tools handlers", () => {
     writeStandIn({ stdout: "installed\n" });
     const { emitted, events, dispatch } = handlerHarness();
     await dispatch({
-      type: "daemon.tools.install.request",
+      type: "daemon.tool.install.request",
       requestId: "r2",
       names: ["claude"],
       version: "1.2.3",
@@ -306,18 +306,18 @@ describe("tools handlers", () => {
     expect(calls()).toEqual(["use --global claude@1.2.3"]);
     expect(emitted).toEqual([
       {
-        type: "daemon.tools.install.response",
+        type: "daemon.tool.install.response",
         payload: { requestId: "r2", ok: true, output: "installed\n" },
       },
     ]);
-    expect(events).toEqual(["refresh:claude", "daemon.tools.install.response"]);
+    expect(events).toEqual(["refresh:claude", "daemon.tool.install.response"]);
   });
 
   test("install passes latest through to mise", async () => {
     writeStandIn();
     const { dispatch } = handlerHarness();
     await dispatch({
-      type: "daemon.tools.install.request",
+      type: "daemon.tool.install.request",
       requestId: "r2",
       names: ["uv"],
       latest: true,
@@ -328,15 +328,15 @@ describe("tools handlers", () => {
   test("installing the agents group refreshes all five providers", async () => {
     writeStandIn();
     const { events, dispatch } = handlerHarness();
-    await dispatch({ type: "daemon.tools.install.request", requestId: "r2", names: ["agents"] });
-    expect(events).toEqual([`refresh:${AGENTS.join(",")}`, "daemon.tools.install.response"]);
+    await dispatch({ type: "daemon.tool.install.request", requestId: "r2", names: ["agents"] });
+    expect(events).toEqual([`refresh:${AGENTS.join(",")}`, "daemon.tool.install.response"]);
   });
 
   test("installing a non-provider tool refreshes nothing", async () => {
     writeStandIn();
     const { events, dispatch } = handlerHarness();
-    await dispatch({ type: "daemon.tools.install.request", requestId: "r2", names: ["gh"] });
-    expect(events).toEqual(["daemon.tools.install.response"]);
+    await dispatch({ type: "daemon.tool.install.request", requestId: "r2", names: ["gh"] });
+    expect(events).toEqual(["daemon.tool.install.response"]);
   });
 
   test("a failed install returns mise's output and refreshes nothing", async () => {
@@ -344,25 +344,25 @@ describe("tools handlers", () => {
     writeStandIn({ exitCode: 1, stderr });
     const { emitted, events, dispatch } = handlerHarness();
     await dispatch({
-      type: "daemon.tools.install.request",
+      type: "daemon.tool.install.request",
       requestId: "r2",
       names: ["claude"],
       version: "9.9.9",
     });
     expect(emitted).toEqual([
       {
-        type: "daemon.tools.install.response",
+        type: "daemon.tool.install.response",
         payload: { requestId: "r2", ok: false, output: stderr },
       },
     ]);
-    expect(events).toEqual(["daemon.tools.install.response"]);
+    expect(events).toEqual(["daemon.tool.install.response"]);
   });
 
   test("upgrade with names returns the mise result and refreshes those providers", async () => {
     writeStandIn({ stdout: "upgraded\n", globalList: { codex: installed("0.1.0") } });
     const { emitted, events, dispatch } = handlerHarness();
     await dispatch({
-      type: "daemon.tools.upgrade.request",
+      type: "daemon.tool.upgrade.request",
       requestId: "r3",
       names: ["codex"],
       latest: true,
@@ -370,32 +370,32 @@ describe("tools handlers", () => {
     expect(calls()).toEqual(["ls --json --global", "use --global codex@latest"]);
     expect(emitted).toEqual([
       {
-        type: "daemon.tools.upgrade.response",
+        type: "daemon.tool.upgrade.response",
         payload: { requestId: "r3", ok: true, output: "upgraded\n" },
       },
     ]);
-    expect(events).toEqual(["refresh:codex", "daemon.tools.upgrade.response"]);
+    expect(events).toEqual(["refresh:codex", "daemon.tool.upgrade.response"]);
   });
 
   test("upgrade with no names refreshes every provider", async () => {
     writeStandIn({ globalList: { codex: installed("0.1.0") } });
     const { events, dispatch } = handlerHarness();
-    await dispatch({ type: "daemon.tools.upgrade.request", requestId: "r3", names: [] });
-    expect(events).toEqual([`refresh:${AGENTS.join(",")}`, "daemon.tools.upgrade.response"]);
+    await dispatch({ type: "daemon.tool.upgrade.request", requestId: "r3", names: [] });
+    expect(events).toEqual([`refresh:${AGENTS.join(",")}`, "daemon.tool.upgrade.response"]);
   });
 
   test("uninstall returns the mise result and refreshes the provider before responding", async () => {
     writeStandIn({ stdout: "removed\n" });
     const { emitted, events, dispatch } = handlerHarness();
-    await dispatch({ type: "daemon.tools.uninstall.request", requestId: "r4", names: ["pi"] });
+    await dispatch({ type: "daemon.tool.uninstall.request", requestId: "r4", names: ["pi"] });
     expect(calls()).toEqual(["unuse --global pi"]);
     expect(emitted).toEqual([
       {
-        type: "daemon.tools.uninstall.response",
+        type: "daemon.tool.uninstall.response",
         payload: { requestId: "r4", ok: true, output: "removed\n" },
       },
     ]);
-    expect(events).toEqual(["refresh:pi", "daemon.tools.uninstall.response"]);
+    expect(events).toEqual(["refresh:pi", "daemon.tool.uninstall.response"]);
   });
 
   test("other messages are left for the session", () => {
@@ -404,23 +404,23 @@ describe("tools handlers", () => {
   });
 });
 
-describe("tools permissions", () => {
+describe("daemon.tool permissions", () => {
   test("list requires daemon.read and the other three require daemon.manage", () => {
     const payload = { requestId: "r", ok: true, output: "" };
-    expect(requiredPermissionForInbound("daemon.tools.list.request")).toBe("daemon.read");
-    expect(requiredPermissionForInbound("daemon.tools.install.request")).toBe("daemon.manage");
-    expect(requiredPermissionForInbound("daemon.tools.upgrade.request")).toBe("daemon.manage");
-    expect(requiredPermissionForInbound("daemon.tools.uninstall.request")).toBe("daemon.manage");
+    expect(requiredPermissionForInbound("daemon.tool.list.request")).toBe("daemon.read");
+    expect(requiredPermissionForInbound("daemon.tool.install.request")).toBe("daemon.manage");
+    expect(requiredPermissionForInbound("daemon.tool.upgrade.request")).toBe("daemon.manage");
+    expect(requiredPermissionForInbound("daemon.tool.uninstall.request")).toBe("daemon.manage");
     expect(
       requiredPermissionForOutbound({
-        type: "daemon.tools.list.response",
+        type: "daemon.tool.list.response",
         payload: { ...payload, tools: [] },
       }),
     ).toBe("daemon.read");
     for (const type of [
-      "daemon.tools.install.response",
-      "daemon.tools.upgrade.response",
-      "daemon.tools.uninstall.response",
+      "daemon.tool.install.response",
+      "daemon.tool.upgrade.response",
+      "daemon.tool.uninstall.response",
     ] as const) {
       expect(requiredPermissionForOutbound({ type, payload })).toBe("daemon.manage");
     }

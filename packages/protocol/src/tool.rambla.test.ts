@@ -1,4 +1,4 @@
-// RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: proves the tools RPCs and the toolsInstall flag parse in both directions.
+// RAMBLA-FORK: feature: 2026-10-02-feat-server-tool-install.md: proves the daemon.tool RPCs and the toolInstall flag parse in both directions.
 import { describe, expect, test } from "vitest";
 import {
   ServerInfoStatusPayloadSchema,
@@ -7,33 +7,33 @@ import {
 } from "./messages.js";
 
 const requests = [
-  { type: "daemon.tools.list.request", requestId: "req-list" },
-  { type: "daemon.tools.install.request", requestId: "req-install", names: ["agents", "gh"] },
+  { type: "daemon.tool.list.request", requestId: "req-list" },
+  { type: "daemon.tool.install.request", requestId: "req-install", names: ["agents", "gh"] },
   {
-    type: "daemon.tools.install.request",
+    type: "daemon.tool.install.request",
     requestId: "req-install-version",
     names: ["claude"],
     version: "1.2.3",
   },
   {
-    type: "daemon.tools.install.request",
+    type: "daemon.tool.install.request",
     requestId: "req-install-latest",
     names: ["uv"],
     latest: true,
   },
-  { type: "daemon.tools.upgrade.request", requestId: "req-upgrade", names: [] },
+  { type: "daemon.tool.upgrade.request", requestId: "req-upgrade", names: [] },
   {
-    type: "daemon.tools.upgrade.request",
+    type: "daemon.tool.upgrade.request",
     requestId: "req-upgrade-latest",
     names: ["codex"],
     latest: true,
   },
-  { type: "daemon.tools.uninstall.request", requestId: "req-uninstall", names: ["pi"] },
+  { type: "daemon.tool.uninstall.request", requestId: "req-uninstall", names: ["pi"] },
 ];
 
 const responses = [
   {
-    type: "daemon.tools.list.response",
+    type: "daemon.tool.list.response",
     payload: {
       requestId: "req-list",
       ok: true,
@@ -51,24 +51,24 @@ const responses = [
     },
   },
   {
-    type: "daemon.tools.list.response",
+    type: "daemon.tool.list.response",
     payload: { requestId: "req-list", ok: false, output: "mise not found on the host", tools: [] },
   },
   {
-    type: "daemon.tools.install.response",
+    type: "daemon.tool.install.response",
     payload: { requestId: "req-install", ok: true, output: "mise claude@2.1.287 installed" },
   },
   {
-    type: "daemon.tools.upgrade.response",
+    type: "daemon.tool.upgrade.response",
     payload: { requestId: "req-upgrade", ok: false, output: "mise ERROR failed" },
   },
   {
-    type: "daemon.tools.uninstall.response",
+    type: "daemon.tool.uninstall.response",
     payload: { requestId: "req-uninstall", ok: true, output: "" },
   },
 ];
 
-describe("tools wire schemas", () => {
+describe("daemon.tool wire schemas", () => {
   test.each(requests)("the inbound union accepts $type ($requestId)", (request) => {
     expect(SessionInboundMessageSchema.parse(request)).toEqual(request);
   });
@@ -77,20 +77,20 @@ describe("tools wire schemas", () => {
     expect(SessionOutboundMessageSchema.parse(response)).toEqual(response);
   });
 
-  test("server_info keeps toolsInstall: true and still parses without it", () => {
+  test("server_info keeps toolInstall: true and still parses without it", () => {
     expect(
       ServerInfoStatusPayloadSchema.parse({
         status: "server_info",
         serverId: "new-host",
-        features: { toolsInstall: true },
-      }).features?.toolsInstall,
+        features: { toolInstall: true },
+      }).features?.toolInstall,
     ).toBe(true);
     expect(
       ServerInfoStatusPayloadSchema.parse({
         status: "server_info",
         serverId: "old-host",
         features: {},
-      }).features?.toolsInstall,
+      }).features?.toolInstall,
     ).toBeUndefined();
   });
 });

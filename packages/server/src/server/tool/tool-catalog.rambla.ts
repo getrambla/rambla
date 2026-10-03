@@ -1,4 +1,4 @@
-// RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: the server tool catalog, named by mise registry short name with pinned versions.
+// RAMBLA-FORK: feature: 2026-10-02-feat-server-tool-install.md: the server tool catalog, named by mise registry short name with pinned versions.
 export interface CatalogTool {
   name: string;
   pin: string;

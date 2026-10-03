@@ -1,7 +1,7 @@
-// RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: the rambla tools command group for mise installs on the daemon host.
+// RAMBLA-FORK: feature: 2026-10-02-feat-server-tool-install.md: the rambla tool command group for mise installs on the daemon host.
 import { Command, Option } from "commander";
 import type { DaemonClient } from "@getrambla/client/internal/daemon-client";
-import type { DaemonToolStatus } from "@getrambla/protocol/tools.rambla";
+import type { DaemonToolStatus } from "@getrambla/protocol/tool.rambla";
 import type {
   CommandError,
   CommandOptions,
@@ -13,12 +13,12 @@ import { withOutput } from "../../output/index.js";
 import { addJsonAndDaemonHostOptions } from "../../utils/command-options.js";
 import { connectToDaemon } from "../../utils/client.js";
 
-interface ToolsOptions extends CommandOptions {
+interface ToolOptions extends CommandOptions {
   version?: string;
   latest?: boolean;
 }
 
-interface ToolsChangeResult {
+interface ToolChangeResult {
   ok: boolean;
   output: string;
 }
@@ -33,7 +33,7 @@ const toolSchema: OutputSchema<DaemonToolStatus> = {
   ],
 };
 
-const changeSchema: OutputSchema<ToolsChangeResult> = {
+const changeSchema: OutputSchema<ToolChangeResult> = {
   idField: (result) => (result.ok ? "ok" : "failed"),
   columns: [],
   // withOutput appends a newline, so drop the one mise ended with to print its output unchanged.
@@ -41,8 +41,8 @@ const changeSchema: OutputSchema<ToolsChangeResult> = {
 };
 
 /** Connects to the selected daemon, runs one tools call, and closes the connection. */
-async function withToolsClient<T>(
-  options: ToolsOptions,
+async function withToolClient<T>(
+  options: ToolOptions,
   run: (client: DaemonClient) => Promise<T>,
 ): Promise<T> {
   const client = await connectToDaemon({ target: options.daemonTarget });
@@ -54,33 +54,33 @@ async function withToolsClient<T>(
 }
 
 /** Runs a tools change and exits non-zero when mise did. */
-async function runToolsChange(
-  options: ToolsOptions,
-  run: (client: DaemonClient) => Promise<ToolsChangeResult>,
-): Promise<SingleResult<ToolsChangeResult>> {
-  const { ok, output } = await withToolsClient(options, run);
+async function runToolChange(
+  options: ToolOptions,
+  run: (client: DaemonClient) => Promise<ToolChangeResult>,
+): Promise<SingleResult<ToolChangeResult>> {
+  const { ok, output } = await withToolClient(options, run);
   if (!ok) process.exitCode = 1;
   return { type: "single", data: { ok, output }, schema: changeSchema };
 }
 
 /** Lists catalog tools with their group, pin, and installed version. */
-export async function runToolsListCommand(
-  options: ToolsOptions,
+export async function runToolListCommand(
+  options: ToolOptions,
   _command: Command,
 ): Promise<ListResult<DaemonToolStatus>> {
-  const payload = await withToolsClient(options, (client) => client.listDaemonTools());
+  const payload = await withToolClient(options, (client) => client.listDaemonTools());
   if (!payload.ok)
-    throw { code: "TOOLS_LIST_FAILED", message: payload.output } satisfies CommandError;
+    throw { code: "TOOL_LIST_FAILED", message: payload.output } satisfies CommandError;
   return { type: "list", data: payload.tools, schema: toolSchema };
 }
 
 /** Installs the named tools or groups at their pins, a given version, or the newest. */
-export async function runToolsInstallCommand(
+export async function runToolInstallCommand(
   names: string[],
-  options: ToolsOptions,
+  options: ToolOptions,
   _command: Command,
-): Promise<SingleResult<ToolsChangeResult>> {
-  return runToolsChange(options, (client) =>
+): Promise<SingleResult<ToolChangeResult>> {
+  return runToolChange(options, (client) =>
     client.installDaemonTools({
       names,
       ...(options.version ? { version: options.version } : {}),
@@ -90,35 +90,35 @@ export async function runToolsInstallCommand(
 }
 
 /** Moves installed tools, or only the named ones, to their pins or the newest. */
-export async function runToolsUpgradeCommand(
+export async function runToolUpgradeCommand(
   names: string[],
-  options: ToolsOptions,
+  options: ToolOptions,
   _command: Command,
-): Promise<SingleResult<ToolsChangeResult>> {
-  return runToolsChange(options, (client) =>
+): Promise<SingleResult<ToolChangeResult>> {
+  return runToolChange(options, (client) =>
     client.upgradeDaemonTools({ names, ...(options.latest ? { latest: true } : {}) }),
   );
 }
 
 /** Uninstalls the named tools or groups. */
-export async function runToolsUninstallCommand(
+export async function runToolUninstallCommand(
   names: string[],
-  options: ToolsOptions,
+  options: ToolOptions,
   _command: Command,
-): Promise<SingleResult<ToolsChangeResult>> {
-  return runToolsChange(options, (client) => client.uninstallDaemonTools(names));
+): Promise<SingleResult<ToolChangeResult>> {
+  return runToolChange(options, (client) => client.uninstallDaemonTools(names));
 }
 
-/** Builds the `rambla tools` command group. */
-export function createToolsCommand(): Command {
-  const tools = new Command("tools").description("Manage tools on the daemon host through mise");
-  // cli.ts gives tools a CLI --version flag; positional options leave install's --version to install.
-  tools.enablePositionalOptions();
+/** Builds the `rambla tool` command group. */
+export function createToolCommand(): Command {
+  const tool = new Command("tool").description("Manage tools on the daemon host through mise");
+  // cli.ts gives tool a CLI --version flag; positional options leave install's --version to install.
+  tool.enablePositionalOptions();
   addJsonAndDaemonHostOptions(
-    tools.command("ls").description("List catalog tools with their pins and installed versions"),
-  ).action(withOutput(runToolsListCommand));
+    tool.command("ls").description("List catalog tools with their pins and installed versions"),
+  ).action(withOutput(runToolListCommand));
   addJsonAndDaemonHostOptions(
-    tools
+    tool
       .command("install")
       .description("Install tools or groups at their catalog pins")
       .argument("<names...>", "Tool or group names")
@@ -128,19 +128,19 @@ export function createToolsCommand(): Command {
         ),
       )
       .option("--latest", "Install the newest version instead of the pin"),
-  ).action(withOutput(runToolsInstallCommand));
+  ).action(withOutput(runToolInstallCommand));
   addJsonAndDaemonHostOptions(
-    tools
+    tool
       .command("upgrade")
       .description("Move installed tools to their catalog pins")
       .argument("[names...]", "Tool or group names (default: every installed tool)")
       .option("--latest", "Move to the newest version instead of the pin"),
-  ).action(withOutput(runToolsUpgradeCommand));
+  ).action(withOutput(runToolUpgradeCommand));
   addJsonAndDaemonHostOptions(
-    tools
+    tool
       .command("uninstall")
       .description("Uninstall tools or groups")
       .argument("<names...>", "Tool or group names"),
-  ).action(withOutput(runToolsUninstallCommand));
-  return tools;
+  ).action(withOutput(runToolUninstallCommand));
+  return tool;
 }
