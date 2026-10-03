@@ -37,9 +37,9 @@ const headings = lines.filter((l) => l.startsWith("## ")).map((l) => l.slice(3).
 const isFix = (lines[0] ?? "").startsWith("# fix: ");
 const required = [
   "Provenance",
+  "Goal",
   "Scope",
   "Acceptance criteria",
-  "Goal",
   "Merge conflict mitigation",
   ...(isFix ? ["Cause"] : []),
   "Constraints",

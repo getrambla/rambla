@@ -22,6 +22,10 @@ Status: unapproved
 - upstream-rebrand: test
 - upstream/main: test
 
+## Goal
+
+Test.
+
 ## Scope
 
 Test.
@@ -29,10 +33,6 @@ Test.
 ## Acceptance criteria
 
 1. Test.
-
-## Goal
-
-Test.
 
 ## Merge conflict mitigation
 

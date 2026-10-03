@@ -266,6 +266,10 @@ Status: unapproved
 - upstream-rebrand: `61b044d8b` — 2026-09-21
 - upstream/main: `135a3b4c9` (v0.10.0-beta.1) — 2026-09-21
 
+## Goal
+
+<One or two sentences: what bug is fixed or what feature is added.>
+
 ## Scope
 
 **In scope:**
@@ -286,10 +290,6 @@ Status: unapproved
    approved this exact list before the plan was written; steps cite these
    numbers.>
 2. ...
-
-## Goal
-
-<One or two sentences: what bug is fixed or what feature is added.>
 
 ## Merge conflict mitigation
 
