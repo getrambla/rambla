@@ -3066,8 +3066,11 @@ export class Session {
         return;
       // RAMBLA-FORK: feature: 2026-10-02-feat-server-tool-install.md: dispatches the daemon.tool RPCs.
       default:
-        await dispatchToolMessage(msg, this.providerSnapshotManager, (message) =>
-          this.emit(message),
+        await dispatchToolMessage(
+          msg,
+          this.providerSnapshotManager,
+          (message) => this.emit(message),
+          this.sessionLogger,
         );
     }
   }

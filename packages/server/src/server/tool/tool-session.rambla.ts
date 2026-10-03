@@ -1,4 +1,5 @@
 // RAMBLA-FORK: feature: 2026-10-02-feat-server-tool-install.md: handles the daemon.tool RPCs and refreshes provider snapshots after changes.
+import type { Logger } from "pino";
 import type { ProviderSnapshotManager } from "../agent/provider-snapshot-manager.js";
 import type { SessionInboundMessage, SessionOutboundMessage } from "../messages.js";
 import {
@@ -12,6 +13,7 @@ import { TOOL_CATALOG, resolveToolNames } from "./tool-catalog.rambla.js";
 
 type ProviderSnapshots = Pick<ProviderSnapshotManager, "refreshSettingsSnapshot">;
 type Emit = (msg: SessionOutboundMessage) => void;
+type Warn = Pick<Logger, "warn">;
 type ChangeResponseType =
   | "daemon.tool.install.response"
   | "daemon.tool.upgrade.response"
@@ -32,10 +34,18 @@ async function runChange(
   change: Promise<MiseResult>,
   snapshots: ProviderSnapshots,
   emit: Emit,
+  logger: Warn,
 ): Promise<void> {
   const result = await change;
   const providers = affectedProviderIds(names);
-  if (result.ok && providers.length > 0) await snapshots.refreshSettingsSnapshot({ providers });
+  if (result.ok && providers.length > 0) {
+    // mise already changed the host, so a refresh failure must not turn its success into an error.
+    try {
+      await snapshots.refreshSettingsSnapshot({ providers });
+    } catch (err) {
+      logger.warn({ err, providers }, "Failed to refresh provider snapshots after tool change");
+    }
+  }
   emit({ type, payload: { requestId, ...result } });
 }
 
@@ -44,6 +54,7 @@ export function dispatchToolMessage(
   msg: SessionInboundMessage,
   snapshots: ProviderSnapshots,
   emit: Emit,
+  logger: Warn,
 ): Promise<void> | undefined {
   switch (msg.type) {
     case "daemon.tool.list.request":
@@ -62,6 +73,7 @@ export function dispatchToolMessage(
         installTools(msg.names, { version: msg.version, latest: msg.latest }),
         snapshots,
         emit,
+        logger,
       );
     case "daemon.tool.upgrade.request":
       return runChange(
@@ -71,6 +83,7 @@ export function dispatchToolMessage(
         upgradeTools(msg.names, { latest: msg.latest }),
         snapshots,
         emit,
+        logger,
       );
     case "daemon.tool.uninstall.request":
       return runChange(
@@ -80,6 +93,7 @@ export function dispatchToolMessage(
         uninstallTools(msg.names),
         snapshots,
         emit,
+        logger,
       );
     default:
       return undefined;

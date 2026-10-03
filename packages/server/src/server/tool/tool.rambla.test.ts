@@ -241,21 +241,34 @@ describe("mise wrapper", () => {
 });
 
 // RAMBLA-FORK: feature: 2026-10-02-feat-server-tool-install.md: tests the daemon.tool handlers, snapshot refresh, and permissions.
-/** Dispatches tools messages, logging each snapshot refresh and emitted message in order. */
-function handlerHarness() {
+/** Dispatches tools messages, logging each snapshot refresh, warning, and emitted message in order. */
+function handlerHarness(options: { refreshError?: Error } = {}) {
   const events: string[] = [];
   const emitted: SessionOutboundMessage[] = [];
+  const warnings: { obj: unknown; msg?: string }[] = [];
   const snapshots = {
-    refreshSettingsSnapshot: async (options?: { providers?: string[] }) => {
-      events.push(`refresh:${(options?.providers ?? []).join(",")}`);
+    refreshSettingsSnapshot: async (refresh?: { providers?: string[] }) => {
+      events.push(`refresh:${(refresh?.providers ?? []).join(",")}`);
+      if (options.refreshError) throw options.refreshError;
+    },
+  };
+  const logger = {
+    warn: (obj: unknown, msg?: string) => {
+      events.push("warn");
+      warnings.push({ obj, msg });
     },
   };
   const dispatch = (msg: SessionInboundMessage) =>
-    dispatchToolMessage(msg, snapshots, (message) => {
-      events.push(message.type);
-      emitted.push(message);
-    });
-  return { events, emitted, dispatch };
+    dispatchToolMessage(
+      msg,
+      snapshots,
+      (message) => {
+        events.push(message.type);
+        emitted.push(message);
+      },
+      logger,
+    );
+  return { events, emitted, warnings, dispatch };
 }
 
 describe("daemon.tool handlers", () => {
@@ -397,6 +410,42 @@ describe("daemon.tool handlers", () => {
     ]);
     expect(events).toEqual(["refresh:pi", "daemon.tool.uninstall.response"]);
   });
+
+  test.each([
+    {
+      msg: { type: "daemon.tool.install.request", requestId: "r5", names: ["claude"] },
+      responseType: "daemon.tool.install.response",
+      globalList: {},
+    },
+    {
+      msg: { type: "daemon.tool.upgrade.request", requestId: "r5", names: ["claude"] },
+      responseType: "daemon.tool.upgrade.response",
+      globalList: { claude: installed("0.1.0") },
+    },
+    {
+      msg: { type: "daemon.tool.uninstall.request", requestId: "r5", names: ["claude"] },
+      responseType: "daemon.tool.uninstall.response",
+      globalList: {},
+    },
+  ] as const)(
+    "$responseType keeps mise's success and logs a warning when the refresh throws",
+    async ({ msg, responseType, globalList }) => {
+      writeStandIn({ stdout: "done\n", globalList });
+      const refreshError = new Error("refresh failed");
+      const { emitted, events, warnings, dispatch } = handlerHarness({ refreshError });
+      await dispatch({ ...msg, names: [...msg.names] });
+      expect(emitted).toEqual([
+        { type: responseType, payload: { requestId: "r5", ok: true, output: "done\n" } },
+      ]);
+      expect(events).toEqual(["refresh:claude", "warn", responseType]);
+      expect(warnings).toEqual([
+        {
+          obj: { err: refreshError, providers: ["claude"] },
+          msg: "Failed to refresh provider snapshots after tool change",
+        },
+      ]);
+    },
+  );
 
   test("other messages are left for the session", () => {
     const { dispatch } = handlerHarness();
