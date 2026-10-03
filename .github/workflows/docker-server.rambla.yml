@@ -18,7 +18,7 @@ on:
           - "linux/amd64,linux/arm64"
 
 concurrency:
-  group: fork-rambla-server-${{ github.ref }}
+  group: docker-server-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:

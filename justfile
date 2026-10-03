@@ -60,8 +60,8 @@ testflight ref="" quiet="":
     gh run watch "$run_id"
 
 # Dispatch a rambla-server image build on the current branch; arg is the platforms choice: linux/amd64 (default), linux/arm64, or linux/amd64,linux/arm64.
-publish-server platforms="linux/amd64":
-    gh workflow run fork-rambla-server.yml --ref "$(git rev-parse --abbrev-ref HEAD)" -f platforms="{{ platforms }}"
+docker-server platforms="linux/amd64":
+    gh workflow run docker-server.rambla.yml --ref "$(git rev-parse --abbrev-ref HEAD)" -f platforms="{{ platforms }}"
 
 # Build rambla
 [script]
