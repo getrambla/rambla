@@ -40,6 +40,8 @@ import {
 } from "./utils/command-options.js";
 import { resolveCliVersion } from "./version.js";
 
+// RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: imports the tools command group.
+import { createToolsCommand } from "./commands/tools/index.rambla.js";
 const VERSION = resolveCliVersion();
 
 export function createCli(): Command {
@@ -149,6 +151,8 @@ export function createCli(): Command {
   // Provider commands
   program.addCommand(createProviderCommand());
   program.addCommand(createPluginCommand());
+  // RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: registers the tools command group.
+  program.addCommand(createToolsCommand());
 
   // Speech model commands
   program.addCommand(createSpeechCommand());

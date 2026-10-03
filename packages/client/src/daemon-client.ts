@@ -5413,6 +5413,51 @@ export class DaemonClient {
     return payload.plugins;
   }
 
+  // RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: daemon.tools client methods, each gated on toolsInstall.
+  private requireToolsInstall(): void {
+    // COMPAT(toolsInstall): added in v0.10.0, remove gate after 2027-04-03.
+    if (this.getLastServerInfoMessage()?.features?.toolsInstall !== true)
+      throw new Error("Update the host to manage server tools.");
+  }
+
+  /** Lists the daemon's catalog tools with their pins and installed versions. */
+  async listDaemonTools() {
+    this.requireToolsInstall();
+    return this.sendCorrelatedSessionRequest({
+      message: { type: "daemon.tools.list.request" },
+      responseType: "daemon.tools.list.response",
+    });
+  }
+
+  /** Installs catalog tools or groups on the daemon host through mise. */
+  async installDaemonTools(input: { names: string[]; version?: string; latest?: boolean }) {
+    this.requireToolsInstall();
+    return this.sendCorrelatedSessionRequest({
+      message: { type: "daemon.tools.install.request", ...input },
+      responseType: "daemon.tools.install.response",
+      timeout: 5 * 60 * 1000,
+    });
+  }
+
+  /** Moves installed catalog tools to their pins, or to the newest with latest. */
+  async upgradeDaemonTools(input: { names: string[]; latest?: boolean }) {
+    this.requireToolsInstall();
+    return this.sendCorrelatedSessionRequest({
+      message: { type: "daemon.tools.upgrade.request", ...input },
+      responseType: "daemon.tools.upgrade.response",
+      timeout: 5 * 60 * 1000,
+    });
+  }
+
+  /** Removes catalog tools or groups from the daemon host's global mise config. */
+  async uninstallDaemonTools(names: string[]) {
+    this.requireToolsInstall();
+    return this.sendCorrelatedSessionRequest({
+      message: { type: "daemon.tools.uninstall.request", names },
+      responseType: "daemon.tools.uninstall.response",
+    });
+  }
+
   private requirePluginUpdates(): void {
     // COMPAT(pluginSourceUpdates): added in v0.8.0; remove after 2027-03-16 once daemon floor supports reviewed updates.
     if (this.getLastServerInfoMessage()?.features?.pluginSourceUpdates !== true)
