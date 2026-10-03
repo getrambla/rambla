@@ -42,7 +42,7 @@ ENV HOME=/home/rambla \
     XDG_STATE_HOME=/home/rambla/.local/state \
     XDG_CACHE_HOME=/home/rambla/.cache \
     ONNXRUNTIME_NODE_INSTALL=skip \
-    PATH=/home/rambla/.local/share/mise/shims:${PATH}
+    PATH=/home/rambla/.local/bin:/home/rambla/.local/share/mise/shims:${PATH}
 
 RUN set -eux; \
     apt-get update; \
