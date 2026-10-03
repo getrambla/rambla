@@ -68,6 +68,9 @@ import { getProviderIcon } from "@/components/provider-icons";
 import { BrowserToolsOptInCard } from "./browser-tools-card";
 import { restartDaemonFromSettings, updateDaemonFromSettings } from "./daemon-lifecycle";
 
+// RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: reads which connections are on the DataChannel.
+import { useDirectCarrierActive } from "@/runtime/direct-carrier.rambla";
+
 const ThemedRestart = withUnistyles(RotateCw);
 const ThemedUpdate = withUnistyles(ArrowUpToLine);
 const lifecycleIconProps = (theme: Theme) => ({
@@ -195,7 +198,10 @@ function HostStatusBadges({ serverId }: { serverId: string }) {
     statusVariant = "error";
     statusDotColor = theme.colors.statusDotDanger;
   }
-  const connectionBadge = formatActiveConnectionBadge(activeConnection, theme, t);
+  // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: the badge shows WebRTC while the active connection is on the DataChannel.
+  const onDirect = useDirectCarrierActive(serverId, snapshot?.activeConnectionId ?? null);
+  const badge = formatActiveConnectionBadge(activeConnection, theme, t);
+  const connectionBadge = badge && onDirect ? { ...badge, text: "WebRTC" } : badge;
   const versionBadgeText = formatDaemonVersionBadge(daemonVersion);
   const statusDotStyle = useMemo(
     () => [styles.statusDot, { backgroundColor: statusDotColor }],
@@ -453,6 +459,8 @@ function ConnectionsSection({ host }: { host: HostProfile }) {
               latencyLoading={!probe || probe.status === "pending"}
               latencyError={probe?.status === "unavailable"}
               onRemove={handleRequestRemove}
+              // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: the row reads the DataChannel store by server id.
+              serverId={host.serverId}
             />
           );
         })}
@@ -504,6 +512,8 @@ function ConnectionRow({
   latencyLoading,
   latencyError,
   onRemove,
+  // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: server id for the DataChannel store.
+  serverId,
 }: {
   connection: HostConnection;
   showBorder: boolean;
@@ -511,10 +521,17 @@ function ConnectionRow({
   latencyLoading: boolean;
   latencyError: boolean;
   onRemove: (connection: HostConnection) => void;
+  // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: server id for the DataChannel store.
+  serverId: string;
 }) {
   const { t } = useTranslation();
   const { theme } = useUnistyles();
-  const title = formatHostConnectionLabel(connection, t);
+  // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: the label shows WebRTC in place of Relay while on the DataChannel.
+  const onDirect = useDirectCarrierActive(serverId, connection.id);
+  const title =
+    onDirect && connection.type === "relay"
+      ? `WebRTC (${connection.relayEndpoint})`
+      : formatHostConnectionLabel(connection, t);
 
   const latencyText = (() => {
     if (latencyLoading) return "...";

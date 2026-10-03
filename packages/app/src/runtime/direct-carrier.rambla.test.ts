@@ -12,9 +12,15 @@ import {
   exportPublicKey,
   generateKeyPair,
   type DirectCarrierSocket,
+  type DirectCarrierTransport,
+  type DirectPeerFactory,
   type Transport,
 } from "@getrambla/relay/e2ee";
-import { relayDirectCarrierConfig } from "./direct-carrier.rambla";
+import {
+  isDirectCarrierActive,
+  markLiveDirectCarrier,
+  relayDirectCarrierConfig,
+} from "./direct-carrier.rambla";
 
 type Frame = string | Uint8Array | ArrayBuffer;
 type Listener = (...args: unknown[]) => void;
@@ -252,5 +258,177 @@ describe("app relay wrapper with old and new daemons", () => {
     expect(daemonReceived).toEqual(["client 1", "client 2"]);
     expect(clientReceived).toEqual(["daemon 1", "daemon 2"]);
     expect("negotiated" in daemonSide && daemonSide.negotiated).toBe(true);
+  });
+});
+
+type DirectPeerEvents = Parameters<DirectPeerFactory>[1];
+
+/** Fake peer factory that records each peer's events so a test can open or drop it. */
+function fakePeers() {
+  const events: DirectPeerEvents[] = [];
+  const createPeer: DirectPeerFactory = (_config, peerEvents) => {
+    events.push(peerEvents);
+    return {
+      signal: () => undefined,
+      send: () => undefined,
+      bufferedAmount: 0,
+      close: () => undefined,
+    };
+  };
+  return { events, createPeer };
+}
+
+const servers = { count: 0 };
+
+/** A relay wrapper over fake WebSockets and fake peers, for one server and connection. */
+function wrapperFor(serverId = `srv_store_${++servers.count}`) {
+  const peers = fakePeers();
+  const sockets: FakeWebSocket[] = [];
+  const { transportFactory } = relayDirectCarrierConfig({
+    ...TARGET,
+    serverId,
+    webSocketFactory: (url) => {
+      const ws = new FakeWebSocket(url);
+      sockets.push(ws);
+      return ws;
+    },
+    createPeer: peers.createPeer,
+  });
+  if (!transportFactory) throw new Error("expected a transport factory");
+
+  /** Opens a transport, negotiates the carrier, and starts its peer, as the client's chunker does. */
+  const open = () => {
+    const transport = transportFactory({ url: "wss://relay.example/ws?role=client" });
+    (transport as DirectCarrierTransport).bindControl(() => undefined);
+    const ws = sockets[sockets.length - 1];
+    ws.emit(
+      "message",
+      JSON.stringify({ type: "e2ee_ready", capabilities: { directCarrier: true } }),
+      false,
+    );
+    const peer = peers.events[peers.events.length - 1];
+    if (!peer) throw new Error("expected the negotiated carrier to start a peer");
+    return { transport, peer };
+  };
+
+  return {
+    transportFactory,
+    open,
+    active: () => isDirectCarrierActive(serverId, TARGET.connectionId),
+  };
+}
+
+describe("store of connections on the DataChannel", () => {
+  it("marks the live connection at cutover", () => {
+    const live = wrapperFor();
+    markLiveDirectCarrier(live.transportFactory);
+    const { peer } = live.open();
+
+    expect(live.active()).toBe(false);
+    peer.open();
+    expect(live.active()).toBe(true);
+  });
+
+  it("clears it on fallback: the DataChannel drops and the reconnect stays on relay when ICE fails", () => {
+    const live = wrapperFor();
+    markLiveDirectCarrier(live.transportFactory);
+    const first = live.open();
+    first.peer.open();
+    expect(live.active()).toBe(true);
+
+    first.peer.close();
+    live.open().peer.close();
+    expect(live.active()).toBe(false);
+  });
+
+  it("stays unmarked when ICE fails before cutover", () => {
+    const live = wrapperFor();
+    markLiveDirectCarrier(live.transportFactory);
+    const { peer } = live.open();
+
+    peer.close();
+    expect(live.active()).toBe(false);
+  });
+
+  it("keeps a second host on the same relay off it", () => {
+    const first = wrapperFor("srv_store_host_a");
+    const second = wrapperFor("srv_store_host_b");
+    markLiveDirectCarrier(first.transportFactory);
+    markLiveDirectCarrier(second.transportFactory);
+
+    first.open().peer.open();
+    second.open();
+
+    expect(first.active()).toBe(true);
+    expect(second.active()).toBe(false);
+  });
+
+  it("clears when its own transport closes on purpose", () => {
+    const live = wrapperFor();
+    markLiveDirectCarrier(live.transportFactory);
+    const { transport, peer } = live.open();
+    peer.open();
+    expect(live.active()).toBe(true);
+
+    transport.close(1000, "Client closed");
+    expect(live.active()).toBe(false);
+  });
+
+  it("clears when its DataChannel drops", () => {
+    const live = wrapperFor();
+    markLiveDirectCarrier(live.transportFactory);
+    const { peer } = live.open();
+    peer.open();
+    expect(live.active()).toBe(true);
+
+    peer.close();
+    expect(live.active()).toBe(false);
+  });
+
+  it("does not clear when a second transport for the same server and connection, such as a latency probe, closes", () => {
+    const live = wrapperFor("srv_store_probe");
+    const probe = wrapperFor("srv_store_probe");
+    markLiveDirectCarrier(live.transportFactory);
+    live.open().peer.open();
+
+    const probed = probe.open();
+    probed.peer.open();
+    probed.transport.close(1000, "Probe done");
+    expect(live.active()).toBe(true);
+
+    const dropped = probe.open();
+    dropped.peer.open();
+    dropped.peer.close();
+    expect(live.active()).toBe(true);
+  });
+
+  it("leaves the store unmarked when an unmarked transport cuts over", () => {
+    const probe = wrapperFor();
+    probe.open().peer.open();
+    expect(probe.active()).toBe(false);
+  });
+
+  it("marks a transport already on the DataChannel when its factory is marked", () => {
+    const live = wrapperFor();
+    live.open().peer.open();
+    expect(live.active()).toBe(false);
+
+    markLiveDirectCarrier(live.transportFactory);
+    expect(live.active()).toBe(true);
+  });
+
+  it("does not let an older transport from the marked factory clear a newer one's entry", () => {
+    const live = wrapperFor();
+    markLiveDirectCarrier(live.transportFactory);
+    const older = live.open();
+    older.peer.open();
+    live.open().peer.open();
+
+    older.transport.close(1000, "Replaced");
+    expect(live.active()).toBe(true);
+  });
+
+  it("ignores a transport factory that is not a relay wrapper", () => {
+    expect(() => markLiveDirectCarrier(undefined)).not.toThrow();
   });
 });

@@ -85,7 +85,7 @@ import { revokePushNotifications } from "@/push-notifications";
 import { createAppWebSocketFactory } from "./websocket-factory";
 
 // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: direct carrier wrapper for relay clients.
-import { relayDirectCarrierConfig } from "./direct-carrier.rambla";
+import { markLiveDirectCarrier, relayDirectCarrierConfig } from "./direct-carrier.rambla";
 
 export type HostRuntimeConnectionStatus = "idle" | "connecting" | "online" | "offline" | "error";
 export type PairingNavigationTarget = "openProject" | "hostRoot" | "hostSettings";
@@ -1294,6 +1294,8 @@ export class HostRuntimeController {
     }
 
     this.activeClient = client;
+    // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: only the live client's connection sets the WebRTC label.
+    markLiveDirectCarrier(client.transportFactory);
     this.applyConnectionEvent({
       type: "select_connection",
       connectionId: connection.id,

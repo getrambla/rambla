@@ -383,3 +383,27 @@ test("a client built with only a webSocketFactory, as the CLI's is, passes throu
   for (const frame of peer.decrypted) expect(typeof frame).toBe("string");
   expect(peer.appMessages[0]?.type).toBe("hello");
 });
+
+test("the transport factory getter returns the factory the client was built with", async () => {
+  const peer = createRelayPeer({ daemonOffersCarrier: true });
+  const transportFactory = createDirectCarrierTransportFactory({
+    offer: true,
+    baseFactory: () => peer.baseTransport,
+  });
+  const client = createRelayClient(peer, { transportFactory });
+
+  expect(client.transportFactory).toBe(transportFactory);
+  await client.connect();
+  expect(client.transportFactory).toBe(transportFactory);
+  client.setReconnectEnabled(true);
+  expect(client.transportFactory).toBe(transportFactory);
+  client.setReconnectEnabled(false);
+  expect(client.transportFactory).toBe(transportFactory);
+});
+
+test("the transport factory getter returns undefined for a client built with only a webSocketFactory", () => {
+  const peer = createRelayPeer({ daemonOffersCarrier: true });
+  const client = createRelayClient(peer, { webSocketFactory: () => peer.webSocket });
+
+  expect(client.transportFactory).toBeUndefined();
+});

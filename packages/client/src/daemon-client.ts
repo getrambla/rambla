@@ -1614,6 +1614,11 @@ export class DaemonClient {
     return this.connectionState.status === "connecting";
   }
 
+  // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: exposes the transport factory the client was built with.
+  get transportFactory(): DaemonTransportFactory | undefined {
+    return this.config.transportFactory;
+  }
+
   get lastError(): string | null {
     return this.lastErrorValue;
   }
