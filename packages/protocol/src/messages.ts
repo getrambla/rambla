@@ -96,6 +96,17 @@ import {
   type ProjectConfigRpcError,
 } from "./rambla-config-schema.js";
 import { DictationSegmentSchema } from "./dictation-segment.rambla.js";
+// RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: imports the daemon.tools RPC schemas.
+import {
+  DaemonToolsInstallRequestSchema,
+  DaemonToolsInstallResponseSchema,
+  DaemonToolsListRequestSchema,
+  DaemonToolsListResponseSchema,
+  DaemonToolsUninstallRequestSchema,
+  DaemonToolsUninstallResponseSchema,
+  DaemonToolsUpgradeRequestSchema,
+  DaemonToolsUpgradeResponseSchema,
+} from "./tools.rambla.js";
 export {
   RamblaConfigRawSchema,
   RamblaLifecycleCommandRawSchema,
@@ -3357,6 +3368,11 @@ export const SessionInboundMessageSchema = z.discriminatedUnion("type", [
   LoopInspectRequestSchema,
   LoopLogsRequestSchema,
   LoopStopRequestSchema,
+  // RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: registers the daemon.tools requests.
+  DaemonToolsListRequestSchema,
+  DaemonToolsInstallRequestSchema,
+  DaemonToolsUpgradeRequestSchema,
+  DaemonToolsUninstallRequestSchema,
 ]);
 
 export type SessionInboundMessage = z.infer<typeof SessionInboundMessageSchema>;
@@ -3701,6 +3717,9 @@ export const ServerInfoStatusPayloadSchema = z
         agentProfiles: z.boolean().optional(),
         // COMPAT(agentConfigApply): added in v0.3.2, remove gate after 2027-02-11.
         agentConfigApply: z.boolean().optional(),
+        // RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: advertises the daemon.tools RPCs.
+        // COMPAT(toolsInstall): added in v0.10.0, remove gate after 2027-04-03.
+        toolsInstall: z.boolean().optional(),
       })
       .optional(),
   })
@@ -6953,6 +6972,11 @@ export const SessionOutboundMessageSchema = z.discriminatedUnion("type", [
   LoopStopResponseSchema,
   DaemonUpdateProgressMessageSchema,
   DaemonUpdateResponseSchema,
+  // RAMBLA-FORK: feature: 2026-10-02-feat-server-tools-install.md: registers the daemon.tools responses.
+  DaemonToolsListResponseSchema,
+  DaemonToolsInstallResponseSchema,
+  DaemonToolsUpgradeResponseSchema,
+  DaemonToolsUninstallResponseSchema,
 ]);
 
 export type SessionOutboundMessage = z.infer<typeof SessionOutboundMessageSchema>;
