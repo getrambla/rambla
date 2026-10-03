@@ -92,6 +92,17 @@ provenance:
     tag=$(git ls-remote --tags upstream 'refs/tags/v*' | awk -v u="$u" '$1 == u { sub(/^refs\/tags\//, "", $2); sub(/\^\{\}$/, "", $2); print $2 }')
     git log -1 --format="- upstream/main: %h ($tag) — %cs" "$u"
 
+# Create branch <branch> off HEAD in ~/worktrees/rambla/<branch with / as ->, then npm ci and build:server.
+[script]
+worktree branch:
+    set -eu
+    dir="$HOME/worktrees/rambla/$(echo "{{ branch }}" | tr / -)"
+    git worktree add "$dir" -b "{{ branch }}"
+    cd "$dir"
+    npm ci
+    npm run build:server
+    echo "ready: $dir"
+
 # Clean build outputs.
 [script]
 clean: stop

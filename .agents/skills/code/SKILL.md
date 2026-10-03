@@ -99,14 +99,19 @@ Before the first line of code, pass all three, in order:
      worktree, after the plan commit from gate 2:
 
      ```
-     mkdir -p ~/worktrees/rambla
-     git worktree add ~/worktrees/rambla/<branch-name-slug> -b <branch>
+     just worktree <branch>
      ```
 
-     The supervisor owns the worktree: it runs
-     `npm ci` there before the first step, gives every coder and reviewer
-     the worktree's path in their brief, and makes sure they work inside
-     it.
+     It creates `~/worktrees/rambla/<branch-name-slug>`, then runs
+     `npm ci` and `npm run build:server` there. Run `build:server` before
+     any typecheck or commit. Typecheck is
+     incremental: run before the build, it caches errors that persist
+     after the build. If that happened, delete the failing package's
+     `tsconfig.tsbuildinfo` and typecheck again.
+
+     The supervisor owns the worktree: it prepares it as above before the
+     first step, gives every coder and reviewer the worktree's path in
+     their brief, and makes sure they work inside it.
 
      **Never work directly on main**, however small the plan.
 
@@ -322,8 +327,10 @@ Then:
   files. The final step's commit is the final commit the changelog cites.
 - **Dedicated branch — the plan has its own `feat/` or `fix/` branch and is
   not parallel work:** once the reviewer accepts the final code, push the
-  branch to GitHub so CI runs, then dispatch a TestFlight build with
-  `just testflight <branch-name>` from `rambla/`, and tell the user the
+  branch to GitHub so CI runs.
+- **TestFlight only for app UI or app accessibility changes**, never for
+  anything else. Ask the user first; on yes, dispatch with
+  `just testflight <branch-name>` from `rambla/` and tell the user the
   build number to test.
 - **Parallel work — e.g. a daily `fixes-YYYY-MM-DD` branch: never push
   without the user's approval.**
@@ -359,6 +366,21 @@ Then:
 toggle`, not `Added a toggle for the enabling of notifications`).
     Create either `###` heading if it is not there yet. The fork tag in the
     code and this line are the whole audit trail. Last step.
+
+## Merging to main
+
+Only after the reviewer's ACCEPT on the final step and the user's final
+approval. Run from the main checkout, not the worktree.
+
+1. Merge commit the branch: `git merge --no-ff <branch>`. Never squash or
+   rebase; the changelog cites the branch's commit hash.
+2. Resolve conflicts, if any. In `RAMBLA-CHANGELOG.md`, keep both sides'
+   bullets.
+3. Push main: `git push origin main`.
+4. Delete the worktree, then the branch:
+   `git worktree remove ~/worktrees/rambla/<branch-name-slug>` and
+   `git branch -d <branch>`.
+5. Delete the branch from GitHub: `git push origin --delete <branch>`.
 
 ## Stop and ask
 
