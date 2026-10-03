@@ -1,6 +1,6 @@
 # feat: server-only Docker image published as rambla-server
 
-Status: approved
+Status: done
 
 ## Provenance
 
