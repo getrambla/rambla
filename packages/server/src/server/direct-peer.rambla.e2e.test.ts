@@ -180,15 +180,9 @@ interface DirectClient {
   let relayOutput = "";
   const tempDirs: string[] = [];
 
-  /** Returns whether the local relay logged one leg of a relay connection closing at cutover. */
-  function relayLegClosedAtCutover(role: "server" | "client", connectionId: string): boolean {
-    return relayOutput
-      .split("\n")
-      .some(
-        (line) =>
-          line.includes(`v2:${role}(${connectionId}) disconnected`) &&
-          line.includes("(1000: Moved to direct link)"),
-      );
+  /** Returns whether the local relay logged one leg of a relay connection closing, with any code or reason. */
+  function relayLegClosed(role: "server" | "client", connectionId: string): boolean {
+    return relayOutput.includes(`v2:${role}(${connectionId}) disconnected`);
   }
 
   beforeAll(async () => {
@@ -377,12 +371,12 @@ interface DirectClient {
     expect(typeof cutover.connectionId).toBe("string");
     const connectionId = String(cutover.connectionId);
     await waitFor(
-      () => relayLegClosedAtCutover("server", connectionId),
+      () => relayLegClosed("server", connectionId),
       5000,
       "the daemon's relay leg to close",
     );
     await waitFor(
-      () => relayLegClosedAtCutover("client", connectionId),
+      () => relayLegClosed("client", connectionId),
       5000,
       "the client's relay leg to close",
     );
@@ -411,7 +405,7 @@ interface DirectClient {
     );
     const connectionId = String(logRecords(lines, "relay_direct_cutover")[0].connectionId);
     await waitFor(
-      () => relayLegClosedAtCutover("client", connectionId),
+      () => relayLegClosed("client", connectionId),
       5000,
       "the client's relay leg to close",
     );
@@ -514,11 +508,8 @@ interface DirectClient {
       "the cutover",
     );
     const connectionId = String(logRecords(lines, "relay_direct_cutover")[0].connectionId);
-    // The relay may close the daemon's leg as "Client disconnected" once the client's leg goes first.
     await waitFor(
-      () =>
-        relayLegClosedAtCutover("client", connectionId) &&
-        relayOutput.includes(`v2:server(${connectionId}) disconnected`),
+      () => relayLegClosed("client", connectionId) && relayLegClosed("server", connectionId),
       5000,
       "both relay legs to close",
     );

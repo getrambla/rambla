@@ -581,6 +581,35 @@ describe("direct link", () => {
     expect(link.pair.channelEvents).toEqual([]);
   });
 
+  it.each([
+    [1000, "Moved to direct link"],
+    [1000, "Client disconnected"],
+    [1001, "Server disconnected"],
+    [1005, ""],
+    [1006, ""],
+    [1011, "Internal error"],
+    [4000, "any reason at all"],
+  ])(
+    "a relay-leg close after cutover with code %i and reason %j reaches neither end's E2EE channel",
+    async (code, reason) => {
+      const link = await connectDirectPair();
+      const [clientPeer, daemonPeer] = cutOver(link);
+
+      link.socket.emit("close", code, reason);
+      link.base.close(code, reason);
+      await settle();
+
+      expect(link.pair.channelEvents).toEqual([]);
+      expect(link.daemonCarrier.readyState).toBe(1);
+      const relayFrames = link.socket.sent.length + link.base.sent.length;
+      await expectMessagesFlow(link.pair);
+      expect(link.socket.sent.length + link.base.sent.length).toBe(relayFrames);
+      expect(clientPeer.sent).toHaveLength(3);
+      expect(daemonPeer.sent).toHaveLength(2);
+      expect(link.pair.channelEvents).toEqual([]);
+    },
+  );
+
   it("a DataChannel drop after cutover closes the E2EE channel on both ends", async () => {
     const link = await connectDirectPair();
     const [clientPeer, daemonPeer] = cutOver(link);
