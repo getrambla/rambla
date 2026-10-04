@@ -352,7 +352,7 @@ install-server ref="" fresh="false": && install-unit
     echo "installed daemon to {{ stable_dir }}/daemon"
 
     # launchd runs outside any shell; mise must trust the clone's .tool-versions itself.
-    if [ "$(uname)" = "Darwin" ]; then
+    if {{ is_macos }}; then
         mise trust "{{ stable_repo }}/.tool-versions" || true
     fi
 
@@ -464,12 +464,23 @@ install-app ref="" fresh="false": && install-desktop
     fi
 
     # desktop's own build script compiles its workspace deps first, then electron-builder packs; --dir skips installers.
-    npm run build:desktop -- --dir -c.directories.output="{{ stable_dir }}/app-build"
+    if {{ is_macos }}; then
+        # No signing identity in CI-less local installs; ad-hoc enough to launch locally.
+        npm run build:desktop -- --dir -c.directories.output="{{ stable_dir }}/app-build" -c.mac.notarize=false
+    else
+        npm run build:desktop -- --dir -c.directories.output="{{ stable_dir }}/app-build"
+    fi
 
-    # --dir output lands in <output>/linux-unpacked; flatten to stable_dir/app with a swap so the target is never half-replaced.
+    # --dir output lands in <output>/<platform>-unpacked; flatten to stable_dir/app with a swap so the target is never half-replaced.
+    if {{ is_macos }}; then
+        unpacked="{{ stable_dir }}/app-build/mac-arm64"
+        [ -d "$unpacked" ] || unpacked="{{ stable_dir }}/app-build/mac"
+    else
+        unpacked="{{ stable_dir }}/app-build/linux-unpacked"
+    fi
     rm -rf "{{ stable_dir }}/app.old"
     [ -d "{{ stable_dir }}/app" ] && mv "{{ stable_dir }}/app" "{{ stable_dir }}/app.old"
-    mv "{{ stable_dir }}/app-build/linux-unpacked" "{{ stable_dir }}/app"
+    mv "$unpacked" "{{ stable_dir }}/app"
     rm -rf "{{ stable_dir }}/app-build" "{{ stable_dir }}/app.old"
 
     echo "installed desktop app to {{ stable_dir }}/app"
@@ -478,6 +489,15 @@ install-app ref="" fresh="false": && install-desktop
 [script]
 install-desktop:
     set -euo pipefail
+    if {{ is_macos }}; then
+        # macOS install = copy the .app bundle into /Applications (swap, never half-replace).
+        rm -rf "/Applications/Rambla.app.old"
+        [ -d "/Applications/Rambla.app" ] && mv "/Applications/Rambla.app" "/Applications/Rambla.app.old"
+        cp -R "{{ stable_dir }}/app/Rambla.app" /Applications/
+        rm -rf "/Applications/Rambla.app.old"
+        echo "installed Rambla.app to /Applications"
+        exit 0
+    fi
     mkdir -p "$(dirname "{{ desktop }}")"
     cat > {{ desktop }} <<EOF
     [Desktop Entry]
