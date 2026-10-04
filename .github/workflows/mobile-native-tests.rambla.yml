@@ -1,0 +1,116 @@
+# RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: runs the phone module's native tests on Android emulators and an iOS simulator.
+name: Mobile native tests
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-native-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
+jobs:
+  android:
+    name: android-api-${{ matrix.api-level }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        # API 29 proves the module stays off below Android 13; API 33 proves libdatachannel loads.
+        api-level: [29, 33]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies with retry
+        run: node scripts/npm-retry.mjs ci
+
+      - name: Build app dependencies
+        run: npm run build:app-deps
+
+      - name: Generate the Android project
+        working-directory: packages/app
+        env:
+          APP_VARIANT: production
+        run: npx expo prebuild --platform android --no-install --non-interactive
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the module's instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          working-directory: packages/app/android
+          script: ./gradlew :rambla-datachannel:connectedDebugAndroidTest
+
+  ios:
+    name: ios-simulator
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies with retry
+        run: node scripts/npm-retry.mjs ci
+
+      - name: Build app dependencies
+        run: npm run build:app-deps
+
+      - name: Generate the Xcode project
+        working-directory: packages/app
+        env:
+          APP_VARIANT: production
+        run: npx expo prebuild --platform ios --no-install --non-interactive
+
+      # The generated Podfile leaves test specs out; includeTests adds the module's XCTest target.
+      - name: Include module test specs in the Podfile
+        working-directory: packages/app/ios
+        run: |
+          set -euo pipefail
+          sed -i '' 's/^  use_expo_modules!$/  use_expo_modules!(includeTests: true)/' Podfile
+          grep -q 'use_expo_modules!(includeTests: true)' Podfile
+
+      - name: Install CocoaPods dependencies
+        working-directory: packages/app/ios
+        env:
+          RCT_USE_PREBUILT_RNCORE: "1"
+        run: pod install
+
+      - name: Run the module's XCTests
+        working-directory: packages/app/ios
+        run: |
+          set -euo pipefail
+          workspace="$(ls -d *.xcworkspace | head -n 1)"
+          simulator="$(xcrun simctl list devices available --json | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')"
+          xcodebuild test \
+            -workspace "$workspace" \
+            -scheme RamblaDataChannel-Unit-Tests \
+            -destination "id=$simulator"

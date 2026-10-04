@@ -79,6 +79,8 @@ function withFdroidAutolinking(config) {
               ...android,
               buildFromSource: [".*"],
               exclude: EXCLUDED_ANDROID_MODULES,
+              // RAMBLA-FORK: feature: 2026-10-01-feat-webrtc-p2p-upgrade.md: links the app's local modules into the F-Droid build; the full F-Droid build is not yet verified.
+              nativeModulesDir: "../../modules",
             },
           },
         },
