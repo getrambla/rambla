@@ -478,11 +478,11 @@ install-app ref="" fresh="false": && install-desktop
 [script]
 install-desktop:
     set -euo pipefail
+    # macOS: copy with ditto (preserves symlinks + resource forks inside the .app); cp -R can break the framework bundle's Versions/Current symlinks.
     if {{ is_macos }}; then
-        # macOS install = copy the .app bundle into /Applications (swap, never half-replace).
         rm -rf "/Applications/Rambla.app.old"
         [ -d "/Applications/Rambla.app" ] && mv "/Applications/Rambla.app" "/Applications/Rambla.app.old"
-        cp -R "{{ stable_dir }}/app/Rambla.app" /Applications/
+        ditto "{{ stable_dir }}/app/Rambla.app" /Applications/Rambla.app
         rm -rf "/Applications/Rambla.app.old"
         echo "installed Rambla.app to /Applications"
         exit 0
