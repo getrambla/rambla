@@ -286,11 +286,16 @@ dev-server log_level="debug":
     set -euo pipefail
     eval "$(mise env -C "{{justfile_dir()}}" -s bash)"
     npm run build:server
-    systemd-run --user --collect --unit=rambla-dev \
-        --working-directory="{{justfile_dir()}}" \
-        --setenv=PATH="$PATH" --setenv=RAMBLA_LOG_LEVEL={{log_level}} \
-        --property=ExecStopPost="systemctl --user start rambla" \
-        "$(command -v just)" _dev-server-run
+    if {{is_macos}}; then
+        just _install-plist rambla-dev "{{justfile_directory()}}" {{log_level}} false
+        just (_start "rambla-dev")
+    else
+        systemd-run --user --collect --unit=rambla-dev \
+            --working-directory="{{justfile_dir()}}" \
+            --setenv=PATH="$PATH" --setenv=RAMBLA_LOG_LEVEL={{log_level}} \
+            --property=ExecStopPost="systemctl --user start rambla" \
+            "$(command -v just)" _dev-server-run
+    fi
 
 [script]
 _dev-server-run:
@@ -300,8 +305,13 @@ _dev-server-run:
     exec ../cli/bin/rambla daemon run
 
 # Show the dev server's logs; extra args go to journalctl, e.g. -f or -n 100.
-dev-server-logs *args:
-    journalctl --user -u rambla-dev {{args}}
+[script]
+dev-server-logs lines="40" *args:
+    if {{is_macos}}; then
+        tail -n {{lines}} "$HOME/.rambla/rambla-dev.log"
+    else
+        journalctl --user -n {{lines}} -u rambla-dev {{args}}
+    fi
 
 # Reinstall the stable daemon and desktop app under stable_dir.
 install: install-server install-app
@@ -345,17 +355,17 @@ install-server ref="" fresh="false": && install-unit
 [script]
 install-unit: && restart
     if {{is_macos}}; then
-        just _install-plist rambla "{{stable_repo}}" info
+        just _install-plist rambla "{{stable_repo}}" info true
     else
         just _install-systemd-unit
     fi
 
 # Render a launchd plist for the daemon. name=rambla runs the stable clone; name=rambla-dev runs this checkout.
 [script]
-_install-plist name path log_level:
+_install-plist name path log_level keep_alive:
     set -euo pipefail
     mkdir -p "$HOME/Library/LaunchAgents"
-    tmp="{{plist_dir}}/{{name}}.plist.tmp"
+    tmp="$HOME/Library/LaunchAgents/{{name}}.plist.tmp"
     cat > "$tmp" <<EOF
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -376,10 +386,8 @@ _install-plist name path log_level:
       </dict>
       <key>StandardOutPath</key><string>$HOME/.rambla/{{name}}.log</string>
       <key>StandardErrorPath</key><string>$HOME/.rambla/{{name}}.log</string>
-      <key>KeepAlive</key>
-      <true/>
-      <key>RunAtLoad</key>
-      <true/>
+      <key>KeepAlive</key><{{keep_alive}}/>
+      <key>RunAtLoad</key><true/>
       <key>ThrottleInterval</key><integer>5</integer>
     </dict>
     </plist>
@@ -477,19 +485,19 @@ install-desktop:
     Terminal=false
     EOF
 
-# Show the daemon log tail.
+# Show the stable daemon log tail.
 daemon-log lines="40":
-    tail -n {{lines}} ~/.rambla/daemon.log
+    tail -n {{lines}} ~/.rambla/rambla.log
 
 [script]
 _logs name lines:
     if {{is_macos}}; then
-        tail -n {{lines}} "$HOME/.rambla/daemon.log"
+        tail -n {{lines}} "$HOME/.rambla/{{name}}.log"
     else
         journalctl --user -n {{lines}} -u {{name}}
     fi
 
-logs lines="40": (_logs "rambla" {{lines}})
+logs lines="40": (_logs "rambla" lines)
 
 # Sync each new upstream release tag onto upstream-rebrand, then land it in the checked-out branch through its own merge branch once the local checks and ci.yml pass.
 sync-upstream:
