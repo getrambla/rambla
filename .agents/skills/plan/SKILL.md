@@ -44,6 +44,9 @@ Past ~500 words of your own prose on a routine plan, you are implementing inside
   plan file.
 - **Researcher — a subagent, mandatory.** Runs the repository searches;
   returns files, line numbers, citations. No placement opinions, ever.
+  Writes research files only in the outer repo's `research/` folder
+  (`~/getrambla/research/`), never in this repo or a worktree, so they stay
+  out of the public repo.
 - **Reviewer — 1 subagent, blind.** Spawned with the fixed prompt below,
   never this skill.
 
@@ -98,7 +101,9 @@ paths, line numbers, quotes of at most 3 lines. No placement opinions, no
 recommendations. Never read or grep a minified or 1-line file — not even
 partially; report it as minified and move on. If the question is about a
 bundled library, search its documentation instead. Flag any file over 2000
-lines.
+lines. Write any research file only in `~/getrambla/research/`, never in
+this repo or a worktree. Create it first and append each finding as you
+find it, so the work survives if you are stopped.
 ```
 
 ## Ask the user when a decision is theirs
@@ -373,6 +378,8 @@ The plan: plans/<FILE>
 
 The user approved its `## Acceptance criteria` section; judge the plan
 against those criteria and the code you open, nothing else.
+Anything the plan's `Not in scope` lists is out of scope for this review:
+never raise it.
 
 You are not a researcher and not a designer. Point out problems only.
 Never propose a fix, an option, or a design, not even as a hint.
@@ -443,9 +450,10 @@ Files to change:
 Conflict mitigation: <the approach in 25 words or less>
 ```
 
-File references here are **chat**, so the target starts with `rambla/` —
-`rambla/packages/app/...#L120`. Inside the plan file they're relative
-instead (`../packages/app/...`).
+Every file link in chat, including the plan file link, targets the absolute
+path inside the plan branch's worktree: `<worktree>/packages/app/...#L120`.
+Files that exist only on the branch open nowhere else. Inside the plan file
+they're relative instead (`../packages/app/...`).
 
 ## Reporting to the user
 

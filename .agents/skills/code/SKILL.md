@@ -29,6 +29,10 @@ Three roles, kept separate.
 - **Reviewer** (a separate subagent) — checks the work against the plan and
   against this skill's rules. Never the agent that wrote the code. Reviewing
   is read-only: it reports, it does not fix.
+- **Researcher** (a subagent, when needed) — writes research files only in
+  the outer repo's `research/` folder (`~/getrambla/research/`), never in
+  this repo or a worktree, so they stay out of the public repo. Give it that
+  path in every brief.
 
 Subagents run the same model as the supervisor, unless the user says
 otherwise. When spawning subagents, do not set the provider/model fields —
@@ -207,8 +211,8 @@ Plus:
 - **Keep our edits in one contiguous block per file.** Scattered one-line
   edits multiply the chances of colliding with upstream.
 - **New imports go at the END of the import block, after a blank line.**
-- **Every block of code we add or change gets a fork tag on the line
-  above — one line, exactly this format:**
+- **Every block of code we add or change in an upstream file gets a fork
+  tag on the line above — one line, exactly this format:**
 
   ```
   // RAMBLA-FORK: <category>: <plan file name>: <what it does>.
@@ -225,10 +229,11 @@ Plus:
   // RAMBLA-FORK: fix: 2026-09-22-fix-os-notification-toggle.md: adds the desktop notifications toggle.
   ```
 
-  This tag goes on every block in upstream files, in our own
-  `*.rambla.*` files, and in test files alike — it is the code's audit
-  trail. Never invent a category; `skip-test:` and `release:` exist for
-  special cases you did not choose.
+  The tag goes above every changed block in an upstream file, so a merge
+  conflict shows which feature or fix the block belongs to. Our own
+  `*.rambla.*` files, tests included, never conflict: they get one tag at
+  the top, naming the plan, and no per-block tags. Never invent a category;
+  `skip-test:` and `release:` exist for special cases you did not choose.
 
 - **Never reformat, reorder, rename, or tidy upstream code you aren't
   fixing.** Keep their lines in their order.
