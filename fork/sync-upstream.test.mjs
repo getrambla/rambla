@@ -342,8 +342,14 @@ function makeFixture(t) {
     "nix/npm-deps.hash": "main-hash\n",
     "RAMBLA-CHANGELOG.md": RAMBLA_CHANGELOG,
     "CHANGELOG.md": "# Changelog\n",
+    "PASEO-README.md": "# Paseo\n",
     ...Object.fromEntries(
-      ["fork/build-changelog.mjs", "scripts/changelog-utils.mjs", "scripts/is-main-module.mjs"].map(
+      [
+        "fork/build-changelog.mjs",
+        "fork/build-readme.mjs",
+        "scripts/changelog-utils.mjs",
+        "scripts/is-main-module.mjs",
+      ].map(
         (file) => [file, readFileSync(path.join(repoRoot, file), "utf8")],
       ),
     ),
@@ -1029,6 +1035,7 @@ test("criterion 8: each merge regenerates CHANGELOG.md with fork/build-changelog
   assert.match(show(fx.origin, first, "CHANGELOG.md"), /Added the 0\.10\.0-beta\.2 thing/);
   assert.doesNotMatch(show(fx.origin, first, "CHANGELOG.md"), /Added the 0\.10\.0 thing/);
   assert.match(show(fx.origin, second, "CHANGELOG.md"), /Added the 0\.10\.0 thing/);
+  assert.equal(show(fx.origin, second, "README.md"), "# Rambla\n");
 });
 
 test("criterion 9: with every release tag synced and landed, a run changes nothing, makes no merge branch and exits 0", (t) => {

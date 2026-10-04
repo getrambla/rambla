@@ -260,7 +260,8 @@ for tag in "${MERGES[@]}"; do
 			exit 1
 		fi
 		node "$WT/fork/build-changelog.mjs"
-		git -C "$WT" add CHANGELOG.md
+		node "$WT/fork/build-readme.mjs"
+		git -C "$WT" add CHANGELOG.md README.md
 		git -C "$WT" commit -m "merge upstream $tag"
 		if on "$RUN_LOCAL_CHECKS"; then
 			check npm ci
