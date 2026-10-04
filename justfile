@@ -1,5 +1,6 @@
 unit := home_dir() / ".config/systemd/user/rambla.service"
 desktop := home_dir() / ".local/share/applications/rambla.desktop"
+is_macos := if os() == "macos" { "true" } else { "false" }
 
 # Stable install root: `just install-*` builds into this tree; dev builds never write here.
 stable_dir := home_dir() / ".local" / "rambla"
@@ -75,11 +76,15 @@ build:
     eval "$(mise env -s bash)"
     ./tsconfig/build.sh
 
-# Uninstall systemd unit.
-uninstall: stop systemctl-reload
-    systemctl --user disable rambla.service
-    rm -f "{{unit}}"
-
+[script]
+uninstall: stop
+    if {{is_macos}}; then
+        rm -f "$HOME/Library/LaunchAgents/rambla.plist"
+    else
+        systemctl --user disable rambla.service
+        rm -f "{{unit}}"
+        just _systemctl-reload
+    fi
 
 # Print the provenance at HEAD
 [script]
@@ -230,26 +235,44 @@ e2e-desktop:
     npm run test:e2e:renderer -w @getrambla/desktop
 
 [script]
-stop-dev-server:
-    if systemctl --user is-active rambla-dev-server; then
-        systemctl --user stop rambla-dev-server
+_stop name:
+    if {{is_macos}}; then
+        launchctl bootout gui/"$(id -u)" "$HOME/Library/LaunchAgents/{{name}}.plist" || true
+    elif systemctl --user is-active {{name}}; then
+        systemctl --user stop {{name}}
     fi
 
-start: stop-dev-server
-    systemctl --user start rambla
+[script]
+_start name:
+    if {{is_macos}}; then
+        launchctl bootstrap gui/"$(id -u)" "$HOME/Library/LaunchAgents/{{name}}.plist"
+    else
+        systemctl --user enable {{name}}
+        systemctl --user start {{name}}
+    fi
 
-stop:
-    systemctl --user stop rambla || true
+_restart name: (_stop name) (_start name)
 
-systemctl-reload:
+stop-dev-server: (_stop "rambla-dev")
+
+start: stop-dev-server (_start "rambla")
+
+stop: (_stop "rambla")
+
+_systemctl-reload:
     systemctl --user daemon-reload
 
-restart: stop-dev-server
-    systemctl --user enable rambla
-    systemctl --user restart rambla
+restart: (_restart "rambla")
 
-status:
-    systemctl --user status rambla
+[script]
+_status name:
+    if {{is_macos}}; then
+        launchctl print gui/"$(id -u)"/{{name}} | sed -n '1,20p'
+    else
+        systemctl --user status {{name}}
+    fi
+
+status: (_status "rambla")
 
 # Build and run Rambla Debug desktop
 dev-desktop:
@@ -257,13 +280,13 @@ dev-desktop:
     npm run build:desktop -- --dir
     npm run dev:desktop
 
-# Build this checkout's server, then stop the installed daemon and run this one detached; the installed daemon restarts when it exits or fails. Logs: just dev-server-logs.
+# Build this checkout's server, then stop the installed daemon and run this one detached; the installed daemon restarts when it exits or fails.
 [script]
 dev-server log_level="debug":
     set -euo pipefail
     eval "$(mise env -C "{{justfile_dir()}}" -s bash)"
     npm run build:server
-    systemd-run --user --collect --unit=rambla-dev-server \
+    systemd-run --user --collect --unit=rambla-dev \
         --working-directory="{{justfile_dir()}}" \
         --setenv=PATH="$PATH" --setenv=RAMBLA_LOG_LEVEL={{log_level}} \
         --property=ExecStopPost="systemctl --user start rambla" \
@@ -275,16 +298,17 @@ _dev-server-run:
     systemctl --user stop rambla
     cd packages/server
     exec ../cli/bin/rambla daemon run
+
 # Show the dev server's logs; extra args go to journalctl, e.g. -f or -n 100.
 dev-server-logs *args:
-    journalctl --user -u rambla-dev-server {{args}}
+    journalctl --user -u rambla-dev {{args}}
 
 # Reinstall the stable daemon and desktop app under stable_dir.
-install: install-daemon install-app
+install: install-server install-app
 
 # Build the daemon from the dedicated stable clone and reinstall+restart the systemd user unit. ref: "" = current branch tip (must be pushed), or a SHA/branch/tag. mode: "soft" (default) waits for running turns, "immediate" restarts now. fresh=true wipes node_modules.
 [script]
-install-daemon ref="" fresh="false": && install-systemd-unit
+install-server ref="" fresh="false": && install-unit
     set -euo pipefail
     command -v mise >/dev/null 2>&1 || { echo "missing mise" >&2; exit 1; }
 
@@ -317,11 +341,55 @@ install-daemon ref="" fresh="false": && install-systemd-unit
 
     echo "installed daemon to {{stable_dir}}/daemon"
 
-# Reload systemd and enable+restart the unit (own recipe because install-daemon's script attribute eats dependencies).
+
 [script]
-install-systemd-unit: && systemctl-reload restart
-    set -x
-    # Render to a temp file then rename, so a failed render never leaves a truncated unit.
+install-unit: && restart
+    if {{is_macos}}; then
+        just _install-plist rambla "{{stable_repo}}" info
+    else
+        just _install-systemd-unit
+    fi
+
+# Render a launchd plist for the daemon. name=rambla runs the stable clone; name=rambla-dev runs this checkout.
+[script]
+_install-plist name path log_level:
+    set -euo pipefail
+    mkdir -p "$HOME/Library/LaunchAgents"
+    tmp="{{plist_dir}}/{{name}}.plist.tmp"
+    cat > "$tmp" <<EOF
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    <dict>
+      <key>Label</key><string>{{name}}</string>
+      <key>ProgramArguments</key>
+      <array>
+        <string>{{path}}/packages/cli/bin/rambla</string>
+        <string>daemon</string>
+        <string>run</string>
+      </array>
+      <key>WorkingDirectory</key><string>{{path}}/packages/server</string>
+      <key>EnvironmentVariables</key>
+      <dict>
+        <key>RAMBLA_LOG_LEVEL</key><string>{{log_level}}</string>
+        <key>PATH</key><string>$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+      </dict>
+      <key>StandardOutPath</key><string>$HOME/.rambla/{{name}}.log</string>
+      <key>StandardErrorPath</key><string>$HOME/.rambla/{{name}}.log</string>
+      <key>KeepAlive</key>
+      <true/>
+      <key>RunAtLoad</key>
+      <true/>
+      <key>ThrottleInterval</key><integer>5</integer>
+    </dict>
+    </plist>
+    EOF
+    plutil -lint "$tmp"
+    mv "$tmp" "$HOME/Library/LaunchAgents/{{name}}.plist"
+
+# Reload systemd and enable+restart the unit (own recipe because install-server's script attribute eats dependencies).
+[script]
+_install-systemd-unit: && _systemctl-reload
     mkdir -p "$(dirname "{{unit}}")"
     tmp_unit="$(mktemp "{{unit}}.XXXXXX")"
 
@@ -338,7 +406,7 @@ install-systemd-unit: && systemctl-reload restart
     EnvironmentFile=-%h/.rambla/daemon.env
     TimeoutStopSec=15
     # AGENTS: ExecStart MUST be exactly "rambla daemon run" with NO FLAGS. Do NOT add --foreground; it crashes the daemon (removed flag; REMOVED_LAUNCH_FLAGS in packages/cli/src/commands/daemon/local-daemon.ts).
-    # If you touch this line, run "just install-systemd-unit" to prove the daemon starts.
+    # If you touch this line, re-run the recipe to prove the daemon starts.
     ExecStart={{stable_repo}}/packages/cli/bin/rambla daemon run
     Restart=always
     RestartSec=5
@@ -359,7 +427,7 @@ install-app ref="" fresh="false": && install-desktop
     set -euo pipefail
     command -v mise >/dev/null 2>&1 || { echo "missing mise" >&2; exit 1; }
 
-    # Same dedicated clone as install-daemon; created here too so install-app works standalone.
+    # Same dedicated clone as install-server; created here too so install-app works standalone.
     mkdir -p "{{stable_dir}}"
     if [ ! -d "{{stable_repo}}" ]; then
         rm -rf "{{stable_repo}}.incoming"
@@ -413,8 +481,15 @@ install-desktop:
 daemon-log lines="40":
     tail -n {{lines}} ~/.rambla/daemon.log
 
-logs lines="40":
-    journalctl --user -n {{lines}} -u rambla
+[script]
+_logs name lines:
+    if {{is_macos}}; then
+        tail -n {{lines}} "$HOME/.rambla/daemon.log"
+    else
+        journalctl --user -n {{lines}} -u {{name}}
+    fi
+
+logs lines="40": (_logs "rambla" {{lines}})
 
 # Sync each new upstream release tag onto upstream-rebrand, then land it in the checked-out branch through its own merge branch once the local checks and ci.yml pass.
 sync-upstream:
