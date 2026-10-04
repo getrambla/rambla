@@ -37,9 +37,25 @@ function rebrand(line) {
     .replaceAll("paseo", "rambla");
 }
 
+export const FORKED_FROM = "- Forked from [getpaseo/paseo](https://github.com/getpaseo/paseo)";
+
+function addForkedFrom(lines) {
+  const start = lines.indexOf("## Related projects");
+  if (start === -1) {
+    return lines;
+  }
+  let last = start;
+  for (let index = start + 1; index < lines.length && !lines[index].startsWith("## "); index += 1) {
+    if (lines[index].startsWith("- ")) {
+      last = index;
+    }
+  }
+  return [...lines.slice(0, last + 1), FORKED_FROM, ...lines.slice(last + 1)];
+}
+
 export function buildReadme(upstreamText) {
   const kept = REMOVE.reduce((text, rule) => text.replace(rule, ""), upstreamText);
-  return kept.split("\n").map(rebrand).join("\n");
+  return addForkedFrom(kept.split("\n").map(rebrand)).join("\n");
 }
 
 if (isMainModule(import.meta.url)) {

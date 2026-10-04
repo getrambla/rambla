@@ -181,6 +181,7 @@ npm run typecheck
 
 - [getrambla/rambla-relay](https://github.com/getrambla/rambla-relay) — official distributed relay, written in Elixir
 - [paseo-vscode](https://marketplace.visualstudio.com/items?itemName=hinnes.paseo-vscode) — VS Code extension
+- Forked from [getpaseo/paseo](https://github.com/getpaseo/paseo)
 
 ## License
 

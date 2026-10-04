@@ -3,14 +3,21 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { buildReadme, EXEMPT } from "./build-readme.mjs";
+import { buildReadme, EXEMPT, FORKED_FROM } from "./build-readme.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const upstream = readFileSync(path.join(rootDir, "PASEO-README.md"), "utf8");
 const readme = buildReadme(upstream);
 const isExempt = (line) => EXEMPT.some((rule) => rule.test(line));
-const rebranded = readme.split("\n").filter((line) => !isExempt(line));
+const rebranded = readme.split("\n").filter((line) => !isExempt(line) && line !== FORKED_FROM);
+
+test("Related projects ends with the forked-from line", () => {
+  const section = readme.split("## Related projects")[1].split("\n## ")[0];
+  const items = section.split("\n").filter((line) => line.startsWith("- "));
+  assert.equal(items.at(-1), FORKED_FROM);
+  assert.equal(items.filter((line) => line === FORKED_FROM).length, 1);
+});
 
 test("only exempt lines mention Paseo", () => {
   for (const line of rebranded) {
