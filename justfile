@@ -341,12 +341,7 @@ install-server ref="" fresh="false": && install-unit
     cd "{{ stable_repo }}"
     git fetch origin "$ref"
     git checkout --quiet --force FETCH_HEAD
-    if [ "{{ fresh }}" = "true" ] || [ ! -d node_modules ]; then
-        npm ci
-    else
-        # Incremental: with warm node_modules this only installs the delta.
-        npm install
-    fi
+    npm ci
     npm run build:server
 
     echo "installed daemon to {{ stable_dir }}/daemon"
@@ -456,12 +451,6 @@ install-app ref="" fresh="false": && install-desktop
     cd "{{ stable_repo }}"
     git fetch origin "$ref"
     git checkout --quiet --force FETCH_HEAD
-    if [ "{{ fresh }}" = "true" ] || [ ! -d node_modules ]; then
-        npm ci
-    else
-        # Incremental: with warm node_modules this only installs the delta.
-        npm install
-    fi
 
     # desktop's own build script compiles its workspace deps first, then electron-builder packs; --dir skips installers.
     if {{ is_macos }}; then
