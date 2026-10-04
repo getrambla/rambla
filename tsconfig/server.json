@@ -14,6 +14,7 @@
     "../packages/server/node_modules",
     "../packages/server/dist",
     "../packages/server/src/server/**/test-utils/**",
+    "../packages/server/src/server/**/*fixture-test.ts",
     "../packages/server/src/server/daemon-e2e/**",
     "../packages/server/src/server/**/*.e2e.ts",
     "../packages/server/src/server/**/*.e2e.tsx",
