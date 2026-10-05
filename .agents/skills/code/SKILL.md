@@ -231,8 +231,10 @@ Plus:
 
   The tag goes above every changed block in an upstream file, so a merge
   conflict shows which feature or fix the block belongs to. Our own
-  `*.rambla.*` files, tests included, never conflict: they get one tag at
-  the top, naming the plan, and no per-block tags. Never invent a category;
+  `*.rambla.*` files, tests included, never conflict, so they get one tag
+  per plan, never one per block. That tag goes on the line above the first
+  block the plan adds or changes in the file. In a new file, that is the
+  top. It records which plans touched the file. Never invent a category;
   `skip-test:` and `release:` exist for special cases you did not choose.
 
 - **Never reformat, reorder, rename, or tidy upstream code you aren't

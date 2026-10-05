@@ -310,7 +310,9 @@ Fill the activity column from `git log upstream-rebrand -- <path>` for every
 file without `.rambla.` in its name. Files with `.rambla.` in the name are ours alone
 and can never conflict, so their activity entry is just `new` or `existing`.
 The Tag column states the fork tag's category for that file; the coder
-writes the full tag (category, plan file name, one clause) per block.
+writes the full tag (category, plan file name, one clause) per block in
+upstream files. A `.rambla.` file gets 1 tag per plan, never 1 per block,
+on the line above the first block the plan changes.
 
 **Why this shape:** <one or two sentences — the judgment call, stated so a
 reviewer can disagree with it. What we'd lose by copying more, what we'd risk
