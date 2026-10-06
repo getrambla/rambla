@@ -1,0 +1,631 @@
+{
+  "schemaVersion": 1,
+  "registry": {
+    "name": "Rambla plugins",
+    "url": "https://plugins.rambla.sh"
+  },
+  "generatedAt": "2026-10-04T15:55:47.882Z",
+  "categories": [
+    {
+      "slug": "daemon-management",
+      "label": "Daemon management",
+      "description": "Manage hosts, daemon jobs, resources, approvals, and MCP servers."
+    },
+    {
+      "slug": "themes",
+      "label": "Themes",
+      "description": "Change the app color scheme."
+    },
+    {
+      "slug": "providers",
+      "label": "Providers",
+      "description": "Connect coding agents, ACP servers, and model routers, with account and quota fallback."
+    },
+    {
+      "slug": "orchestration",
+      "label": "Orchestration",
+      "description": "Coordinate agents, delegate work, and send messages across hosts."
+    },
+    {
+      "slug": "git",
+      "label": "Git",
+      "description": "Work with branches, worktrees, pull requests, stacks, diffs, and reviews."
+    },
+    {
+      "slug": "workspaces",
+      "label": "Workspaces",
+      "description": "Add workspace panels and tabs for boards, browsers, documents, and terminals."
+    },
+    {
+      "slug": "sidebar",
+      "label": "Sidebar",
+      "description": "Add sidebar items and panels for usage, notifications, pricing, and links."
+    },
+    {
+      "slug": "extras",
+      "label": "Extras",
+      "description": "Add presence, pets, puzzles, wellbeing reminders, and demos."
+    },
+    {
+      "slug": "utils",
+      "label": "Utils",
+      "description": "Extend the composer and timeline with commands, prompts, skills, and small helpers."
+    }
+  ],
+  "plugins": [
+    {
+      "id": "alhassanaraouf/base2tone",
+      "name": "Base2Tone",
+      "description": "Base2Tone theme for Rambla, ported from the Obsidian theme deathau/Base2Tone-For-Obsidian.md.",
+      "artifact": {
+        "kind": "npm",
+        "package": "@alhassanaraouf/rambla-base2tone-theme",
+        "version": "0.1.2",
+        "resolved": "https://registry.npmjs.org/@alhassanaraouf/rambla-base2tone-theme/-/rambla-base2tone-theme-0.1.2.tgz",
+        "integrity": "sha512-baP+qh3MlPgwACvt72XjrULjbDHARofzHfxyGGVVl22iw6qVnMzyfBJXi4exgtplvD/yPqf/XlsqD8wTqHB+lg=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/alhassanaraouf/rambla-themes/tree/HEAD/packages/rambla-base2tone-theme"
+      },
+      "categories": ["themes"],
+      "author": {
+        "npm": "alhassanaraouf",
+        "name": "alhassanaraouf",
+        "github": "alhassanaraouf"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/alhassanaraouf/rambla-themes/main/packages/rambla-base2tone-theme/preview.png"
+      ],
+      "submittedAt": "2026-09-24T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-09-24T17:12:05.467Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Base2Tone\n\n## Behavior\n\nBase2Tone theme for Rambla, ported from the Obsidian theme deathau/Base2Tone-For-Obsidian.md."
+    },
+    {
+      "id": "dorasto/sayr",
+      "name": "Sayr",
+      "description": "A rambla plugin for viewing and managing your Sayr tasks",
+      "artifact": {
+        "kind": "npm",
+        "package": "@sayrio/rambla-plugin",
+        "version": "0.2.0",
+        "resolved": "https://registry.npmjs.org/@sayrio/rambla-plugin/-/rambla-plugin-0.2.0.tgz",
+        "integrity": "sha512-LPmVkEPWl8Km6US4zQAzhqSbGm7lBDwCjgNoysOhCsDiRy0jbtDKYRg1XVgwwUkoEwhF1EdZHCPwIuT8IizyWQ=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/dorasto/sayr/tree/HEAD/packages/rambla-plugin",
+        "commit": "e70919b89df3cf9e95c18242939193a79c7593b1"
+      },
+      "categories": ["workspaces"],
+      "author": {
+        "npm": "trent-001",
+        "name": "Tom Lundy",
+        "github": "dorasto"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/dorasto/sayr/main/packages/rambla-plugin/assets/sayr-plguin-1.png",
+        "https://raw.githubusercontent.com/dorasto/sayr/main/packages/rambla-plugin/assets/rambla-plugin-2.png"
+      ],
+      "submittedAt": "2026-09-22T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-09-22T10:39:28.935Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Sayr\n\n## Behavior\n\nA rambla plugin for viewing and managing your Sayr tasks"
+    },
+    {
+      "id": "gpambrozio/github-board",
+      "name": "GitHub Board",
+      "description": "Rambla plugin: a GitHub sidebar board of your issues, draft and open pull requests, and discussions",
+      "artifact": {
+        "kind": "npm",
+        "package": "@gpambrozio/rambla-github-board",
+        "version": "0.10.0",
+        "resolved": "https://registry.npmjs.org/@gpambrozio/rambla-github-board/-/rambla-github-board-0.10.0.tgz",
+        "integrity": "sha512-G6LxSsbt4Kt36yWEB2rXUxOwNLFsA4DbF20ViroVqaicMPjaw5H4JUWXjzEZAxWJT+0DlH12/TtqN4I0sNoQtg=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/gpambrozio/rambla-plugins/tree/HEAD/github-board",
+        "commit": "530a66c592e20915169b5e67a35de8793f71ec60"
+      },
+      "categories": ["git"],
+      "author": {
+        "npm": "gpambrozio",
+        "name": "gpambrozio",
+        "github": "gpambrozio"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/gpambrozio/rambla-plugins/main/github-board/docs/screenshot.png",
+        "https://raw.githubusercontent.com/gpambrozio/rambla-plugins/main/github-board/docs/detail-panel.png"
+      ],
+      "submittedAt": "2026-09-19T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-10-01T17:46:20.500Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# GitHub Board\n\n## Behavior\n\nRambla plugin: a GitHub sidebar board of your issues, draft and open pull requests, and discussions"
+    },
+    {
+      "id": "gpambrozio/herald",
+      "name": "Herald",
+      "description": "Rambla plugin: speaks one sentence when an agent needs you, and lists everything waiting in a sidebar panel",
+      "artifact": {
+        "kind": "npm",
+        "package": "@gpambrozio/rambla-herald",
+        "version": "0.5.1",
+        "resolved": "https://registry.npmjs.org/@gpambrozio/rambla-herald/-/rambla-herald-0.5.1.tgz",
+        "integrity": "sha512-rXdlaxgRlYP3nmZrvbG29sQeluz5JC7TPuJDgKzyh9itDH1AvZYGjLgGp9XZGKxdBBhaGxgGAFhDh+VTL8h9dw=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/gpambrozio/rambla-plugins/tree/HEAD/herald",
+        "commit": "b658d0ab58735959e46d12660ae179c002cdadda"
+      },
+      "categories": ["sidebar"],
+      "author": {
+        "npm": "gpambrozio",
+        "name": "gpambrozio",
+        "github": "gpambrozio"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/gpambrozio/rambla-plugins/main/herald/docs/panel.png",
+        "https://raw.githubusercontent.com/gpambrozio/rambla-plugins/main/herald/docs/timeline-card.png"
+      ],
+      "submittedAt": "2026-09-19T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-09-27T19:03:31.943Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Herald\n\n## Behavior\n\nRambla plugin: speaks one sentence when an agent needs you, and lists everything waiting in a sidebar panel"
+    },
+    {
+      "id": "gpambrozio/launchd-jobs",
+      "name": "launchd Jobs",
+      "description": "Rambla plugin: schedule shell commands on your Mac through launchd, from a sidebar panel",
+      "artifact": {
+        "kind": "npm",
+        "package": "@gpambrozio/rambla-launchd-jobs",
+        "version": "0.5.0",
+        "resolved": "https://registry.npmjs.org/@gpambrozio/rambla-launchd-jobs/-/rambla-launchd-jobs-0.5.0.tgz",
+        "integrity": "sha512-H6CQnalMdyQjW9ta9ZT40qEPJsREgNFSEAH8EC4sJXdz2Hz9tIsInSUmm2bDcgfY3D3HFffUrwf1mmeevi/wUA=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/gpambrozio/rambla-plugins/tree/HEAD/launchd-jobs",
+        "commit": "08e75003b287208ef804f3d31b2fda2597f69dce"
+      },
+      "categories": ["daemon-management"],
+      "author": {
+        "npm": "gpambrozio",
+        "name": "gpambrozio",
+        "github": "gpambrozio"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/gpambrozio/rambla-plugins/main/launchd-jobs/docs/screenshot.png"
+      ],
+      "submittedAt": "2026-09-19T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-09-22T17:56:41.061Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# launchd Jobs\n\n## Behavior\n\nRambla plugin: schedule shell commands on your Mac through launchd, from a sidebar panel"
+    },
+    {
+      "id": "gpambrozio/model-pricing",
+      "name": "Model Pricing",
+      "description": "Rambla plugin: a sidebar table of what every model costs, across Anthropic, OpenAI, Fireworks AI, Ollama Cloud and OpenRouter",
+      "artifact": {
+        "kind": "npm",
+        "package": "@gpambrozio/rambla-model-pricing",
+        "version": "0.3.0",
+        "resolved": "https://registry.npmjs.org/@gpambrozio/rambla-model-pricing/-/rambla-model-pricing-0.3.0.tgz",
+        "integrity": "sha512-jLfC6iCLOwNACiili8nw3/qmBymoj6YHitMeGCa2RggiMdUhT6n+INRsSjoTs2kNzeYMftMfQ3MZJXeLLF1opA=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/gpambrozio/rambla-plugins/tree/HEAD/model-pricing",
+        "commit": "08e75003b287208ef804f3d31b2fda2597f69dce"
+      },
+      "categories": ["sidebar"],
+      "author": {
+        "npm": "gpambrozio",
+        "name": "gpambrozio",
+        "github": "gpambrozio"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/gpambrozio/rambla-plugins/main/model-pricing/docs/screenshot.png"
+      ],
+      "submittedAt": "2026-09-19T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-09-22T18:03:14.979Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Model Pricing\n\n## Behavior\n\nRambla plugin: a sidebar table of what every model costs, across Anthropic, OpenAI, Fireworks AI, Ollama Cloud and OpenRouter"
+    },
+    {
+      "id": "gpambrozio/skills",
+      "name": "Skills",
+      "description": "Rambla plugin: lists the skills an agent can use, shows where each comes from, renders its SKILL.md, and invokes it",
+      "artifact": {
+        "kind": "npm",
+        "package": "@gpambrozio/rambla-skills",
+        "version": "0.4.0",
+        "resolved": "https://registry.npmjs.org/@gpambrozio/rambla-skills/-/rambla-skills-0.4.0.tgz",
+        "integrity": "sha512-zMgP2U/vrRsLkKhoQICkN52+YoDy2WkkYymEDmruduKxf4Dq99Ct8Pk3xqJyAzijq2oprMFYLbj/wT6XepBLeA=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/gpambrozio/rambla-plugins/tree/HEAD/skills",
+        "commit": "d04187ee60ca3702ca5843803567600427102d99"
+      },
+      "categories": ["utils"],
+      "author": {
+        "npm": "gpambrozio",
+        "name": "gpambrozio",
+        "github": "gpambrozio"
+      },
+      "screenshots": [],
+      "submittedAt": "2026-09-19T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-10-01T22:25:58.192Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Skills\n\n## Behavior\n\nRambla plugin: lists the skills an agent can use, shows where each comes from, renders its SKILL.md, and invokes it"
+    },
+    {
+      "id": "hungcuong9125/prompt-kit",
+      "name": "PromptKit",
+      "description": "PromptKit - rewrite and transform prompts directly from the Rambla composer.",
+      "artifact": {
+        "kind": "npm",
+        "package": "rambla-prompt-kit",
+        "version": "0.6.0",
+        "resolved": "https://registry.npmjs.org/rambla-prompt-kit/-/rambla-prompt-kit-0.6.0.tgz",
+        "integrity": "sha512-eiagOY1OokDx2iihfe3Vjh2dgKKP6IsBKbJYbfhM+TXw3aU7duV/rs/TUnBSeeWAk0cEsVg2Jd+EkeaPM8IJdA=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/hungcuong9125/rambla-prompt-kit"
+      },
+      "categories": ["utils"],
+      "author": {
+        "npm": "hungcuong9125",
+        "name": "hungcuong9125",
+        "github": "hungcuong9125"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/hungcuong9125/rambla-prompt-kit/main/docs/images/settings-provider-cli.png",
+        "https://raw.githubusercontent.com/hungcuong9125/rambla-prompt-kit/main/docs/images/settings-direct-api.png"
+      ],
+      "submittedAt": "2026-09-22T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-09-30T02:57:56.473Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# PromptKit\n\n## Behavior\n\nPromptKit - rewrite and transform prompts directly from the Rambla composer."
+    },
+    {
+      "id": "omercnet/agent-monitor",
+      "name": "Agent Monitor",
+      "description": "A Rambla plugin that provides a host-wide agent triage roster.",
+      "artifact": {
+        "kind": "npm",
+        "package": "@omercnet/rambla-agent-monitor",
+        "version": "1.2.0",
+        "resolved": "https://registry.npmjs.org/@omercnet/rambla-agent-monitor/-/rambla-agent-monitor-1.2.0.tgz",
+        "integrity": "sha512-dY7/3f49sPMVwb+Wr7iUsw4jCoQWRX2UF9Li+uU8yJdN0cj4BvTsz4GDiR3OsKk8zJ1/o01DSRi1e4uDRS3TmA=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/omercnet/rambla-plugins/tree/HEAD/agent-monitor",
+        "commit": "d7b3e654f364b5be72edf6fd1d914a3750b53082"
+      },
+      "categories": ["orchestration"],
+      "author": {
+        "npm": "omercnet",
+        "name": "Omer Cohen",
+        "github": "omercnet"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/omercnet/rambla-plugins/main/agent-monitor/docs/images/agent-monitor-roster.png",
+        "https://raw.githubusercontent.com/omercnet/rambla-plugins/main/agent-monitor/docs/images/agent-monitor-settings.png"
+      ],
+      "submittedAt": "2026-09-17T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-10-03T09:36:35.639Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Agent Monitor\n\n## Behavior\n\nA Rambla plugin that provides a host-wide agent triage roster."
+    },
+    {
+      "id": "omercnet/beads",
+      "name": "Beads",
+      "description": "A dependency-aware Beads work queue for each Rambla workspace.",
+      "artifact": {
+        "kind": "npm",
+        "package": "@omercnet/rambla-beads",
+        "version": "1.2.0",
+        "resolved": "https://registry.npmjs.org/@omercnet/rambla-beads/-/rambla-beads-1.2.0.tgz",
+        "integrity": "sha512-UkI1SNP73RUrW0ap4qOx2Jv1GCxkrw4HIMrWOFCS3FDoPg2jw06DqHC8Jf34psaFglxXKWLAOkfL2wEZJhlUFw=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/omercnet/rambla-plugins/tree/HEAD/rambla-beads",
+        "commit": "d7b3e654f364b5be72edf6fd1d914a3750b53082"
+      },
+      "categories": ["workspaces"],
+      "author": {
+        "npm": "omercnet",
+        "name": "Omer Cohen",
+        "github": "omercnet"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/omercnet/rambla-plugins/main/rambla-beads/docs/images/rambla-beads-wide.png",
+        "https://raw.githubusercontent.com/omercnet/rambla-plugins/main/rambla-beads/docs/images/rambla-beads-compact.png"
+      ],
+      "submittedAt": "2026-09-17T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-10-03T09:37:29.149Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Beads\n\n## Behavior\n\nA dependency-aware Beads work queue for each Rambla workspace."
+    },
+    {
+      "id": "omercnet/dracula",
+      "name": "Dracula",
+      "description": "Dracula Classic and Alucard Classic themes for Rambla.",
+      "artifact": {
+        "kind": "npm",
+        "package": "@omercnet/rambla-dracula",
+        "version": "1.2.0",
+        "resolved": "https://registry.npmjs.org/@omercnet/rambla-dracula/-/rambla-dracula-1.2.0.tgz",
+        "integrity": "sha512-I3yUiFIvaIe3jdvuQ1tZyngsfgukaUJwEQza2XYkEaB8yIA0pplZehqJLvqqmA403cjNXdVtsdW7umPtmnycqw=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/omercnet/rambla-plugins/tree/HEAD/rambla-dracula",
+        "commit": "d7b3e654f364b5be72edf6fd1d914a3750b53082"
+      },
+      "categories": ["themes"],
+      "author": {
+        "npm": "omercnet",
+        "name": "Omer Cohen",
+        "github": "omercnet"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/omercnet/rambla-plugins/main/rambla-dracula/screenshot.png",
+        "https://raw.githubusercontent.com/omercnet/rambla-plugins/main/rambla-dracula/screenshot-alucard.png"
+      ],
+      "submittedAt": "2026-09-17T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-10-03T09:37:18.185Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Dracula\n\n## Behavior\n\nDracula Classic and Alucard Classic themes for Rambla."
+    },
+    {
+      "id": "omercnet/fresh-worktrees",
+      "name": "Fresh Worktrees",
+      "description": "Fast-forwards clean local base branches before Rambla creates branch-off worktrees",
+      "artifact": {
+        "kind": "npm",
+        "package": "@omercnet/rambla-fresh-worktrees",
+        "version": "2.2.0",
+        "resolved": "https://registry.npmjs.org/@omercnet/rambla-fresh-worktrees/-/rambla-fresh-worktrees-2.2.0.tgz",
+        "integrity": "sha512-WRarzdfTbrZ36JfzmvX9HfnIYh6Pp+GV9TkoeVwM7I6f1MAEZ4gzPEmT51lWuUyMGvwTs2HFB7LthCa+VYs7IA=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/omercnet/rambla-plugins/tree/HEAD/fresh-worktrees",
+        "commit": "d7b3e654f364b5be72edf6fd1d914a3750b53082"
+      },
+      "categories": ["git"],
+      "author": {
+        "npm": "omercnet",
+        "name": "Omer Cohen",
+        "github": "omercnet"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/omercnet/rambla-plugins/main/fresh-worktrees/docs/images/fresh-worktrees-behind.png",
+        "https://raw.githubusercontent.com/omercnet/rambla-plugins/main/fresh-worktrees/docs/images/fresh-worktrees-settings.png"
+      ],
+      "submittedAt": "2026-09-18T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-10-03T09:36:06.720Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Fresh Worktrees\n\n## Behavior\n\nFast-forwards clean local base branches before Rambla creates branch-off worktrees"
+    },
+    {
+      "id": "omercnet/omp",
+      "name": "OMP",
+      "description": "Rambla integration for OMP, including its direct provider and workspace tooling.",
+      "artifact": {
+        "kind": "npm",
+        "package": "@omercnet/rambla-omp",
+        "version": "1.2.0",
+        "resolved": "https://registry.npmjs.org/@omercnet/rambla-omp/-/rambla-omp-1.2.0.tgz",
+        "integrity": "sha512-ueZede5D34hoNrdF4y6DBaomErA+hHcv+bcz0Sd6eArQKqF8L6ecKXdBe2tEZd3Ev8uQwxMHuiDQhMBx3q6gOw=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/omercnet/rambla-plugins/tree/HEAD/rambla-omp",
+        "commit": "d7b3e654f364b5be72edf6fd1d914a3750b53082"
+      },
+      "categories": ["providers"],
+      "author": {
+        "npm": "omercnet",
+        "name": "Omer Cohen",
+        "github": "omercnet"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/omercnet/rambla-plugins/main/rambla-omp/docs/images/plugin-manager.png",
+        "https://raw.githubusercontent.com/omercnet/rambla-plugins/main/rambla-omp/docs/images/workspace-settings.png"
+      ],
+      "submittedAt": "2026-09-17T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-10-03T09:36:36.267Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# OMP\n\n## Behavior\n\nRambla integration for OMP, including its direct provider and workspace tooling."
+    },
+    {
+      "id": "omercnet/pr-radar",
+      "name": "PR Radar",
+      "description": "A viewer-aware delivery queue for pull requests linked to Rambla workspaces.",
+      "artifact": {
+        "kind": "npm",
+        "package": "@omercnet/rambla-pr-radar",
+        "version": "1.2.0",
+        "resolved": "https://registry.npmjs.org/@omercnet/rambla-pr-radar/-/rambla-pr-radar-1.2.0.tgz",
+        "integrity": "sha512-sk+zuzTGZ5Vmri2toic3z3uChm4d6kEShSr/UjkqfOTeILrsZVDHUc+XKX/CtZIQazT/vWvbgZ115+KUiAonCw=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/omercnet/rambla-plugins/tree/HEAD/pr-radar",
+        "commit": "d7b3e654f364b5be72edf6fd1d914a3750b53082"
+      },
+      "categories": ["git"],
+      "author": {
+        "npm": "omercnet",
+        "name": "Omer Cohen",
+        "github": "omercnet"
+      },
+      "screenshots": [],
+      "submittedAt": "2026-09-17T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-10-03T09:37:04.327Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# PR Radar\n\n## Behavior\n\nA viewer-aware delivery queue for pull requests linked to Rambla workspaces."
+    },
+    {
+      "id": "omercnet/shared-browser",
+      "name": "Shared Browser",
+      "description": "One real Chromium session per Rambla workspace, shared live across every connected client.",
+      "artifact": {
+        "kind": "npm",
+        "package": "@omercnet/rambla-shared-browser",
+        "version": "1.2.0",
+        "resolved": "https://registry.npmjs.org/@omercnet/rambla-shared-browser/-/rambla-shared-browser-1.2.0.tgz",
+        "integrity": "sha512-ddvtkBSzHLFzyTRZFixO1y+QXOKW0of8Uo3PSkETRhW5xhd9ep0jqsJJF9JSfWLt1ouvVa5K8zFXic/EBzQ8lw=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/omercnet/rambla-plugins/tree/HEAD/rambla-shared-browser",
+        "commit": "d7b3e654f364b5be72edf6fd1d914a3750b53082"
+      },
+      "categories": ["workspaces"],
+      "author": {
+        "npm": "omercnet",
+        "name": "Omer Cohen",
+        "github": "omercnet"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/omercnet/rambla-plugins/main/rambla-shared-browser/docs/images/shared-browser-wide.png",
+        "https://raw.githubusercontent.com/omercnet/rambla-plugins/main/rambla-shared-browser/docs/images/shared-browser-compact.png"
+      ],
+      "submittedAt": "2026-09-18T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-10-03T09:38:48.289Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Shared Browser\n\n## Behavior\n\nOne real Chromium session per Rambla workspace, shared live across every connected client."
+    },
+    {
+      "id": "omercnet/tell-agent",
+      "name": "Tell Agent",
+      "description": "Send messages to agents in other workspaces on the same Rambla host.",
+      "artifact": {
+        "kind": "npm",
+        "package": "@omercnet/rambla-tell-agent",
+        "version": "1.2.0",
+        "resolved": "https://registry.npmjs.org/@omercnet/rambla-tell-agent/-/rambla-tell-agent-1.2.0.tgz",
+        "integrity": "sha512-4XqL1RK1x3TQLoRRKTkZfDxytJbUCEnu2em5pbPDpsGQ5Gv6VN1h07mBci9iW8s2FbNINohNcIBdUaAMTXdOHA=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/omercnet/rambla-plugins/tree/HEAD/tell-agent",
+        "commit": "d7b3e654f364b5be72edf6fd1d914a3750b53082"
+      },
+      "categories": ["orchestration"],
+      "author": {
+        "npm": "omercnet",
+        "name": "Omer Cohen",
+        "github": "omercnet"
+      },
+      "screenshots": [],
+      "submittedAt": "2026-09-17T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-10-03T09:36:15.719Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Tell Agent\n\n## Behavior\n\nSend messages to agents in other workspaces on the same Rambla host."
+    },
+    {
+      "id": "tomgrin10/defer",
+      "name": "Defer",
+      "description": "Defer messages to Rambla coding agents until a chosen time or usage-window reset.",
+      "artifact": {
+        "kind": "npm",
+        "package": "rambla-defer",
+        "version": "2.1.9",
+        "resolved": "https://registry.npmjs.org/rambla-defer/-/rambla-defer-2.1.9.tgz",
+        "integrity": "sha512-xBBf4TUC8zkTh9WMzQRRDt0alRAYPRCmUdBnBI1ZEkatUFC4i9MxFHgaTY939xij99dASM/261IWqctcKsQppQ=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/tomgrin10/rambla-defer"
+      },
+      "categories": ["utils"],
+      "author": {
+        "npm": "tomgrin10",
+        "name": "Tom Gringauz",
+        "github": "tomgrin10"
+      },
+      "screenshots": [
+        "https://raw.githubusercontent.com/tomgrin10/rambla-defer/main/docs/defer-popover.png"
+      ],
+      "submittedAt": "2026-09-22T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-09-27T09:59:16.553Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Defer\n\n## Behavior\n\nDefer messages to Rambla coding agents until a chosen time or usage-window reset."
+    },
+    {
+      "id": "tomgrin10/graphite",
+      "name": "Graphite",
+      "description": "Workspace-native Graphite stack status and PR action radar for Rambla.",
+      "artifact": {
+        "kind": "npm",
+        "package": "rambla-graphite",
+        "version": "0.2.4",
+        "resolved": "https://registry.npmjs.org/rambla-graphite/-/rambla-graphite-0.2.4.tgz",
+        "integrity": "sha512-aAFvh+118c5mmSQ3sTsDKO8Is7g1ZU8m2+0fisr8nFrgPMu0m2mokPJnM/LaIqQc3Zaaak1chB6M6k0dWOPeIA=="
+      },
+      "license": "MIT",
+      "repository": {
+        "url": "https://github.com/tomgrin10/rambla-graphite"
+      },
+      "categories": ["git"],
+      "author": {
+        "npm": "tomgrin10",
+        "name": "Tom Gringauz",
+        "github": "tomgrin10"
+      },
+      "screenshots": [],
+      "submittedAt": "2026-09-22T00:00:00.000Z",
+      "reviewedAt": "2026-10-03T00:00:00.000Z",
+      "publishedAt": "2026-09-23T10:36:50.112Z",
+      "updatedAt": "2026-10-03T00:00:00.000Z",
+      "installs": 0,
+      "readme": "# Graphite\n\n## Behavior\n\nWorkspace-native Graphite stack status and PR action radar for Rambla."
+    }
+  ]
+}

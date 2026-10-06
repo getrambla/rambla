@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://rambla.sh/sitemap-index.xml

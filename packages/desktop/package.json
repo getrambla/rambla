@@ -1,6 +1,6 @@
 {
   "name": "@getrambla/desktop",
-  "version": "0.11.0-beta.3",
+  "version": "0.11.0-beta.4",
   "private": true,
   "description": "Rambla desktop app (Electron wrapper)",
   "homepage": "https://rambla.sh",

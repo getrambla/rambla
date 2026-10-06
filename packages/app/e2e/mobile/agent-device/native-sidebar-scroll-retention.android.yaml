@@ -1,0 +1,4 @@
+appId: sh.rambla.debug
+---
+- launchApp
+- runFlow: ../../../maestro/sidebar-scroll-retention.yaml

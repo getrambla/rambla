@@ -1,5 +1,6 @@
 import type { PluginServerContext } from "@getrambla/plugin/server";
 import { z } from "zod";
+import { windowFromReportedDuration } from "@getrambla/plugin/server/usage";
 
 let fetches = 0;
 export default function contribute(server: PluginServerContext) {
@@ -32,7 +33,13 @@ export default function contribute(server: PluginServerContext) {
       fetches++;
       return {
         status: "available",
-        windows: [{ id: "count", label: "Count", usedPct: fetches }],
+        windows: [
+          windowFromReportedDuration({
+            durationSeconds: 604800,
+            unknown: { id: "unknown", label: "Limit", shortLabel: "" },
+            utilizationPct: fetches,
+          }),
+        ],
       };
     },
   });
