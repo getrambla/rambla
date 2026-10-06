@@ -3,6 +3,7 @@ import * as pluginSharedRuntime from "@getrambla/plugin";
 import * as pluginProviderRuntime from "@getrambla/plugin/server/provider";
 import * as pluginAcpRuntime from "@getrambla/plugin/server/acp";
 import * as pluginUsageRuntime from "@getrambla/plugin/server/usage";
+import * as pluginServerRuntime from "@getrambla/plugin/server";
 import type { PluginServerContribution } from "@getrambla/plugin/server";
 import * as zod from "zod";
 import { isPluginClientOnlySdkSpecifier } from "./plugin-sdk-specifiers.js";
@@ -14,7 +15,7 @@ function runtimeRequire(name: string): unknown {
     throw new Error(`${name} is available only in plugin client code`);
   }
   if (name === "@getrambla/plugin") return pluginSharedRuntime;
-  if (name === "@getrambla/plugin/server") return {};
+  if (name === "@getrambla/plugin/server") return pluginServerRuntime;
   if (name === "@getrambla/plugin/server/provider") return pluginProviderRuntime;
   if (name === "@getrambla/plugin/server/acp") return pluginAcpRuntime;
   if (name === "@getrambla/plugin/server/usage") return pluginUsageRuntime;

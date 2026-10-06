@@ -157,6 +157,9 @@ buildNpmPackage {
         cp -a "$path" "$out/share/rambla-desktop/$path"
       done < desktop-files.txt
 
+      # Shell hooks invoke the retained CLI bin directly, without a system Node.
+      patchShebangs --build "$out/share/rambla-desktop"
+
       # Keep the same unpackaged monorepo layout expected by main.js.
       cp package.json $out/share/rambla-desktop/
       mkdir -p $out/share/rambla-desktop/packages/app

@@ -36,7 +36,7 @@ jobs:
           RAMBLA_HOME="$(mktemp -d)"
           export RAMBLA_LISTEN=127.0.0.1:6767
 
-          WRAPPER_LOG="$RAMBLA_HOME/rambla-server-wrapper.log"
+          WRAPPER_LOG="$RAMBLA_HOME/rambla-cli.log"
 
           cleanup() {
             if [[ -n "${DAEMON_PID:-}" ]] && kill -0 "$DAEMON_PID" 2>/dev/null; then
@@ -47,7 +47,7 @@ jobs:
           }
           trap cleanup EXIT
 
-          RAMBLA_WEB_UI_ENABLED=true ./result/bin/rambla-server --no-relay >"$WRAPPER_LOG" 2>&1 &
+          RAMBLA_WEB_UI_ENABLED=true RAMBLA_RELAY_ENABLED=false ./result/bin/rambla daemon run >"$WRAPPER_LOG" 2>&1 &
           DAEMON_PID=$!
 
           deadline=$((SECONDS + 30))
@@ -57,7 +57,22 @@ jobs:
               echo "$STATUS_JSON"
               curl --fail --silent --show-error http://127.0.0.1:6767/ >"$RAMBLA_HOME/web-ui.html"
               [[ -s "$RAMBLA_HOME/web-ui.html" ]]
-              exit 0
+              if ! TERMINAL_JSON="$(./result/bin/rambla terminal create --cwd "$RAMBLA_HOME" --name nix-smoke --json)"; then
+                break
+              fi
+              TERMINAL_ID="$(jq -er '.id' <<<"$TERMINAL_JSON")"
+              ./result/bin/rambla terminal send-keys "$TERMINAL_ID" 'PATH= "$RAMBLA_HOOK_CLI" --version && printf "nix-terminal-%s\n" ok' Enter
+              deadline=$((SECONDS + 15))
+              while (( SECONDS < deadline )); do
+                if ./result/bin/rambla terminal capture "$TERMINAL_ID" --json \
+                  | jq -e '.lines | any(. == "nix-terminal-ok")' >/dev/null; then
+                  ./result/bin/rambla terminal kill "$TERMINAL_ID"
+                  exit 0
+                fi
+                sleep 1
+              done
+              echo "Nix terminal did not execute the command."
+              break
             fi
 
             if ! kill -0 "$DAEMON_PID" 2>/dev/null; then
@@ -72,7 +87,7 @@ jobs:
           cat "$RAMBLA_HOME/daemon.log" 2>/dev/null || echo "<missing>"
           echo "::endgroup::"
 
-          echo "::group::rambla-server stdout/stderr"
+          echo "::group::rambla daemon run stdout/stderr"
           cat "$WRAPPER_LOG" 2>/dev/null || echo "<missing>"
           echo "::endgroup::"
 
