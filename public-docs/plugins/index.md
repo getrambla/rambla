@@ -21,6 +21,16 @@ A plugin is a TypeScript project installed into one Rambla daemon. It can add
 [connect a coding agent as a provider](/docs/plugins/providers). Client
 contributions run on every Rambla client connected to that daemon, including mobile.
 
+Browse [published plugins](https://rambla.sh/plugins), then install one on your daemon:
+
+```bash
+rambla plugin add owner/slug
+```
+
+Or paste `owner/slug` into **Settings → Plugins → Plugin source** and select **Install plugin**.
+Rambla installs the registry's reviewed artifact. Use `git:owner/repository` or a full Git URL
+when you want to install directly from a Git repository.
+
 This guide scaffolds a plugin, runs it, and adds a workspace panel to it.
 
 ## Create a plugin
@@ -246,13 +256,13 @@ reload use the installed files.
 See [plugin sources](/docs/plugins/reference#plugin-sources) for identifier syntax. To share your own plugin, follow
 [Publish a plugin](/docs/plugins/publishing).
 
-Plugins published in a Git repository install by shorthand or URL:
+Plugins published in a Git repository install by explicit Git shorthand or URL:
 
 ```bash
-rambla plugin add owner/repository
+rambla plugin add git:owner/repository
 rambla plugin add https://gitlab.com/group/repository.git
-rambla plugin add owner/monorepo:plugins/workspace
-rambla plugin add owner/repository --ref main
+rambla plugin add git:owner/monorepo:plugins/workspace
+rambla plugin add git:owner/repository --ref main
 ```
 
 Append `:relative/path` when the plugin lives below the repository root. `--ref` selects the initial
