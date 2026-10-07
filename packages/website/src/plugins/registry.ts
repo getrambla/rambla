@@ -41,7 +41,7 @@ export function getPluginsByAuthor(plugins: Plugin[], owner: string): Plugin[] {
   return plugins.filter((plugin) => pluginOwner(plugin) === owner);
 }
 export function installCommand(plugin: Plugin): string {
-  return `rambla plugin install ${plugin.id}`;
+  return `rambla plugin add ${plugin.id}`;
 }
 export function pluginVersion(plugin: Plugin): string {
   return plugin.artifact.kind === "npm"

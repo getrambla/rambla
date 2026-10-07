@@ -263,7 +263,7 @@ describe("plugin registry", () => {
     );
   });
   it("offers a registry install command", () => {
-    expect(installCommand(plugin)).toBe("rambla plugin install acme/example");
+    expect(installCommand(plugin)).toBe("rambla plugin add acme/example");
     expect(formatInstalls(1250)).toBe("1.3k");
   });
 });
