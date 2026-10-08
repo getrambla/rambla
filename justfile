@@ -1,16 +1,24 @@
+set unstable
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+# Vars
+worktrees_path := home_dir() / "worktrees/rambla"
 unit := home_dir() / ".config/systemd/user/rambla.service"
 desktop := home_dir() / ".local/share/applications/rambla.desktop"
 is_macos := if os() == "macos" { "true" } else { "false" }
-
-# Stable install root: `just install-*` builds into this tree; dev builds never write here.
 stable_dir := home_dir() / ".local" / "rambla"
-# Dedicated clone the stable daemon is built+run from (same shape as deploy/remote-deploy.sh); a real clone, not a worktree.
 stable_repo := stable_dir / "repo"
+macos_unit_path := home_dir() / "Library/LaunchAgents"
+
+# Functions
+name(dev) := if dev == "dev" { "rambla-dev" } else { "rambla" }
+install_path(dev) := if dev == "dev" { justfile_dir() } else { stable_dir }
 
 # List recipes.
 @list:
     just --list
 
+# npm run format
 format:
     npm run format
 
@@ -61,13 +69,12 @@ testflight ref="" quiet="":
     gh run watch "$run_id"
 
 # Dispatch a rambla-server image build on the current branch; arg is the platforms choice: linux/amd64 (default), linux/arm64, or linux/amd64,linux/arm64.
-docker-server platforms="linux/amd64":
+deploy-docker-server platforms="linux/amd64":
     gh workflow run docker-server.rambla.yml --ref "$(git rev-parse --abbrev-ref HEAD)" -f platforms="{{ platforms }}"
 
 # Build rambla
 [script]
 build:
-    set -euo pipefail
     if ! command -v mise >/dev/null 2>&1; then
         echo "error: 'mise' is required (it pins the Node version this repo builds with)."
         echo "  install: https://mise.jdx.dev/installing-mise.html  (then: mise install)"
@@ -79,7 +86,7 @@ build:
 [script]
 uninstall: stop
     if {{ is_macos }}; then
-        rm -f "$HOME/Library/LaunchAgents/rambla.plist"
+        rm -f "{{ macos_unit_path }}/rambla.plist"
     else
         systemctl --user disable rambla.service
         rm -f "{{ unit }}"
@@ -105,7 +112,7 @@ provenance:
 [script]
 worktree branch:
     set -eu
-    dir="$HOME/worktrees/rambla/$(echo "{{ branch }}" | tr / -)"
+    dir="{{ worktrees_path }}/$(echo "{{ branch }}" | tr / -)"
     git worktree add "$dir" -b "{{ branch }}"
     cd "$dir"
     npm ci
@@ -115,7 +122,6 @@ worktree branch:
 # Clean build outputs.
 [script]
 clean: stop
-    set -euo pipefail
     rm -rf node_modules **/node_modules
     rm -rf packages/desktop/release packages/*/dist
     find . -name '*.tsbuildinfo' -not -path './node_modules/*' -delete
@@ -125,7 +131,6 @@ clean: stop
 # CI status for a branch's tip commit, per job. Answers now; does not wait for slow jobs.
 [script]
 ci branch="main" *args="":
-    set -euo pipefail
     RED=$(tput -T xterm-256color setaf 1) YEL=$(tput -T xterm-256color setaf 3) GRN=$(tput -T xterm-256color setaf 2) OFF=$(tput -T xterm-256color sgr0)
 
     sha="$(git rev-parse "{{ branch }}")"
@@ -235,44 +240,35 @@ e2e-desktop:
     npm run test:e2e:renderer -w @getrambla/desktop
 
 [script]
-_stop name:
+stop dev="":
     if {{ is_macos }}; then
-        launchctl bootout gui/"$(id -u)" "$HOME/Library/LaunchAgents/{{ name }}.plist" || true
-    elif systemctl --user is-active {{ name }}; then
-        systemctl --user stop {{ name }}
+        launchctl bootout gui/"$(id -u)" "{{ macos_unit_path }}/{{ name(dev) }}.plist" || true
+    elif systemctl --user is-active "{{ name(dev) }}"; then
+        systemctl --user stop "{{ name(dev) }}"
     fi
 
 [script]
-_start name:
+start dev="":
     if {{ is_macos }}; then
-        launchctl bootstrap gui/"$(id -u)" "$HOME/Library/LaunchAgents/{{ name }}.plist"
+        launchctl bootstrap gui/"$(id -u)" "{{ macos_unit_path }}/{{ name(dev) }}.plist"
     else
-        systemctl --user enable {{ name }}
-        systemctl --user start {{ name }}
+        systemctl --user enable {{ name(dev) }}
+        systemctl --user start {{ name(dev) }}
     fi
 
-_restart name: (_stop name) (_start name)
-
-stop-dev-server: (_stop "rambla-dev")
-
-start: stop-dev-server (_start "rambla")
-
-stop: (_stop "rambla")
+restart dev="": (stop dev) (start dev)
 
 _systemctl-reload:
     systemctl --user daemon-reload
 
-restart: (_restart "rambla")
-
 [script]
-_status name:
+status dev="":
     if {{ is_macos }}; then
-        launchctl print gui/"$(id -u)"/{{ name }} | sed -n '1,20p'
+        echo "{{ name(dev) }}"
+        launchctl print gui/"$(id -u)"/{{ name(dev) }}
     else
-        systemctl --user status {{ name }}
+        systemctl --user status {{ name(dev) }}
     fi
-
-status: (_status "rambla")
 
 # Build and run Rambla Debug desktop
 dev-desktop:
@@ -280,46 +276,27 @@ dev-desktop:
     npm run build:desktop -- --dir
     npm run dev:desktop
 
-# Build this checkout's server, then stop the installed daemon and run this one detached; the installed daemon restarts when it exits or fails.
+# Build this checkout's server, then stop the installed daemon and run this one detached
 [script]
 dev-server log_level="debug":
-    set -euo pipefail
     eval "$(mise env -C "{{ justfile_dir() }}" -s bash)"
     npm run build:server
     if {{ is_macos }}; then
-        just _install-plist rambla-dev "{{ justfile_directory() }}" {{ log_level }} false
-        just (_start "rambla-dev")
+        just _install-plist rambla-dev "{{ justfile_dir() }}" {{ log_level }}
+        just _start "rambla-dev"
     else
         systemd-run --user --collect --unit=rambla-dev \
             --working-directory="{{ justfile_dir() }}" \
             --setenv=PATH="$PATH" --setenv=RAMBLA_LOG_LEVEL={{ log_level }} \
-            --property=ExecStopPost="systemctl --user start rambla" \
-            "$(command -v just)" _dev-server-run
-    fi
-
-[script]
-_dev-server-run:
-    set -euo pipefail
-    systemctl --user stop rambla
-    cd packages/server
-    exec ../cli/bin/rambla daemon run
-
-# Show the dev server's logs; extra args go to journalctl, e.g. -f or -n 100.
-[script]
-dev-server-logs lines="40" *args:
-    if {{ is_macos }}; then
-        tail -n {{ lines }} "$HOME/.rambla/rambla-dev.log"
-    else
-        journalctl --user -n {{ lines }} -u rambla-dev {{ args }}
+            --property=ExecStopPost="systemctl --user start rambla"
     fi
 
 # Reinstall the stable daemon and desktop app under stable_dir.
 install: install-server install-app
 
-# Build the daemon from the dedicated stable clone and reinstall+restart the systemd user unit. ref: "" = current branch tip (must be pushed), or a SHA/branch/tag. mode: "soft" (default) waits for running turns, "immediate" restarts now. fresh=true wipes node_modules.
+# Build the daemon from the dedicated stable clone and reinstall+restart the systemd user unit. ref: "" = current branch tip (must be pushed), or a SHA/branch/tag. mode: "soft" (default) waits for running turns, "immediate" restarts now.
 [script]
-install-server ref="" fresh="false": && install-unit
-    set -euo pipefail
+install-server ref="": && install-unit
     command -v mise >/dev/null 2>&1 || { echo "missing mise" >&2; exit 1; }
 
     # Dedicated build clone (clone into a sibling, rename only on success); origin is the dev repo itself.
@@ -354,45 +331,48 @@ install-server ref="" fresh="false": && install-unit
 [script]
 install-unit: && restart
     if {{ is_macos }}; then
-        just _install-plist rambla "{{ stable_repo }}" info true
+        just _install-plist rambla "{{ stable_repo }}" info
     else
         just _install-systemd-unit
     fi
 
 # Render a launchd plist for the daemon. name=rambla runs the stable clone; name=rambla-dev runs this checkout.
 [script]
-_install-plist name path log_level keep_alive:
-    set -euo pipefail
-    mkdir -p "$HOME/Library/LaunchAgents"
-    tmp="$HOME/Library/LaunchAgents/{{ name }}.plist.tmp"
+_install-plist log_level="info" dev="":
+    plist="{{ macos_unit_path }}/{{ name(dev) }}.plist"
+    mkdir -p "{{ macos_unit_path }}"
+    tmp="$plist.tmp"
     cat > "$tmp" <<EOF
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
     <plist version="1.0">
     <dict>
-      <key>Label</key><string>{{ name }}</string>
+      <key>Label</key><string>{{ name(dev) }}</string>
       <key>ProgramArguments</key>
       <array>
-        <string>{{ path }}/packages/cli/bin/rambla</string>
+        <string>{{ install_path(dev) }}/packages/cli/bin/rambla</string>
         <string>daemon</string>
         <string>run</string>
       </array>
-      <key>WorkingDirectory</key><string>{{ path }}/packages/server</string>
+      <key>WorkingDirectory</key><string>{{ install_path(dev) }}/packages/server</string>
       <key>EnvironmentVariables</key>
       <dict>
         <key>RAMBLA_LOG_LEVEL</key><string>{{ log_level }}</string>
         <key>PATH</key><string>$HOME/bin:$HOME/.local/bin:$HOME/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
       </dict>
-      <key>StandardOutPath</key><string>$HOME/.rambla/{{ name }}.log</string>
-      <key>StandardErrorPath</key><string>$HOME/.rambla/{{ name }}.log</string>
-      <key>KeepAlive</key><{{ keep_alive }}/>
+      <key>KeepAlive</key><true/>
       <key>RunAtLoad</key><true/>
       <key>ThrottleInterval</key><integer>5</integer>
     </dict>
     </plist>
     EOF
+    echo "Name: {{ name(dev) }}"
+    echo "Install path: {{ install_path(dev) }}"
+    echo "Linting $tmp ..."
     plutil -lint "$tmp"
-    mv "$tmp" "$HOME/Library/LaunchAgents/{{ name }}.plist"
+    printf "Installing plist to $plist ... "
+    mv "$tmp" "$plist"
+    echo "Done."
 
 # Reload systemd and enable+restart the unit (own recipe because install-server's script attribute eats dependencies).
 [script]
@@ -423,15 +403,13 @@ _install-systemd-unit: && _systemctl-reload
     EOF
     echo "wrote unit file"
 
-
     # Disable (reads the OLD unit's [Install]) before the mv, or the old symlink is orphaned.
     systemctl --user disable rambla >/dev/null 2>&1 || true
     mv "$tmp_unit" "{{ unit }}"
 
 # Build the desktop app from the stable clone into stable_dir/app; --dir with output redirected so the dev tree's release/ is never involved.
 [script]
-install-app ref="" fresh="false": && install-desktop
-    set -euo pipefail
+install-app ref="": && install-desktop
     command -v mise >/dev/null 2>&1 || { echo "missing mise" >&2; exit 1; }
 
     # Same dedicated clone as install-server; created here too so install-app works standalone.
@@ -477,7 +455,6 @@ install-app ref="" fresh="false": && install-desktop
 # Write the XDG desktop entry pointing into stable_dir/app.
 [script]
 install-desktop:
-    set -euo pipefail
     # macOS: copy with ditto (preserves symlinks + resource forks inside the .app); cp -R can break the framework bundle's Versions/Current symlinks.
     if {{ is_macos }}; then
         rm -rf "/Applications/Rambla.app.old"
@@ -498,19 +475,13 @@ install-desktop:
     Terminal=false
     EOF
 
-# Show the stable daemon log tail.
-daemon-log lines="40":
-    tail -n {{ lines }} ~/.rambla/rambla.log
-
 [script]
-_logs name lines:
+logs dev="" lines="50":
     if {{ is_macos }}; then
-        tail -n {{ lines }} "$HOME/.rambla/{{ name }}.log"
+        tail -n {{ lines }} "$HOME/.rambla/daemon.log"
     else
-        journalctl --user -n {{ lines }} -u {{ name }}
+        journalctl --user -n {{ lines }} -u {{ name(dev) }}
     fi
-
-logs lines="40": (_logs "rambla" lines)
 
 # Sync each new upstream release tag onto upstream-rebrand, then land it in the checked-out branch through its own merge branch once the local checks and ci.yml pass.
 sync-upstream:
