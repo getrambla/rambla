@@ -381,7 +381,7 @@ _install-plist name path log_level keep_alive:
       <key>EnvironmentVariables</key>
       <dict>
         <key>RAMBLA_LOG_LEVEL</key><string>{{ log_level }}</string>
-        <key>PATH</key><string>$HOME/.local/share/mise/shims:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>PATH</key><string>$HOME/bin:$HOME/.local/bin:$HOME/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
       </dict>
       <key>StandardOutPath</key><string>$HOME/.rambla/{{ name }}.log</string>
       <key>StandardErrorPath</key><string>$HOME/.rambla/{{ name }}.log</string>
