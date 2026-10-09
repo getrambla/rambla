@@ -79,7 +79,7 @@ tag_date() {
 
 # Prints a tag's date in UTC.
 when() {
-	date -u -d "@${DATE[$1]}" '+%Y-%m-%d %H:%M:%S UTC'
+	node -e 'console.log(new Date(process.argv[1] * 1000).toISOString().replace("T", " ").slice(0, 19) + " UTC")' "${DATE[$1]}"
 }
 
 # Fails the run unless tag $2, the higher version, was tagged after tag $1.

@@ -27,7 +27,7 @@ const at = (i, msg) => problems.push(`${file}:${i + 1}  ${msg}`);
 const git = (...args) => execFileSync("git", args, { encoding: "utf8" }).trim();
 
 // Filename: YYYY-MM-DD-fix-slug.md or -feat-slug.md.
-if (!/^\d{4}-\d{2}-\d{2}-(fix|feat)-[a-z0-9-]+\.md$/.test(basename(file))) {
+if (!/^\d{4}-\d{2}-\d{2}-(fix|feat|merge)-[a-z0-9-]+\.md$/.test(basename(file))) {
   problems.push(`${file}  filename must be YYYY-MM-DD-fix-slug.md or YYYY-MM-DD-feat-slug.md`);
 }
 
@@ -60,7 +60,7 @@ for (const want of required) {
 }
 
 // Title line: "# fix: ..." or "# feat: ...".
-if (!/^# (fix|feat): \S/.test(lines[0] ?? "")) {
+if (!/^# (fix|feat|merge): \S/.test(lines[0] ?? "")) {
   at(0, 'title must start with "# fix: " or "# feat: "');
 }
 
