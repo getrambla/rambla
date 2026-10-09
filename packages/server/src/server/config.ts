@@ -626,6 +626,8 @@ export function resolveConfigFromPersisted(
     skillSelection: persisted.agents?.skills?.selection,
     pluginsEnabled: persisted.pluginsEnabled ?? false,
     plugins: persisted.plugins,
+    pluginRegistries: persisted.pluginRegistries,
+    pluginRegistryUrl: env.RAMBLA_PLUGIN_REGISTRY,
     mcpDebug: env.MCP_DEBUG === "1",
     isDev: resolveRamblaNodeEnv(env) === "development",
     agentStoragePath: path.join(ramblaHome, "agents"),

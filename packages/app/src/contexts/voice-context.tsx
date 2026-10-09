@@ -11,9 +11,9 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: imports for the toast and the capture-claim callback type.
 import { useToast } from "@/contexts/toast-api-context";
 import { useSessionStore } from "@/stores/session-store";
-import { createAudioEngine } from "@/voice/audio-engine";
+import { createAudioEngine } from "@/audio";
 // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: imports the callbacks type for claim consumers.
-import type { AudioEngine, AudioEngineCallbacks } from "@/voice/audio-engine-types";
+import type { AudioEngine, AudioEngineCallbacks } from "@/audio";
 import {
   createVoiceRuntime,
   type VoiceRuntime,

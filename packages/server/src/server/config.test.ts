@@ -200,3 +200,18 @@ describe("server config", () => {
     ).toBe(path.join(packageRoot, "app-dist"));
   });
 });
+
+test("loads private plugin registry settings through the configuration boundary", async () => {
+  const home = await mkdtemp(path.join(os.tmpdir(), "rambla-registry-config-"));
+  try {
+    const pluginRegistries = { "plugins.example.test": { authorization: "Bearer fixture" } };
+    await writeFile(path.join(home, "config.json"), JSON.stringify({ pluginRegistries }));
+    const config = loadConfig(home, {
+      env: { RAMBLA_PLUGIN_REGISTRY: "https://plugins.example.test/internal" },
+    });
+    expect(config.pluginRegistryUrl).toBe("https://plugins.example.test/internal");
+    expect(config.pluginRegistries).toEqual(pluginRegistries);
+  } finally {
+    await rm(home, { recursive: true, force: true });
+  }
+});

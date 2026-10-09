@@ -1,3 +1,4 @@
+import { lstatSync } from "node:fs";
 import { getErrorMessage } from "@getrambla/protocol/error-utils";
 import { z } from "zod";
 import { execCommand } from "../../../utils/spawn.js";
@@ -19,7 +20,6 @@ const NpmGlobalCliPackageSchema = z
   .object({
     version: z.string(),
     path: z.string(),
-    link: z.boolean().optional(),
   })
   .passthrough();
 
@@ -50,8 +50,12 @@ export interface NpmGlobalRamblaInstall {
 }
 
 export interface NpmGlobalRamblaCli {
-  inspect(): Promise<NpmGlobalRamblaInstall>;
-  installLatest(): Promise<CommandResult>;
+  inspect(options?: NpmGlobalOptions): Promise<NpmGlobalRamblaInstall>;
+  installLatest(options?: NpmGlobalOptions): Promise<CommandResult>;
+}
+
+interface NpmGlobalOptions {
+  prefix?: string;
 }
 
 export type CommandRunner = (
@@ -108,17 +112,20 @@ function parseNpmGlobalRamblaInstall(stdout: string): NpmGlobalRamblaInstall | n
     version: cliPackage.data.version,
     packagePath: cliPackage.data.path,
     globalRootPath: list.data.path ?? null,
-    isLinked: cliPackage.data.link === true,
+    // npm links an install by making its node_modules entry a symlink (a junction
+    // on Windows), and `npm ls --json` reports no flag for it.
+    isLinked: lstatSync(cliPackage.data.path).isSymbolicLink(),
   };
 }
 
 export class DefaultNpmGlobalRamblaCli implements NpmGlobalRamblaCli {
   constructor(private readonly runCommand: CommandRunner = runExternalCommand) {}
 
-  async inspect(): Promise<NpmGlobalRamblaInstall> {
+  async inspect(options: NpmGlobalOptions = {}): Promise<NpmGlobalRamblaInstall> {
+    const prefixArgs = options.prefix ? ["--prefix", options.prefix] : [];
     const result = await this.runCommand(
       "npm",
-      ["-g", "ls", RAMBLA_CLI_PACKAGE, "--json", "--depth=0", "--long"],
+      ["-g", "ls", RAMBLA_CLI_PACKAGE, "--json", "--depth=0", "--long", ...prefixArgs],
       {
         timeout: NPM_PROBE_TIMEOUT_MS,
         maxBuffer: NPM_MAX_BUFFER_BYTES,
@@ -136,11 +143,16 @@ export class DefaultNpmGlobalRamblaCli implements NpmGlobalRamblaCli {
     return install;
   }
 
-  installLatest(): Promise<CommandResult> {
-    return this.runCommand("npm", ["install", "-g", `${RAMBLA_CLI_PACKAGE}@latest`], {
-      timeout: NPM_INSTALL_TIMEOUT_MS,
-      maxBuffer: NPM_MAX_BUFFER_BYTES,
-    });
+  installLatest(options: NpmGlobalOptions = {}): Promise<CommandResult> {
+    const prefixArgs = options.prefix ? ["--prefix", options.prefix] : [];
+    return this.runCommand(
+      "npm",
+      ["install", "-g", `${RAMBLA_CLI_PACKAGE}@latest`, ...prefixArgs],
+      {
+        timeout: NPM_INSTALL_TIMEOUT_MS,
+        maxBuffer: NPM_MAX_BUFFER_BYTES,
+      },
+    );
   }
 }
 

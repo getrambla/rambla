@@ -210,7 +210,7 @@ async function blockAgentsDir(targets: SkillTargets): Promise<void> {
 }
 
 async function isInstalled(targets: SkillTargets, name: string): Promise<boolean> {
-  const dirs = [targets.agentsDir, targets.claudeDir, targets.codexDir];
+  const dirs = [targets.agentsDir, targets.claudeDir];
   const present = await Promise.all(
     dirs.map((dir) =>
       access(path.join(dir, name))
@@ -454,7 +454,7 @@ describe("skills controller", () => {
     expect(await installedEverywhere(readOnly.targets)).toEqual([
       ["rambla", "rambla-loop"],
       ["rambla", "rambla-loop"],
-      ["rambla", "rambla-loop"],
+      ["rambla-loop"],
     ]);
     expect(await readUserFile(readOnly.targets, "rambla-loop", "notes/mine.md")).toEqual([
       "hand written",
@@ -575,6 +575,7 @@ describe("skills controller", () => {
       };
       const next: SkillSelection = { mode: "custom", skills: ["rambla"] };
       await harness.controller.save(previous);
+      await writeUserFile(harness.targets, "rambla-loop", "SKILL.md", "rambla-loop-v1");
       const livePaths = [
         harness.targets.agentsDir,
         harness.targets.claudeDir,
@@ -601,6 +602,7 @@ describe("skills controller", () => {
     };
     const next: SkillSelection = { mode: "custom", skills: ["rambla"] };
     await harness.controller.save(previous);
+    await writeUserFile(harness.targets, "rambla-loop", "SKILL.md", "rambla-loop-v1");
 
     const transaction = await beginSkillsTransaction(harness.targets, previous, next, [
       { kind: "delete", name: "rambla-loop" },
@@ -666,6 +668,7 @@ describe("skills controller", () => {
     };
     const next: SkillSelection = { mode: "custom", skills: ["rambla"] };
     await harness.controller.save(previous);
+    await writeUserFile(harness.targets, "rambla-loop", "SKILL.md", "rambla-loop-v1");
     await writeUserFile(harness.targets, "rambla-loop", "notes/mine.md", "staged notes");
 
     const transaction = await beginSkillsTransaction(harness.targets, previous, next, [
@@ -1115,7 +1118,7 @@ describe("skills controller", () => {
     expect(await installedEverywhere(harness.targets)).toEqual([
       ["rambla", "rambla-advisor", "rambla-loop"],
       ["rambla", "rambla-advisor", "rambla-loop"],
-      ["rambla", "rambla-advisor", "rambla-loop"],
+      ["rambla-advisor"],
     ]);
     expect(result.selection).toEqual({ mode: "custom", skills: ["rambla", "rambla-loop"] });
   });
@@ -1131,11 +1134,7 @@ describe("skills controller", () => {
 
     expect(result.confirmationRequired).toBeNull();
     expect(result.selection).toEqual({ mode: "custom", skills: ["rambla"] });
-    expect(await installedEverywhere(harness.targets)).toEqual([
-      ["rambla"],
-      ["rambla"],
-      ["rambla"],
-    ]);
+    expect(await installedEverywhere(harness.targets)).toEqual([["rambla"], ["rambla"], []]);
   });
 
   it("asks again when another directory appears before the retry", async () => {
@@ -1154,7 +1153,7 @@ describe("skills controller", () => {
     expect(await installedEverywhere(harness.targets)).toEqual([
       ["rambla", "rambla-advisor", "rambla-chat", "rambla-loop"],
       ["rambla", "rambla-advisor", "rambla-chat", "rambla-loop"],
-      ["rambla", "rambla-advisor", "rambla-chat", "rambla-loop"],
+      ["rambla-chat"],
     ]);
   });
 
@@ -1183,11 +1182,7 @@ describe("skills controller", () => {
     const result = await harness.controller.save({ mode: "custom", skills: ["rambla"] });
 
     expect(result.confirmationRequired).toBeNull();
-    expect(await installedEverywhere(harness.targets)).toEqual([
-      ["rambla"],
-      ["rambla"],
-      ["rambla"],
-    ]);
+    expect(await installedEverywhere(harness.targets)).toEqual([["rambla"], ["rambla"], []]);
   });
 
   it("preserves a regular file at a skill path when save convergence fails", async () => {
@@ -1219,11 +1214,7 @@ describe("skills controller", () => {
     ]);
 
     expect(saved.selection).toEqual({ mode: "custom", skills: ["rambla"] });
-    expect(await installedEverywhere(harness.targets)).toEqual([
-      ["rambla"],
-      ["rambla"],
-      ["rambla"],
-    ]);
+    expect(await installedEverywhere(harness.targets)).toEqual([["rambla"], ["rambla"], []]);
     expect(await harness.controller.status()).toEqual({
       state: "up-to-date",
       ops: [],

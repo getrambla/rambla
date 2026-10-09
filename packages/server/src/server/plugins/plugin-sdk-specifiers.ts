@@ -8,6 +8,7 @@ export const PLUGIN_CLIENT_ONLY_SDK_SPECIFIERS = [
 const PLUGIN_SERVER_ONLY_SDK_SPECIFIERS = [
   "@getrambla/plugin/server",
   "@getrambla/plugin/server/provider",
+  "@getrambla/plugin/server/usage",
   "@getrambla/plugin/server/acp",
 ] as const;
 

@@ -7,7 +7,7 @@ export const Route = createFileRoute("/sponsor")({
   head: () =>
     pageMeta(
       "Sponsor Rambla",
-      "Rambla is built by one person with no investors. Sponsor the work on GitHub Sponsors, Open Collective or Buy Me a Coffee, or sponsor it as a company.",
+      "Rambla is an independent project used by tens of thousands of developers daily, built by one person with no investors. Sponsor the work on GitHub Sponsors, Open Collective or Buy Me a Coffee, or sponsor it as a company.",
       "/sponsor",
     ),
   component: Sponsor,

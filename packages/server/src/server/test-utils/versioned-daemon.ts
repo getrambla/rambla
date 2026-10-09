@@ -1,8 +1,28 @@
 // Browser compatibility tests run a real daemon in a separate Node runtime.
+//
+// argv: <daemonVersion> [port] [ramblaHomeRoot]
+// A fixed port and a caller-owned home let a test stop this daemon and start a
+// replacement under the same endpoint and serverId.
+import path from "node:path";
 import { createTestRamblaDaemon } from "./rambla-daemon.js";
 
+const [, , daemonVersion, portArg, ramblaHomeRoot] = process.argv;
+const listenPort = portArg ? Number(portArg) : 0;
+if (!Number.isInteger(listenPort) || listenPort < 0) {
+  throw new Error(`Invalid versioned daemon port: ${portArg ?? ""}`);
+}
+
 const daemon = await createTestRamblaDaemon({
-  daemonVersion: process.argv[2],
+  daemonVersion,
+  ...(listenPort > 0 ? { listenPort } : {}),
+  ...(ramblaHomeRoot
+    ? {
+        ramblaHomeRoot,
+        staticDir: path.join(ramblaHomeRoot, "static"),
+        // The caller removes the home so a replacement daemon keeps the same serverId.
+        cleanup: false,
+      }
+    : {}),
   pluginsEnabled: true,
   mcpEnabled: false,
   corsAllowedOrigins: ["*"],

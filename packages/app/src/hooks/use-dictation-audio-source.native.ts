@@ -7,7 +7,7 @@ import {
   useVoiceAudioEngineOptional,
   useVoiceCaptureClaimOptional,
 } from "@/contexts/voice-context";
-import type { AudioEngineCallbacks } from "@/voice/audio-engine-types";
+import type { AudioEngineCallbacks } from "@/audio";
 
 import type {
   DictationAudioSource,

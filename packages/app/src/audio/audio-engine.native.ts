@@ -1,0 +1,327 @@
+import type { AudioEngine, AudioEngineCallbacks, AudioPlaybackSource } from "./audio-engine-types";
+
+import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
+import { File, Paths } from "expo-file-system";
+import { createPlaybackQueue } from "./playback";
+import { playFile } from "./file-playback";
+import { playPcm16 } from "./pcm";
+
+// RAMBLA-FORK: fix: (no plan): top-level native import so tests can substitute the module.
+import * as native from "@getrambla/expo-two-way-audio";
+
+interface AudioEngineTraceOptions {
+  traceLabel?: string;
+  // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: lets the engine ask whether anyone holds the capture claim.
+  hasCaptureClaim?: () => boolean;
+}
+
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: timings for draining the mic bridge on stop.
+/** How long a stop waits for the native bridge to hand over the buffers it already dispatched. */
+const CAPTURE_FLUSH_TIMEOUT_MS = 500;
+/** A gap this long with no microphone buffer is the bridge confirming it has drained. */
+const CAPTURE_FLUSH_QUIET_MS = 50;
+
+export function createAudioEngine(
+  callbacks: AudioEngineCallbacks,
+  // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: options are read for the capture claim.
+  options?: AudioEngineTraceOptions,
+): AudioEngine {
+  // RAMBLA-FORK: fix: (no plan): the native module comes from the top-level import, not a require here.
+  const refs: {
+    initialized: boolean;
+    captureActive: boolean;
+    muted: boolean;
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: drain hook and post-stop buffer queue.
+    onCaptureDataWhileDraining: (() => void) | null;
+    /** Mic buffers still crossing the bridge after stop; delivered once stop settles. */
+    postStopCaptureQueue: Uint8Array[];
+    destroyed: boolean;
+  } = {
+    initialized: false,
+    captureActive: false,
+    muted: false,
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: starts the drain hook and post-stop queue.
+    onCaptureDataWhileDraining: null,
+    postStopCaptureQueue: [],
+    destroyed: false,
+  };
+
+  const microphoneSubscription = native.addExpoTwoWayAudioEventListener(
+    "onMicrophoneData",
+    (event: { data: Uint8Array }) => {
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: queues buffers that land after stop instead of dropping them.
+      if (!refs.captureActive) {
+        // The stop path queues these and delivers them once the bridge drains, so the
+        // recording tail is not dropped. Muted audio is still dropped, as before.
+        if (refs.postStopCaptureQueue.length < 64) {
+          refs.postStopCaptureQueue.push(event.data);
+        }
+        return;
+      }
+      if (refs.muted) {
+        return;
+      }
+      const pcm = event.data;
+      callbacks.onCaptureData(pcm);
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: tells a pending drain that a buffer arrived.
+      refs.onCaptureDataWhileDraining?.();
+    },
+  );
+  const volumeSubscription = native.addExpoTwoWayAudioEventListener(
+    "onInputVolumeLevelData",
+    (event: { data: number }) => {
+      if (!refs.captureActive) {
+        return;
+      }
+      const level = refs.muted ? 0 : event.data;
+      callbacks.onVolumeLevel(level);
+    },
+  );
+  const interruptionSubscription = native.addExpoTwoWayAudioEventListener(
+    "onAudioInterruption",
+    (event: { data: string }) => {
+      // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: act on began and ended interruptions instead of ignoring them.
+      if (event.data === "ended") {
+        // Native resumed recording on its own, so reconcile with who wants the microphone now.
+        if (options?.hasCaptureClaim?.()) {
+          refs.captureActive = true;
+        } else {
+          native.toggleRecording(false);
+          releaseSessionIfIdle();
+        }
+        return;
+      }
+      if (event.data !== "began" && event.data !== "blocked") {
+        return;
+      }
+      const wasCaptureActive = refs.captureActive;
+      refs.captureActive = false;
+      refs.muted = false;
+      callbacks.onVolumeLevel(0);
+      if (wasCaptureActive) {
+        callbacks.onInterruption?.();
+      }
+    },
+  );
+
+  async function ensureInitialized(): Promise<void> {
+    if (refs.initialized) {
+      return;
+    }
+    const success = await native.initialize();
+    if (!success) {
+      throw new Error("expo-two-way-audio: native initialize() returned false");
+    }
+    refs.initialized = true;
+  }
+
+  /**
+   * Release the OS audio session as soon as we are neither capturing nor playing.
+   * Holding it keeps the user's background music paused — on iOS the non-mixing
+   * `.playAndRecord` category survives backgrounding and is re-asserted on every
+   * foreground, so an unreleased session means their music never comes back.
+   */
+  function releaseSessionIfIdle(): void {
+    if (!refs.initialized || refs.destroyed) {
+      return;
+    }
+    if (refs.captureActive || playback.isPlaying()) {
+      return;
+    }
+    // The wrapper no-ops on binaries whose native module predates this function.
+    native.releaseAudioSession();
+  }
+
+  async function ensureMicrophonePermission(): Promise<void> {
+    let permission = await native.getMicrophonePermissionsAsync().catch(() => null);
+    if (!permission?.granted) {
+      permission = await native.requestMicrophonePermissionsAsync().catch(() => null);
+    }
+    if (!permission?.granted) {
+      throw new Error(
+        "Microphone permission is required to capture audio. Please enable microphone access in system settings.",
+      );
+    }
+  }
+
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: waits for the mic bridge to go quiet before stop settles.
+  /** Resolves false when the bridge is still handing over buffers at the deadline. */
+  async function waitForCaptureDrain(): Promise<boolean> {
+    let quietTimer: ReturnType<typeof setTimeout> | null = null;
+    let capTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const drained = new Promise<boolean>((resolve) => {
+      const armQuietTimer = () => {
+        if (quietTimer) {
+          clearTimeout(quietTimer);
+        }
+        quietTimer = setTimeout(() => resolve(true), CAPTURE_FLUSH_QUIET_MS);
+      };
+      refs.onCaptureDataWhileDraining = armQuietTimer;
+      armQuietTimer();
+    });
+    const timedOut = new Promise<boolean>((resolve) => {
+      capTimer = setTimeout(() => resolve(false), CAPTURE_FLUSH_TIMEOUT_MS);
+    });
+
+    return await Promise.race([drained, timedOut]).finally(() => {
+      if (quietTimer) {
+        clearTimeout(quietTimer);
+      }
+      if (capTimer) {
+        clearTimeout(capTimer);
+      }
+      refs.onCaptureDataWhileDraining = null;
+    });
+  }
+
+  let nextFileId = 0;
+  async function playAudio(audio: AudioPlaybackSource, signal: AbortSignal): Promise<number> {
+    const bytes = new Uint8Array(await audio.arrayBuffer());
+    if (signal.aborted) throw new Error("Playback stopped");
+    if (audio.type.startsWith("audio/pcm")) {
+      await ensureInitialized();
+      return playPcm16(bytes, audio.type, signal, native);
+    }
+    // Capture owns its audio session while active. File playback alone must not
+    // initialize the microphone or the native two-way engine.
+    if (!refs.captureActive) {
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        allowsRecording: false,
+        interruptionMode: "duckOthers",
+        interruptionModeAndroid: "duckOthers",
+      });
+    }
+    if (signal.aborted) throw new Error("Playback stopped");
+    // AVPlayer needs a file extension to recognize local encoded audio on iOS.
+    const extension =
+      {
+        "audio/wav": "wav",
+        "audio/x-wav": "wav",
+        "audio/wave": "wav",
+        "audio/mpeg": "mp3",
+        "audio/mp3": "mp3",
+        "audio/mp4": "m4a",
+        "audio/aac": "aac",
+        "audio/ogg": "ogg",
+        "audio/flac": "flac",
+      }[audio.type.split(";")[0].trim()] ?? "audio";
+    const file = new File(Paths.cache, `rambla-audio-${Date.now()}-${nextFileId++}.${extension}`);
+    try {
+      file.write(bytes);
+      const player = createAudioPlayer(file.uri, {
+        updateInterval: 100,
+        keepAudioSessionActive: refs.captureActive,
+      });
+      return await playFile(player, signal);
+    } finally {
+      if (file.exists) file.delete();
+    }
+  }
+  const playback = createPlaybackQueue(playAudio, releaseSessionIfIdle);
+
+  return {
+    async initialize() {
+      await ensureInitialized();
+    },
+
+    async destroy() {
+      if (refs.destroyed) {
+        return;
+      }
+      refs.destroyed = true;
+      playback.destroy();
+      if (refs.captureActive) {
+        native.toggleRecording(false);
+        refs.captureActive = false;
+      }
+      refs.muted = false;
+      callbacks.onVolumeLevel(0);
+      if (refs.initialized) {
+        // RAMBLA-FORK: fix: (no plan): destroy releases the session instead of tearing down the shared engine.
+        // Never tearDown(): the native engine is process-wide, and dropping it kills a capture
+        // another wrapper still has in flight. Releasing the session is guarded natively.
+        native.releaseAudioSession();
+        refs.initialized = false;
+      }
+      microphoneSubscription.remove();
+      volumeSubscription.remove();
+      interruptionSubscription.remove();
+    },
+
+    async startCapture() {
+      if (refs.captureActive) {
+        return;
+      }
+
+      try {
+        await ensureMicrophonePermission();
+        await ensureInitialized();
+        const isRecording = native.toggleRecording(true);
+        if (!isRecording) {
+          throw new Error(
+            // RAMBLA-FORK: fix: (no plan): failure names the missing audio engine, not Android audio focus.
+            "Microphone capture could not start because the audio engine is not available.",
+          );
+        }
+        refs.captureActive = true;
+      } catch (error) {
+        const wrapped = error instanceof Error ? error : new Error(String(error));
+        callbacks.onError?.(wrapped);
+        throw wrapped;
+      }
+    },
+
+    async stopCapture() {
+      if (refs.captureActive) {
+        // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: clears the post-stop queue before stopping.
+        refs.postStopCaptureQueue.length = 0;
+        native.toggleRecording(false);
+        // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: waits for the drain, then delivers the queued tail.
+        // The tap has already dispatched the tail of the recording across the bridge; the
+        // buffers that land after captureActive goes false are queued above and delivered
+        // once the bridge goes quiet, so the end of the recording rides along instead of
+        // being dropped.
+        const drained = await waitForCaptureDrain();
+        refs.captureActive = false;
+        refs.muted = false;
+        for (const pcm of refs.postStopCaptureQueue) {
+          callbacks.onCaptureData(pcm);
+        }
+        refs.postStopCaptureQueue.length = 0;
+        if (!drained) {
+          callbacks.onError?.(
+            new Error(
+              `Microphone capture did not settle within ${CAPTURE_FLUSH_TIMEOUT_MS} ms, so the end of the recording may be missing.`,
+            ),
+          );
+        }
+        callbacks.onVolumeLevel(0);
+        releaseSessionIfIdle();
+        return;
+      }
+      refs.captureActive = false;
+      refs.muted = false;
+      callbacks.onVolumeLevel(0);
+      releaseSessionIfIdle();
+    },
+
+    toggleMute() {
+      refs.muted = !refs.muted;
+      if (refs.muted) {
+        callbacks.onVolumeLevel(0);
+      }
+      return refs.muted;
+    },
+
+    isMuted() {
+      return refs.muted;
+    },
+
+    play: playback.play,
+    stop: playback.stop,
+    clearQueue: playback.clearQueue,
+    isPlaying: playback.isPlaying,
+  };
+}

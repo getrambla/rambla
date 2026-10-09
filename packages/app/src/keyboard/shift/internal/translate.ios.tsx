@@ -8,11 +8,14 @@ import { getComposerBottomInset } from "@/composer/dock/composer-bottom-inset.ra
 interface KeyboardTranslateViewProps extends ViewProps {
   children: ReactNode;
   enabled?: boolean;
+  /** Space below the view's resting position that the keyboard may fill before the view moves. */
+  bottomClearance?: number;
 }
 
 export function KeyboardTranslateView({
   children,
   enabled = true,
+  bottomClearance = 0,
   style,
   ...props
 }: KeyboardTranslateViewProps) {
@@ -20,8 +23,17 @@ export function KeyboardTranslateView({
   const { height, progress } = useKeyboardAnimation();
   // RAMBLA-FORK: fix: 2026-09-26-fix-composer-ios-bottom-spacing.md: rides the keyboard with the computed bottom inset instead of the raw safe-area inset.
   const translateY = useMemo(
-    () => Animated.add(height, Animated.multiply(progress, getComposerBottomInset(insets.bottom))),
-    [height, insets.bottom, progress],
+    () =>
+      Animated.add(
+        Animated.add(height, Animated.multiply(progress, getComposerBottomInset(insets.bottom))),
+        bottomClearance,
+      ).interpolate({
+        inputRange: [-1, 0],
+        outputRange: [-1, 0],
+        extrapolateLeft: "extend",
+        extrapolateRight: "clamp",
+      }),
+    [bottomClearance, height, insets.bottom, progress],
   );
   const keyboardStyle = useMemo(
     () => ({ transform: [{ translateY: enabled ? translateY : 0 }] }),

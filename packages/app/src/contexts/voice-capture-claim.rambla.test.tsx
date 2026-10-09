@@ -4,7 +4,7 @@ import React, { type ReactNode } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ToastApi } from "@/components/toast-host";
-import type { AudioEngine, AudioEngineCallbacks } from "@/voice/audio-engine-types";
+import type { AudioEngine, AudioEngineCallbacks } from "@/audio";
 import type { VoiceRuntime, VoiceRuntimeDeps } from "@/voice/voice-runtime";
 import { ToastApiProvider } from "@/contexts/toast-api-context";
 import { VoiceProvider, useVoiceCaptureClaimOptional } from "@/contexts/voice-context";
@@ -37,7 +37,7 @@ const voiceMock = vi.hoisted(() => ({ engine: null as AudioEngine | null }));
 // The repo's tsconfig picks the classic JSX transform, so rendered modules need a global React.
 vi.stubGlobal("React", React);
 
-vi.mock("@/voice/audio-engine", () => ({
+vi.mock("@/audio", () => ({
   createAudioEngine: (callbacks: AudioEngineCallbacks) => {
     engineMock.callbacks = callbacks;
     return engineMock;
