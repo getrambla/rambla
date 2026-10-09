@@ -136,7 +136,7 @@ touching anything.** One entry each:
 For each one say: what our side is (name the `RAMBLA-FORK:` tag; if there
 isn't one, say the divergence is untagged), what upstream changed, whether
 the two actually collide in behavior or only in text, and your proposed
-resolution. Check `PATCHES.md` for the standing rule on that divergence.
+resolution.
 
 **Trace upstream's change. Every conflict, no exceptions.** Never describe
 their intent from the shape of the diff:
@@ -199,18 +199,15 @@ git push origin merge-<tag>
 just sync-upstream
 ```
 
-### 6. Update the ledger
+### 6. Update the tags
 
-Before pushing the merge branch, go through `PATCHES.md`:
+Before pushing the merge branch:
 
-- **Entries that drop.** Any divergence where upstream fixed it properly and
-  we took theirs — mark it DROPPED with the date and what upstream did.
-- **Conflict history.** Any entry that conflicted this round gets a line:
-  what upstream changed and how it was resolved. That line is what makes the
-  same conflict cheap next time.
 - **Untagged divergences you hit.** If a conflict landed on fork code with
-  no `RAMBLA-FORK:` tag, add the tag while you're in there and give it an
-  entry. Untagged divergence is divergence we lose.
+  no `RAMBLA-FORK:` tag, add the tag while you're in there. Untagged
+  divergence is divergence we lose.
+- **Divergences that drop.** Where upstream fixed it properly and we took
+  theirs, delete our tag along with our code.
 
 ### 7. Propose what should become a rule
 
@@ -219,7 +216,7 @@ if a rule had existed? A placement that caused a conflict, an upstream habit
 worth knowing, a resolution that took three tries.
 
 **Propose it in one or two sentences. Do not write it into any file.** The
-user decides whether it becomes a `PATCHES.md` entry, a line in a skill, or
+user decides whether it becomes a line in a skill, or
 nothing. "Nothing to propose" is a normal answer — don't manufacture one.
 
 ## Resolving a conflict
@@ -241,7 +238,7 @@ upstream's, and make the smallest edit that achieves both.
    upstream file, so it can seed the next conflict. Keep upstream's lines in
    upstream's order, keep our block contiguous, don't tidy anything.
 5. **Take upstream's version outright when our patch is obsolete** — they
-   fixed it properly. Tell the user; it means a `PATCHES.md` entry drops.
+   fixed it properly. Tell the user; it means a `RAMBLA-FORK:` tag drops.
 6. **Genuine behavioral collision → the user decides.** Explain in plain
    English what each side does and what is lost either way. Recommend one.
 7. **Run the unit tests that cover the touched code** after each resolution,
@@ -288,7 +285,7 @@ through.
 A number that is part of an English phrase rather than a quantity stays a
 word: "one at a time", "one another", "no one", "one of them".
 
-Applies in chat, in commit messages and in `PATCHES.md`.
+Applies in chat, in commit messages and in files in the repo.
 
 ## File links
 
@@ -302,14 +299,14 @@ link with the line as `#L<n>`. Link text is always `name.ts:120`.
 
 ```markdown
 chat: [en.ts:2207](rambla/packages/app/src/i18n/resources/en.ts#L2207)
-PATCHES.md: [en.ts:2207](packages/app/src/i18n/resources/en.ts#L2207)
+RAMBLA-CHANGELOG.md: [en.ts:2207](packages/app/src/i18n/resources/en.ts#L2207)
 ```
 
 Why they differ: the user runs this project from a workspace folder that
 holds the fork in a subfolder named `rambla/`, so paths in chat resolve from
 that workspace root. A file committed in the repo has no `rambla/` above it —
 on GitHub and in a clone, the repo root _is_ the fork — so links written into
-a file are relative to that file. `PATCHES.md` sits at the fork root, so it
+a file are relative to that file. `RAMBLA-CHANGELOG.md` sits at the fork root, so it
 needs no prefix at all.
 
 `#L<n>` is the GitHub form and it works in both places, so the line syntax

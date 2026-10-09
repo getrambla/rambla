@@ -24,6 +24,7 @@ export interface ToolCallSheetData {
   errorText?: string;
   icon: ToolCallIconComponent;
   showLoadingSkeleton?: boolean;
+  // RAMBLA-FORK: feature: (no plan): file path and open-file handler on the sheet data.
   filePath?: string;
   onOpenFile?: () => void;
 }
@@ -165,10 +166,12 @@ function ToolCallSheetContent({ data, onClose }: ToolCallSheetContentProps) {
     errorText,
     icon: IconComponent,
     showLoadingSkeleton,
+    // RAMBLA-FORK: feature: (no plan): reads the file path and opener off the sheet data.
     filePath,
     onOpenFile,
   } = data;
 
+  // RAMBLA-FORK: feature: (no plan): closes the sheet, then opens the file.
   // Close before opening: navigation swaps the underlying route, but this sheet is
   // portal-hosted above the whole navigator and would otherwise keep occluding the
   // newly opened file. Same close-then-act ordering as menu selectItem.
@@ -198,6 +201,7 @@ function ToolCallSheetContent({ data, onClose }: ToolCallSheetContentProps) {
         </Pressable>
       </View>
 
+      {/* RAMBLA-FORK: feature: (no plan): file path row under the header, a link when the file can be opened. */}
       {filePath && onOpenFile ? (
         <Pressable
           onPress={handleOpenFilePress}
@@ -262,6 +266,7 @@ const styles = StyleSheet.create((theme) => ({
   closeButton: {
     padding: theme.spacing[2],
   },
+  // RAMBLA-FORK: feature: (no plan): styles for the file path row.
   filePathRow: {
     paddingHorizontal: theme.spacing[4],
     paddingVertical: theme.spacing[2],

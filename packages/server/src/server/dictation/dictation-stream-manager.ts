@@ -14,7 +14,7 @@ import type {
 import { toResolver, type Resolvable } from "../speech/provider-resolver.js";
 import { parsePcmRateFromFormat, pcm16lePeakAbs } from "../speech/audio.js";
 
-// RAMBLA-FORK: feature: live dictation — adaptive commit windows, discard logging, shared VAD owner (PATCHES.md #10–28).
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: imports the per-segment partial builder.
 import {
   toPartialMessage,
   type DictationStreamPartialMessage,
@@ -25,12 +25,14 @@ const PCM_CHANNELS = 1;
 const PCM_BITS_PER_SAMPLE = 16;
 const DEFAULT_DICTATION_FINAL_TIMEOUT_MS = 10000;
 const DEFAULT_DICTATION_AUTO_COMMIT_SECONDS = 15;
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: explains which side bounds the final wait.
 // The adaptive budget answers "how long can this transcription legitimately take?" for a
 // stream the daemon measured itself; the client separately bounds a silent daemon.
 const DICTATION_FINAL_TIMEOUT_MAX_MS = 5 * 60 * 1000;
 const DICTATION_FINAL_TIMEOUT_PER_PENDING_SEGMENT_MS = 15 * 1000;
 const DICTATION_FINAL_TIMEOUT_PER_PENDING_AUDIO_SECOND_MS = 1500;
 const DICTATION_FINAL_TIMEOUT_PER_MISSING_SEQ_MS = 250;
+// RAMBLA-FORK: fix: (no plan): replaces the fixed silence threshold with a room-relative speech floor.
 // A speaker trails off at the end of a sentence and a fan never stops, so how
 // loud a window is means nothing on its own; what counts is how far above the
 // room it rises. Nothing here decides whether audio is kept — the engine is the
@@ -41,6 +43,7 @@ const DICTATION_SPEECH_FLOOR_MARGIN = 3;
 // suppression zeroes a pause outright, and one such moment kept forever would
 // hold the floor at zero and hide every later gap in a room that has a level.
 const DICTATION_NOISE_FLOOR_HISTORY_SECONDS = 4;
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: pause-scan constants so a window cut lands between words.
 // A window boundary landing inside a word is heard whole by the window before it
 // and by the window after it, so the word is transcribed twice. Wait for the
 // speaker to pause, then cut there.
@@ -107,11 +110,14 @@ interface DictationStreamState {
   ackSeq: number;
   autoCommitBytes: number;
   bytesSinceCommit: number;
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: remembers the loudest audio forwarded.
   peakOverall: number;
+  // RAMBLA-FORK: fix: (no plan): recent room level replaces the per-window peak.
   noiseFloorSamples: Array<{ quietest: number; seconds: number }>;
   committedSegmentIds: string[];
   transcriptsBySegmentId: Map<string, string>;
   finalTranscriptSegmentIds: Set<string>;
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: keeps every dropped transcript for the final.
   /** Dropped across every finalization pass, since the pass that drops rarely emits. */
   droppedTranscriptTexts: string[];
   inFlightCommitCount: number;
@@ -122,11 +128,13 @@ interface DictationStreamState {
   finalTimeout: ReturnType<typeof setTimeout> | null;
 }
 
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: byte-to-seconds helper for discard logs.
 /** Seconds of PCM16 mono audio represented by a byte count at the given sample rate. */
 function pcm16SecondsFromBytes(bytes: number, sampleRate: number): number {
   return bytes / Math.max(1, sampleRate * PCM_CHANNELS * (PCM_BITS_PER_SAMPLE / 8));
 }
 
+// RAMBLA-FORK: fix: (no plan): room noise-floor and speech-threshold helpers.
 /** Quietest scan window in a buffer: what this stream sounds like with nobody speaking. */
 function windowPeakMin(pcm16: Buffer, sampleRate: number): number {
   const scanBytes = Math.max(2, Math.round(sampleRate * DICTATION_GAP_SCAN_WINDOW_SECONDS) * 2);
@@ -173,6 +181,7 @@ function speechPeakThreshold(noiseFloor: number): number {
   return Math.max(DICTATION_SPEECH_PEAK_FLOOR, noiseFloor * DICTATION_SPEECH_FLOOR_MARGIN);
 }
 
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: finds a pause to cut an auto-commit window on.
 /** Byte offset inside the first pause at or after `fromByte`, or null when the audio never goes quiet. */
 function findPauseOffset(
   pcm16: Buffer,
@@ -200,6 +209,7 @@ function findPauseOffset(
   return null;
 }
 
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: received-audio duration for discard logs.
 /** Seconds of audio forwarded to the provider for this stream so far. */
 function receivedSeconds(state: DictationStreamState): number {
   const bytes = state.debugAudioChunks.reduce((total, chunk) => total + chunk.length, 0);
@@ -212,6 +222,7 @@ export type DictationStreamOutboundMessage =
       type: "dictation_stream_finish_accepted";
       payload: { dictationId: string; timeoutMs: number };
     }
+  // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: partial may carry one segment.
   | DictationStreamPartialMessage
   | {
       type: "dictation_stream_final";
@@ -247,6 +258,7 @@ export class DictationStreamManager {
   private readonly autoCommitSeconds: number;
   private readonly onIdle: (() => void) | undefined;
   private readonly streams = new Map<string, DictationStreamState>();
+  // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: whether the client takes per-segment partials.
   private readonly supportsSegments: () => boolean;
 
   constructor(params: {
@@ -258,8 +270,10 @@ export class DictationStreamManager {
     finalTimeoutMs?: number;
     autoCommitSeconds?: number;
     onIdle?: () => void;
+    // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: accepts and stores the segments capability check.
     supportsSegments?: () => boolean;
   }) {
+    // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: stores the segments capability check.
     this.supportsSegments = params.supportsSegments ?? (() => false);
     this.onIdle = params.onIdle;
     this.logger = params.logger.child({ component: "dictation-stream-manager" });
@@ -364,11 +378,14 @@ export class DictationStreamManager {
       ackSeq: -1,
       autoCommitBytes,
       bytesSinceCommit: 0,
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: starts the loudest-audio tracker.
       peakOverall: 0,
+      // RAMBLA-FORK: fix: (no plan): starts the room-level history.
       noiseFloorSamples: [],
       committedSegmentIds: [],
       transcriptsBySegmentId: new Map(),
       finalTranscriptSegmentIds: new Set(),
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: starts the dropped-transcript list.
       droppedTranscriptTexts: [],
       inFlightCommitCount: 0,
       awaitingFinalCommit: false,
@@ -395,6 +412,7 @@ export class DictationStreamManager {
       this.maybeFinalizeDictationStream(dictationId);
     });
 
+    // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: reads the segment index.
     stt.on("transcript", ({ segmentId, transcript, isFinal, index }) => {
       const state = this.streams.get(dictationId);
       if (state?.stt !== stt) {
@@ -414,9 +432,11 @@ export class DictationStreamManager {
         : [...state.committedSegmentIds, segmentId];
       const partialText = orderedIds
         .map((id) => state.transcriptsBySegmentId.get(id) ?? "")
+        // RAMBLA-FORK: fix: (no plan): skips empty segments in the join.
         .filter((text) => text.length > 0)
         .join(" ")
         .trim();
+      // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: passes the transcript event to the partial.
       const event = { segmentId, transcript, isFinal, index };
       this.emitDictationPartial(dictationId, partialText, event);
 
@@ -492,7 +512,9 @@ export class DictationStreamManager {
 
       const resampled = state.resampler ? state.resampler.processChunk(pcm16) : pcm16;
       if (resampled.length > 0) {
+        // RAMBLA-FORK: fix: (no plan): tracks the room level.
         trackNoiseFloor(state, resampled);
+        // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: forwards the chunk in two parts split at a pause.
         const parts = this.splitChunkAtAutoCommitPause(state, resampled);
         for (let part = 0; part < parts.length; part += 1) {
           state.stt.appendPcm16(parts[part]);
@@ -613,6 +635,7 @@ export class DictationStreamManager {
     this.emit({ type: "dictation_stream_ack", payload: { dictationId, ackSeq } });
   }
 
+  // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: builds the partial per client capability.
   private emitDictationPartial(dictationId: string, text: string, event?: TranscriptEvent): void {
     this.emit(toPartialMessage({ dictationId, text, event, segments: this.supportsSegments() }));
   }
@@ -650,6 +673,7 @@ export class DictationStreamManager {
     return path;
   }
 
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: writes the debug recording without delaying the final.
   /**
    * Starts the debug recording write and announces it when it lands. The write is never awaited
    * by the finalize path, so enabling the debug flag cannot delay or reorder the user's transcript.
@@ -691,6 +715,7 @@ export class DictationStreamManager {
     const state = this.streams.get(dictationId);
     const debugRecordingPath = await this.maybePersistDictationStreamAudio(dictationId);
     if (!state || this.streams.get(dictationId) !== state) return;
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: logs every stream failure with the audio received.
     this.logger.error(
       { dictationId, error, receivedSeconds: receivedSeconds(state) },
       "Dictation stream failed; audio discarded",
@@ -768,6 +793,7 @@ export class DictationStreamManager {
     };
   }
 
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: splits a due window at a pause.
   /** Splits a chunk so a due auto-commit window ends on a pause instead of mid-word. */
   private splitChunkAtAutoCommitPause(state: DictationStreamState, chunk: Buffer): Buffer[] {
     if (state.finishRequested || state.autoCommitBytes <= 0) {
@@ -788,6 +814,7 @@ export class DictationStreamManager {
     return [chunk.subarray(0, offset), chunk.subarray(offset)];
   }
 
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: takes whether this part ends at a pause.
   private maybeAutoCommitDictationSegment(state: DictationStreamState, atPause: boolean): void {
     if (state.finishRequested) {
       return;
@@ -795,6 +822,7 @@ export class DictationStreamManager {
     if (state.autoCommitBytes <= 0 || state.bytesSinceCommit < state.autoCommitBytes) {
       return;
     }
+    // RAMBLA-FORK: fix: (no plan): no quiet-window clear; waits up to 5 s for a pause before committing.
     const maxExtraBytes = Math.round(
       DICTATION_AUTO_COMMIT_MAX_EXTRA_SECONDS * state.outputRate * PCM_CHANNELS * 2,
     );
@@ -807,6 +835,7 @@ export class DictationStreamManager {
 
   private requestDictationCommit(state: DictationStreamState): void {
     state.bytesSinceCommit = 0;
+    // RAMBLA-FORK: fix: (no plan): no per-window peak to reset.
     state.inFlightCommitCount += 1;
     try {
       state.stt.commit();
@@ -832,6 +861,7 @@ export class DictationStreamManager {
     }
 
     if (state.bytesSinceCommit > 0) {
+      // RAMBLA-FORK: fix: (no plan): never clears a quiet tail at finish; always commits it.
       state.awaitingFinalCommit = true;
       try {
         this.requestDictationCommit(state);
@@ -847,8 +877,10 @@ export class DictationStreamManager {
     state.finishSealed = true;
   }
 
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: returns the dropped texts instead of a count.
   private dropUncommittedNonFinalTranscripts(state: DictationStreamState): string[] {
     const committedSet = new Set(state.committedSegmentIds);
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: collects the dropped texts.
     const droppedTexts: string[] = [];
     for (const segmentId of state.transcriptsBySegmentId.keys()) {
       if (committedSet.has(segmentId)) {
@@ -857,11 +889,14 @@ export class DictationStreamManager {
       if (state.finalTranscriptSegmentIds.has(segmentId)) {
         continue;
       }
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: records the text before deleting it.
       const droppedText = state.transcriptsBySegmentId.get(segmentId) ?? "";
       droppedTexts.push(droppedText);
       state.droppedTranscriptTexts.push(droppedText);
       state.transcriptsBySegmentId.delete(segmentId);
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: no dropped count; the dropped texts replace it.
     }
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: returns dropped texts; helpers find which never reached the final.
     return droppedTexts;
   }
 
@@ -884,6 +919,7 @@ export class DictationStreamManager {
     });
   }
 
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: fails an empty transcript after audible speech.
   /** Fails the stream instead of shipping empty text when the recording held audible speech. */
   private failEmptyTranscriptAfterSpeech(
     dictationId: string,
@@ -922,6 +958,7 @@ export class DictationStreamManager {
       return;
     }
 
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: logs dropped transcripts at warn.
     const droppedTexts = this.dropUncommittedNonFinalTranscripts(state);
     if (droppedTexts.length > 0) {
       this.logger.warn(
@@ -939,6 +976,7 @@ export class DictationStreamManager {
     }
 
     if (orderedSegmentIds.length === 0) {
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: fails or warns instead of a silent empty final.
       if (this.failEmptyTranscriptAfterSpeech(dictationId, state)) {
         return;
       }
@@ -946,6 +984,7 @@ export class DictationStreamManager {
         { dictationId, receivedSeconds: receivedSeconds(state) },
         "Dictation finalized with an empty transcript",
       );
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: final carries lost words; debug audio saves in the background.
       const emptyLostTexts = this.transcriptsMissingFrom(state.droppedTranscriptTexts, "");
       this.emit({
         type: "dictation_stream_final",
@@ -967,14 +1006,17 @@ export class DictationStreamManager {
       return;
     }
 
+    // RAMBLA-FORK: fix: (no plan): skips empty segments in the final join.
     // A segment holding only room noise transcribes to nothing, and joining that
     // nothing would put a double space in the middle of the user's sentence.
     const orderedText = orderedSegmentIds
       .map((segmentId) => state.transcriptsBySegmentId.get(segmentId) ?? "")
+      // RAMBLA-FORK: fix: (no plan): drops empty segments from the join.
       .filter((text) => text.length > 0)
       .join(" ")
       .trim();
 
+    // RAMBLA-FORK: fix: (no plan): empty assembled text fails after speech or warns.
     if (orderedText.length === 0) {
       if (this.failEmptyTranscriptAfterSpeech(dictationId, state)) {
         return;
@@ -985,6 +1027,7 @@ export class DictationStreamManager {
       );
     }
 
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: final carries lost words; debug audio saves in the background.
     const lostTexts = this.transcriptsMissingFrom(state.droppedTranscriptTexts, orderedText);
 
     this.emit({

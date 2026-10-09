@@ -1,6 +1,8 @@
+// RAMBLA-FORK: fix: (no plan): imports for writeFixtureWav.
 import { mkdirSync, mkdtempSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+// RAMBLA-FORK: fix: (no plan): resolves the workspace root for writeFixtureWav.
 import { fileURLToPath } from "node:url";
 import { OpenAI } from "openai";
 
@@ -64,6 +66,7 @@ export function parsePcm16MonoWav(buffer: Buffer): { sampleRate: number; pcm16: 
   return { sampleRate: fmt.sampleRate, pcm16: dataChunk };
 }
 
+// RAMBLA-FORK: fix: (no plan): writeFixtureWav saves test audio so it can be heard.
 function pcm16MonoToWav(pcm16: Buffer, sampleRate: number): Buffer {
   const wav = Buffer.alloc(44 + pcm16.length);
   wav.write("RIFF", 0);

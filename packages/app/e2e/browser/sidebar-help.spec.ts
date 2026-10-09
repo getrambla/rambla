@@ -35,6 +35,7 @@ async function expectExternalPage(
   actionTestID: string,
   expectedUrl: RegExp,
 ): Promise<void> {
+  // RAMBLA-FORK: fix: (no plan): stub external destinations so CI never depends on live sites.
   // Stub the destination. This asserts where the app sends you, not whether that
   // site is reachable from CI — an outage is a separate signal, not a code failure.
   await page.context().route(
@@ -44,6 +45,7 @@ async function expectExternalPage(
   const popupPromise = page.waitForEvent("popup");
   await page.getByTestId(actionTestID).click();
   const popup = await popupPromise;
+  // RAMBLA-FORK: fix: (no plan): wait for the stubbed popup to load before reading its URL.
   await popup.waitForLoadState("domcontentloaded");
   expect(popup.url()).toMatch(expectedUrl);
   await popup.close();

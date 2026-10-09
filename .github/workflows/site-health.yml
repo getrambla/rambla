@@ -1,3 +1,4 @@
+# RAMBLA-FORK: fix: (no plan): manual-only live-site uptime check, kept out of code CI.
 name: Site Health
 
 # Manual only. This checks whether the live site is up, which is a separate

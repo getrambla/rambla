@@ -1,12 +1,16 @@
+// RAMBLA-FORK: feature: (no plan): read Z.ai quota-limit windows instead of the subscription list.
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { Logger } from "pino";
 import { z } from "zod";
+// RAMBLA-FORK: feature: (no plan): import the window type the quota windows are built from.
 import type { ProviderUsage, ProviderUsageWindow } from "../../../server/messages.js";
 import type { ProviderApiFetch, ProviderUsageFetcher } from "../provider.js";
+// RAMBLA-FORK: feature: (no plan): drop the subscription-list string schema import.
 import { fetchProviderApi, unavailableUsage } from "../usage.js";
 
+// RAMBLA-FORK: feature: (no plan): schemas for the monitor API's quota-limit response.
 const QUOTA_LIMIT_URL = "https://api.z.ai/api/monitor/usage/quota/limit";
 
 const QuotaLimitSchema = z
@@ -23,6 +27,7 @@ const QuotaLimitSchema = z
 
 const QuotaResponseSchema = z.object({
   data: z
+    // RAMBLA-FORK: feature: (no plan): quota level and limits instead of a subscription array.
     .object({
       level: z.string().optional(),
       limits: z.array(QuotaLimitSchema).optional(),
@@ -30,6 +35,7 @@ const QuotaResponseSchema = z.object({
     .optional(),
 });
 
+// RAMBLA-FORK: feature: (no plan): read the token glm-acp-agent --setup stores and map quota limits to 5-hour/weekly windows.
 /** Read the token written by `glm-acp-agent --setup`. */
 function readStoredToken(): string | null {
   try {
@@ -92,7 +98,7 @@ interface ZaiQuotaProviderOptions {
 }
 
 export class ZaiQuotaProvider implements ProviderUsageFetcher {
-  // RAMBLA-FORK: feature: real Z.ai 5-hour/weekly quota windows (see PATCHES.md #4).
+  // RAMBLA-FORK: feature: (no plan): report under the GLM agent's id so the meter shows its quota.
   readonly providerId = "glm-acp-agent";
   readonly displayName = "Z.ai";
 
@@ -105,9 +111,11 @@ export class ZaiQuotaProvider implements ProviderUsageFetcher {
   }
 
   async fetchUsage(): Promise<ProviderUsage> {
+    // RAMBLA-FORK: feature: (no plan): fall back to the stored token and call the monitor API with the raw token.
     const token = process.env["ZAI_API_KEY"] || process.env["GLM_API_KEY"] || readStoredToken();
     if (!token) return unavailableUsage(this);
 
+    // RAMBLA-FORK: feature: (no plan): fetch the quota-limit endpoint with the raw token.
     // The monitor API takes the raw token — no "Bearer" prefix.
     const res = await fetchProviderApi(this.fetchApi, QUOTA_LIMIT_URL, {
       headers: {
@@ -115,6 +123,7 @@ export class ZaiQuotaProvider implements ProviderUsageFetcher {
         Accept: "application/json",
         "Accept-Language": "en-US,en",
       },
+      // RAMBLA-FORK: feature: (no plan): close the single-line fetch call.
     });
 
     if (!res.ok) {
@@ -122,6 +131,7 @@ export class ZaiQuotaProvider implements ProviderUsageFetcher {
       return unavailableUsage(this);
     }
 
+    // RAMBLA-FORK: feature: (no plan): build windows from the quota limits.
     const resp = QuotaResponseSchema.parse(await res.json());
     const level = resp.data?.level;
     const windows: ProviderUsageWindow[] = [];
@@ -134,12 +144,14 @@ export class ZaiQuotaProvider implements ProviderUsageFetcher {
       providerId: this.providerId,
       displayName: this.displayName,
       status: "available",
+      // RAMBLA-FORK: feature: (no plan): plan label from the quota level and the computed windows.
       planLabel:
         typeof level === "string" && level.length > 0
           ? level.charAt(0).toUpperCase() + level.slice(1)
           : null,
       windows,
       balances: [],
+      // RAMBLA-FORK: feature: (no plan): no subscription details; the windows carry the quota.
       details: [],
       error: null,
     };

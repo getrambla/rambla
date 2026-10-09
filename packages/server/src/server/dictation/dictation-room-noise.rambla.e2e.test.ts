@@ -1,3 +1,4 @@
+// RAMBLA-FORK: fix: (no plan): room noise through the real engine transcribes to nothing.
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";

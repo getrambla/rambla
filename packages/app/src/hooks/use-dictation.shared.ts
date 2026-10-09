@@ -1,4 +1,5 @@
 import { i18n } from "@/i18n/i18next";
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: imports the segment-carrying partial meta.
 import type { DictationPartialMeta } from "@getrambla/protocol/dictation-segment.rambla";
 
 export type DictationStatus = "idle" | "recording" | "uploading" | "failed";
@@ -6,6 +7,7 @@ export type DictationStatus = "idle" | "recording" | "uploading" | "failed";
 export interface UseDictationOptions {
   client: import("@getrambla/client/internal/daemon-client").DaemonClient | null;
   onTranscript: (text: string, meta: { requestId: string }) => void;
+  // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: partial meta carries the segment, plus a restart callback.
   onPartialTranscript?: (text: string, meta: DictationPartialMeta) => void;
   /** Fires before a reconnect or retry re-sends the recording, so the field can clear what it holds. */
   onDictationRestarted?: () => void;
@@ -25,6 +27,7 @@ export interface UseDictationResult {
   duration: number;
   error: string | null;
   status: DictationStatus;
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: exposes whether a failed dictation can be retried.
   /** Whether the failed recording still holds audio, so a retry has something to send. */
   canRetryFailedDictation: boolean;
   startDictation: () => Promise<void>;
@@ -37,6 +40,7 @@ export interface UseDictationResult {
 
 export const DURATION_TICK_MS = 1000;
 export const PCM_DICTATION_FORMAT = "audio/pcm;rate=16000;bits=16";
+// RAMBLA-FORK: feature: (no plan): wake-lock tag for dictation.
 export const DICTATION_KEEP_AWAKE_TAG = "rambla:dictation";
 
 export const toError = (error: unknown): Error => {

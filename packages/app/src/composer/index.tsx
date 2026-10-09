@@ -53,6 +53,7 @@ import { selectAgentTurnPresentation, useSessionStore } from "@/stores/session-s
 import { useFilePicker } from "@/hooks/use-file-picker";
 import { useFileDrop } from "@/components/file-drop/use-file-drop";
 import type { DroppedItem } from "@/components/file-drop/types";
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: routes the composer to our forked input.
 import {
   MessageInput,
   type AttachmentMenuItem,

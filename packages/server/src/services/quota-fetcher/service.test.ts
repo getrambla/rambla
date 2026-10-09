@@ -841,9 +841,11 @@ describe("real provider usage fetchers", () => {
     fetchApi = mockFetch(
       new Map([
         [
+          // RAMBLA-FORK: feature: (no plan): mock the Z.ai quota-limit endpoint.
           "https://api.z.ai/api/monitor/usage/quota/limit",
           () =>
             jsonResponse({
+              // RAMBLA-FORK: feature: (no plan): quota-limit response with 5-hour and weekly limits.
               data: {
                 level: "max",
                 limits: [
@@ -867,10 +869,12 @@ describe("real provider usage fetchers", () => {
       ]),
     );
 
+    // RAMBLA-FORK: feature: (no plan): Z.ai usage reports under the GLM agent's id.
     const zai = findProvider(await service().listUsage(), "glm-acp-agent");
 
     expect(zai).toMatchObject({
       status: "available",
+      // RAMBLA-FORK: feature: (no plan): expect 5-hour and weekly windows.
       windows: expect.arrayContaining([
         expect.objectContaining({ id: "five_hour", label: "5-hour", usedPct: 40.5 }),
         expect.objectContaining({ id: "weekly", label: "Weekly", usedPct: 52.0 }),

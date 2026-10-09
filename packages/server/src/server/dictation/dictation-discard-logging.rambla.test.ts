@@ -1,3 +1,5 @@
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: pins the warn/error log on every dictation discard.
+// RAMBLA-FORK: fix: (no plan): no longer pins the quiet-audio discards, which are gone.
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { EventEmitter } from "node:events";
 

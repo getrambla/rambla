@@ -4,6 +4,7 @@
 set -euo pipefail
 
 # The fork owns these at upstream's paths (the logos fork/brand/generate.mjs writes, the nix hash); globs match upstream's names and ours.
+# RAMBLA-FORK: feature: (no plan): the brand artwork entries keep upstream's logos from ever landing.
 DELETE_LIST=(
 	"fastlane/metadata/android/en-US/images/icon.png"
 	"nix/npm-deps.hash"

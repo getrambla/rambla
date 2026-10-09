@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: pins the optional segment on the dictation partial.
 import { describe, expect, it } from "vitest";
 import { DictationStreamPartialMessageSchema } from "../../src/messages.js";
 import { validateWSOutboundMessage } from "../../src/validation/ws-outbound.js";

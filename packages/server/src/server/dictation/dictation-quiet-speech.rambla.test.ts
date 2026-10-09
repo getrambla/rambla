@@ -1,3 +1,4 @@
+// RAMBLA-FORK: fix: (no plan): quiet speech is never discarded and pauses are found above room noise.
 import { EventEmitter } from "node:events";
 import pino from "pino";
 import { describe, expect, it } from "vitest";

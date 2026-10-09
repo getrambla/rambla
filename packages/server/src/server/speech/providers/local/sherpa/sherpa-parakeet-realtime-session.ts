@@ -14,6 +14,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
 
   public readonly requiredSampleRate: number;
   private currentSegmentId: string | null = null;
+  // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: numbers segments in cut order.
   private currentSegmentIndex = 0;
   private previousSegmentId: string | null = null;
   private lastPartialText = "";
@@ -36,6 +37,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
       return;
     }
     this.currentSegmentId = uuidv4();
+    // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: resets segment numbering on connect.
     this.currentSegmentIndex = 0;
     this.connected = true;
   }
@@ -60,26 +62,31 @@ export class SherpaParakeetRealtimeTranscriptionSession
       return;
     }
 
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: commit() bounds the segment synchronously, then decodes that snapshot.
     // The segment ends here, synchronously. Audio appended after this call — in
     // the same tick or later — belongs to the next segment, so a decode that
     // resolves afterwards cannot pull it into this transcript.
     const segmentId = this.currentSegmentId;
+    // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: captures the committed segment's index.
     const index = this.currentSegmentIndex;
     const previousSegmentId = this.previousSegmentId;
     const audio = this.pcm16;
     this.previousSegmentId = segmentId;
     this.currentSegmentId = uuidv4();
+    // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: advances the index in the same block that cuts.
     this.currentSegmentIndex += 1;
     this.lastPartialText = "";
     this.pcm16 = Buffer.alloc(0);
 
     void (async () => {
       try {
+        // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the final decodes this segment's own audio snapshot.
         // A fresh decode over exactly this segment's audio: a decode still in
         // flight covers a different buffer and its text is never shipped final.
         const finalText = await this.decodePcm16(audio);
 
         this.emit("committed", { segmentId, previousSegmentId });
+        // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: final carries the segment index.
         this.emit("transcript", { segmentId, index, transcript: finalText, isFinal: true });
       } catch (err) {
         this.emit("error", err instanceof Error ? err : new Error(String(err)));
@@ -93,6 +100,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
     }
     this.pcm16 = Buffer.alloc(0);
     this.currentSegmentId = uuidv4();
+    // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: clear starts a new numbered segment.
     this.currentSegmentIndex += 1;
     this.lastPartialText = "";
   }
@@ -119,11 +127,14 @@ export class SherpaParakeetRealtimeTranscriptionSession
     }
 
     this.decoding = true;
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: decodes a snapshot and drops text for a segment already committed.
     const decodedSegmentId = this.currentSegmentId;
     const audio = this.pcm16;
     try {
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: decodes the snapshot taken above.
       const text = await this.decodePcm16(audio);
       this.lastDecodeAt = Date.now();
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: drops partial text for a segment a commit already ended.
       // A commit may have ended that segment while this decode ran; its text
       // describes audio that has already shipped, so it must not land here.
       if (decodedSegmentId !== this.currentSegmentId) {
@@ -133,6 +144,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
         this.lastPartialText = text;
         this.emit("transcript", {
           segmentId: this.currentSegmentId,
+          // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: partial carries the segment index.
           index: this.currentSegmentIndex,
           transcript: text,
           isFinal: false,
@@ -147,11 +159,13 @@ export class SherpaParakeetRealtimeTranscriptionSession
     }
   }
 
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: decodes the given buffer instead of the live one.
   private async decodePcm16(pcm16: Buffer): Promise<string> {
     if (pcm16.length === 0) {
       return "";
     }
 
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: reads the given buffer.
     const peak = pcm16lePeakAbs(pcm16);
     const peakFloat = peak / 32768.0;
     const targetPeak = 0.6;
@@ -161,6 +175,7 @@ export class SherpaParakeetRealtimeTranscriptionSession
 
     const stream = this.engine.createStream();
     try {
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: reads the given buffer.
       const floatSamples = pcm16leToFloat32(pcm16, gain);
       this.engine.acceptWaveform(stream, this.engine.sampleRate, floatSamples);
       this.engine.recognizer.decode(stream);

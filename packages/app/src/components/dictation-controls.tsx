@@ -92,6 +92,7 @@ export function DictationControls({
         <Pressable
           onPress={handleCancel}
           disabled={actionsDisabled && !isFailed}
+          // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: names the cancel control a button.
           accessibilityRole="button"
           accessibilityLabel={t("message.dictation.cancel")}
           style={cancelButtonStyle}
@@ -106,6 +107,7 @@ export function DictationControls({
         {!actionsDisabled && isFailed ? (
           <Pressable
             onPress={onRetry}
+            // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: names the retry control a button.
             accessibilityRole="button"
             accessibilityLabel={t("message.dictation.retry")}
             style={[styles.actionButton, styles.actionButtonConfirm]}
@@ -117,6 +119,7 @@ export function DictationControls({
           <>
             <Pressable
               onPress={onAccept}
+              // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: names the insert control a button.
               accessibilityRole="button"
               accessibilityLabel={t("message.dictation.insert")}
               style={[styles.actionButton, styles.actionButtonSecondary]}
@@ -125,6 +128,7 @@ export function DictationControls({
             </Pressable>
             <Pressable
               onPress={onAcceptAndSend}
+              // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: names the insert-and-send control a button.
               accessibilityRole="button"
               accessibilityLabel={t("message.dictation.insertAndSend")}
               style={[styles.actionButton, styles.actionButtonConfirm]}
@@ -229,6 +233,7 @@ export function DictationOverlay({
             <LoadingSpinner size="small" color={theme.colors.accentForeground} />
           </View>
         ) : null}
+        {/* RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: renders retry only when there is audio to retry. */}
         {!actionsDisabled && isFailed && onRetry ? (
           <Pressable
             onPress={onRetry}

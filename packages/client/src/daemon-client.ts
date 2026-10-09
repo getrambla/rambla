@@ -1047,6 +1047,7 @@ const LIVENESS_FAILURE_RECONNECT_THRESHOLD = 2;
 
 /** Default timeout for waiting for connection before sending queued messages */
 const DEFAULT_SEND_QUEUE_TIMEOUT_MS = DEFAULT_SESSION_RPC_TIMEOUT_MS;
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: short bounds for a silent daemon; a daemon-stated deadline wins.
 // A daemon that takes the finish states its own deadline and the client honors it; these
 // bounds cover only a daemon that says nothing: 15 s to take the finish, 10 s for the text.
 const DEFAULT_DICTATION_FINISH_ACCEPT_TIMEOUT_MS = 15_000;
@@ -3856,6 +3857,7 @@ export class DaemonClient {
   async finishDictationStream(
     dictationId: string,
     finalSeq: number,
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the result carries words the daemon dropped.
   ): Promise<{ dictationId: string; text: string; droppedTranscript?: string }> {
     const final = this.waitForWithCancel(
       (msg) => {
@@ -3934,6 +3936,7 @@ export class DaemonClient {
 
     const waitForFinalResult = async (
       timeoutMs: number,
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the result carries words the daemon dropped.
     ): Promise<{ dictationId: string; text: string; droppedTranscript?: string }> => {
       if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
         const outcome = await Promise.race([finalOutcomePromise, errorOutcomePromise]);

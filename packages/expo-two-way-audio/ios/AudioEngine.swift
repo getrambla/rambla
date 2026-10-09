@@ -97,12 +97,14 @@ class AudioEngine {
     func setupAudioSession() {
         let session = AVAudioSession.sharedInstance()
 
+        // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: a refused session never reads as active.
         // A session we failed to take must not read as active, or every caller above us
         // believes it has the microphone.
         do {
             try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP])
         } catch {
             print("Could not set the audio category: \(error.localizedDescription)")
+            // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: a failed category leaves the session inactive.
             isSessionActive = false
             return
         }
@@ -110,6 +112,7 @@ class AudioEngine {
         do {
             try session.setPreferredSampleRate(voiceIOFormat.sampleRate)
         } catch {
+            // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: a refused sample rate still lets the session through.
             // A refused sample rate is only a preference; the session is still usable.
             print("Could not set the preferred sample rate: \(error.localizedDescription)")
         }
@@ -118,6 +121,7 @@ class AudioEngine {
             try session.setActive(true)
             isSessionActive = true
         } catch {
+            // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: a failed activation logs why and leaves the session inactive.
             print("Could not set the audio session as active: \(error.localizedDescription)")
             isSessionActive = false
         }
@@ -313,6 +317,7 @@ class AudioEngine {
     }
     
     func toggleRecording(_ val: Bool) -> Bool {
+        // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: recording refuses to start without an active session.
         if val {
             activateAudioSessionIfNeeded()
             // Without a session there is no microphone, so report the refusal instead of recording silence.
@@ -325,6 +330,7 @@ class AudioEngine {
             inputBuffer = [Float](repeating: 0, count: 2048)
             updateInputVolume()
         } else {
+            // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: session activation moved ahead of the recording guard.
             avAudioEngine.inputNode.isVoiceProcessingInputMuted = false
         }
         print("Recording \(isRecording ? "started" : "stopped")")
@@ -348,12 +354,14 @@ class AudioEngine {
         playbackCountLock.unlock()
     }
 
+    // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: resume reports whether recording actually restarted.
     @discardableResult
     func resumeRecordingAndPlayer() -> Bool {
         activateAudioSessionIfNeeded()
         self.checkEngineIsRunning()
         isRecording = toggleRecording(true)
         speechPlayer.play()
+        // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: resume reports whether recording actually restarted.
         return isRecording
     }
     
@@ -411,6 +419,7 @@ class AudioEngine {
             if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
                 let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
                 if options.contains(.shouldResume) {
+                    // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: a refused resume reports blocked instead of ended.
                     // Interruption ended. Resume playback. A refused resume is "blocked",
                     // or JavaScript goes on believing it is capturing.
                     let resumed = self.resumeRecordingAndPlayer()

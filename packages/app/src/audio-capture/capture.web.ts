@@ -1,4 +1,4 @@
-// RAMBLA-FORK: feature: live dictation — web capture reworked as the shared dictation/voice engine (PATCHES.md #10–28).
+// RAMBLA-FORK: feature: 2026-09-17-feat-shared-audio-capture-worklet.md: web microphone capture on an AudioWorklet, shared by dictation and voice.
 
 /**
  * Microphone capture for the web, running its per-sample work on the audio

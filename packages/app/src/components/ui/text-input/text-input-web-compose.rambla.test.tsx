@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: pins the IME composition write guard in replaceText.
 // @vitest-environment jsdom
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";

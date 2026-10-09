@@ -1,3 +1,4 @@
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: an empty transcript after audible speech fails the stream.
 import { EventEmitter } from "node:events";
 import pino from "pino";
 import { describe, expect, it } from "vitest";

@@ -8,9 +8,11 @@ import {
   type ReactNode,
 } from "react";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
+// RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: imports for the toast and the capture-claim callback type.
 import { useToast } from "@/contexts/toast-api-context";
 import { useSessionStore } from "@/stores/session-store";
 import { createAudioEngine } from "@/voice/audio-engine";
+// RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: imports the callbacks type for claim consumers.
 import type { AudioEngine, AudioEngineCallbacks } from "@/voice/audio-engine-types";
 import {
   createVoiceRuntime,
@@ -41,6 +43,7 @@ const EMPTY_TELEMETRY: VoiceRuntimeTelemetrySnapshot = {
   segmentDuration: 0,
 };
 
+// RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: capture-claim interface and context shared by voice mode and dictation.
 export interface VoiceCaptureClaim {
   claimCapture(consumer: AudioEngineCallbacks): boolean;
   releaseCapture(consumer: AudioEngineCallbacks): void;
@@ -48,6 +51,7 @@ export interface VoiceCaptureClaim {
 
 const VoiceRuntimeContext = createContext<VoiceRuntime | null>(null);
 const VoiceAudioEngineContext = createContext<AudioEngine | null>(null);
+// RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: context carrying the capture claim.
 const VoiceCaptureClaimContext = createContext<VoiceCaptureClaim | null>(null);
 
 const noopSubscribe = () => () => {};
@@ -115,6 +119,7 @@ export function useVoiceAudioEngineOptional(): AudioEngine | null {
   return useContext(VoiceAudioEngineContext);
 }
 
+// RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: hook exposing the capture claim to dictation.
 export function useVoiceCaptureClaimOptional(): VoiceCaptureClaim | null {
   return useContext(VoiceCaptureClaimContext);
 }
@@ -126,6 +131,7 @@ interface VoiceProviderProps {
 export function VoiceProvider({ children }: VoiceProviderProps) {
   const engineRef = useRef<AudioEngine | null>(null);
   const runtimeRef = useRef<VoiceRuntime | null>(null);
+  // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: claim cell and toast ref for engine errors.
   const claimRef = useRef<VoiceCaptureClaim | null>(null);
   const captureConsumerRef = useRef<AudioEngineCallbacks | null>(null);
   const toast = useToast();
@@ -138,6 +144,7 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
 
   if (!engineRef.current) {
     let runtime: VoiceRuntime | null = null;
+    // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: voice-mode callbacks become one claim consumer.
     const runtimeConsumer: AudioEngineCallbacks = {
       onCaptureData: (pcm) => {
         runtime?.handleCapturePcm(pcm);
@@ -150,6 +157,7 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
           console.error("[VoiceEngine] Failed to stop after audio interruption:", error);
         });
       },
+      // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: engine errors stop voice and toast; one shared engine routes callbacks to the claim holder.
       // Named `captureError` so the lint rule against promises in node-style callbacks stays quiet.
       onError: (captureError) => {
         console.error("[VoiceEngine] Capture error:", captureError);
@@ -158,6 +166,7 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
         });
         toastRef.current.error(captureError.message);
       },
+      // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: builds the claim, one shared engine routed to the claim holder, and a claim-taking engine for voice mode.
     };
 
     const claim: VoiceCaptureClaim = {
@@ -212,6 +221,7 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
     };
 
     runtime = createVoiceRuntime({
+      // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: voice mode runs on the claim-taking engine.
       engine: claimedEngine,
       getServerInfo: (serverId) =>
         useSessionStore.getState().getSession(serverId)?.serverInfo ?? null,
@@ -225,11 +235,13 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
 
     engineRef.current = engine;
     runtimeRef.current = runtime;
+    // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: keep the claim alongside the engine and runtime.
     claimRef.current = claim;
   }
 
   const engine = engineRef.current;
   const runtime = runtimeRef.current!;
+  // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: read the claim for the provider below.
   const claim = claimRef.current!;
 
   useEffect(() => {
@@ -242,6 +254,7 @@ export function VoiceProvider({ children }: VoiceProviderProps) {
 
   return (
     <VoiceAudioEngineContext.Provider value={engine}>
+      {/* RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: provide the capture claim to the tree. */}
       <VoiceCaptureClaimContext.Provider value={claim}>
         <VoiceRuntimeContext.Provider value={runtime}>{children}</VoiceRuntimeContext.Provider>
       </VoiceCaptureClaimContext.Provider>

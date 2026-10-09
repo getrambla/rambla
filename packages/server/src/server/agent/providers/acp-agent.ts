@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 import { Readable, Writable } from "node:stream";
+// RAMBLA-FORK: fix: (no plan): jsdiff for the derived trimmed ACP unifiedDiff.
 import { createTwoFilesPatch } from "diff";
 
 import { terminateWithTreeKill } from "../../../utils/tree-kill.js";
@@ -1313,6 +1314,7 @@ export class ACPAgentClient implements AgentClient {
       await this.resolveLaunchCommand();
       return true;
     } catch (error) {
+      // RAMBLA-FORK: fix: (no plan): log why the availability check failed instead of a bare false.
       this.logger.error(
         { provider: this.provider, err: error },
         "ACP provider availability check failed",
@@ -1457,6 +1459,7 @@ export class ACPAgentClient implements AgentClient {
     probe: UninitializedACPProcess,
     sessionId: string | null = null,
   ): Promise<void> {
+    // RAMBLA-FORK: fix: (no plan): log collected stderr when a probe never completed initialize.
     // A probe that never completed initialize has no other error channel:
     // upstream refresh logs only the deadline message, so surface the agent's
     // raw stderr here. Healthy probes (initialize set) stay silent.
@@ -1830,6 +1833,7 @@ export class ACPAgentSession implements AgentSession, ACPClient {
   }
 
   private async closeAfterInitializationFailure(error: unknown): Promise<never> {
+    // RAMBLA-FORK: fix: (no plan): log the initialization error before closing.
     this.logger.error({ provider: this.provider, err: error }, "ACP session initialization failed");
     try {
       await this.close();
@@ -3144,8 +3148,9 @@ export class ACPAgentSession implements AgentSession, ACPClient {
     }
   }
 
-  // RAMBLA-FORK: feature: forward ACP usage_update to the UI; upstream discards it (see PATCHES.md #3).
+  // RAMBLA-FORK: feature: (no plan): forward ACP usage_update to the context meter; upstream discards it.
   private handleUsageUpdate(update: UsageUpdate): void {
+    // RAMBLA-FORK: feature: (no plan): map used/size into a usage_updated event instead of void update.
     const usage: AgentUsage = {
       contextWindowUsedTokens: update.used,
       contextWindowMaxTokens: update.size,
@@ -3670,6 +3675,7 @@ function mapToolDetail(
       return buildReadToolDetail(context);
     case "edit":
     case "delete":
+      // RAMBLA-FORK: fix: (no plan): route whole-file writes declared as edits to the write detail.
       // ACP has no "write" kind, so whole-file writes are declared as edits
       // by every agent. Refine by input shape — a write carries the full new
       // content and no old/new pair — mirroring what the Claude provider
@@ -3716,6 +3722,7 @@ function buildReadToolDetail(context: MapToolDetailContext): ToolCallDetail {
 
 function buildEditToolDetail(context: MapToolDetailContext): ToolCallDetail {
   const { snapshot, firstLocation, textContent, diffContent, rawInput } = context;
+  // RAMBLA-FORK: fix: (no plan): hoist old/new strings so the derived unifiedDiff can reuse them.
   const oldString = diffContent?.oldText ?? readString(rawInput, ["oldText", "oldString"]);
   const newString =
     snapshot.kind === "delete"
@@ -3724,12 +3731,14 @@ function buildEditToolDetail(context: MapToolDetailContext): ToolCallDetail {
   return {
     type: "edit",
     filePath: firstLocation ?? readString(rawInput, ["path", "filePath", "file"]) ?? snapshot.title,
+    // RAMBLA-FORK: fix: (no plan): fall back to a derived trimmed unifiedDiff when the agent sent none.
     oldString,
     newString,
     unifiedDiff: textContent ?? buildAcpUnifiedDiff(firstLocation, oldString, newString),
   };
 }
 
+// RAMBLA-FORK: fix: (no plan): detect a whole-file write declared as ACP kind edit by its input shape.
 function isWholeFileWriteShape(rawInput: Record<string, unknown> | null): boolean {
   return (
     typeof rawInput?.["content"] === "string" &&
@@ -3738,6 +3747,7 @@ function isWholeFileWriteShape(rawInput: Record<string, unknown> | null): boolea
   );
 }
 
+// RAMBLA-FORK: fix: (no plan): derive a hunk-trimmed unifiedDiff from ACP whole-file oldText/newText.
 // Hunk-trimmed unified diff computed from an ACP diff block's whole-file
 // oldText/newText. Clients render `unifiedDiff` when present, so deriving it
 // here gives every ACP agent the trimmed view instead of a whole-file LCS
@@ -3771,6 +3781,7 @@ function buildAcpUnifiedDiff(
     .trimEnd();
 }
 
+// RAMBLA-FORK: fix: (no plan): write detail for whole-file ACP writes, with old/new text and a trimmed unifiedDiff.
 function buildWriteToolDetail(context: MapToolDetailContext): ToolCallDetail {
   const { snapshot, firstLocation, textContent, diffContent, rawInput } = context;
   const oldText = diffContent?.oldText;

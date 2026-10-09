@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: inserts an old-path transcript at the caret or over the selection.
 export interface DictationInsertPlacement {
   /** Where the dictated words go: a caret collapses to start === end. */
   selection: { start: number; end: number };

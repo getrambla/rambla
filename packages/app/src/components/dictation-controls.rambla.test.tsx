@@ -1,3 +1,5 @@
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: covers the failure overlay's retry gating.
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: covers the inline dictation controls.
 /**
  * @vitest-environment jsdom
  */

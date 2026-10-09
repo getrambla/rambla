@@ -25,6 +25,7 @@ export interface StreamingTranscriptionEvent {
   segmentId: string;
   transcript: string;
   isFinal: boolean;
+  // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: optional segment index on transcript events.
   /** Position of this segment in the session's cut order; absent when a provider does not number its segments. */
   index?: number;
   language?: string;

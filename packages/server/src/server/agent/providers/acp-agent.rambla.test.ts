@@ -1,3 +1,4 @@
+// RAMBLA-FORK: fix: (no plan): tests for the hunk-trimmed unifiedDiff derived from ACP diff blocks.
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { SessionUpdate } from "@agentclientprotocol/sdk";
 

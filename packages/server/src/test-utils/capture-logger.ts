@@ -1,3 +1,4 @@
+// RAMBLA-FORK: fix: (no plan): real pino logger that records parsed lines for fork tests that assert logging.
 import pino from "pino";
 
 export interface CapturedLogLine {

@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: opaque in-flow recording strip between the text surface and the toolbar.
 import { Pressable, Text, View } from "react-native";
 import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { ArrowUp, Check, RefreshCcw, X } from "lucide-react-native";

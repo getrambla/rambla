@@ -1,3 +1,4 @@
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: a window cut lands on a pause and a commit covers only its own audio.
 import pino from "pino";
 import { describe, expect, it } from "vitest";
 

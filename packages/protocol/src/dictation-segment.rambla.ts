@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: schema for one dictated segment carried on the dictation partial.
 import { z } from "zod";
 
 /** One dictated segment. `index` is assigned when the daemon cuts the segment, so segments

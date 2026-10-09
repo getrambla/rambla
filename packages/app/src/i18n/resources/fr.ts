@@ -68,6 +68,7 @@ export const fr: TranslationResources = {
       noFileFound: "Aucun fichier trouvé pour{{token}}",
       unexpectedDictationError:
         "Une erreur inattendue s'est produite lors du traitement de la dictée.",
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: adds the dictation-not-sent and no-recording-to-resend messages.
       dictationNotSent: "Dictée non envoyée.",
       dictationRetryNotPossible: "Aucun enregistrement à renvoyer.",
     },

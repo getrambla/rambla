@@ -1187,6 +1187,7 @@ export class Session {
         voice,
         voiceBridge,
         dictation,
+        // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: tells voice whether this client takes per-segment partials.
         supportsDictationSegments: () => this.supports(CLIENT_CAPS.dictationSegments),
       },
       this.delivery,

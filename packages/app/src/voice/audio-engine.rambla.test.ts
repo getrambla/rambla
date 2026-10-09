@@ -1,3 +1,6 @@
+// RAMBLA-FORK: fix: (no plan): pins that destroying one wrapper leaves a capture in flight running.
+// RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: pins interruption handling against the capture claim.
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: pins that buffers landing after stop are delivered.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type NativeEventListener = (event: { data: Uint8Array | string }) => void;

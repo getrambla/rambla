@@ -45,6 +45,7 @@ const buildProfile = isFdroidBuild
           "expo-notifications",
           {
             icon: "./assets/images/notification-icon.png",
+            // RAMBLA-FORK: feature: (no plan): notification tint in brand purple.
             color: "#5E2CC0",
           },
         ],
@@ -121,6 +122,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
+        // RAMBLA-FORK: feature: (no plan): adaptive-icon background in brand purple.
         backgroundColor: "#5E2CC0",
         foregroundImage: "./assets/images/android-icon-foreground.png",
       },

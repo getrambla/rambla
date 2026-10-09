@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: covers the in-flow recording strip.
 /**
  * @vitest-environment jsdom
  */

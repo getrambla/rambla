@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: covers dictated words landing in the field.
 /** @vitest-environment jsdom */
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";

@@ -38,6 +38,7 @@ export const PROVIDER_USAGE_FETCHERS: readonly ProviderUsageFetcherManifestEntry
     create: (options) => new CursorQuotaProvider({ logger: options.logger, fetch: options.fetch }),
   },
   {
+    // RAMBLA-FORK: feature: (no plan): register the Z.ai quota fetcher under the GLM agent's id.
     providerId: "glm-acp-agent",
     create: (options) => new ZaiQuotaProvider({ logger: options.logger, fetch: options.fetch }),
   },

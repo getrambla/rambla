@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: pure transaction for the dictated region in the field.
 /** Caret or selected range in the composer field. */
 export interface DictationSelection {
   start: number;

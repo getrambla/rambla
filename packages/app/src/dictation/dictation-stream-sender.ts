@@ -2,7 +2,6 @@ import { generateMessageId } from "@/types/stream";
 import type { SessionOutboundMessage } from "@getrambla/protocol/messages";
 import { i18n } from "@/i18n/i18next";
 
-// RAMBLA-FORK: feature: live dictation — dropped-transcript recovery, finish ack, restart resend (PATCHES.md #22).
 const MAX_CHUNKS_PER_FLUSH_TURN = 128;
 const DICTATION_DRAIN_IDLE_TIMEOUT_MS = 30_000;
 
@@ -21,6 +20,7 @@ export interface DictationStreamClient {
   finishDictationStream(
     dictationId: string,
     finalSeq: number,
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the finish reply may carry a dropped transcript.
   ): Promise<{ dictationId: string; text: string; droppedTranscript?: string }>;
   cancelDictationStream(dictationId: string): void;
   subscribeRawMessages(handler: (message: SessionOutboundMessage) => void): () => void;
@@ -30,6 +30,7 @@ export interface DictationStreamSenderParams {
   client: DictationStreamClient | null;
   format: string;
   createDictationId?: () => string;
+  // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: takes a restart callback.
   /** Called before a restart re-sends the whole recording under a new dictation id. */
   onRestart?: () => void;
 }
@@ -37,6 +38,7 @@ export interface DictationStreamSenderParams {
 interface DictationFinishResult {
   dictationId: string;
   text: string;
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: carries the dropped transcript.
   /** Words the daemon transcribed but could not place in `text`. */
   droppedTranscript?: string;
 }
@@ -57,6 +59,7 @@ export class DictationStreamSender {
   private client: DictationStreamClient | null = null;
   private readonly format: string;
   private readonly createDictationId: () => string;
+  // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: holds the restart callback.
   private readonly onRestart: (() => void) | undefined;
 
   private dictationId: string | null = null;
@@ -74,6 +77,7 @@ export class DictationStreamSender {
   constructor(params: DictationStreamSenderParams) {
     this.format = params.format;
     this.createDictationId = params.createDictationId ?? generateMessageId;
+    // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: stores the restart callback.
     this.onRestart = params.onRestart;
     this.setClient(params.client);
   }
@@ -196,6 +200,7 @@ export class DictationStreamSender {
       return;
     }
 
+    // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: announces a restart that resends audio.
     // Every reason but the first start resends chunks the daemon already transcribed, so the
     // listener is told to drop what it holds before those words come back under new ids.
     if (reason !== "start") {

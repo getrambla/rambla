@@ -665,6 +665,7 @@ function buildRamblaUnknownSections(
   return sections.map((section) => <RamblaDetailSection key={section.title} section={section} />);
 }
 
+// RAMBLA-FORK: fix: (no plan): renders a write as an old-to-new diff when the agent reports what it replaced.
 function buildWriteDetailSections(
   detail: Extract<ToolCallDetail, { type: "write" }>,
   ds: DetailStyles,
@@ -735,6 +736,7 @@ function buildDetailSections(
     return [<EditDetailSection key="edit" diffLines={diffLines} ds={ds} />];
   }
   if (detail.type === "write") {
+    // RAMBLA-FORK: fix: (no plan): routes write details through the diff-aware builder.
     return buildWriteDetailSections(detail, ds);
   }
   if (detail.type === "read") {

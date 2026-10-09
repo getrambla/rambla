@@ -1,3 +1,5 @@
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: covers empty, truncated, unanswered, and refused dictation results.
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: covers segment carry and restart announcements.
 /** @vitest-environment jsdom */
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi, beforeEach } from "vitest";

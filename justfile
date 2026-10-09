@@ -24,6 +24,7 @@ format:
 
 alias fmt := format
 
+# RAMBLA-FORK: feature: (no plan): redraws every brand asset from the one source SVG.
 # Redraw every brand asset; pass an SVG to adopt a new design, nothing to redraw from the stored one.
 logos svg="":
     node fork/brand/generate.mjs {{ svg }}

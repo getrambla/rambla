@@ -66,6 +66,7 @@ export const ko: TranslationResources = {
       daemonClientDisconnected: "데몬 클라이언트 연결이 끊어졌습니다",
       noFileFound: "{{token}}에 해당하는 파일을 찾을 수 없습니다",
       unexpectedDictationError: "받아쓰기를 처리하는 중 예기치 않은 오류가 발생했습니다.",
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: adds the dictation-not-sent and no-recording-to-resend messages.
       dictationNotSent: "받아쓰기를 보내지 않았습니다.",
       dictationRetryNotPossible: "다시 보낼 녹음이 없습니다.",
     },

@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: pins per-segment partials and the glued fallback.
 import { EventEmitter } from "node:events";
 import pino from "pino";
 import { describe, expect, it } from "vitest";

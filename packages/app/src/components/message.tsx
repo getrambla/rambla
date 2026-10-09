@@ -345,10 +345,10 @@ const userMessageStylesheet = StyleSheet.create((theme) => ({
   containerLastInGroup: {
     marginBottom: theme.spacing[4],
   },
-  // RAMBLA-FORK: fix: 2026-10-01-fix-user-bubble-top-right-radius.md: removes the top-right radius override so all four bubble corners are uniform.
   bubble: {
     backgroundColor: theme.colors.surface3,
     borderRadius: theme.borderRadius["2xl"],
+    // RAMBLA-FORK: fix: 2026-10-01-fix-user-bubble-top-right-radius.md: removes the top-right radius override so all four bubble corners are uniform.
     paddingHorizontal: theme.spacing[4],
     paddingVertical: theme.spacing[4],
     minWidth: 0,
@@ -2981,6 +2981,7 @@ export const ExpandableBadge = memo(function ExpandableBadge({
             onLabelRowLayout={handleLabelRowLayout}
             onLabelLayout={handleLabelLayout}
             onSecondaryLayout={handleSecondaryLayout}
+            // RAMBLA-FORK: feature: (no plan): open-file button always visible on native, which has no hover.
             showOpenFileButton={Boolean(onOpenFile && (isHovered || isNative))}
             isOpenFileHovered={isOpenFileHovered}
             onOpenFilePress={handleOpenFilePress}
@@ -3110,6 +3111,7 @@ export const ToolCall = memo(function ToolCall({
         errorText: presentation.errorText,
         icon: presentation.icon,
         showLoadingSkeleton: presentation.isLoadingDetails,
+        // RAMBLA-FORK: feature: (no plan): pass the file path and opener to the tool-call sheet.
         filePath:
           effectiveDetail &&
           (effectiveDetail.type === "read" ||
@@ -3132,6 +3134,7 @@ export const ToolCall = memo(function ToolCall({
     presentation.icon,
     presentation.isLoadingDetails,
     effectiveDetail,
+    // RAMBLA-FORK: feature: (no plan): sheet data depends on the file opener.
     handleOpenFile,
   ]);
 

@@ -204,9 +204,11 @@ const CATALOG_DATA = [
     id: "glm-acp-agent",
     title: "GLM Agent",
     description:
+      // RAMBLA-FORK: fix: (no plan): describes our glm-acp-agent fork's models and pins its current version.
       "ACP agent powered by Zhipu AI's GLM Coding Plan models (glm-5.3, glm-5.3-flash, glm-4.7, glm-4.5-air). Supports streaming, tool calls, mid-session model switching, image input via Z.AI Coding Plan Vision MCP, and session load/fork/resume with on-disk persistence.",
     version: "1.10.0",
     iconId: "glm-acp-agent",
+    // RAMBLA-FORK: fix: (no plan): installs and runs the GLM agent from our glm-acp-agent fork.
     installLink: "https://github.com/getrambla/glm-acp-agent",
     command: ["npx", "-y", "https://github.com/getrambla/glm-acp-agent"],
   },

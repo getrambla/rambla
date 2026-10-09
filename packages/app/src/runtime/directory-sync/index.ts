@@ -42,6 +42,7 @@ const PAGE_LIMIT = 200;
 const AGENT_SORT: NonNullable<FetchAgentsOptions["sort"]> = [
   { key: "updated_at", direction: "desc" },
 ];
+// RAMBLA-FORK: fix: (no plan): retry interval for a failed directory refresh.
 const DEMAND_RETRY_INTERVAL_MS = 2_000;
 
 function resolveAgentNextPage(pageInfo: AgentPageInfo): {
@@ -233,6 +234,7 @@ export class DirectorySync {
     this.releaseSubscriptions();
     this.fullDemandSources.clear();
     this.routeDemandIds.clear();
+    // RAMBLA-FORK: fix: (no plan): clear the pending directory-refresh retry on dispose.
     if (this.demandRetryTimer) {
       clearTimeout(this.demandRetryTimer);
       this.demandRetryTimer = null;
@@ -324,6 +326,7 @@ export class DirectorySync {
         this.satisfiedDemandSource = source;
         return undefined;
       })
+      // RAMBLA-FORK: fix: (no plan): log a failed directory refresh and schedule a retry instead of swallowing it.
       .catch((error) => {
         // A failed refresh used to be swallowed here, leaving the directory
         // stale for the rest of the connection. Keep retrying on this
@@ -349,6 +352,7 @@ export class DirectorySync {
     return this.demandRefresh;
   }
 
+  // RAMBLA-FORK: fix: (no plan): retry the directory refresh while demand and the same connection remain.
   private demandRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
   private scheduleDemandRetry(source: DirectorySourceToken): void {

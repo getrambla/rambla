@@ -3,6 +3,7 @@ import type {
   AudioEngineCallbacks,
   AudioPlaybackSource,
 } from "@/voice/audio-engine-types";
+// RAMBLA-FORK: fix: (no plan): top-level native import so tests can substitute the module.
 import * as native from "@getrambla/expo-two-way-audio";
 
 interface QueuedAudio {
@@ -13,9 +14,11 @@ interface QueuedAudio {
 
 interface AudioEngineTraceOptions {
   traceLabel?: string;
+  // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: lets the engine ask whether anyone holds the capture claim.
   hasCaptureClaim?: () => boolean;
 }
 
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: timings for draining the mic bridge on stop.
 /** How long a stop waits for the native bridge to hand over the buffers it already dispatched. */
 const CAPTURE_FLUSH_TIMEOUT_MS = 500;
 /** A gap this long with no microphone buffer is the bridge confirming it has drained. */
@@ -75,8 +78,10 @@ function resamplePcm16(pcm: Uint8Array, fromRate: number, toRate: number): Uint8
 
 export function createAudioEngine(
   callbacks: AudioEngineCallbacks,
+  // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: options are read for the capture claim.
   options?: AudioEngineTraceOptions,
 ): AudioEngine {
+  // RAMBLA-FORK: fix: (no plan): the native module comes from the top-level import, not a require here.
   const refs: {
     initialized: boolean;
     captureActive: boolean;
@@ -89,6 +94,7 @@ export function createAudioEngine(
       reject: (error: Error) => void;
       settled: boolean;
     } | null;
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: drain hook and post-stop buffer queue.
     onCaptureDataWhileDraining: (() => void) | null;
     /** Mic buffers still crossing the bridge after stop; delivered once stop settles. */
     postStopCaptureQueue: Uint8Array[];
@@ -101,6 +107,7 @@ export function createAudioEngine(
     processingQueue: false,
     playbackTimeout: null,
     activePlayback: null,
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: starts the drain hook and post-stop queue.
     onCaptureDataWhileDraining: null,
     postStopCaptureQueue: [],
     destroyed: false,
@@ -109,6 +116,7 @@ export function createAudioEngine(
   const microphoneSubscription = native.addExpoTwoWayAudioEventListener(
     "onMicrophoneData",
     (event: { data: Uint8Array }) => {
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: queues buffers that land after stop instead of dropping them.
       if (!refs.captureActive) {
         // The stop path queues these and delivers them once the bridge drains, so the
         // recording tail is not dropped. Muted audio is still dropped, as before.
@@ -122,6 +130,7 @@ export function createAudioEngine(
       }
       const pcm = event.data;
       callbacks.onCaptureData(pcm);
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: tells a pending drain that a buffer arrived.
       refs.onCaptureDataWhileDraining?.();
     },
   );
@@ -138,6 +147,7 @@ export function createAudioEngine(
   const interruptionSubscription = native.addExpoTwoWayAudioEventListener(
     "onAudioInterruption",
     (event: { data: string }) => {
+      // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: act on began and ended interruptions instead of ignoring them.
       if (event.data === "ended") {
         // Native resumed recording on its own, so reconcile with who wants the microphone now.
         if (options?.hasCaptureClaim?.()) {
@@ -201,6 +211,7 @@ export function createAudioEngine(
     }
   }
 
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: waits for the mic bridge to go quiet before stop settles.
   /** Resolves false when the bridge is still handing over buffers at the deadline. */
   async function waitForCaptureDrain(): Promise<boolean> {
     let quietTimer: ReturnType<typeof setTimeout> | null = null;
@@ -321,6 +332,7 @@ export function createAudioEngine(
       refs.muted = false;
       callbacks.onVolumeLevel(0);
       if (refs.initialized) {
+        // RAMBLA-FORK: fix: (no plan): destroy releases the session instead of tearing down the shared engine.
         // Never tearDown(): the native engine is process-wide, and dropping it kills a capture
         // another wrapper still has in flight. Releasing the session is guarded natively.
         native.releaseAudioSession();
@@ -342,6 +354,7 @@ export function createAudioEngine(
         const isRecording = native.toggleRecording(true);
         if (!isRecording) {
           throw new Error(
+            // RAMBLA-FORK: fix: (no plan): failure names the missing audio engine, not Android audio focus.
             "Microphone capture could not start because the audio engine is not available.",
           );
         }
@@ -355,8 +368,10 @@ export function createAudioEngine(
 
     async stopCapture() {
       if (refs.captureActive) {
+        // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: clears the post-stop queue before stopping.
         refs.postStopCaptureQueue.length = 0;
         native.toggleRecording(false);
+        // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: waits for the drain, then delivers the queued tail.
         // The tap has already dispatched the tail of the recording across the bridge; the
         // buffers that land after captureActive goes false are queued above and delivered
         // once the bridge goes quiet, so the end of the recording rides along instead of

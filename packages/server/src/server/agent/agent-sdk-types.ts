@@ -276,6 +276,7 @@ export type ToolCallDetail =
       type: "write";
       filePath: string;
       content?: string;
+      // RAMBLA-FORK: fix: (no plan): write details carry old/new text like edits, so overwrites render as a diff.
       /** Present when the agent reported what the file replaced (overwrite). */
       oldString?: string;
       newString?: string;

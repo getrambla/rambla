@@ -95,6 +95,7 @@ import {
   type RamblaScriptEntryRaw,
   type ProjectConfigRpcError,
 } from "./rambla-config-schema.js";
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: import the dictation segment schema.
 import { DictationSegmentSchema } from "./dictation-segment.rambla.js";
 export {
   RamblaConfigRawSchema,
@@ -3442,6 +3443,7 @@ export const DictationStreamPartialMessageSchema = z.object({
   payload: z.object({
     dictationId: z.string(),
     text: z.string(),
+    // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: optional segment on the dictation partial.
     // COMPAT(dictationSegments): added in v0.8.0. Sent only to clients advertising
     // "dictation_segments"; those partials carry an empty `text`. Remove the empty-text
     // branch after 2027-03-20 once every client reads segments.
@@ -3454,6 +3456,7 @@ export const DictationStreamFinalMessageSchema = z.object({
   payload: z.object({
     dictationId: z.string(),
     text: z.string(),
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: optional words the daemon could not place in the final.
     /** Words the daemon transcribed but could not place in `text`; absent when nothing was lost. */
     droppedTranscript: z.string().optional(),
     debugRecordingPath: z.string().optional(),
@@ -7444,6 +7447,7 @@ export const WSHelloMessageSchema = z.object({
       [CLIENT_CAPS.timelineReplacementInvalidation]: z.boolean().optional(),
       [CLIENT_CAPS.timelineNotifications]: z.boolean().optional(),
       [CLIENT_CAPS.browserHost]: BrowserAutomationHostCapabilitySchema.optional(),
+      // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: dictation_segments capability in hello.
       // COMPAT(dictationSegments): added in v0.8.0, remove after 2027-03-20.
       [CLIENT_CAPS.dictationSegments]: z.boolean().optional(),
     })

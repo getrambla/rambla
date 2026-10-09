@@ -242,6 +242,7 @@ async function callBrowserTool(client, name, args = {}) {
   return mcpPayload(await client.callTool({ name, args }), name);
 }
 
+// RAMBLA-FORK: fix: (no plan): retry browser tool calls on retryable errors and return the raw result with image bytes.
 async function callBrowserToolUntilReady(client, name, args = {}) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -529,6 +530,7 @@ async function verifyHiddenBrowserScreenshots({
   };
   const measurements = [];
   const expectIdle = async (label) => {
+    // RAMBLA-FORK: fix: (no plan): sample repeated one-second windows until the hidden browser goes idle.
     const deadline = Date.now() + 5_000;
     let frames = 0;
     while (Date.now() < deadline) {
@@ -551,6 +553,7 @@ async function verifyHiddenBrowserScreenshots({
       browserId,
       function: "() => { document.body.style.background = 'rgb(0,255,0)'; }",
     });
+    // RAMBLA-FORK: fix: (no plan): take the hidden-window screenshot through the retry helper.
     const response = await callBrowserToolUntilReady(client, "browser_screenshot", { browserId });
     const screenshot = response.content.find((item) => item.type === "image");
     assert(screenshot, "browser_screenshot returned no image");

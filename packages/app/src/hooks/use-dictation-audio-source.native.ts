@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { Buffer } from "buffer";
 import { useState } from "react";
 
+// RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: take the shared engine and capture claim from the voice provider.
 import {
   useVoiceAudioEngineOptional,
   useVoiceCaptureClaimOptional,
@@ -18,10 +19,12 @@ export function useDictationAudioSource(config: DictationAudioSourceConfig): Dic
   const onErrorRef = useRef(config.onError);
   const onInterruptionRef = useRef(config.onInterruption);
   const [volume, setVolume] = useState(0);
+  // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: shared engine, claim, and a stable claim-token consumer replace a per-composer engine.
   const engine = useVoiceAudioEngineOptional();
   const claim = useVoiceCaptureClaimOptional();
   const holdsClaimRef = useRef(false);
 
+  // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: one stable consumer object is this composer's claim token.
   // The object's identity is the claim token, so it has to outlive every render.
   const consumerRef = useRef<AudioEngineCallbacks>({
     onCaptureData: (pcm) => {
@@ -45,6 +48,7 @@ export function useDictationAudioSource(config: DictationAudioSourceConfig): Dic
   }, [config.onPcmSegment, config.onError, config.onInterruption]);
 
   const start = useCallback(async () => {
+    // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: start claims the microphone first and names voice mode when refused.
     if (!engine || !claim) {
       throw new Error("The microphone is not available.");
     }
@@ -63,12 +67,14 @@ export function useDictationAudioSource(config: DictationAudioSourceConfig): Dic
   }, [engine, claim]);
 
   const stop = useCallback(async () => {
+    // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: stop touches the engine only while holding the claim.
     if (holdsClaimRef.current) {
       await engine?.stopCapture();
       claim?.releaseCapture(consumerRef.current);
       holdsClaimRef.current = false;
     }
     setVolume(0);
+    // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: stop depends on the shared engine and claim; unmount reads the latest stop through a ref.
   }, [engine, claim]);
 
   const stopRef = useRef(stop);
@@ -79,6 +85,7 @@ export function useDictationAudioSource(config: DictationAudioSourceConfig): Dic
 
   useEffect(() => {
     return () => {
+      // RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: unmount stops through the claim instead of destroying the shared engine.
       void stopRef.current().catch(() => undefined);
     };
   }, []);

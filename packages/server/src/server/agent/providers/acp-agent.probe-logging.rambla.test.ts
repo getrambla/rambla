@@ -1,3 +1,4 @@
+// RAMBLA-FORK: fix: (no plan): tests for ACP probe, initialization and availability failure logging.
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

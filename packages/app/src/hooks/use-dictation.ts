@@ -6,6 +6,7 @@ import { useDictationAudioSource } from "@/hooks/use-dictation-audio-source";
 import { generateMessageId } from "@/types/stream";
 import { AttemptGuard } from "@/utils/attempt-guard";
 import {
+  // RAMBLA-FORK: feature: (no plan): imports the dictation keep-awake tag.
   DICTATION_KEEP_AWAKE_TAG,
   DURATION_TICK_MS,
   PCM_DICTATION_FORMAT,
@@ -15,15 +16,16 @@ import {
   type UseDictationResult,
 } from "./use-dictation.shared";
 
+// RAMBLA-FORK: feature: (no plan): imports the wake-lock API.
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 
-// RAMBLA-FORK: feature: live dictation — loss-proof streaming, loud discard logging, keep-awake (PATCHES.md #10–28).
 export function useDictation(options: UseDictationOptions): UseDictationResult {
   const { t } = useTranslation();
   const {
     client,
     onTranscript,
     onPartialTranscript,
+    // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: takes the restart callback.
     onDictationRestarted,
     onError,
     onPermanentFailure,
@@ -38,6 +40,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<DictationStatus>("idle");
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: tracks whether a failed dictation holds audio to retry.
   const [canRetryFailedDictation, setCanRetryFailedDictation] = useState(false);
   const latestPartialTranscriptRef = useRef("");
 
@@ -51,6 +54,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     onPartialTranscriptRef.current = onPartialTranscript;
   }, [onPartialTranscript]);
 
+  // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: mirrors the restart callback into a ref.
   const onDictationRestartedRef = useRef(onDictationRestarted);
   useEffect(() => {
     onDictationRestartedRef.current = onDictationRestarted;
@@ -81,6 +85,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
 
   const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const attemptGuardRef = useRef(new AttemptGuard());
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: adds a teardown flag and a retry gate.
   // Teardown cancels the attempt guard the same way a supersede does, so the two are
   // told apart here; navigating away is not an abort the user needs told about.
   const isTearingDownRef = useRef(false);
@@ -93,6 +98,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     starting: false,
     confirming: false,
     cancelling: false,
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the retry gate starts open.
     retrying: false,
   });
 
@@ -102,6 +108,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       client,
       format: PCM_DICTATION_FORMAT,
       createDictationId: generateMessageId,
+      // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: announces stream restarts to the field.
       onRestart: () => onDictationRestartedRef.current?.(),
     });
   }
@@ -116,6 +123,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     }
   }, []);
 
+  // RAMBLA-FORK: feature: (no plan): acquires and releases the dictation wake lock.
   const releaseKeepAwake = useCallback(() => {
     void deactivateKeepAwake(DICTATION_KEEP_AWAKE_TAG).catch(() => undefined);
   }, []);
@@ -170,6 +178,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     await senderRef.current?.restartStream(reason);
   }, []);
 
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: returns the daemon's dropped transcript with the final.
   const ensureFinalTranscript = useCallback(
     async (finalSeq: number): Promise<{ text: string; droppedTranscript?: string }> => {
       const result = await senderRef.current!.finish(finalSeq);
@@ -213,6 +222,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       const next = message.payload.text ?? "";
       latestPartialTranscriptRef.current = next;
       setPartialTranscript(next);
+      // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: passes the partial's segment to the field.
       onPartialTranscriptRef.current?.(next, {
         requestId: generateMessageId(),
         segment: message.payload.segment,
@@ -220,29 +230,35 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     });
   }, [client]);
 
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: upstream's success handler moved below the failure handler.
   const handleDictationFailure = useCallback(
     (failure: unknown) => {
       const normalized = toError(failure);
       const failureId = generateMessageId();
       stopDurationTracking();
+      // RAMBLA-FORK: feature: (no plan): releases the wake lock on failure.
       releaseKeepAwake();
       setIsProcessing(false);
       isProcessingRef.current = false;
       isRecordingRef.current = false;
       setIsRecording(false);
 
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: always enters the failed status and records whether audio can be retried.
       const hasBufferedAudio = senderRef.current?.hasSegments() ?? false;
       setStatus("failed");
       setCanRetryFailedDictation(hasBufferedAudio);
       if (hasBufferedAudio) {
         onPermanentFailureRef.current?.(normalized, { requestId: failureId });
+        // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: a failure without buffered audio no longer drops back to idle.
       }
 
       reportError(normalized, "Failed to complete dictation");
     },
+    // RAMBLA-FORK: feature: (no plan): wake-lock dependency.
     [releaseKeepAwake, reportError, stopDurationTracking],
   );
 
+  // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: reports aborts and fails on an empty or truncated final.
   // reportError's console line already carries the specific reason via `context`, so the
   // user-facing toast stays one plain message per situation and the log keeps the detail.
   const reportDetailOnly = useCallback((detail: string, context: string) => {
@@ -357,6 +373,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     clearStreamingState();
 
     try {
+      // RAMBLA-FORK: feature: (no plan): holds the wake lock while recording.
       acquireKeepAwake();
       await audio.start();
       isRecordingRef.current = true;
@@ -368,6 +385,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
         await startNewStream("start");
       }
     } catch (err) {
+      // RAMBLA-FORK: feature: (no plan): releases the wake lock on a failed start.
       releaseKeepAwake();
       await audio.stop().catch(() => undefined);
       stopDurationTracking();
@@ -379,12 +397,14 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       actionGateRef.current.starting = false;
     }
   }, [
+    // RAMBLA-FORK: feature: (no plan): wake-lock dependency.
     acquireKeepAwake,
     audio,
     canStart,
     clearStreamingState,
     client,
     enableDuration,
+    // RAMBLA-FORK: feature: (no plan): wake-lock dependency.
     releaseKeepAwake,
     reportError,
     startDurationTracking,
@@ -402,6 +422,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     }
     actionGateRef.current.cancelling = true;
     stopDurationTracking();
+    // RAMBLA-FORK: feature: (no plan): releases the wake lock on cancel.
     releaseKeepAwake();
     setDuration(0);
     setError(null);
@@ -424,10 +445,12 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       clearStreamingState();
       actionGateRef.current.cancelling = false;
     }
+    // RAMBLA-FORK: feature: (no plan): wake-lock dependency.
   }, [audio, clearStreamingState, releaseKeepAwake, reportError, stopDurationTracking]);
 
   const confirmDictation = useCallback(async () => {
     if (actionGateRef.current.confirming) {
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: reports a refused submit instead of returning silently.
       reportConfirmAbort("submit already in flight");
       return;
     }
@@ -438,11 +461,13 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       return;
     }
     if (!isRecordingRef.current || isProcessingRef.current) {
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: reports a submit with no recording instead of returning silently.
       reportConfirmAbort("no recording in progress");
       return;
     }
     const confirmAllowed = canConfirm ? canConfirm() : true;
     if (!confirmAllowed) {
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: a submit blocked by canConfirm fails visibly.
       await audio.stop().catch(() => undefined);
       handleDictationFailure(new Error(t("common.errors.daemonClientDisconnected")));
       return;
@@ -451,6 +476,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     actionGateRef.current.confirming = true;
     setError(null);
     stopDurationTracking();
+    // RAMBLA-FORK: feature: (no plan): releases the wake lock on submit.
     releaseKeepAwake();
     setIsProcessing(true);
     isProcessingRef.current = true;
@@ -467,12 +493,15 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
 
       const finalSeq = senderRef.current?.getFinalSeq() ?? -1;
       if (finalSeq < 0) {
+        // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: no captured audio fails visibly.
         reportConfirmAbort("no audio was captured", { asFailure: true });
         return;
       }
 
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: passes the dropped transcript and reports a superseded submit.
       const finalResult = await ensureFinalTranscript(finalSeq);
       attemptGuardRef.current.assertCurrent(attemptId);
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: hands the final text and any dropped transcript to the success handler.
       handleStreamingTranscriptionSuccess(
         finalResult.text,
         generateMessageId(),
@@ -480,12 +509,14 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       );
     } catch (err) {
       if (err instanceof Error && err.name === "AttemptCancelledError") {
+        // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: reports a superseded submit.
         reportConfirmAbort("superseded by cancel or restart");
         return;
       }
       handleDictationFailure(err);
     } finally {
       actionGateRef.current.confirming = false;
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: finishes a teardown deferred by this submit.
       if (isTearingDownRef.current) {
         attemptGuardRef.current.cancel();
         senderRef.current?.dispose();
@@ -496,14 +527,18 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     canConfirm,
     handleDictationFailure,
     handleStreamingTranscriptionSuccess,
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: abort-reporting dependency.
     reportConfirmAbort,
     stopDurationTracking,
     ensureFinalTranscript,
+    // RAMBLA-FORK: feature: (no plan): wake-lock dependency.
     releaseKeepAwake,
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: translation dependency.
     t,
   ]);
 
   const retryFailedDictation = useCallback(async () => {
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: gates a double retry and reports a refused retry.
     // Without this gate the second tap resets the stream under the first, whose finish then
     // throws and reports a failure for a transcript the user already received.
     if (actionGateRef.current.retrying) {
@@ -511,14 +546,17 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       return;
     }
     if (!senderRef.current?.hasSegments()) {
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: reports a retry with no buffered audio.
       reportRetryAbort("no buffered audio to resend");
       return;
     }
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: closes the retry gate.
     actionGateRef.current.retrying = true;
     setError(null);
     setStatus("uploading");
     setIsProcessing(true);
     isProcessingRef.current = true;
+    // RAMBLA-FORK: feature: (no plan): releases the wake lock on retry.
     releaseKeepAwake();
 
     try {
@@ -527,6 +565,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       }
       senderRef.current.resetStreamForReplay();
       const finalSeq = senderRef.current.getFinalSeq();
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: passes the dropped transcript and reports a superseded retry.
       const finalResult = await ensureFinalTranscript(finalSeq);
       handleStreamingTranscriptionSuccess(
         finalResult.text,
@@ -535,10 +574,12 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       );
     } catch (err) {
       if (err instanceof Error && err.name === "AttemptCancelledError") {
+        // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: reports a superseded retry.
         reportRetryAbort("superseded by cancel or restart");
         return;
       }
       handleDictationFailure(err);
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: clears the retry gate and finishes a deferred teardown.
     } finally {
       actionGateRef.current.retrying = false;
       if (isTearingDownRef.current) {
@@ -551,7 +592,9 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     ensureFinalTranscript,
     handleDictationFailure,
     handleStreamingTranscriptionSuccess,
+    // RAMBLA-FORK: feature: (no plan): wake-lock dependency.
     releaseKeepAwake,
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: abort-reporting dependency.
     reportRetryAbort,
     t,
   ]);
@@ -571,22 +614,28 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     setIsProcessing(false);
     isProcessingRef.current = false;
     stopDurationTracking();
+    // RAMBLA-FORK: feature: (no plan): releases the wake lock on reset.
     releaseKeepAwake();
     setDuration(0);
     setError(null);
     setStatus("idle");
     clearStreamingState();
+    // RAMBLA-FORK: feature: (no plan): wake-lock dependency.
   }, [clearStreamingState, releaseKeepAwake, stopDurationTracking]);
 
   useEffect(() => {
     const attemptGuard = attemptGuardRef.current;
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: defers teardown while a submit or retry is in flight.
     const actionGate = actionGateRef.current;
     const audioStop = audioStopRef;
     return () => {
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: marks teardown instead of cancelling the attempt here.
       isTearingDownRef.current = true;
       stopDurationTracking();
+      // RAMBLA-FORK: feature: (no plan): releases the wake lock on unmount.
       releaseKeepAwake();
       void audioStop.current().catch(() => undefined);
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: lets an in-flight submit or retry deliver before disposing.
       // A submit or retry already waiting on the daemon owns the transcript: cancelling or
       // disposing it here drops words the user spoke, so it runs to delivery and cleans up
       // after itself.
@@ -596,6 +645,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
       attemptGuard.cancel();
       senderRef.current?.dispose();
     };
+    // RAMBLA-FORK: feature: (no plan): wake-lock dependency.
   }, [releaseKeepAwake, stopDurationTracking]);
 
   return {
@@ -607,6 +657,7 @@ export function useDictation(options: UseDictationOptions): UseDictationResult {
     duration,
     error,
     status,
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: exposes whether a failed dictation can be retried.
     canRetryFailedDictation,
     startDictation,
     cancelDictation,

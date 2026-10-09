@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: (no plan): pins the sheet's file-path link and close-before-open.
 /**
  * @vitest-environment jsdom
  *

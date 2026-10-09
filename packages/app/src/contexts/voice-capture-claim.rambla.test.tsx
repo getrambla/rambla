@@ -1,4 +1,5 @@
 /** @vitest-environment jsdom */
+// RAMBLA-FORK: fix: 2026-09-19-fix-ios-microphone-ownership.md: pins one microphone owner across dictation and voice mode.
 import React, { type ReactNode } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";

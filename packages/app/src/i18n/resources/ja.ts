@@ -67,6 +67,7 @@ export const ja: TranslationResources = {
       daemonClientDisconnected: "デーモンクライアントが切断されています",
       noFileFound: "{{token}}のファイルが見つかりません",
       unexpectedDictationError: "音声入力処理中に予期しないエラーが発生しました。",
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: adds the dictation-not-sent and no-recording-to-resend messages.
       dictationNotSent: "音声入力を送信できませんでした。",
       dictationRetryNotPossible: "再送信できる録音がありません。",
     },

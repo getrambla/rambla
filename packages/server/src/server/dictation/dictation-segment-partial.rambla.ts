@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: builds a per-segment partial for capable clients.
 import type { DictationSegment } from "@getrambla/protocol/dictation-segment.rambla";
 
 /** What a transcript event reports; `index` is absent when the provider does not number segments. */

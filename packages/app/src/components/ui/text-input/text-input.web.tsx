@@ -68,6 +68,7 @@ export const EditingTextInput = forwardRef<EditingTextInputHandle, EditingTextIn
         return nextText;
       },
       replaceText: (nextText, selection) => {
+        // RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: refuses to write into a live IME composition, except a clear.
         // Writing into a live IME composition cancels it and loses the half-typed word,
         // but a clear (the send path) must always go through.
         if (isComposingRef.current && nextText !== "") return;

@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: covers inserting an old-path transcript at the caret.
 import { describe, expect, it } from "vitest";
 import { insertDictationAtSelection } from "./dictation-insert.rambla";
 

@@ -16,6 +16,7 @@ import { openExternalUrl } from "@/utils/open-external-url";
 import { BookOpen, Copy, RotateCw, TriangleAlert } from "lucide-react-native";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { RamblaLogo } from "@/components/icons/rambla-logo";
+// RAMBLA-FORK: feature: (no plan): imports the splash mask generated from the Rambla mark.
 import { RAMBLA_LOGO_MASK_URL } from "@/components/icons/rambla-logo-mask";
 import { Button } from "@/components/ui/button";
 import { getDesktopDaemonLogs, type DesktopDaemonLogs } from "@/desktop/daemon/desktop-daemon";
@@ -99,6 +100,7 @@ function WebLogoShimmer({ color }: { color: string }) {
     () => ({
       width: LOGO_SIZE,
       height: LOGO_SIZE,
+      // RAMBLA-FORK: feature: (no plan): masks the shimmer with the Rambla mark.
       WebkitMaskImage: RAMBLA_LOGO_MASK_URL,
       WebkitMaskSize: "contain",
       WebkitMaskRepeat: "no-repeat",

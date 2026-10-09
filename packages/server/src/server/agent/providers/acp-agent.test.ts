@@ -2773,6 +2773,7 @@ describe("ACPAgentSession", () => {
     ]);
   });
 
+  // RAMBLA-FORK: fix: (no plan): pins whole-file writes declared as edit labeled Write with old/new text.
   test("labels whole-file write_file calls as Write with old/new for the diff", async () => {
     const session = createSession();
     const events: Array<{ type: string; item?: { type: string } }> = [];

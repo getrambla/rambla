@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { EventEmitter } from "node:events";
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: fs helpers for the debug-recording test.
 import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -12,6 +13,7 @@ import type {
   SpeechToTextProvider,
   StreamingTranscriptionSession,
 } from "../speech/speech-provider.js";
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: imports the real session for the in-flight decode tests.
 import { SherpaParakeetRealtimeTranscriptionSession } from "../speech/providers/local/sherpa/sherpa-parakeet-realtime-session.js";
 
 class FakeRealtimeSession extends EventEmitter implements StreamingTranscriptionSession {
@@ -67,6 +69,7 @@ class FakeSttProvider implements SpeechToTextProvider {
   }
 }
 
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: optional trailing silence so a window can cut at a pause.
 const buildPcmBase64 = (
   sampleValue: number,
   sampleCount: number,
@@ -77,11 +80,13 @@ const buildPcmBase64 = (
   return Buffer.from(samples.buffer).toString("base64");
 };
 
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: emit collector replaces tick() so a test awaits the message it needs.
 interface EmittedMessage {
   type: string;
   payload: unknown;
 }
 
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the collector type and factory.
 interface EmitCollector {
   emitted: EmittedMessage[];
   emit: (message: EmittedMessage) => void;
@@ -114,6 +119,7 @@ const createEmitCollector = (): EmitCollector => {
 const textOf = (message: EmittedMessage | undefined): string | undefined =>
   (message?.payload as { text?: string } | undefined)?.text;
 
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: pins the debug flag off for the whole file with stubEnv.
 // The debug flag decides whether the daemon writes recordings to disk, so it is
 // pinned for the whole file: no block may inherit a developer's shell.
 beforeEach(() => {
@@ -124,20 +130,25 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the block opens after the file-wide debug stub.
 describe("DictationStreamManager (finish buffer-too-small tolerance)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the file-wide stub replaces the per-block debug flag.
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the file-wide stub restores the debug flag.
   });
 
   it("treats buffer-too-small as benign and finalizes with existing transcripts", async () => {
     const session = new FakeRealtimeSession();
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: collects emits through the collector.
     const collector = createEmitCollector();
     const manager = new DictationStreamManager({
       logger: pino({ level: "silent" }),
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: emits into the collector.
       emit: collector.emit,
       sessionId: "s1",
       stt: new FakeSttProvider(session),
@@ -155,14 +166,17 @@ describe("DictationStreamManager (finish buffer-too-small tolerance)", () => {
     session.emitTranscript("seg-1", "hello world", true);
 
     await manager.handleFinish("d1", 0);
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: drops tick(); the final is awaited below.
 
     session.emitError(
       "Error committing input audio buffer: buffer too small. Expected at least 100ms of audio, but buffer only has 0.00ms of audio.",
     );
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: drops tick() and awaits the final through the collector.
 
     const final = await collector.waitFor("dictation_stream_final");
     const error = collector.emitted.find((msg) => msg.type === "dictation_stream_error");
     expect(error).toBeUndefined();
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: reads the final text through textOf.
     expect(textOf(final)).toBe("hello world");
     expect(session.closed).toBe(true);
   });
@@ -288,6 +302,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
   });
 
   it("auto-commits while streaming and assembles final transcript in segment order", async () => {
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: test moved onto the collector and the file-wide debug stub; first chunk ends in a pause.
     const session = new FakeRealtimeSession();
     const collector = createEmitCollector();
     const manager = new DictationStreamManager({
@@ -298,8 +313,10 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
       autoCommitSeconds: 1,
     });
 
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: un-nested from the debug try/finally.
     await manager.handleStart("d-segmented", "audio/pcm;rate=24000;bits=16");
 
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: first chunk ends in a pause, un-nested.
     await manager.handleChunk({
       dictationId: "d-segmented",
       seq: 0,
@@ -308,9 +325,11 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     });
     expect(session.commitCalls).toBe(1);
 
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: un-nested.
     session.emitCommitted("seg-1");
     session.emitTranscript("seg-1", "hello", true);
 
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: un-nested.
     await manager.handleChunk({
       dictationId: "d-segmented",
       seq: 1,
@@ -318,20 +337,25 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
       format: "audio/pcm;rate=24000;bits=16",
     });
 
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: un-nested.
     await manager.handleFinish("d-segmented", 1);
     expect(session.commitCalls).toBe(2);
 
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: un-nested; no tick().
     session.emitCommitted("seg-2");
     session.emitTranscript("seg-2", "world", true);
 
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: awaits the final through the collector.
     expect(textOf(await collector.waitFor("dictation_stream_final"))).toBe("hello world");
   });
 
   it("waits for an in-flight auto-commit before finalizing", async () => {
     const session = new FakeRealtimeSession();
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: collects emits through the collector.
     const collector = createEmitCollector();
     const manager = new DictationStreamManager({
       logger: pino({ level: "silent" }),
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: emits into the collector.
       emit: collector.emit,
       sessionId: "s1",
       stt: new FakeSttProvider(session),
@@ -342,12 +366,14 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     await manager.handleChunk({
       dictationId: "d-delayed-auto-commit",
       seq: 0,
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: adds a pause for the window cut.
       audioBase64: buildPcmBase64(2000, 24000, 7200),
       format: "audio/pcm;rate=24000;bits=16",
     });
     expect(session.commitCalls).toBe(1);
 
     await manager.handleFinish("d-delayed-auto-commit", 0);
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: drops tick() and checks the collector for an early final.
 
     expect(
       collector.emitted.find((message) => message.type === "dictation_stream_final"),
@@ -356,19 +382,23 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
 
     session.emitCommitted("seg-tail");
     session.emitTranscript("seg-tail", "the final words", true);
+    // RAMBLA-FORK: fix: (no plan): the silent tail is committed, not cleared.
     // The silence after the pause is committed too, and transcribes to nothing.
     session.emitCommitted("seg-silent-tail");
     session.emitTranscript("seg-silent-tail", "", true);
 
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: awaits the final through the collector.
     expect(textOf(await collector.waitFor("dictation_stream_final"))).toBe("the final words");
     expect(session.closed).toBe(true);
   });
 
   it("commits tail audio appended while an auto-commit is in flight", async () => {
     const session = new FakeRealtimeSession();
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: collects emits through the collector.
     const collector = createEmitCollector();
     const manager = new DictationStreamManager({
       logger: pino({ level: "silent" }),
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: emits into the collector.
       emit: collector.emit,
       sessionId: "s1",
       stt: new FakeSttProvider(session),
@@ -379,6 +409,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     await manager.handleChunk({
       dictationId: "d-tail-during-commit",
       seq: 0,
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: adds a pause for the window cut.
       audioBase64: buildPcmBase64(2000, 24000, 7200),
       format: "audio/pcm;rate=24000;bits=16",
     });
@@ -397,17 +428,21 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
 
     session.emitCommitted("seg-tail");
     session.emitTranscript("seg-tail", "the final words", true);
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: drops tick() and awaits the final through the collector.
 
     expect(textOf(await collector.waitFor("dictation_stream_final"))).toBe(
       "the beginning the final words",
     );
   });
 
+  // RAMBLA-FORK: fix: (no plan): silence is committed, not cleared.
   it("does not wait for an abandoned partial after committing mid-stream silence", async () => {
     const session = new FakeRealtimeSession();
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: collects emits through the collector.
     const collector = createEmitCollector();
     const manager = new DictationStreamManager({
       logger: pino({ level: "silent" }),
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: emits into the collector.
       emit: collector.emit,
       sessionId: "s1",
       stt: new FakeSttProvider(session),
@@ -418,6 +453,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     await manager.handleChunk({
       dictationId: "d-cleared-partial",
       seq: 0,
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: adds a pause for the window cut.
       audioBase64: buildPcmBase64(2000, 24000, 7200),
       format: "audio/pcm;rate=24000;bits=16",
     });
@@ -431,6 +467,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
       audioBase64: buildPcmBase64(0, 24000),
       format: "audio/pcm;rate=24000;bits=16",
     });
+    // RAMBLA-FORK: fix: (no plan): mid-stream silence is committed, not cleared.
     expect(session.clearCalls).toBe(0);
     session.emitCommitted("seg-silence");
     session.emitTranscript("seg-silence", "", true);
@@ -444,6 +481,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
     await manager.handleFinish("d-cleared-partial", 2);
     session.emitCommitted("seg-final");
     session.emitTranscript("seg-final", "the final words", true);
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: drops tick() and awaits the final through the collector.
 
     expect(textOf(await collector.waitFor("dictation_stream_final"))).toBe(
       "the beginning the final words",
@@ -509,18 +547,23 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
 
     const finishAccepted = emitted.find((msg) => msg.type === "dictation_stream_finish_accepted");
     expect(finishAccepted).toBeDefined();
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the restored adaptive budget does extend the deadline.
     // With the adaptive budget restored, the pending in-flight commit does extend the
     // deadline; the abandoned transcript's audio is what the extension buys time for.
     expect((finishAccepted?.payload as { timeoutMs?: number } | undefined)?.timeoutMs).toBe(20_000);
   });
 
+  // RAMBLA-FORK: fix: (no plan): the silence tail is committed, not cleared.
   it("drops dangling uncommitted non-final transcripts when finishing after a silence tail", async () => {
     vi.useFakeTimers();
+    // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the file-wide stub replaces the per-test debug flag.
     try {
       const session = new FakeRealtimeSession();
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: collects emits through the collector.
       const collector = createEmitCollector();
       const manager = new DictationStreamManager({
         logger: pino({ level: "silent" }),
+        // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: emits into the collector.
         emit: collector.emit,
         sessionId: "s1",
         stt: new FakeSttProvider(session),
@@ -532,6 +575,7 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
       await manager.handleChunk({
         dictationId: "d-clear-tail",
         seq: 0,
+        // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: adds a pause for the window cut.
         audioBase64: buildPcmBase64(2000, 24000, 7200),
         format: "audio/pcm;rate=24000;bits=16",
       });
@@ -548,18 +592,24 @@ describe("DictationStreamManager (provider-agnostic provider)", () => {
       session.emitTranscript("seg-dangling", "", false);
 
       await manager.handleFinish("d-clear-tail", 1);
+      // RAMBLA-FORK: fix: (no plan): the silent tail is committed, not cleared.
       session.emitCommitted("seg-silent-tail");
       session.emitTranscript("seg-silent-tail", "", true);
 
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: awaits the final through the collector.
       const final = await collector.waitFor("dictation_stream_final");
       // Past the finish deadline the stream is gone, so no late timeout error follows.
       await vi.advanceTimersByTimeAsync(5_100);
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: drops tick() and reads errors from the collector.
 
       const error = collector.emitted.find((msg) => msg.type === "dictation_stream_error");
+      // RAMBLA-FORK: fix: (no plan): nothing is cleared.
       expect(session.clearCalls).toBe(0);
       expect(error).toBeUndefined();
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: reads the final text through textOf.
       expect(textOf(final)).toBe("hello");
     } finally {
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the file-wide stub restores the debug flag.
       vi.useRealTimers();
     }
   });
@@ -592,6 +642,7 @@ it("cancellation during STT bootstrap closes the producer and never acknowledges
   manager.cleanupAll();
 });
 
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: fakes and tests for a commit landing during an in-flight decode.
 class FakeParakeetStream {
   samples = new Float32Array(0);
   freed = false;
@@ -730,6 +781,7 @@ describe("DictationStreamManager (commit during in-flight decode)", () => {
   });
 });
 
+// RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: the final does not wait for the debug recording write.
 describe("DictationStreamManager (debug recording enabled)", () => {
   let debugDir: string;
 

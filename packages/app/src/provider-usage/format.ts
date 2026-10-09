@@ -16,6 +16,7 @@ function relativeDuration(iso: string): string | null {
   const diffMinutes = Math.floor(diffMs / 60_000);
   const diffHours = Math.floor(diffMinutes / 60);
   const diffDays = Math.floor(diffHours / 24);
+  // RAMBLA-FORK: fix: (no plan): show reset countdown to two units (d h, h m, m s).
   if (diffDays > 0) return `${diffDays}d ${diffHours % 24}h`;
   if (diffHours > 0) return `${diffHours}h ${diffMinutes % 60}m`;
   return `${diffMinutes}m ${Math.floor((diffMs % 60_000) / 1000)}s`;

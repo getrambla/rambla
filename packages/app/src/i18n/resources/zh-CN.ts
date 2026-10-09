@@ -66,6 +66,7 @@ export const zhCN: TranslationResources = {
       daemonClientDisconnected: "Daemon client 已断开连接",
       noFileFound: "未找到 {{token}} 对应的文件",
       unexpectedDictationError: "处理听写时发生意外错误。",
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: adds the dictation-not-sent and no-recording-to-resend messages.
       dictationNotSent: "听写未发送。",
       dictationRetryNotPossible: "没有可重新发送的录音。",
     },

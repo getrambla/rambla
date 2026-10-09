@@ -1,3 +1,4 @@
+// RAMBLA-FORK: feature: 2026-09-20-feat-live-dictation-text-in-field.md: places dictated segments in the composer field as they arrive.
 import { useMemo, useRef } from "react";
 import type { DictationSegment } from "@getrambla/protocol/dictation-segment.rambla";
 import type { DictationStatus } from "@/hooks/use-dictation";

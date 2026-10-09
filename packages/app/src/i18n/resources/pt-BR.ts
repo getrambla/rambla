@@ -67,6 +67,7 @@ export const ptBR: TranslationResources = {
       daemonClientDisconnected: "O cliente do daemon está desconectado",
       noFileFound: "Nenhum arquivo encontrado para {{token}}",
       unexpectedDictationError: "Ocorreu um erro inesperado ao processar o ditado.",
+      // RAMBLA-FORK: fix: 2026-09-16-fix-dictation-loss.md: adds the dictation-not-sent and no-recording-to-resend messages.
       dictationNotSent: "Ditado não enviado.",
       dictationRetryNotPossible: "Não há gravação para reenviar.",
     },
