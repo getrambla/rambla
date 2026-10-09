@@ -43,8 +43,8 @@ done
 # Then contents, only in tracked text files that actually contain the string.
 git grep -lIi paseo -- . | grep -Ev "$SKIP" | while IFS= read -r f; do
 	sub <"$f" >"$f.rebrand.tmp"
-	chmod --reference="$f" "$f.rebrand.tmp"
-	mv "$f.rebrand.tmp" "$f"
+	cat "$f.rebrand.tmp" >"$f"
+	rm "$f.rebrand.tmp"
 done
 
 echo "remaining case-insensitive paseo hits: $(git grep -lIi paseo -- . | grep -Ev "$SKIP" | wc -l)"

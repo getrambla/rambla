@@ -271,7 +271,7 @@ function oldStyleMerge(repo, sha, n) {
 
 /** Builds a fixture upstream, an origin holding main, the target branch and an old-style upstream-rebrand, plus the stand-in npm and gh; asserts main never moves (criteria 1, 13). */
 function makeFixture(t) {
-  const root = mkdtempSync(path.join(tmpdir(), "sync-upstream-test-"));
+  const root = realpathSync(mkdtempSync(path.join(tmpdir(), "sync-upstream-test-")));
   let main;
   t.after(() => {
     try {
@@ -381,6 +381,7 @@ function sync(dir, env = {}) {
     cwd: dir,
     env: {
       ...gitEnv,
+      HOME: path.join(root, "home"),
       PATH: `${path.join(root, "standins")}${path.delimiter}${process.env.PATH}`,
       REAL_NPM: realNpm,
       CALL_LOG: log,
@@ -911,6 +912,11 @@ function mergeBranches(repo) {
   return branchNames(repo).filter((name) => name.startsWith("merge-"));
 }
 
+/** Where the sync puts a merge branch's worktree under the fixture's HOME. */
+function mergeWorktree(fx, name) {
+  return path.join(fx.root, "home", "worktrees", "rambla", name);
+}
+
 /** Makes the target branch rewrite rambla.ts and tags an upstream release rewriting it too, so merging that release conflicts; returns the checkout. */
 function conflictingRelease(fx, name, n) {
   const ours = pushToTarget(
@@ -1054,7 +1060,7 @@ test("criterion 9: with every release tag synced and landed, a run changes nothi
   assert.equal(worktreeCount(dir), 1);
 });
 
-test("criteria 10, 16: a conflict stops the run listing its paths; upstream-rebrand is pushed, the merge branch is deleted unpushed, the target branch is unchanged", (t) => {
+test("criteria 10, 16: a conflict stops the run listing its paths; upstream-rebrand is pushed, the merge branch is left unpushed in its worktree, the target branch is unchanged", (t) => {
   const fx = makeFixture(t);
   const synced = firstRun(fx);
   const ours = conflictingRelease(fx, "v0.11.0", 9);
@@ -1071,10 +1077,16 @@ test("criteria 10, 16: a conflict stops the run listing its paths; upstream-rebr
   assert.equal(rev(fx.origin, TARGET), target);
   assert.equal(rev(ours, TARGET), target);
   assert.deepEqual(mergeBranches(fx.origin), []);
-  assert.deepEqual(mergeBranches(ours), []);
+  assert.deepEqual(mergeBranches(ours), ["merge-v0.11.0"]);
   assert.deepEqual(run.gh, []);
   assert.deepEqual(checkCalls(run), []);
-  assert.equal(worktreeCount(ours), 1);
+  assert.equal(worktreeCount(ours), 2);
+  const wt = mergeWorktree(fx, "merge-v0.11.0");
+  assert.equal(git(wt, ["symbolic-ref", "--short", "HEAD"]), "merge-v0.11.0");
+  assert.equal(
+    git(wt, ["diff", "--name-only", "--diff-filter=U"]),
+    "packages/rambla-core/src/rambla.ts",
+  );
 });
 
 test("criterion 10: upstream deleting a file main changed is a conflict, listed", (t) => {
@@ -1101,7 +1113,7 @@ test("criterion 10: upstream deleting a file main changed is a conflict, listed"
   assert.match(run.output, /^packages\/rambla-core\/src\/beta2\.ts$/m);
   assert.equal(rev(fx.origin, TARGET), target);
   assert.deepEqual(mergeBranches(fx.origin), []);
-  assert.equal(worktreeCount(ours), 1);
+  assert.equal(worktreeCount(ours), 2);
 });
 
 test("criteria 8, 10: of two new release tags, the first lands and the second conflicts; the first stays landed and each got its own merge branch", (t) => {
@@ -1138,8 +1150,8 @@ test("criteria 8, 10: of two new release tags, the first lands and the second co
     LOCAL_CHECKS.map(() => landed),
   );
   assert.deepEqual(mergeBranches(fx.origin), []);
-  assert.deepEqual(mergeBranches(ours), []);
-  assert.equal(worktreeCount(ours), 1);
+  assert.deepEqual(mergeBranches(ours), ["merge-v0.12.0"]);
+  assert.equal(worktreeCount(ours), 2);
 });
 
 test("criteria 10, 16, 18: a failing local check stops the run naming it; the merge branch is pushed and left on origin, upstream-rebrand is pushed, the target branch is unchanged", (t) => {
@@ -1166,9 +1178,10 @@ test("criteria 10, 16, 18: a failing local check stops the run naming it; the me
   for (const call of checks) assert.equal(call.head, left);
   assert.equal(rev(fx.origin, TARGET), target);
   assert.equal(rev(dir, TARGET), target);
-  assert.deepEqual(mergeBranches(dir), []);
+  assert.deepEqual(mergeBranches(dir), ["merge-v0.10.0-beta.2"]);
+  assert.equal(rev(mergeWorktree(fx, "merge-v0.10.0-beta.2"), "HEAD"), left);
   assert.deepEqual(run.gh, []);
-  assert.equal(worktreeCount(dir), 1);
+  assert.equal(worktreeCount(dir), 2);
 });
 
 test("criteria 10, 11: a re-run after the merge branch a failing local check left is fixed on origin uses that branch and lands it", (t) => {
@@ -1196,6 +1209,7 @@ test("criteria 10, 11: a re-run after the merge branch a failing local check lef
     LOCAL_CHECKS.map((args) => [args, tip]),
   );
   assert.deepEqual(mergeBranches(fx.origin), []);
+  assert.deepEqual(mergeBranches(dir), []);
   assert.equal(worktreeCount(dir), 1);
 });
 
@@ -1300,6 +1314,7 @@ test("criterion 11: a merge branch already on origin, fixed by hand after a stop
   ]);
   assert.equal(rev(fx.origin, TARGET), fixed);
   assert.deepEqual(mergeBranches(fx.origin), []);
+  assert.deepEqual(mergeBranches(ours), []);
   assert.equal(worktreeCount(ours), 1);
 });
 
@@ -1340,7 +1355,7 @@ test("criteria 11, 16: a failing ci.yml job stops the run naming it and leaves t
   assert.deepEqual(mergeBranches(fx.origin), ["merge-v0.10.0-beta.2"]);
   assert.equal(rev(fx.origin, "merge-v0.10.0-beta.2"), lookups[0].commit);
   assert.equal(rev(fx.origin, TARGET), target);
-  assert.equal(worktreeCount(dir), 1);
+  assert.equal(worktreeCount(dir), 2);
 });
 
 test("criterion 11: the target branch moving during the ci.yml wait stops the run naming both tips, with no fast-forward and the merge branch left", (t) => {
@@ -1357,7 +1372,7 @@ test("criterion 11: the target branch moving during the ci.yml wait stops the ru
   assert.equal(rev(fx.origin, TARGET), moved);
   assert.deepEqual(mergeBranches(fx.origin), ["merge-v0.10.0-beta.2"]);
   assert.equal(rev(fx.origin, "merge-v0.10.0-beta.2"), lookup.commit);
-  assert.equal(worktreeCount(dir), 1);
+  assert.equal(worktreeCount(dir), 2);
 });
 
 test("criterion 11: a Playwright-only failure lands while IGNORE_PLAYWRIGHT_TESTS is on, its default, and stops the run when it is false or 0", (t) => {
@@ -1569,7 +1584,7 @@ test("criterion 11: the skill is sync-upstream, reachable from .claude/ and .age
   assert.doesNotMatch(text.replace(WORKFLOW_NAME, ""), new RegExp(OLD_NAMES));
 });
 
-test("criterion 10: the skill's stop table says a failing local check leaves merge-<tag> on origin to fix on that branch, and a conflict deletes it", () => {
+test("criterion 10: the skill's stop table says a failing local check leaves merge-<tag> on origin to fix on that branch, and a conflict leaves it in its worktree", () => {
   const table = section(repoFile(SYNC_SKILL), "### 2. When it stops");
   const row = (start) => {
     const line = table.split("\n").find((l) => l.startsWith(`| ${start}`));
@@ -1585,7 +1600,7 @@ test("criterion 10: the skill's stop table says a failing local check leaves mer
   assert.match(checkNext, /fix it/);
   assert.doesNotMatch(checkNext, /by hand/);
   const [, conflictLeft] = row("a conflict");
-  assert.match(conflictLeft, /`merge-<tag>` deleted/);
+  assert.match(conflictLeft, /`merge-<tag>` unpushed in `~\/worktrees\/rambla\/merge-<tag>`/);
 });
 
 test("criterion 11: the skill and docs/brand.md never say a sync runs the logo generator, and generate.mjs's comment never mentions a sync", () => {

@@ -94,21 +94,11 @@ on() {
 	[ "$1" != 0 ] && [ "$1" != false ]
 }
 
-# Puts the temporary worktree at commit $1, making it on first use.
-worktree_at() {
-	if [ -z "$WT" ]; then
-		WT="$(mktemp -d)"
-		git worktree add --detach "$WT" "$1"
-	else
-		git -C "$WT" checkout --detach "$1"
-	fi
-}
-
-# Runs one local check in the temporary worktree; a failure pushes the merge branch, left on origin to fix, and stops the run.
+# Runs one local check in the merge branch's worktree; a failure pushes the merge branch, left on origin and in the worktree to fix, and stops the run.
 check() {
 	if ! (cd "$WT" && "$@"); then
 		git push origin "$(git -C "$WT" rev-parse HEAD):refs/heads/$MB"
-		echo "error: local check failed: $*; $MB is left on origin to fix by hand, then run again" >&2
+		echo "error: local check failed: $*; $MB is left on origin and in $WT to fix by hand, then run again" >&2
 		exit 1
 	fi
 }
@@ -183,31 +173,32 @@ for tag in "${TAGS[@]}"; do
 	PLAN+=("$tag")
 done
 
-WT=""
-trap '[ -z "$WT" ] || git worktree remove --force "$WT" || rm -rf "$WT"' EXIT
+RWT=""
+trap '[ -z "$RWT" ] || git worktree remove --force "$RWT" || rm -rf "$RWT"' EXIT
 
 if [ ${#PLAN[@]} -eq 0 ]; then
 	echo "$BRANCH already holds every release tag through $NEWEST"
 else
-	worktree_at "$BRANCH"
+	RWT="$(mktemp -d)"
+	git worktree add --detach "$RWT" "$BRANCH"
 fi
 
 for tag in "${PLAN[@]}"; do
-	merge="$(git -C "$WT" commit-tree -p HEAD -p "${COMMIT[$tag]}" -m "merge upstream $tag with -s ours" 'HEAD^{tree}')"
-	git -C "$WT" read-tree -u --reset "${COMMIT[$tag]}"
+	merge="$(git -C "$RWT" commit-tree -p HEAD -p "${COMMIT[$tag]}" -m "merge upstream $tag with -s ours" 'HEAD^{tree}')"
+	git -C "$RWT" read-tree -u --reset "${COMMIT[$tag]}"
 	# -f because read-tree just staged the tag's copies, which git rm otherwise refuses to drop.
-	git -C "$WT" rm -r -f --ignore-unmatch -- "${DELETE_LIST[@]}"
-	(cd "$WT" && bash "$HERE/rebrand.sh")
-	npm --prefix "$HERE/.." run format:files -- "$WT"
-	git -C "$WT" add -A
-	rebrand="$(git -C "$WT" commit-tree -p "$merge" -m "rebrand upstream $tag" "$(git -C "$WT" write-tree)")"
-	git -C "$WT" reset --soft "$rebrand"
+	git -C "$RWT" rm -r -f --ignore-unmatch -- "${DELETE_LIST[@]}"
+	(cd "$RWT" && bash "$HERE/rebrand.sh")
+	npm --prefix "$HERE/.." run format:files -- "$RWT"
+	git -C "$RWT" add -A
+	rebrand="$(git -C "$RWT" commit-tree -p "$merge" -m "rebrand upstream $tag" "$(git -C "$RWT" write-tree)")"
+	git -C "$RWT" reset --soft "$rebrand"
 	REBRAND_OF[${COMMIT[$tag]}]="$rebrand"
 	echo "synced $tag onto $BRANCH"
 done
 
 if [ ${#PLAN[@]} -gt 0 ]; then
-	TIP="$(git -C "$WT" rev-parse HEAD)"
+	TIP="$(git -C "$RWT" rev-parse HEAD)"
 	git push --atomic origin "$TIP:refs/heads/$BRANCH"
 	git branch -f "$BRANCH" "$TIP"
 fi
@@ -237,18 +228,22 @@ while read -r sha ref; do
 	fi
 done <<<"$REMOTE_MERGES"
 
+WORKTREES="$HOME/worktrees/rambla"
+
 # gh would pick the upstream remote over origin, so name origin's repo.
 REPO="$(git remote get-url origin | sed -E 's#\.git$##; s#^.*[:/]([^/]+/[^/]+)$#\1#')"
 
 for tag in "${MERGES[@]}"; do
 	MB="merge-$tag"
+	WT="$WORKTREES/$MB"
 	if [ "$MB" = "$EXISTING" ]; then
 		git fetch --no-tags origin "refs/heads/$MB"
 		HEAD_SHA="$(git rev-parse FETCH_HEAD)"
 		echo "using $MB from origin at $HEAD_SHA"
 	else
 		echo "merging $tag's rebrand commit into $MB, cut from $TARGET at $TARGET_TIP"
-		worktree_at "$TARGET_TIP"
+		mkdir -p "$WORKTREES"
+		git worktree add -b "$MB" "$WT" "$TARGET_TIP"
 		# A conflict is listed below; any other merge failure stops the run here.
 		git -C "$WT" merge --no-ff --no-commit "${REBRAND_OF[${COMMIT[$tag]}]}" || [ -n "$(git -C "$WT" ls-files --unmerged)" ]
 		# The rebrand commit lacks the delete list, so the merge would otherwise take its deletions.
@@ -256,7 +251,7 @@ for tag in "${MERGES[@]}"; do
 		if [ -n "$KEEP" ]; then git -C "$WT" checkout "$TARGET_TIP" --pathspec-from-file=- <<<"$KEEP"; fi
 		CONFLICTS="$(git -C "$WT" diff --name-only --diff-filter=U)"
 		if [ -n "$CONFLICTS" ]; then
-			printf 'error: merging %s conflicts; %s was deleted, never pushed. Conflicted paths:\n%s\n' "$tag" "$MB" "$CONFLICTS" >&2
+			printf 'error: merging %s conflicts; %s is left unpushed in %s to resolve, commit and push to origin, then run again. Conflicted paths:\n%s\n' "$tag" "$MB" "$WT" "$CONFLICTS" >&2
 			exit 1
 		fi
 		node "$WT/fork/build-changelog.mjs"
@@ -308,6 +303,10 @@ for tag in "${MERGES[@]}"; do
 		exit 1
 	fi
 	git push origin --delete "$MB"
+	if [ -d "$WT" ]; then
+		git worktree remove --force "$WT"
+		git branch -D "$MB"
+	fi
 	echo "landed $tag in $TARGET"
 	TARGET_TIP="$HEAD_SHA"
 done
