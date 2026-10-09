@@ -46,7 +46,7 @@ BRANCH="upstream-rebrand"
 # The newest tag the old sync reached; tags at or below it are never synced or checked.
 FLOOR="v0.10.0-beta.1"
 # CI runs the same checks, so the sync workflow turns these off.
-RUN_LOCAL_CHECKS="${RUN_LOCAL_CHECKS:-1}"
+LOCAL_SYNC="${LOCAL_SYNC:-0}"
 # Turn this off once the flaky Playwright tests are fixed.
 IGNORE_PLAYWRIGHT_TESTS="${IGNORE_PLAYWRIGHT_TESTS:-1}"
 # CI runs the end-to-end and integration tests; locally only unit tests run.
@@ -263,7 +263,7 @@ for tag in "${MERGES[@]}"; do
 		node "$WT/fork/build-readme.mjs"
 		git -C "$WT" add CHANGELOG.md README.md
 		git -C "$WT" commit -m "merge upstream $tag"
-		if on "$RUN_LOCAL_CHECKS"; then
+		if on "$LOCAL_SYNC"; then
 			check npm ci
 			check npm run build:server
 			check npm run build:app-deps

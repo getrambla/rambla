@@ -74,7 +74,7 @@ It takes no arguments, and does the whole run:
    on origin to it, and deletes it. The local branch catches up with
    `git pull --ff-only`, or at the next run.
 
-`RUN_LOCAL_CHECKS=0 just sync-upstream` skips the local checks. The daily
+`just sync-upstream` skips the local checks. The daily
 `sync-upstream.rambla.yml` workflow runs the same script with them off, since
 `ci.yml` runs the same checks.
 

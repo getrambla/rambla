@@ -26,7 +26,7 @@ permissions:
 env:
   ONNXRUNTIME_NODE_INSTALL: skip
   # ci.yml runs the same checks on each merge branch.
-  RUN_LOCAL_CHECKS: "0"
+  LOCAL_SYNC: "0"
 
 jobs:
   sync-upstream:

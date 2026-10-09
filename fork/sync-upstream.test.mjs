@@ -1265,11 +1265,11 @@ test("criterion 18: no test file named e2e or integration runs or is passed to a
   }
 });
 
-test("criterion 18: RUN_LOCAL_CHECKS set to 0 or false skips the local checks", (t) => {
+test("criterion 18: LOCAL_SYNC set to 0 or false skips the local checks", (t) => {
   for (const value of ["0", "false"]) {
     const fx = makeFixture(t);
 
-    const run = sync(checkout(fx, "checkout"), { RUN_LOCAL_CHECKS: value });
+    const run = sync(checkout(fx, "checkout"), { LOCAL_SYNC: value });
 
     assert.equal(run.status, 0, run.output);
     assert.deepEqual(checkCalls(run), [], value);
@@ -1456,7 +1456,7 @@ test("criteria 11, 16, 18: just sync-upstream runs the script, with its local ch
 
   assert.match(recipe, /^\s+bash fork\/sync-upstream\.sh\s*$/m);
   // The script turns the local checks on unless told otherwise, so the recipe never mentions them.
-  assert.doesNotMatch(recipe, /RUN_LOCAL_CHECKS/);
+  assert.doesNotMatch(recipe, /LOCAL_SYNC/);
   assert.doesNotMatch(recipe, HIDDEN_OUTPUT);
 });
 
@@ -1466,7 +1466,7 @@ test("criteria 11, 13, 16, 18: sync-upstream.rambla.yml runs the script daily an
   assert.match(workflow, /^ {2}schedule:\n( +#.*\n)* +- cron: "\d+ \d+ \* \* \*"$/m);
   assert.match(workflow, /^ {2}workflow_dispatch:$/m);
   assert.match(workflow, /^ +fork\/sync-upstream\.sh$/m);
-  assert.match(workflow, /^ +RUN_LOCAL_CHECKS: "?(0|false)"?$/m);
+  assert.match(workflow, /^ +LOCAL_SYNC: "?(0|false)"?$/m);
   assert.match(workflow, /^ +ref: \$\{\{ github\.ref \}\}$/m);
   assert.doesNotMatch(workflow.replaceAll("main-writer", ""), /\bmain\b/);
   // The script does every push; the workflow names no branch to push to or trigger on.
