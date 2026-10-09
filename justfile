@@ -486,4 +486,4 @@ logs dev="" lines="50":
 
 # Sync each new upstream release tag onto upstream-rebrand, then land it in the checked-out branch through its own merge branch once the local checks and ci.yml pass.
 sync-upstream:
-    bash fork/sync-upstream.sh
+    LOCAL_SYNC=1 bash fork/sync-upstream.sh
