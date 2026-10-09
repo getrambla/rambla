@@ -97,7 +97,7 @@ vi.mock("expo-audio", () => ({
   setAudioModeAsync: async () => {},
 }));
 vi.mock("expo-file-system", () => ({
-  File: class {},
+  File: vi.fn(),
   Paths: {},
 }));
 
