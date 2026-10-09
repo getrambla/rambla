@@ -63,12 +63,15 @@ just sync-upstream
 It takes no arguments, and does the whole run:
 
 1. Syncs every new upstream release tag onto `upstream-rebrand`, oldest
-   first, and pushes it. A release tag is a `v*` tag on upstream main, betas
+   first, and pushes it. Every tag gets its own rebrand commit there, kept
+   for future reference. A release tag is a `v*` tag on upstream main, betas
    included. Tags on upstream side branches, like hotfix `v0.10.1`, are
    ignored.
-2. For each tag the branch lacks, oldest first, cuts `merge-<tag>` from the
-   branch, merges that tag's rebrand commit, keeps the branch's copies of
-   the delete list, rebuilds `CHANGELOG.md`, and runs the local checks:
+2. Merges only the newest tag the branch lacks; its rebrand commit carries
+   every older one, so the tags in between are never merged on their own.
+   Cuts `merge-<tag>` from the branch, merges that tag's rebrand commit,
+   keeps the branch's copies of the delete list, rebuilds `CHANGELOG.md`,
+   and runs the local checks:
    `npm ci`, `npm run build:server`, `npm run typecheck` and the unit tests.
 3. Pushes `merge-<tag>`, waits for `ci.yml` on it, fast-forwards the branch
    on origin to it, and deletes it. The local branch catches up with
@@ -78,12 +81,11 @@ It takes no arguments, and does the whole run:
 `sync-upstream.rambla.yml` workflow runs the same script with them off, since
 `ci.yml` runs the same checks.
 
-Exit 0 → report which tags landed, from its `landed <tag>` lines, and stop.
+Exit 0 → report which tag landed, from its `landed <tag>` line, and stop.
 
 ### 2. When it stops
 
-The first tag that stops ends the run; the tags before it stay landed. The
-last lines of the output say why:
+The last lines of the output say why:
 
 | It stopped on                        | Left behind                                                | Next                                                     |
 | ------------------------------------ | ---------------------------------------------------------- | -------------------------------------------------------- |

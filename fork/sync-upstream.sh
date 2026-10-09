@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sync each new upstream release tag onto upstream-rebrand as an ours-merge commit, then a rebrand commit; then land each tag's rebrand commit in the checked-out branch through its own merge branch once ci.yml passes. No arguments.
+# Sync each new upstream release tag onto upstream-rebrand as an ours-merge commit, then a rebrand commit; then land the newest tag's rebrand commit in the checked-out branch through its own merge branch once ci.yml passes. No arguments.
 
 set -euo pipefail
 
@@ -213,6 +213,8 @@ if [ ${#MERGES[@]} -eq 0 ]; then
 	echo "$TARGET already holds every rebrand commit on $BRANCH"
 	exit 0
 fi
+# Only the newest tag is merged; its rebrand commit carries every older one.
+MERGES=("${MERGES[${#MERGES[@]}-1]}")
 
 # A merge branch already in the target branch is spent and deleted; one that is not is the next tag's, left by a stop, and resumed.
 EXISTING=""
