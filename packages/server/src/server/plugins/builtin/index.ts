@@ -13,7 +13,8 @@ export const builtinPlugins = [
   "minimax-usage-source",
   "muse-provider",
   "opencode-go-usage-source",
-  "zai-usage-source",
+  // RAMBLA-FORK: feature: 2026-10-09-merge-upstream-v0-11-1.md: load the GLM Z.ai source in place of upstream's zai-usage-source.
+  "glm-usage-source",
 ] as const;
 
 export function resolveBuiltinPluginsRoot(moduleUrl: string | URL = import.meta.url): string {

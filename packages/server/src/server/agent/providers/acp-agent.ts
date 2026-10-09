@@ -132,6 +132,9 @@ import {
 } from "./diagnostic-utils.js";
 import { withTimeout } from "../../../utils/promise-timeout.js";
 
+// RAMBLA-FORK: feature: 2026-10-09-merge-upstream-v0-11-1.md: builds the launch env usageSession() reports.
+import { createProviderEnv } from "../provider-launch-config.js";
+
 const ACP_AUTO_ACCEPT_FEATURE_ID = "auto_accept";
 
 function assertChildWithPipes(
@@ -1811,6 +1814,22 @@ export class ACPAgentSession implements AgentSession, ACPClient {
 
   get id(): string | null {
     return this.sessionId;
+  }
+
+  // RAMBLA-FORK: feature: 2026-10-09-merge-upstream-v0-11-1.md: reports the session to usage sources so the GLM agent shows its Z.ai card.
+  private readonly usageSessionKey = randomUUID();
+  usageSession() {
+    if (this.closed) return null;
+    return {
+      provider: this.provider,
+      model: this.currentModel ?? undefined,
+      env: createProviderEnv({
+        baseEnv: process.env,
+        runtimeSettings: this.runtimeSettings,
+        overlays: [this.launchEnv],
+      }),
+      sessionKey: this.usageSessionKey,
+    };
   }
 
   async initializeNewSession(): Promise<void> {
