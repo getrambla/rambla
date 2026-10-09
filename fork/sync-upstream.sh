@@ -223,18 +223,18 @@ if [ ${#MERGES[@]} -eq 0 ]; then
 	exit 0
 fi
 
-# A branch left from an earlier stop holds work only a person can finish, so nothing merges past it.
+# A merge branch already in the target branch is spent and deleted; one that is not is the next tag's, left by a stop, and resumed.
 EXISTING=""
 REMOTE_MERGES="$(git ls-remote --heads origin 'refs/heads/merge-*')"
-while read -r _ ref; do
-	case "$ref" in
-	"") ;;
-	"refs/heads/merge-${MERGES[0]}") EXISTING="${ref#refs/heads/}" ;;
-	*)
-		echo "error: ${ref#refs/heads/} is on origin; it must land in $TARGET or be deleted first" >&2
-		exit 1
-		;;
-	esac
+while read -r sha ref; do
+	if [ -z "$ref" ]; then continue; fi
+	git fetch --no-tags origin "$ref"
+	if git merge-base --is-ancestor "$sha" "$TARGET_TIP"; then
+		git push origin --delete "${ref#refs/heads/}"
+		echo "deleted ${ref#refs/heads/}: already landed in $TARGET"
+	else
+		EXISTING="${ref#refs/heads/}"
+	fi
 done <<<"$REMOTE_MERGES"
 
 # gh would pick the upstream remote over origin, so name origin's repo.

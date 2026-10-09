@@ -349,9 +349,7 @@ function makeFixture(t) {
         "fork/build-readme.mjs",
         "scripts/changelog-utils.mjs",
         "scripts/is-main-module.mjs",
-      ].map(
-        (file) => [file, readFileSync(path.join(repoRoot, file), "utf8")],
-      ),
+      ].map((file) => [file, readFileSync(path.join(repoRoot, file), "utf8")]),
     ),
   };
   commit(seed, forkFiles, 5, "fork change");
@@ -1305,28 +1303,25 @@ test("criterion 11: a merge branch already on origin, fixed by hand after a stop
   assert.equal(worktreeCount(ours), 1);
 });
 
-test("criterion 11: a merge- branch for an older tag on origin stops the merge step with an error naming it, while upstream-rebrand still syncs", (t) => {
+test("criterion 11: a merge- branch on origin already landed in the target branch is deleted and the next tag lands", (t) => {
   const fx = makeFixture(t);
   const synced = firstRun(fx);
   const dir = checkout(fx, "checkout");
   git(dir, ["push", "origin", `${TARGET}:refs/heads/merge-v0.10.0`]);
-  const stray = rev(fx.origin, "merge-v0.10.0");
   release(fx, "v0.11.0", { "version.txt": "0.11.0\n" }, 10);
   const target = rev(fx.origin, TARGET);
 
   const run = sync(dir);
 
-  assert.notEqual(run.status, 0, run.output);
-  assert.match(
-    run.output,
-    /^error: merge-v0\.10\.0 .*must land in fix\/sync-target or be deleted first/m,
-  );
-  assertSynced(fx, synced, ["v0.11.0"]);
-  assert.equal(rev(fx.origin, TARGET), target);
-  assert.deepEqual(mergeBranches(fx.origin), ["merge-v0.10.0"]);
-  assert.equal(rev(fx.origin, "merge-v0.10.0"), stray);
-  assert.deepEqual(run.gh, []);
-  assert.deepEqual(checkCalls(run), []);
+  assert.equal(run.status, 0, run.output);
+  assert.match(run.output, /^deleted merge-v0\.10\.0: already landed in fix\/sync-target$/m);
+  const [v0110] = assertSynced(fx, synced, ["v0.11.0"]);
+  const landed = rev(fx.origin, TARGET);
+  assert.deepEqual(parents(fx.origin, landed), [target, v0110]);
+  assert.deepEqual(ciLookups(run), [
+    { workflow: "ci.yml", branch: "merge-v0.11.0", commit: landed },
+  ]);
+  assert.deepEqual(mergeBranches(fx.origin), []);
   assert.equal(worktreeCount(dir), 1);
 });
 
