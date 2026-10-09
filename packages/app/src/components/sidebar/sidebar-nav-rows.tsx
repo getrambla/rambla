@@ -3,8 +3,7 @@ import { CalendarClock, History, Plus, Search } from "lucide-react-native";
 import { memo, useCallback, useMemo, useRef, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { View, type StyleProp, type ViewStyle } from "react-native";
-// RAMBLA-FORK: fix: 2026-09-30-fix-sidebar-shortcut-hover-wrap.md: uses our row that never wraps.
-import { RamblaSidebarHeaderRow as SidebarHeaderRow } from "@/components/sidebar/sidebar-header-row.rambla";
+import { SidebarHeaderRow } from "@/components/sidebar/sidebar-header-row";
 import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 import { PluginSidebarItem } from "@/plugins/sidebar-items";
 import { canCreateWorktreeForProjectKind } from "@/projects/host-projects";

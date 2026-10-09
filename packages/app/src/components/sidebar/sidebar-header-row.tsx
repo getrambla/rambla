@@ -14,6 +14,9 @@ import type { Theme } from "@/styles/theme";
 import { Shortcut } from "@/components/ui/shortcut";
 import type { ShortcutKey } from "@/utils/format-shortcut";
 
+// RAMBLA-FORK: fix: 2026-09-30-fix-sidebar-shortcut-hover-wrap.md: the label screen readers speak, with the shortcut.
+import { useSidebarHeaderRowSpokenLabel } from "@/components/sidebar/sidebar-header-row-spoken-label.rambla";
+
 const foregroundColorMapping = (theme: Theme) => ({ color: theme.colors.foreground });
 const foregroundMutedColorMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });
 
@@ -67,6 +70,8 @@ export function SidebarHeaderRow({
   const ThemedIcon = useMemo(() => (Icon ? withUnistyles(Icon) : null), [Icon]);
   const isHighlighted = isHovered || isActive;
   const iconSize = variant === "header" ? ICON_SIZE.md : ICON_SIZE.sm;
+  // RAMBLA-FORK: fix: 2026-09-30-fix-sidebar-shortcut-hover-wrap.md: speaks the shortcut, which is only on screen while hovered.
+  const spokenLabel = useSidebarHeaderRowSpokenLabel(label, shortcutKeys);
 
   let right = trailing ?? null;
   if (right === null && shortcutKeys && isHovered) {
@@ -86,7 +91,8 @@ export function SidebarHeaderRow({
           nativeID={nativeID}
           accessible
           accessibilityRole="button"
-          accessibilityLabel={accessibilityLabel ?? label}
+          // RAMBLA-FORK: fix: 2026-09-30-fix-sidebar-shortcut-hover-wrap.md: the caller's label wins, else the spoken label.
+          accessibilityLabel={accessibilityLabel ?? spokenLabel}
           accessibilityState={isActive ? SELECTED_STATE : undefined}
           aria-selected={isActive}
           style={styles.button}
@@ -99,7 +105,10 @@ export function SidebarHeaderRow({
           ) : (
             <View style={variant === "header" ? styles.iconSpacer : styles.iconSpacerCompact} />
           )}
-          <Text style={[styles.label, isHighlighted && styles.labelHighlighted]}>{label}</Text>
+          {/* RAMBLA-FORK: fix: 2026-09-30-fix-sidebar-shortcut-hover-wrap.md: one line with an ellipsis, never wraps. */}
+          <Text style={[styles.label, isHighlighted && styles.labelHighlighted]} numberOfLines={1}>
+            {label}
+          </Text>
         </Pressable>
         {right === null ? null : (
           <Pressable onPress={onPress} accessible={false} focusable={false} style={styles.trailing}>
