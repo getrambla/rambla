@@ -6,6 +6,8 @@ const withAndroidProfileable = require("./plugins/with-android-profileable");
 const withFdroidAutolinking = require("./plugins/with-fdroid-autolinking");
 const withPasteInput = require("./plugins/with-paste-input");
 const withAndroidScroll = require("./modules/rambla-scroll/app.plugin");
+// RAMBLA-FORK: fix (no-plan) ensure minimum iOS deployment target
+const withIosDeploymentTarget = require("./plugins/with-ios-deployment-target.rambla");
 const { getNativeReleaseVersion } = require("./native-release-version");
 const appVariant = process.env.APP_VARIANT ?? "production";
 const isFdroidBuild = process.env.RAMBLA_FDROID_BUILD === "1";
@@ -146,6 +148,8 @@ export default {
     plugins: [
       "expo-router",
       withPasteInput,
+      // RAMBLA-FORK: fix (no-plan) ensure minimum iOS deployment target
+      withIosDeploymentTarget,
       withAndroidScroll,
       [withAndroidAsyncStorageSize, 64],
       ...buildProfile.cameraPlugins,
@@ -178,6 +182,10 @@ export default {
             kotlinVersion: "2.1.20",
             // Allow HTTP connections for local network hosts in release builds
             usesCleartextTraffic: true,
+          },
+          // RAMBLA-FORK: fix (no-plan) ensure minimum iOS deployment target
+          ios: {
+            deploymentTarget: "15.1",
           },
         },
       ],

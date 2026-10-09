@@ -13,6 +13,8 @@ macos_unit_path := home_dir() / "Library/LaunchAgents"
 # Functions
 name(dev) := if dev == "dev" { "rambla-dev" } else { "rambla" }
 install_path(dev) := if dev == "dev" { justfile_dir() } else { stable_dir }
+app_variant(dev) := if dev == "dev" { "development" } else { "production" }
+xcodeproj(dev) := if dev == "dev" { "RamblaDebug" } else { "Rambla" }
 
 # List recipes.
 @list:
@@ -109,14 +111,14 @@ provenance:
     tag=$(git ls-remote --tags upstream 'refs/tags/v*' | awk -v u="$u" '$1 == u { sub(/^refs\/tags\//, "", $2); sub(/\^\{\}$/, "", $2); print $2 }')
     git log -1 --format="- upstream/main: %h ($tag) — %cs" "$u"
 
-# Create branch <branch> off HEAD in ~/worktrees/rambla/<branch with / as ->, then npm ci and build:server.
+# Create branch <branch> off HEAD in ~/worktrees/rambla/<branch with / as ->, then npm install and build:server.
 [script]
 worktree branch:
     set -eu
     dir="{{ worktrees_path }}/$(echo "{{ branch }}" | tr / -)"
     git worktree add "$dir" -b "{{ branch }}"
     cd "$dir"
-    npm ci
+    npm install
     npm run build:server
     echo "ready: $dir"
 
@@ -260,7 +262,7 @@ start dev="":
 restart dev="": (stop dev) (start dev)
 
 _systemctl-reload:
-    systemctl --user daemon-reload
+    if ! {{ is_macos }}; then systemctl --user daemon-reload; fi
 
 [script]
 status dev="":
@@ -273,8 +275,7 @@ status dev="":
 
 # Build and run Rambla Debug desktop
 dev-desktop:
-    npm ci
-    npm run build:desktop -- --dir
+    npm install
     npm run dev:desktop
 
 # Build this checkout's server, then stop the installed daemon and run this one detached
@@ -283,8 +284,9 @@ dev-server log_level="debug":
     eval "$(mise env -C "{{ justfile_dir() }}" -s bash)"
     npm run build:server
     if {{ is_macos }}; then
-        just _install-plist rambla-dev "{{ justfile_dir() }}" {{ log_level }}
-        just _start "rambla-dev"
+        just stop dev
+        just install-plist info dev
+        just start dev
     else
         systemd-run --user --collect --unit=rambla-dev \
             --working-directory="{{ justfile_dir() }}" \
@@ -319,7 +321,7 @@ install-server ref="": && install-unit
     cd "{{ stable_repo }}"
     git fetch origin "$ref"
     git checkout --quiet --force FETCH_HEAD
-    npm ci
+    npm install
     npm run build:server
 
     echo "installed daemon to {{ stable_dir }}/daemon"
@@ -332,14 +334,15 @@ install-server ref="": && install-unit
 [script]
 install-unit: && restart
     if {{ is_macos }}; then
-        just _install-plist rambla "{{ stable_repo }}" info
+        just install-plist info
     else
         just _install-systemd-unit
     fi
 
 # Render a launchd plist for the daemon. name=rambla runs the stable clone; name=rambla-dev runs this checkout.
 [script]
-_install-plist log_level="info" dev="":
+install-plist log_level="info" dev="":
+    if ! {{ is_macos }}; then exit 0; fi
     plist="{{ macos_unit_path }}/{{ name(dev) }}.plist"
     mkdir -p "{{ macos_unit_path }}"
     tmp="$plist.tmp"
@@ -378,6 +381,7 @@ _install-plist log_level="info" dev="":
 # Reload systemd and enable+restart the unit (own recipe because install-server's script attribute eats dependencies).
 [script]
 _install-systemd-unit: && _systemctl-reload
+    if {{ is_macos }}; then exit 0; fi
     mkdir -p "$(dirname "{{ unit }}")"
     tmp_unit="$(mktemp "{{ unit }}.XXXXXX")"
 
@@ -487,3 +491,23 @@ logs dev="" lines="50":
 # Sync each new upstream release tag onto upstream-rebrand, then land it in the checked-out branch through its own merge branch once the local checks and ci.yml pass.
 sync-upstream:
     LOCAL_SYNC=1 bash fork/sync-upstream.sh
+
+[working-directory('packages/app')]
+[script]
+xcode-gen dev="dev":
+    APP_VARIANT={{ app_variant(dev) }} npx expo prebuild --platform ios
+    (cd ios && pod install)
+    f="ios/{{ xcodeproj(dev) }}.xcodeproj/project.pbxproj"
+    team=$(defaults read com.apple.dt.Xcode IDEProvisioningTeamByIdentifier 2>/dev/null | grep -o 'teamID = [A-Z0-9]\+' | head -1 | cut -d' ' -f3 || true)
+    if [ -z "$team" ]; then
+        echo "error: no signing team found in Xcode settings (IDEProvisioningTeamByIdentifier)" >&2
+        exit 1
+    fi
+    sed -i '' "s/DEVELOPMENT_TEAM = [A-Z0-9]*;/DEVELOPMENT_TEAM = $team;/g" "$f"
+    echo "signing team: $team"
+
+[working-directory('packages/app')]
+[script]
+xcode-open:
+    [ -d "ios/RamblaDebug.xcworkspace" ] || just xcode-gen
+    open ios/RamblaDebug.xcworkspace

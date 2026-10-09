@@ -8,7 +8,8 @@ Pod::Spec.new do |s|
   s.license        = 'Apache-2.0'
   s.author         = 'Rambla'
   s.homepage       = 'https://rambla.sh'
-  s.platforms      = { :ios => '13.4' }
+  # RAMBLA-FORK: fix (no-plan) ensure minimum iOS deployment target
+  s.platforms      = { :ios => '15.1' }
   s.swift_version  = '5.4'
   s.source         = { :path => '.' }
   s.static_framework = true
