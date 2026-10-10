@@ -11,6 +11,9 @@ import {
 import { connectSeedClient, type SeedDaemonClient } from "./helpers/seed-client";
 import { createWithWorkspace, type WithWorkspace } from "./helpers/with-workspace";
 
+// RAMBLA-FORK: fix: (no plan): imports the all-projects sidebar seed.
+import { showAllProjectsInSidebar } from "./helpers/sidebar-all-projects.rambla";
+
 const EXTRA_HOSTS_KEY = "@rambla:e2e-extra-hosts";
 
 interface TrackedProjectPickerFixture extends ProjectPickerFixture {
@@ -185,6 +188,8 @@ const test = daemonTest.extend<{
           extraHostsKey: EXTRA_HOSTS_KEY,
         },
       );
+      // RAMBLA-FORK: fix: (no plan): sidebar shows all projects, so bare projects get a row.
+      await showAllProjectsInSidebar(page);
 
       await provide();
 
