@@ -1,6 +1,6 @@
 # fix: question card text not selectable on web
 
-Status: approved
+Status: done
 
 ## Provenance
 
