@@ -12,7 +12,7 @@ macos_unit_path := home_dir() / "Library/LaunchAgents"
 
 # Functions
 name(dev) := if dev == "dev" { "rambla-dev" } else { "rambla" }
-install_path(dev) := if dev == "dev" { justfile_dir() } else { stable_dir }
+install_path(dev) := if dev == "dev" { justfile_dir() } else { stable_repo }
 app_variant(dev) := if dev == "dev" { "development" } else { "production" }
 xcodeproj(dev) := if dev == "dev" { "RamblaDebug" } else { "Rambla" }
 
@@ -275,7 +275,7 @@ status dev="":
 
 # Build and run Rambla Debug desktop
 dev-desktop:
-    npm install
+    npm ci
     npm run dev:desktop
 
 # Build this checkout's server, then stop the installed daemon and run this one detached
@@ -321,15 +321,14 @@ install-server ref="": && install-unit
     cd "{{ stable_repo }}"
     git fetch origin "$ref"
     git checkout --quiet --force FETCH_HEAD
-    npm install
+    npm ci
     npm run build:server
 
     echo "installed daemon to {{ stable_dir }}/daemon"
 
     # launchd runs outside any shell; mise must trust the clone's .tool-versions itself.
-    if {{ is_macos }}; then
-        mise trust "{{ stable_repo }}/.tool-versions" || true
-    fi
+    mise trust "{{ stable_repo }}/" || true
+    mise trust "{{ stable_repo }}/.tool-versions" || true
 
 [script]
 install-unit: && restart
