@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 // RAMBLA-FORK: tests for the pod iOS deployment target raise plugin
-const { configurePodfileDeploymentTarget, DEPLOYMENT_TARGET_MARKER } = require(
-  "./with-ios-deployment-target.rambla",
-);
+const {
+  configurePodfileDeploymentTarget,
+  DEPLOYMENT_TARGET_MARKER,
+} = require("./with-ios-deployment-target.rambla");
 
 const PODFILE = [
   "platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'",
@@ -53,6 +54,8 @@ describe("configurePodfileDeploymentTarget", () => {
   it("only raises pods below the target", () => {
     const configured = configurePodfileDeploymentTarget(PODFILE);
 
-    expect(configured).toContain("next if current_target.nil? || current_target.to_f >= min_ios_deployment_target.to_f");
+    expect(configured).toContain(
+      "next if current_target.nil? || current_target.to_f >= min_ios_deployment_target.to_f",
+    );
   });
 });

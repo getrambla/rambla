@@ -50,12 +50,12 @@ Publish a lean, daemon-only public image on release tags or on demand, with mise
 
 **Files this work changes:**
 
-| File                                       | Edit                                                 | Upstream activity                                                         | Tag                  |
-| ------------------------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------- | -------------------- |
-| `fork/docker/Dockerfile.server`     | new daemon-only Dockerfile                           | new; `fork/` is ours and [rebrand.sh](../fork/rebrand.sh#L33) skips it    | `RAMBLA-FORK: feat:` |
+| File                                         | Edit                                                 | Upstream activity                                                         | Tag                  |
+| -------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------- | -------------------- |
+| `fork/docker/Dockerfile.server`              | new daemon-only Dockerfile                           | new; `fork/` is ours and [rebrand.sh](../fork/rebrand.sh#L33) skips it    | `RAMBLA-FORK: feat:` |
 | `.github/workflows/docker-server.rambla.yml` | new workflow: build and push `rambla-server` to GHCR | new; the `fork-` prefix cannot collide with an upstream or rebranded name | `RAMBLA-FORK: feat:` |
-| `justfile`                                 | add a `publish-server` recipe                        | existing, ours (absent from `upstream-rebrand`)                           | none                 |
-| `RAMBLA-CHANGELOG.md`                      | append the entry the `code` skill requires           | existing, ours (absent from `upstream-rebrand`)                           | none                 |
+| `justfile`                                   | add a `publish-server` recipe                        | existing, ours (absent from `upstream-rebrand`)                           | none                 |
+| `RAMBLA-CHANGELOG.md`                        | append the entry the `code` skill requires           | existing, ours (absent from `upstream-rebrand`)                           | none                 |
 
 Read-only references, never edited: `docker/base/Dockerfile` (last upstream touch 2026-09-14), `docker/base/rootfs/usr/local/bin/rambla-docker-entrypoint` (2026-09-14), `.github/workflows/docker.yml` (2026-09-21).
 
