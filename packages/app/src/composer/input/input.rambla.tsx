@@ -57,7 +57,6 @@ import { getShortcutOs } from "@/utils/shortcut-platform";
 import type { MessageInputKeyboardActionKind } from "@/keyboard/actions";
 import { isImeComposingKeyboardEvent } from "@/utils/keyboard-ime";
 import { isWeb } from "@/constants/platform";
-import { useIsCompactFormFactor } from "@/constants/layout";
 import { useComposerKeyboardScope } from "@/composer/keyboard-scope";
 import { RenderProfile } from "@/utils/render-profiler";
 import { useComposerHeight } from "./height";
@@ -1202,7 +1201,6 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     } = resolveMessageInputProps(props);
     const mode = resolveComposerInputMode(inputMode);
     const { t } = useTranslation();
-    const isCompact = useIsCompactFormFactor();
     const { height: windowHeight } = useWindowDimensions();
     const maxInputHeight = resolveMaxInputHeight(windowHeight);
     const buttonIconSize = isWeb ? ICON_SIZE.md : ICON_SIZE.lg;
@@ -1651,7 +1649,8 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
     );
 
     const shouldHandleWebKeyPress = isWeb;
-    const shouldSubmitOnEnter = isWeb && !isCompact;
+    // RAMBLA-FORK: fix: (no plan): a11y: prevent disabling keyboard submit on desktop.
+    const shouldSubmitOnEnter = isWeb;
 
     function handleDesktopKeyPress(event: WebTextInputKeyPressEvent) {
       if (!shouldHandleWebKeyPress) return;
