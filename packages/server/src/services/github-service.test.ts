@@ -797,6 +797,7 @@ describe("ForgeService", () => {
       headRepositorySshUrl: "git@github.com:therainisme/rambla.git",
       headRepositoryUrl: "https://github.com/therainisme/rambla",
       isCrossRepository: true,
+      headRefKind: "branch",
     });
 
     expect(runner.calls).toHaveLength(2);

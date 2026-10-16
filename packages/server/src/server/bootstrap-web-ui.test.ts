@@ -134,6 +134,44 @@ describe("daemon web UI bootstrap", () => {
     });
   });
 
+  test("spells out the scheme default port when the Host header omits it", async () => {
+    const distDir = await createWebUiDist();
+
+    daemonHandle = await createTestRamblaDaemon({
+      mcpEnabled: false,
+      webUi: {
+        enabled: true,
+        distDir,
+      },
+    });
+
+    // A browser reaching a proxy that terminates TLS on 443 sends a Host header
+    // with no port at all. The app rejects a portless `listen`, so the daemon
+    // has to supply the default itself.
+    const httpsHint = readInjectedConnectionHint(
+      await fetchDaemonWebUi({
+        port: daemonHandle.port,
+        headers: { host: "rambla.example.test", "x-forwarded-proto": "https" },
+      }),
+    );
+    const httpHint = readInjectedConnectionHint(
+      await fetchDaemonWebUi({
+        port: daemonHandle.port,
+        headers: { host: "rambla.example.test" },
+      }),
+    );
+    const ipv6Hint = readInjectedConnectionHint(
+      await fetchDaemonWebUi({
+        port: daemonHandle.port,
+        headers: { host: "[::1]", "x-forwarded-proto": "https" },
+      }),
+    );
+
+    expect(httpsHint.listen).toBe("rambla.example.test:443");
+    expect(httpHint.listen).toBe("rambla.example.test:80");
+    expect(ipv6Hint.listen).toBe("[::1]:443");
+  });
+
   test("ignores forwarded HTTPS when proxy trust is disabled", async () => {
     const distDir = await createWebUiDist();
 

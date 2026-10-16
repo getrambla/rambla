@@ -10,12 +10,11 @@ category: Getting started
 
 These projects are related to Rambla and built by the community.
 
-## Plugin directory
+## Plugins
 
-[rambla.cafe](https://rambla.cafe) is a community-run directory of Rambla plugins. Listings are generated
-from each plugin's public repository, so it is the fastest way to see what people are building and to
-publish your own. It is independent of the Rambla project and nothing on it is reviewed or endorsed by
-us, so read a plugin's source before installing it.
+Browse the [plugin registry](/plugins) for reviewed community plugins. To share your own, follow
+[Publish a plugin](/docs/plugins/publishing) for package preparation and submission.
+Plugins run unsandboxed; read their listing and source before installing.
 
 ## Tools and integrations
 
@@ -30,7 +29,8 @@ us, so read a plugin's source before installing it.
 
 ## Hosting and infrastructure
 
-| Project                                                              | What it does                                                                                          |
-| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| [Rambla Self-hosted](https://github.com/blockfeed/rambla-selfhosted) | Packages the Rambla web UI and a local daemon as a Docker deployment.                                 |
-| [Devbox Fleet](https://github.com/omrihaviv/devbox-fleet)            | Provisions and maintains per-developer GCP devboxes with Rambla, coding agents, and Tailscale access. |
+| Project                                                                       | What it does                                                                                                                                                               |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Rambla Self-hosted](https://github.com/blockfeed/rambla-selfhosted)          | Packages the Rambla web UI and a local daemon as a Docker deployment.                                                                                                      |
+| [Devbox Fleet](https://github.com/omrihaviv/devbox-fleet)                     | Provisions and maintains per-developer GCP devboxes with Rambla, coding agents, and Tailscale access.                                                                      |
+| [Rambla Vercel Sandbox](https://github.com/vercel-labs/rambla-vercel-sandbox) | Creates persistent Vercel Sandboxes running a Rambla daemon with Codex, Claude Code, OpenCode, or Pi through Vercel AI Gateway. Pair each sandbox as a remote Rambla host. |

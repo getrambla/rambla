@@ -65,6 +65,8 @@ linux:
   extraResources:
     - from: bin/rambla
       to: bin/rambla
+    - from: assets/icon.png
+      to: icon.png
   target:
     - AppImage
     - deb

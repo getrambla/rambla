@@ -21,7 +21,48 @@ rambla attach <id>                    # Stream agent output
 rambla send <id> "also fix linting"   # Send follow-up task
 rambla logs <id>                      # View agent timeline
 rambla stop <id>                      # Stop an agent
+rambla usage                          # Show account quotas and balances
 ```
+
+## Account usage
+
+Show account quotas and balances from the host's usage sources:
+
+```bash
+rambla usage
+rambla usage ls --refresh
+rambla usage ls --agent <agent-id>
+rambla usage inspect <report-id>
+rambla usage inspect <report-id> --refresh
+```
+
+`rambla usage` is equivalent to `rambla usage ls`. The summary groups windows and balances by account, with report IDs, source and account labels, status, and fetch timestamps. Missing values appear as `-`; unavailable and failed reports include their reasons.
+
+Copy the full report ID from the list into `inspect` to see reset times, balances and units, plan details, supplied forecasts, and login failures with recovery instructions. Report IDs require exact matches.
+
+`--agent` selects the account quota associated with an agent. It does not measure that agent's token consumption or cost. Use the full agent ID, and do not combine `--agent` with `inspect`.
+
+Queries use the host's five-minute cache when available. Add `--refresh` to bypass it. Use `--host` or `--home` to [select a daemon](#select-one-daemon). Hosts without usage-source support return an update message.
+
+### Usage in scripts
+
+```bash
+rambla usage ls --json
+rambla usage inspect <report-id> --json
+rambla usage ls --quiet
+```
+
+List JSON is always an array, including `[]` when no reports are returned. Inspect JSON is one report entry. Each entry includes `id`, `sourceId`, `sourceLabel`, `account`, `fetchedAt`, and a nested `report`. Read `report.status` before accessing its data:
+
+| Status        | Fields                                                                 |
+| ------------- | ---------------------------------------------------------------------- |
+| `available`   | `windows`, with optional `planLabel`, `balances`, and `details`        |
+| `unavailable` | `problem`, describing expired or rejected credentials or missing quota |
+| `error`       | `error`, the failure message                                           |
+
+Entries may also include `loginErrors`. Structured output preserves numeric values and optional fields. Standard `--format yaml`, `--no-headers`, and `--no-color` options are supported; `--quiet` prints full report IDs.
+
+A completed query exits with status `0`, including when individual reports are unavailable or failed. Connection or request failures, unsupported hosts, unknown report IDs, and conflicting selectors exit with status `1` and write the error to stderr. Human output says **No usage reports returned** for an empty result; this does not establish whether account discovery succeeded for every source.
 
 ## Provider diagnostics
 
@@ -42,7 +83,8 @@ Use `rambla run` to start a new agent with a task:
 ```bash
 rambla run "implement user authentication"
 rambla run --provider codex "refactor the API layer"
-rambla run --background "run the focused test suite"
+rambla run --no-wait "run the focused test suite"
+rambla run --output-schema schema.json "name this branch"
 rambla run --new-workspace worktree --worktree-mode branch-off --new-branch feature/x --base origin/main "implement feature X"
 rambla run --workspace <workspace-id> "review the current diff"
 rambla run --output-schema schema.json "extract release notes"
@@ -55,9 +97,14 @@ Worktree creation accepts `--worktree-mode branch-off|checkout-branch|checkout-p
 
 When an existing Rambla agent runs the same command, Rambla recognizes it through `RAMBLA_AGENT_ID`. Without explicit placement, the new agent becomes its subagent in the same workspace. `--workspace` can place that subagent elsewhere without changing its parent.
 
-Use `--output-schema` to return only matching JSON output. You can pass a schema file path or an inline JSON schema object. This mode cannot be used with `--background`.
+Use `--output-schema` to return only matching JSON output. You can pass a schema file path or an inline JSON schema object. This mode cannot be used with `--no-wait`.
 
-By default, `rambla run` waits for completion. Use `--background` to return immediately while the agent keeps running.
+By default, `rambla run` waits for completion. Use `--no-wait` to return immediately while the agent keeps running, the same flag `rambla send` takes.
+
+The old `run --background` and `-d` aliases still mean `--no-wait`. They are deprecated, hidden
+from help, and print a warning to stderr. Use `--no-wait` in scripts. Workspace visibility is
+selected separately with `workspace create --background`; this release does not repurpose
+`run --background`.
 
 ## Projects
 
@@ -116,10 +163,23 @@ rambla workspace create \
   --pr-number 2186
 ```
 
+Add `--background` to hide a workspace from default discovery. Its agents and terminals keep
+ordinary history, persistence, hooks, and restart recovery. `--no-background` explicitly overrides
+caller-workspace inheritance; omission inherits when run by a Rambla agent and defaults to false
+from a human shell. Visibility is creation-only.
+
+```bash
+rambla workspace create --isolation local --background --path /path/to/repo
+rambla run --workspace <workspace-id> --no-wait "review the checkout flow"
+```
+
+Exact workspace and agent IDs remain accessible regardless of listing visibility.
+
 Then list, use, rename, or archive it:
 
 ```bash
 rambla workspace ls
+rambla workspace ls --background               # Also include background workspaces
 rambla run --workspace <workspace-id> "implement authentication"
 rambla workspace rename <workspace-id> "Auth rework"
 rambla workspace rename <workspace-id> --reset   # back to the branch or directory name
@@ -168,11 +228,12 @@ The output includes each script's lifecycle and supervised terminal ID. Services
 Create and manage trusted plugins on a daemon:
 
 ```bash
-rambla plugin init /absolute/path/to/plugin
-rambla plugin install /absolute/path/to/plugin
-rambla plugin add owner/repository
+rambla plugin init ./plugin
+rambla plugin install ./plugin
+rambla plugin add owner/slug
+rambla plugin add git:owner/repository
 rambla plugin add https://gitlab.com/group/repository.git --ref main
-rambla plugin add owner/monorepo:plugins/review
+rambla plugin add git:owner/monorepo:plugins/review
 rambla plugin ls [id]
 rambla plugin update my-plugin
 rambla plugin update --all
@@ -183,8 +244,10 @@ rambla plugin enable my-plugin
 rambla plugin remove my-plugin
 ```
 
-GitHub shorthand checks an existing host directory first. Append `:<directory>` for a plugin in a
-monorepo. `rambla plugin ls [id]` does not contact the remote. `rambla plugin logs <id>` returns the
+Bare `owner/slug` installs a reviewed registry listing. Use `git:owner/repository` for GitHub
+source, or `./plugin` for a local directory. Append `:<directory>` for a plugin in a monorepo.
+
+`rambla plugin ls [id]` does not contact the remote. `rambla plugin logs <id>` returns the
 plugin's recent daemon-side stdout and stderr. Add `--json` for structured entries, or run
 `rambla --host <target> plugin logs <id>` for another daemon. See the
 [Plugin reference](/docs/plugins/reference) for installation, trust, lifecycle, and log-retention
@@ -197,6 +260,7 @@ rambla ls                    # Non-archived agents in active workspaces
 rambla ls -a                 # Also include archived agents
 rambla ls -g                 # Non-archived agents across all workspaces
 rambla ls -a -g --json       # All agents, including archived, as JSON
+rambla ls --background       # Also include agents in background workspaces
 ```
 
 ## Streaming output
@@ -391,7 +455,7 @@ The CLI is designed to be used by agents themselves. You can instruct an agent t
 
 ```bash
 # Agent A spawns Agent B and waits for it
-agent_id=$(rambla run --background --quiet --title api-agent "implement the API")
+agent_id=$(rambla run --no-wait --quiet --title api-agent "implement the API")
 rambla wait "$agent_id"
 rambla logs "$agent_id" --tail 5
 ```
