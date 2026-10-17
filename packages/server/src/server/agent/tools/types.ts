@@ -1,6 +1,18 @@
 import type { z } from "zod";
 import type { ProviderRamblaToolsPolicy } from "@getrambla/protocol/provider-config";
 
+export class RamblaToolInputError extends Error {
+  readonly status = 400;
+
+  constructor(
+    message: string,
+    readonly issues?: z.ZodError["issues"],
+  ) {
+    super(message);
+    this.name = "RamblaToolInputError";
+  }
+}
+
 export interface RamblaToolExecutionContext {
   signal?: AbortSignal;
   sendUpdate?: (update: RamblaToolResult) => void;

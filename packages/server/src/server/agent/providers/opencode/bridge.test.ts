@@ -9,6 +9,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { createTestLogger } from "../../../../test-utils/test-logger.js";
 import type { RamblaToolCatalog } from "../../tools/types.js";
+import { RamblaToolInputError } from "../../tools/types.js";
 import { createRamblaToolCatalog } from "../../tools/rambla-tools.js";
 import { AgentManager } from "../../agent-manager.js";
 import { AgentStorage } from "../../agent-storage.js";
@@ -36,8 +37,13 @@ function createCatalog(): RamblaToolCatalog {
     description: "Returns the supplied value.",
     inputSchema: { value: z.string() },
     async handler(input: unknown) {
-      const parsed = z.object({ value: z.string() }).parse(input);
-      return { content: [{ type: "text", text: parsed.value }] };
+      const parsed = z
+        .object({ value: z.string().min(2, "value must be at least 2 characters") })
+        .strict()
+        .safeParse(input);
+      if (!parsed.success)
+        throw new RamblaToolInputError(parsed.error.message, parsed.error.issues);
+      return { content: [{ type: "text", text: parsed.data.value }] };
     },
   };
   const tools = new Map([[tool.name, tool]]);
@@ -193,6 +199,13 @@ describe("OpenCodeBridge", () => {
       expect(asked).toEqual([
         { permission: "rambla_echo_context", patterns: ["*"], always: ["*"], metadata: {} },
       ]);
+      asked.length = 0;
+      await expect(
+        hooks.tool.rambla_echo_context.execute(
+          { value: "x" },
+          { sessionID: "ses_one", ask: async () => undefined },
+        ),
+      ).rejects.toThrow("value: value must be at least 2 characters");
 
       executedInputs.length = 0;
       await expect(
@@ -359,12 +372,17 @@ describe("OpenCodeBridge", () => {
             body: JSON.stringify(input),
           },
         );
-        expect(response.status).toBe(500);
+        expect(response.status).toBe(400);
         const payload = await response.json();
-        expect(payload.error).toContain("provider must be provider/model");
+        expect(payload).toMatchObject({ error: "Invalid tool input", issues: expect.any(Array) });
         await expect(
           tools.get("rambla_create_agent")!.execute(input, { sessionID: "caller" }),
-        ).rejects.toMatchObject({ message: payload.error, status: 500 });
+        ).rejects.toMatchObject({
+          status: 400,
+          message: expect.stringContaining(
+            "Invalid tool input: provider: provider must be provider/model, for example codex/gpt-5.4",
+          ),
+        });
       } finally {
         await dispose();
       }
@@ -547,6 +565,104 @@ describe("OpenCodeBridge", () => {
       expect(entry).toContain('id: "rambla"');
       const manifest = JSON.parse(await readFile(path.join(directory, "package.json"), "utf8"));
       expect(manifest).toMatchObject({ type: "module", exports: { "./server": "./server.js" } });
+    } finally {
+      await bridge.close();
+    }
+  });
+
+  test("returns actionable 4xx responses for invalid bridge requests", async () => {
+    const ramblaHome = await mkdtemp(path.join(tmpdir(), "rambla-opencode-bridge-errors-"));
+    temporaryDirectories.push(ramblaHome);
+    const bridge = new OpenCodeBridge({ ramblaHome, logger: createTestLogger() });
+    await bridge.start();
+    const catalog = createCatalog();
+    bridge.bindSession({ sessionId: "ses_errors", env: {}, tools: catalog });
+    const expectedErrorCatalog: RamblaToolCatalog = {
+      tools: new Map([
+        [
+          "expected_error",
+          {
+            name: "expected_error",
+            description: "Throws an expected tool error.",
+            inputSchema: {},
+            async handler() {
+              throw new RamblaToolInputError("Agent not found: missing-agent");
+            },
+          },
+        ],
+        [
+          "internal_error",
+          {
+            name: "internal_error",
+            description: "Throws an internal error.",
+            inputSchema: {},
+            async handler() {
+              throw new Error("Provider unavailable");
+            },
+          },
+        ],
+      ]),
+      getTool(name) {
+        return this.tools.get(name);
+      },
+      async executeTool(name, input, context) {
+        const tool = this.tools.get(name);
+        if (!tool) throw new Error(`Unknown tool: ${name}`);
+        return tool.handler(input, context ?? {});
+      },
+    };
+    bridge.bindSession({ sessionId: "ses_expected_error", env: {}, tools: expectedErrorCatalog });
+
+    try {
+      const plugin = readPluginOptions(bridge.decorateServerEnv({}));
+      const headers = {
+        Authorization: `Bearer ${plugin.token}`,
+        "Content-Type": "application/json",
+      };
+      const invalidInput = await fetch(
+        `${plugin.baseUrl}/_internal/opencode/sessions/ses_errors/tools/echo_context`,
+        { method: "POST", headers, body: JSON.stringify({ value: "ok", extra: true }) },
+      );
+      expect(invalidInput.status).toBe(400);
+      expect(await invalidInput.json()).toEqual({
+        error: "Invalid tool input",
+        issues: [
+          {
+            code: "unrecognized_keys",
+            keys: ["extra"],
+            path: [],
+            message: 'Unrecognized key: "extra"',
+          },
+        ],
+      });
+
+      const unknownTool = await fetch(
+        `${plugin.baseUrl}/_internal/opencode/sessions/ses_errors/tools/missing`,
+        { method: "POST", headers, body: "{}" },
+      );
+      expect(unknownTool.status).toBe(404);
+      expect(await unknownTool.json()).toEqual({ error: "Rambla tool not found: missing" });
+
+      const malformedBody = await fetch(
+        `${plugin.baseUrl}/_internal/opencode/sessions/ses_errors/tools/echo_context`,
+        { method: "POST", headers, body: "{" },
+      );
+      expect(malformedBody.status).toBe(400);
+      expect(await malformedBody.json()).toEqual({ error: "Malformed JSON request body" });
+
+      const expectedError = await fetch(
+        `${plugin.baseUrl}/_internal/opencode/sessions/ses_expected_error/tools/expected_error`,
+        { method: "POST", headers, body: "{}" },
+      );
+      expect(expectedError.status).toBe(400);
+      expect(await expectedError.json()).toEqual({ error: "Agent not found: missing-agent" });
+
+      const internalError = await fetch(
+        `${plugin.baseUrl}/_internal/opencode/sessions/ses_expected_error/tools/internal_error`,
+        { method: "POST", headers, body: "{}" },
+      );
+      expect(internalError.status).toBe(500);
+      expect(await internalError.json()).toEqual({ error: "Provider unavailable" });
     } finally {
       await bridge.close();
     }
