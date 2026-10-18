@@ -14,7 +14,7 @@ import type { ToolCallDetail } from "@getrambla/protocol/agent-types";
 import {
   buildRamblaToolDetailSections,
   type RamblaToolDetailSection,
-} from "@getrambla/protocol/rambla-tool-call-detail";
+} from "@getrambla/protocol/rambla-tool-presentation/index";
 import { buildLineDiff, parseUnifiedDiff, type DiffLine } from "@/utils/tool-call-parsers";
 import { highlightDiffLines } from "@/utils/diff-highlight";
 import { hasMeaningfulToolCallDetail } from "@/utils/tool-call-detail-state";

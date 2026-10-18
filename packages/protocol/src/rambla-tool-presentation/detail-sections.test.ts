@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildRamblaToolDetailSections } from "./rambla-tool-call-detail.js";
+import { buildRamblaToolDetailSections } from "./index.js";
 
 describe("Rambla tool-call detail presentation", () => {
   it.each(["mcp__rambla__create_agent", "rambla.create_agent", "rambla_remote.create_agent"])(

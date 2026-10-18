@@ -1,3 +1,4 @@
+import type { AgentMessage } from "@getrambla/protocol/agent-message";
 import type { ToolCallDetail, ToolCallIconName } from "@getrambla/protocol/agent-types";
 import { isRamblaToolName } from "@getrambla/protocol/tool-name-normalization";
 
@@ -17,7 +18,15 @@ const TOOL_DETAIL_ICON_NAMES: Record<ToolCallDetail["type"], ToolCallIcon> = {
   unknown: "wrench",
 };
 
-export function resolveToolCallIconName(toolName: string, detail?: ToolCallDetail): ToolCallIcon {
+export function resolveToolCallIconName(
+  toolName: string,
+  detail?: ToolCallDetail,
+  agentMessage?: AgentMessage,
+): ToolCallIcon {
+  // Agent messages are Rambla deliveries; the wire detail's legacy "bot" icon is for old clients.
+  if (agentMessage) {
+    return "rambla";
+  }
   const lowerName = toolName.trim().toLowerCase();
 
   if (detail?.type === "plain_text" && detail.icon) {

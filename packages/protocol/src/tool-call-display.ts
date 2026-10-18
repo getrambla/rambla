@@ -1,6 +1,8 @@
-import { buildAgentMessageDisplay } from "./agent-message-display.js";
 import type { ToolCallTimelineItem } from "./agent-types.js";
-import { getRamblaToolLeafName, isRamblaToolName } from "./tool-name-normalization.js";
+import {
+  buildAgentMessageDisplay,
+  buildRamblaToolDisplay,
+} from "./rambla-tool-presentation/index.js";
 import { stripCwdPrefix } from "./path-utils.js";
 
 export type ToolCallDisplayInput = Pick<
@@ -8,6 +10,8 @@ export type ToolCallDisplayInput = Pick<
   "name" | "status" | "error" | "metadata" | "detail" | "agentMessage"
 > & {
   cwd?: string;
+  /** Title of the agent a Rambla call targets, when the caller knows it. */
+  targetAgentTitle?: string;
 };
 
 export interface ToolCallDisplayModel {
@@ -33,12 +37,6 @@ function humanizeToolName(name: string): string {
   const trimmed = name.trim();
   if (!trimmed) {
     return name;
-  }
-  if (isRamblaToolName(trimmed)) {
-    const leaf = getRamblaToolLeafName(trimmed);
-    if (leaf) {
-      return humanizeToolName(leaf);
-    }
   }
   if (/[:./]/.test(trimmed) || trimmed.includes("__")) {
     return trimmed;
@@ -152,8 +150,20 @@ function buildUnknownDetailOverride(input: ToolCallDisplayInput): DetailDisplay 
 }
 
 export function buildToolCallDisplayModel(input: ToolCallDisplayInput): ToolCallDisplayModel {
-  if (input.agentMessage) {
-    return { displayName: buildAgentMessageDisplay(input.agentMessage).displayName };
+  const errorText = input.status === "failed" ? formatErrorText(input.error) : undefined;
+  const ramblaDisplay = input.agentMessage
+    ? buildAgentMessageDisplay(input.agentMessage)
+    : buildRamblaToolDisplay({
+        toolName: input.name,
+        detail: input.detail,
+        targetAgentTitle: input.targetAgentTitle,
+      });
+  if (ramblaDisplay) {
+    return {
+      displayName: ramblaDisplay.displayName,
+      ...(ramblaDisplay.summary ? { summary: ramblaDisplay.summary } : {}),
+      ...(errorText ? { errorText } : {}),
+    };
   }
   const canonicalDisplay = buildCanonicalDetailDisplay(input);
   const unknownDetailOverride = buildUnknownDetailOverride(input);
@@ -162,7 +172,6 @@ export function buildToolCallDisplayModel(input: ToolCallDisplayInput): ToolCall
     canonicalDisplay.displayName ??
     humanizeToolName(input.name);
   const summary = unknownDetailOverride.summary ?? canonicalDisplay.summary;
-  const errorText = input.status === "failed" ? formatErrorText(input.error) : undefined;
 
   return {
     displayName,
