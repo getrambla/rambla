@@ -1,24 +1,38 @@
+import type { PluginText } from "@getrambla/plugin/client";
 import type { RamblaApi } from "@getrambla/client";
 import type { QueryClient } from "@tanstack/react-query";
 import type { PluginRequirements } from "@getrambla/protocol/messages";
 import type {
-  PluginAttachmentSourceContribution,
+  PluginAttachmentSourceContribution as SDKPluginAttachmentSourceContribution,
   PluginCleanup,
-  PluginThemeContribution,
+  PluginThemeContribution as SDKPluginThemeContribution,
 } from "@getrambla/plugin";
 import type {
-  PluginCommandCenterItemContribution,
-  PluginClientSlashCommandContribution,
-  PluginComposerPillContribution,
-  PluginSidebarContribution,
-  PluginSidebarItemContribution,
-  PluginScreenContribution,
-  PluginSettingsScreenContribution,
+  PluginFilePanelContribution as SDKPluginFilePanelContribution,
+  PluginCommandCenterItemContribution as SDKPluginCommandCenterItemContribution,
+  PluginClientSlashCommandContribution as SDKPluginClientSlashCommandContribution,
+  PluginComposerPillContribution as SDKPluginComposerPillContribution,
+  PluginSidebarContribution as SDKPluginSidebarContribution,
+  PluginSidebarItemContribution as SDKPluginSidebarItemContribution,
+  PluginScreenContribution as SDKPluginScreenContribution,
+  PluginSettingsScreenContribution as SDKPluginSettingsScreenContribution,
   PluginTimelineRendererContribution,
   PluginTimelineTransformerContribution,
   PluginPanelLocation,
-  PluginWorkspacePanelContribution,
+  PluginWorkspacePanelContribution as SDKPluginWorkspacePanelContribution,
 } from "@getrambla/plugin/client";
+
+type PluginFilePanelContribution = SDKPluginFilePanelContribution<PluginText>;
+type PluginAttachmentSourceContribution = SDKPluginAttachmentSourceContribution<PluginText>;
+type PluginThemeContribution = SDKPluginThemeContribution<PluginText>;
+type PluginCommandCenterItemContribution = SDKPluginCommandCenterItemContribution<PluginText>;
+type PluginClientSlashCommandContribution = SDKPluginClientSlashCommandContribution<PluginText>;
+type PluginComposerPillContribution = SDKPluginComposerPillContribution<PluginText>;
+type PluginSidebarContribution = SDKPluginSidebarContribution<PluginText>;
+type PluginSidebarItemContribution = SDKPluginSidebarItemContribution<PluginText>;
+type PluginScreenContribution = SDKPluginScreenContribution<PluginText>;
+type PluginSettingsScreenContribution = SDKPluginSettingsScreenContribution<PluginText>;
+type PluginWorkspacePanelContribution = SDKPluginWorkspacePanelContribution<PluginText>;
 
 export type PluginSidebarSection = "header" | "footer";
 
@@ -35,6 +49,7 @@ export interface EvaluatedPlugin {
   // COMPAT(pluginSidebarAliases): added in v0.11.0, remove after 2027-03-29
   /** `addSidebarItem` registrations, so `/plugin/<id>/sidebar/<item>` routes keep resolving. */
   legacySidebarItems: PluginSidebarContribution[];
+  filePanels: PluginFilePanelContribution[];
   workspacePanels: EvaluatedPluginWorkspacePanelContribution[];
   commandCenterItems: PluginCommandCenterItemContribution[];
   clientSlashCommands: PluginClientSlashCommandContribution[];
@@ -46,6 +61,9 @@ export interface EvaluatedPlugin {
 
 export interface InstalledPlugin extends EvaluatedPlugin {
   lifetime: AbortController;
+  /** Immutable presentation locale, refreshed without replacing the installation lifetime. */
+  locale: string;
+  i18n: import("@getrambla/plugin/client/host").PluginTranslationRuntime;
   /** The plugin's one Rambla client, `useRambla()` in every surface; disposed at teardown. */
   rambla: RamblaApi;
   /** Calls one of the plugin's server RPC methods on its host. */
@@ -57,6 +75,7 @@ export interface InstalledPlugin extends EvaluatedPlugin {
 }
 
 export type {
+  PluginFilePanelContribution,
   PluginAttachmentSourceContribution,
   PluginCommandCenterItemContribution,
   PluginClientSlashCommandContribution,

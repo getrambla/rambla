@@ -13,3 +13,7 @@ useDefaultAndroidSdkVersions()
 android {
   namespace "sh.rambla.trace"
 }
+
+dependencies {
+  testImplementation "junit:junit:4.13.2"
+}

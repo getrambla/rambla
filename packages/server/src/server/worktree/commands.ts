@@ -45,10 +45,7 @@ export interface CreateRamblaWorktreeCommandDependencies<
   createRamblaWorktreeWorkflow?: CreateRamblaWorktreeWorkflow<Result>;
 }
 
-export type CreateRamblaWorktreeCommandInput = Omit<
-  CreateRamblaWorktreeInput,
-  "ramblaHome" | "runSetup"
-> & {
+export type CreateRamblaWorktreeCommandInput = Omit<CreateRamblaWorktreeInput, "ramblaHome"> & {
   ramblaHome?: string;
   worktreesRoot?: string;
 };
@@ -75,7 +72,7 @@ export async function createRamblaWorktreeCommand<Result extends CreateRamblaWor
 
     const createdWorktree = await dependencies.createRamblaWorktreeWorkflow({
       ...input,
-      runSetup: false,
+
       ramblaHome: input.ramblaHome ?? dependencies.ramblaHome,
       worktreesRoot: input.worktreesRoot ?? dependencies.worktreesRoot,
     });

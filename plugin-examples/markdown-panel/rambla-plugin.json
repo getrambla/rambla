@@ -1,0 +1,6 @@
+{
+  "id": "markdown-panel",
+  "requirements": {
+    "rambla": ">=0.13.0"
+  }
+}

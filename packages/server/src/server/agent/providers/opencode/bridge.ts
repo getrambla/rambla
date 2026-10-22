@@ -60,7 +60,7 @@ export class OpenCodeBridge {
   private baseUrl: string | null = null;
   private pluginUrl: string | null = null;
   private v2PluginUrl: string | null = null;
-  private manifestCatalog: RamblaToolCatalog | null = null;
+  private manifestCatalog: Pick<RamblaToolCatalog, "tools"> | null = null;
 
   constructor(options: OpenCodeBridgeOptions) {
     this.ramblaHome = options.ramblaHome;
@@ -89,7 +89,7 @@ export class OpenCodeBridge {
     this.baseUrl = `http://127.0.0.1:${address.port}`;
   }
 
-  setManifestCatalog(catalog: RamblaToolCatalog | null): void {
+  setManifestCatalog(catalog: Pick<RamblaToolCatalog, "tools"> | null): void {
     this.manifestCatalog = catalog;
   }
 

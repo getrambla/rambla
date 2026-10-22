@@ -5,6 +5,7 @@ import type { RamblaSubagentRow, ProviderSubagentRow } from "./select";
 function rambla(id: string, status: RamblaSubagentRow["status"] = "idle"): RamblaSubagentRow {
   return {
     kind: "rambla",
+    address: { serverId: "server-1", agentId: id },
     id,
     provider: "codex",
     title: id,
@@ -76,8 +77,8 @@ describe("createArchiveFinishedSubagents", () => {
       [provider("native"), rambla("first"), rambla("second", "error"), rambla("resumed")],
       {
         parentAgentId: "parent",
-        getManagedSubagent: (id) => current.get(id),
-        archiveManagedSubagent: (id) => {
+        getManagedSubagent: ({ agentId: id }) => current.get(id),
+        archiveManagedSubagent: ({ agentId: id }) => {
           events.push(`archive:${id}`);
           return id === "first" ? first.promise : second.promise;
         },
@@ -130,8 +131,8 @@ describe("createArchiveFinishedSubagents", () => {
     const calls: string[] = [];
     const archive = createArchiveFinishedSubagents([rambla("first"), rambla("second")], {
       parentAgentId: "parent",
-      getManagedSubagent: (id) => current.get(id),
-      archiveManagedSubagent: (id) => {
+      getManagedSubagent: ({ agentId: id }) => current.get(id),
+      archiveManagedSubagent: ({ agentId: id }) => {
         calls.push(id);
         const response = responses.shift();
         if (!response) throw new Error("Unexpected archive");
@@ -204,8 +205,8 @@ describe("createArchiveFinishedSubagents", () => {
     ]);
     const archive = createArchiveFinishedSubagents([rambla("first"), rambla("second")], {
       parentAgentId: "parent",
-      getManagedSubagent: (id) => current.get(id),
-      archiveManagedSubagent: async (id) => {
+      getManagedSubagent: ({ agentId: id }) => current.get(id),
+      archiveManagedSubagent: async ({ agentId: id }) => {
         throw id === "first" ? firstError : secondError;
       },
       dismissProviderSubagents: () => undefined,
@@ -230,7 +231,7 @@ describe("createArchiveFinishedSubagents", () => {
     const current = new Map([["failed", managed("failed")]]);
     const archive = createArchiveFinishedSubagents([rambla("failed")], {
       parentAgentId: "parent",
-      getManagedSubagent: (id) => current.get(id),
+      getManagedSubagent: ({ agentId: id }) => current.get(id),
       archiveManagedSubagent: async () => {
         current.set("failed", managed("failed", "running"));
         throw new Error("archive failed");
@@ -256,7 +257,7 @@ describe("createArchiveFinishedSubagents", () => {
     const current = new Map([["failed", managed("failed")]]);
     const archive = createArchiveFinishedSubagents([rambla("failed")], {
       parentAgentId: "parent",
-      getManagedSubagent: (id) => current.get(id),
+      getManagedSubagent: ({ agentId: id }) => current.get(id),
       archiveManagedSubagent: async () => {
         current.set("failed", managed("failed", "initializing"));
         throw new Error("archive failed");
@@ -297,7 +298,7 @@ describe("createArchiveFinishedSubagents", () => {
       const current = new Map([["failed", managed("failed")]]);
       const archive = createArchiveFinishedSubagents([rambla("failed")], {
         parentAgentId: "parent",
-        getManagedSubagent: (id) => current.get(id),
+        getManagedSubagent: ({ agentId: id }) => current.get(id),
         archiveManagedSubagent: async () => {
           updateSnapshot(current);
           throw error;
@@ -325,8 +326,8 @@ describe("createArchiveFinishedSubagents", () => {
     const calls: string[] = [];
     const archive = createArchiveFinishedSubagents([rambla("first"), rambla("second")], {
       parentAgentId: "parent",
-      getManagedSubagent: (id) => current.get(id),
-      archiveManagedSubagent: async (id) => {
+      getManagedSubagent: ({ agentId: id }) => current.get(id),
+      archiveManagedSubagent: async ({ agentId: id }) => {
         calls.push(id);
         if (calls.length === 1) throw firstError;
         if (calls.length === 2) {
@@ -384,8 +385,8 @@ describe("createArchiveFinishedSubagents", () => {
     const archived: string[] = [];
     const archive = createArchiveFinishedSubagents(rows, {
       parentAgentId: "parent",
-      getManagedSubagent: (id) => current.get(id),
-      archiveManagedSubagent: async (id) => {
+      getManagedSubagent: ({ agentId: id }) => current.get(id),
+      archiveManagedSubagent: async ({ agentId: id }) => {
         archived.push(id);
         current.set("resumed", managed("resumed", "running"));
       },

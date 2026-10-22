@@ -1,3 +1,4 @@
+import { PluginTranslationRuntime } from "@getrambla/plugin/client/host";
 import { useRambla, useRpc } from "@getrambla/plugin/client";
 import { defineRpc } from "@getrambla/plugin";
 import type { RamblaApi } from "@getrambla/client";
@@ -21,6 +22,8 @@ function installation(invoked: string[]): InstalledPlugin {
     serverId: "host",
     clientBundle: "",
     lifetime: new AbortController(),
+    locale: "en",
+    i18n: new PluginTranslationRuntime({ getLocale: () => "en", subscribe: () => () => {} }),
     rambla: { dispose: async () => undefined } as RamblaApi,
     invoke: async (method) => {
       invoked.push(method);
@@ -32,6 +35,7 @@ function installation(invoked: string[]): InstalledPlugin {
     surfaces: [],
     sidebarItems: { header: [], footer: [] },
     legacySidebarItems: [],
+    filePanels: [],
     workspacePanels: [],
     commandCenterItems: [],
     clientSlashCommands: [],

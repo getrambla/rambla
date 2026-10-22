@@ -215,7 +215,7 @@ describe("daemon checkout PR merge loop", () => {
             baseBranch: "main",
             branchName: "merge-pr-squash",
           },
-          runSetup: true,
+
           ramblaHome: ctx.daemon.ramblaHome,
         });
         worktreePath = worktree.worktreePath;

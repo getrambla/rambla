@@ -200,7 +200,7 @@ async function createRamblaOwnedWorktree(
       baseBranch: "main",
       branchName: worktreeSlug,
     },
-    runSetup: false,
+
     ramblaHome,
   });
 }

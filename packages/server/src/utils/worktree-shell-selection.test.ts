@@ -144,7 +144,6 @@ describe("worktree shell selection", () => {
       await runWorktreeSetupCommands({
         worktreePath,
         branchName: "main",
-        cleanupOnFailure: false,
         runtimeEnv: {
           RAMBLA_SOURCE_CHECKOUT_PATH: worktreePath,
           RAMBLA_ROOT_PATH: worktreePath,

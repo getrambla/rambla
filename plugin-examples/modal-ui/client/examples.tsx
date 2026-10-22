@@ -6,7 +6,7 @@ import {
   TextInput,
   copyText,
   useToast,
-} from "@getrambla/plugin/client/react-native";
+} from "@getrambla/plugin/client/ui";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Pressable,

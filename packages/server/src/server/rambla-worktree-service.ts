@@ -135,7 +135,7 @@ async function createRamblaWorktreeWithPriority(
       {
         cwd: createdWorktree.repoRoot,
         worktreePath: createdWorktree.worktree.worktreePath,
-        ...(input.runSetup === false ? { teardownCwds: [] } : {}),
+        teardownCwds: [],
         ramblaHome: input.ramblaHome,
         worktreesBaseRoot: input.worktreesRoot,
       },

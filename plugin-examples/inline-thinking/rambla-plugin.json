@@ -1,6 +1,6 @@
 {
   "id": "inline-thinking",
   "requirements": {
-    "rambla": ">=0.8.0"
+    "rambla": ">=0.13.0"
   }
 }

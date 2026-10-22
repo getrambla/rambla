@@ -5,15 +5,22 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { z } from "zod";
+import Ajv from "ajv";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { createTestLogger } from "../../../../test-utils/test-logger.js";
 import type { RamblaToolCatalog } from "../../tools/types.js";
 import { RamblaToolInputError } from "../../tools/types.js";
-import { createRamblaToolCatalog } from "../../tools/rambla-tools.js";
 import { AgentManager } from "../../agent-manager.js";
 import { AgentStorage } from "../../agent-storage.js";
 import { ProviderSnapshotManager } from "../../provider-snapshot-manager.js";
+import { createTestAgentClients } from "../../../test-utils/fake-agent-client.js";
+import { createTestAgentMessages } from "../../../test-utils/agent-messages.js";
+import {
+  createRamblaAgentToolManifest,
+  createRamblaToolCatalog,
+} from "../../tools/rambla-tools.js";
+import { serializeRamblaToolInputParameters } from "../../tools/rambla-tool-serialization.js";
 import {
   OpenCodeBridge,
   loadOpenCodeBridgePluginArtifact,
@@ -73,6 +80,153 @@ function readPluginOptions(env: Record<string, string>): {
 }
 
 describe("OpenCodeBridge", () => {
+  test("advertises agent-scoped schemas that execute through both bridge plugins", async () => {
+    const ramblaHome = await mkdtemp(path.join(tmpdir(), "rambla-opencode-manifest-"));
+    temporaryDirectories.push(ramblaHome);
+    const logger = createTestLogger();
+    const clients = createTestAgentClients();
+    const agentStorage = new AgentStorage(path.join(ramblaHome, "agents"), logger);
+    const agentManager = new AgentManager({ clients, registry: agentStorage, logger });
+    const providerSnapshotManager = new ProviderSnapshotManager({ logger, extraClients: clients });
+    const agentMessages = createTestAgentMessages({ agentManager, agentStorage, logger });
+    const dependencies = {
+      agentManager,
+      agentStorage,
+      providerSnapshotManager,
+      logger,
+      agentMessages: () => agentMessages,
+    };
+    const bridge = new OpenCodeBridge({ ramblaHome, logger });
+    await bridge.start();
+    bridge.setManifestCatalog(createRamblaAgentToolManifest(dependencies));
+    try {
+      const parent = await agentManager.createAgent(
+        { provider: "codex", cwd: ramblaHome },
+        undefined,
+        { workspaceId: "manifest-workspace" },
+      );
+      const catalog = createRamblaToolCatalog({ ...dependencies, callerAgentId: parent.id });
+      bridge.bindSession({ sessionId: "bound", env: {}, tools: catalog });
+      const plugin = readPluginOptions(bridge.decorateServerEnv({}));
+      const response = await fetch(`${plugin.baseUrl}/_internal/opencode/tools`, {
+        headers: { Authorization: `Bearer ${plugin.token}` },
+      });
+      expect(response.status).toBe(200);
+      const manifest = z
+        .object({
+          tools: z.array(
+            z.object({
+              name: z.string(),
+              description: z.string(),
+              inputSchema: z.record(z.string(), z.unknown()),
+            }),
+          ),
+        })
+        .parse(await response.json());
+      const definitions = new Map(manifest.tools.map((tool) => [tool.name, tool]));
+      const createDefinition = definitions.get("create_agent")!;
+      const sendDefinition = definitions.get("send_agent_prompt")!;
+      const topLevelCatalog = createRamblaToolCatalog(dependencies);
+      for (const name of ["create_agent", "send_agent_prompt"]) {
+        expect(serializeRamblaToolInputParameters(topLevelCatalog.getTool(name)!)).toMatchObject({
+          properties: { notifyOnFinish: { default: false } },
+        });
+      }
+      const ajv = new Ajv({ useDefaults: true, strict: false });
+      const createInput = {
+        title: "Bridge child",
+        provider: "codex/gpt-5.4",
+        initialPrompt: "Hello",
+        notifyOnFinish: false,
+      };
+      expect(ajv.compile(createDefinition.inputSchema)(createInput)).toBe(true);
+
+      const v2Config = z
+        .object({ plugins: z.array(z.object({ package: z.string() })) })
+        .parse(JSON.parse((await bridge.decorateV2ServerEnv({})).OPENCODE_CONFIG_CONTENT));
+      const v2Module: {
+        default: { setup(context: V2TestPluginContext): Promise<() => Promise<void>> };
+      } = await import(
+        pathToFileURL(path.join(fileURLToPath(v2Config.plugins[0]!.package), "server.js")).href
+      );
+      const tools = new Map<string, V2TestTool>();
+      const dispose = await v2Module.default.setup({
+        options: plugin,
+        tool: {
+          transform: async (transform) => {
+            transform({
+              add: (tool) => {
+                tools.set(tool.name, tool);
+              },
+            });
+            return { dispose: async () => undefined };
+          },
+        },
+        session: {
+          context: async () => [],
+          get: async () => ({ parentID: "bound" }),
+          hook: async () => ({ dispose: async () => undefined }),
+        },
+      });
+      try {
+        const created = await tools
+          .get("rambla_create_agent")!
+          .execute(createInput, { sessionID: "bound" });
+        const children = agentManager.listAgents().filter((agent) => agent.id !== parent.id);
+        expect(children).toHaveLength(1);
+        const child = children[0]!;
+        expect(created).toMatchObject({
+          content: [{ type: "text", text: expect.stringContaining(child.id) }],
+        });
+        expect(child.workspaceId).toBe("manifest-workspace");
+        expect([...definitions.keys()]).toEqual([...catalog.tools.keys()]);
+        for (const definition of manifest.tools) {
+          const accepted = catalog.getTool(definition.name)!;
+          expect(definition.inputSchema).toEqual(serializeRamblaToolInputParameters(accepted));
+          expect(definition.description).toBe(accepted.description);
+          expect(tools.get(`rambla_${definition.name}`)!.input).toEqual(definition.inputSchema);
+        }
+        expect(createDefinition.inputSchema).toMatchObject({
+          properties: { notifyOnFinish: { default: true } },
+        });
+        expect(createDefinition.inputSchema.properties).not.toHaveProperty("background");
+        expect(sendDefinition.inputSchema).toMatchObject({
+          properties: { notifyOnFinish: { default: true } },
+        });
+        await expect(
+          catalog.executeTool("create_agent", { ...createInput, background: true }),
+        ).rejects.toThrow("background");
+
+        const v1Module = await import(plugin.pluginUrl);
+        const hooks = await v1Module.default({}, plugin);
+        expect(Object.keys(hooks.tool.rambla_create_agent.args)).toEqual(
+          Object.keys(
+            z.record(z.string(), z.unknown()).parse(createDefinition.inputSchema.properties),
+          ),
+        );
+        const sendInput = { agentId: child.id, prompt: "Hello again", notifyOnFinish: false };
+        expect(ajv.compile(sendDefinition.inputSchema)(sendInput)).toBe(true);
+        await expect(
+          hooks.tool.rambla_send_agent_prompt.execute(sendInput, {
+            sessionID: "bound",
+            ask: async () => undefined,
+          }),
+        ).resolves.toMatchObject({ output: expect.stringContaining('"deliveryStatus": "queued"') });
+        await agentMessages.waitForDispatch(child.id, new AbortController().signal);
+      } finally {
+        await dispose();
+      }
+    } finally {
+      await agentMessages.close();
+      await bridge.close();
+      await Promise.all(
+        agentManager.listAgents().map((agent) => agentManager.closeAgent(agent.id)),
+      );
+      await agentManager.flushForShutdown();
+      await providerSnapshotManager.shutdown();
+    }
+  });
+
   test("loads packaged bundle bytes without invoking source compilation", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "rambla-opencode-artifact-"));
     temporaryDirectories.push(root);
@@ -699,6 +853,7 @@ describe("OpenCodeBridge", () => {
 
 interface V2TestTool {
   name: string;
+  input?: unknown;
   execute(input: unknown, call: { sessionID: string }): Promise<unknown>;
 }
 interface V2TestContext {

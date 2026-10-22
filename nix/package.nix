@@ -148,7 +148,7 @@ buildNpmPackage rec {
   meta = {
     description = "Self-hosted daemon for Claude Code, Codex, and OpenCode";
     homepage = "https://github.com/getrambla/rambla";
-    license = lib.licenses.agpl3Plus;
+    license = lib.licenses.asl20;
     mainProgram = "rambla";
     platforms = lib.platforms.linux ++ lib.platforms.darwin;
   };

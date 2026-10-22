@@ -137,6 +137,7 @@ import { attachAgentStoragePersistence } from "./persistence-hooks.js";
 import { createAgentMcpServer } from "./agent/mcp-server.js";
 import {
   createRamblaToolCatalog,
+  createRamblaAgentToolManifest,
   type RamblaToolHostDependencies,
 } from "./agent/tools/rambla-tools.js";
 import type { RamblaToolRuntimeContext } from "./agent/tools/types.js";
@@ -974,6 +975,7 @@ export async function createRamblaDaemon(
     agentStorage,
   );
   await agentStorage.initialize();
+  await closeStaleAgentRecords(agentStorage);
   logger.info({ elapsed: elapsed() }, "Agent storage initialized");
   await bootstrapWorkspaceRegistries({
     serverId,
@@ -1392,6 +1394,15 @@ export async function createRamblaDaemon(
   const createAgentToolHostDependencies = (
     runtime: RamblaToolRuntimeContext,
   ): RamblaToolHostDependencies => ({
+    agentMessages: () => {
+      if (!wsServer) throw new Error("Daemon is not accepting agent messages");
+      return wsServer.agentMessages;
+    },
+    serverId,
+    hosts: () => {
+      if (!wsServer) throw new Error("Daemon is not accepting host operations");
+      return wsServer.toolHosts();
+    },
     agentManager,
     agentStorage,
     terminalManager,
@@ -1457,7 +1468,9 @@ export async function createRamblaDaemon(
   const createAgentToolCatalog = (runtime: RamblaToolRuntimeContext) =>
     createRamblaToolCatalog(createAgentToolHostDependencies(runtime));
   const setAgentProviderToolsEnabled = (enabled: boolean) => {
-    agentProviderRuntime.setRamblaToolCatalog(enabled ? createAgentToolCatalog({}) : null);
+    agentProviderRuntime.setRamblaToolCatalog(
+      enabled ? createRamblaAgentToolManifest(createAgentToolHostDependencies({})) : null,
+    );
   };
   agentManager.setRamblaToolCatalogFactory(createAgentToolCatalog);
   agentManager.setRamblaToolsEnabled(config.mcpInjectIntoAgents !== false);
@@ -1822,6 +1835,7 @@ export async function createRamblaDaemon(
     scriptHealthMonitor.stop();
     // Freeze both ingress and registration before taking the agent closure snapshot.
     wsServer?.prepareForShutdown();
+    await wsServer?.agentMessages.close();
     agentManager.prepareForShutdown();
     await closeAllAgents(logger, agentManager);
     await withTimeout({
@@ -1872,6 +1886,16 @@ export async function createRamblaDaemon(
     getListenTarget: () => boundListenTarget,
     getServerId: () => serverId,
   };
+}
+
+async function closeStaleAgentRecords(agentStorage: AgentStorage): Promise<void> {
+  // No provider runtimes are loaded at startup. Repair interrupted
+  // shutdowns before any status consumer sees the persisted active states.
+  for (const record of await agentStorage.list()) {
+    if (record.lastStatus === "running" || record.lastStatus === "initializing") {
+      await agentStorage.upsert({ ...record, lastStatus: "closed" });
+    }
+  }
 }
 
 /**

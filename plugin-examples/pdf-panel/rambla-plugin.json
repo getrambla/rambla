@@ -1,0 +1,6 @@
+{
+  "id": "pdf-panel",
+  "requirements": {
+    "rambla": ">=0.13.0"
+  }
+}

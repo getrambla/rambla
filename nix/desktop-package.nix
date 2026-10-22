@@ -257,7 +257,7 @@ buildNpmPackage {
   meta = {
     description = "Rambla desktop app (Electron wrapper)";
     homepage = "https://github.com/getrambla/rambla";
-    license = lib.licenses.agpl3Plus;
+    license = lib.licenses.asl20;
     mainProgram = "rambla-desktop";
     platforms = lib.platforms.linux ++ lib.platforms.darwin;
   };

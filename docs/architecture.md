@@ -4,6 +4,9 @@ Rambla is a client-server system for monitoring and controlling local AI coding 
 
 Your code never leaves your machine. Rambla is local-first.
 
+Daemon-owned outbound connections and routed API scope ownership are described in
+[Connected hosts](connected-hosts.md).
+
 ## System overview
 
 ```

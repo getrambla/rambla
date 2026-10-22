@@ -36,7 +36,7 @@ function pluginClientSource(input: {
 }): string {
   return `import React, { useRef } from "react";
 import { Pressable, Text, View } from "react-native";
-import { Icon } from "@getrambla/plugin/client/react-native";
+import { Icon } from "@getrambla/plugin/client/ui";
 import { useAgent, useWorkspace, openExternalUrl } from "@getrambla/plugin/client";
 import { ExternalLink } from "@getrambla/plugin/client/ui";
 import { recordComposerOpen } from "./shared/rpc";

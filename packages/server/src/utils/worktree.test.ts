@@ -31,7 +31,7 @@ interface LegacyCreateWorktreeTestOptions {
   cwd: string;
   baseBranch: string;
   worktreeSlug: string;
-  runSetup?: boolean;
+
   ramblaHome?: string;
 }
 
@@ -50,7 +50,7 @@ function createLegacyWorktreeForTest(
       baseBranch: options.baseBranch,
       branchName: options.branchName,
     },
-    runSetup: options.runSetup ?? true,
+
     ramblaHome: options.ramblaHome,
   });
 }
@@ -132,7 +132,7 @@ describe("rambla worktree manager", () => {
         cwd: repoDir,
         ramblaHome,
         worktreeSlug: "fork-review",
-        runSetup: false,
+
         source: {
           kind: "checkout-change-request",
           forge: "gitea",

@@ -8,7 +8,7 @@ import {
 } from "@getrambla/plugin/client";
 import { useCallback, useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
-import { ExternalLink } from "@getrambla/plugin/client/ui";
+import { ExternalLink, Markdown } from "@getrambla/plugin/client/ui";
 import { incrementRpc } from "../shared/increment";
 
 export function contributeClient(client: PluginClientContext) {
@@ -107,7 +107,7 @@ export function ExamplePanel({
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.title}>Workspace plugin panel</Text>
+      <Markdown>{"## Workspace plugin panel\n\nCall a **daemon RPC** from this panel."}</Markdown>
       <ExternalLink href="https://rambla.sh/docs/plugins">Plugin documentation</ExternalLink>
       {openBrowser ? (
         <Pressable accessibilityRole="button" onPress={handleOpenBrowser} style={styles.button}>

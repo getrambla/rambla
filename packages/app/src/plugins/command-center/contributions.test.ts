@@ -1,3 +1,4 @@
+import { PluginTranslationRuntime } from "@getrambla/plugin/client/host";
 import { QueryClient } from "@tanstack/react-query";
 import { createRamblaApi, type RamblaApi } from "@getrambla/client";
 import { DaemonClient } from "@getrambla/client/internal/daemon-client";
@@ -61,6 +62,8 @@ function plugin(onAgentSelect: AgentCommandItem["onSelect"]): InstalledPlugin {
     serverId: "host-1",
     clientBundle: "bundle",
     lifetime: new AbortController(),
+    locale: "en",
+    i18n: new PluginTranslationRuntime({ getLocale: () => "en", subscribe: () => () => {} }),
     rambla: createRamblaApi(
       new DaemonClient({
         url: "ws://127.0.0.1:1",
@@ -78,6 +81,7 @@ function plugin(onAgentSelect: AgentCommandItem["onSelect"]): InstalledPlugin {
     surfaces: [{ id: "main", title: "Main", Component: () => null }],
     sidebarItems: { header: [], footer: [] },
     legacySidebarItems: [],
+    filePanels: [],
     workspacePanels: [
       {
         id: "details",

@@ -1,3 +1,9 @@
+import type { AgentAddress } from "@getrambla/protocol/addresses";
+import { parentAddressLabels } from "@getrambla/protocol/agent-labels";
+export type { AgentAddress } from "@getrambla/protocol/addresses";
+import { createHostActions, type RamblaHostActions } from "./hosts/index.js";
+export type { RamblaHostActions } from "./hosts/index.js";
+export type { HostAdd, HostUpdate, HostSummary, HostDirectory } from "@getrambla/protocol/hosts";
 import type { OwnedSubscription } from "./connection/index.js";
 export type { OwnedSubscription, SubscriptionObserver } from "./connection/index.js";
 import type { DaemonClientConfig } from "./daemon-client.js";
@@ -246,7 +252,7 @@ export interface RamblaAgentCreateOptions {
   onEvent?: (snapshot: CreationSnapshot) => void;
   config: RamblaAgentConfig;
   cwd: string;
-  parent?: string | RamblaAgentHandle;
+  parent?: string | AgentAddress | RamblaAgentHandle;
   title?: RamblaAgentSessionConfig["title"];
   env?: CreateAgentRequestMessage["env"];
   prompt?: string;
@@ -346,6 +352,7 @@ export interface RamblaAgentTimelineHandle {
 
 export interface RamblaAgentHandle {
   readonly id: string;
+  readonly address: AgentAddress;
   /**
    * `workspaceId` through `archivedAt` mirror the last snapshot this handle
    * observed. A handle from `ref()` reads `null` for all of them until
@@ -490,6 +497,7 @@ export interface RamblaConfigActions {
 }
 
 export interface RamblaApi {
+  readonly hosts: RamblaHostActions;
   dispose(): Promise<void>;
   observeEvents: DaemonClient["observeEvents"];
   readonly terminals: RamblaTerminalActions;
@@ -532,10 +540,12 @@ export function createRamblaClient(config: RamblaClientConfig): RamblaClient {
 function toDaemonAgentCreateOptions(
   options: RamblaAgentCreateOptions,
   placement?: { workspaceId: string; cwd: string },
+  serverId?: string,
 ): CreateAgentRequestOptions {
   const { config: agentConfig, cwd, parent, title, prompt, ...requestOptions } = options;
   const { provider: providerModel, options: providerOptions, ...runtimeConfig } = agentConfig;
   const { provider, model } = parseProviderModel(providerModel);
+  const relationship = parent ? encodeParent(parent, serverId) : {};
   return {
     ...requestOptions,
     config: {
@@ -547,7 +557,12 @@ function toDaemonAgentCreateOptions(
       ...(providerOptions !== undefined ? { providerOptions } : {}),
     },
     ...(placement ? { workspaceId: placement.workspaceId } : {}),
-    ...(parent ? { callerAgentId: resolveAgentId(parent) } : {}),
+    ...(parent
+      ? {
+          ...relationship,
+          labels: { ...requestOptions.labels, ...relationship.labels },
+        }
+      : {}),
     ...(prompt !== undefined ? { initialPrompt: prompt } : {}),
   };
 }
@@ -594,7 +609,13 @@ export function createRamblaApi(
     options: RamblaAgentCreateOptions,
     placement?: { workspaceId: string; cwd: string },
   ) => {
-    const agent = await daemonClient.createAgent(toDaemonAgentCreateOptions(options, placement));
+    const agent = await daemonClient.createAgent(
+      toDaemonAgentCreateOptions(
+        options,
+        placement,
+        daemonClient.getLastServerInfoMessage()?.serverId,
+      ),
+    );
     return createAgentHandle(agent);
   };
   const terminals = createTerminalActions(daemonClient, async (workspaceId) => {
@@ -701,6 +722,7 @@ export function createRamblaApi(
 
   return {
     dispose,
+    hosts: createHostActions(daemonClient, { own, signal: lifetime.signal, api: createRamblaApi }),
     observeEvents,
     terminals,
     projects: {
@@ -718,7 +740,18 @@ export function createRamblaApi(
         openWorkspace(daemonClient, createWorkspaceHandle, input, requestId),
       create: async ({ requestId, agent, ...options }) => {
         const result = await daemonClient.createWorkspace(
-          { ...options, ...(agent ? { agent: toDaemonAgentCreateOptions(agent) } : {}) },
+          {
+            ...options,
+            ...(agent
+              ? {
+                  agent: toDaemonAgentCreateOptions(
+                    agent,
+                    undefined,
+                    daemonClient.getLastServerInfoMessage()?.serverId,
+                  ),
+                }
+              : {}),
+          },
           requestId,
         );
         if (result.error || !result.workspace) {
@@ -871,8 +904,14 @@ function createAgentHandleFactory(
     const id = typeof agent === "string" ? agent : agent.id;
     let current = typeof agent === "string" ? null : agent;
 
+    let serverId = daemonClient.getLastServerInfoMessage()?.serverId;
     const handle: RamblaAgentHandle = {
       id,
+      get address() {
+        serverId ??= daemonClient.getLastServerInfoMessage()?.serverId;
+        if (!serverId) throw new Error("Connect to a host before obtaining an agent address");
+        return { serverId, agentId: id };
+      },
       timeline: {
         append: (item) => daemonClient.appendAgentTimelineItem(id, item),
         refetch: async (options) => {
@@ -1021,8 +1060,16 @@ function resolveWorkspaceId(workspace: string | RamblaWorkspaceHandle): string {
   return typeof workspace === "string" ? workspace : workspace.id;
 }
 
-function resolveAgentId(agent: string | RamblaAgentHandle): string {
-  return typeof agent === "string" ? agent : agent.id;
+function encodeParent(
+  parent: string | AgentAddress | RamblaAgentHandle,
+  serverId?: string,
+): Pick<CreateAgentRequestOptions, "callerAgentId" | "labels"> {
+  if (typeof parent === "string") return { callerAgentId: parent };
+  const address = "address" in parent ? parent.address : parent;
+  if (!serverId) throw new Error("Connect to a host before creating a child");
+  return address.serverId === serverId
+    ? { callerAgentId: address.agentId, labels: parentAddressLabels(address) }
+    : { labels: parentAddressLabels(address) };
 }
 
 function parseProviderModel(selection: string): { provider: string; model: string } {
@@ -1040,6 +1087,7 @@ function listProviderUsage(
   daemonClient: DaemonClient,
   options?: RamblaProviderUsageOptions,
 ): Promise<RamblaProviderUsageResult> {
+  daemonClient.ensureConnected();
   // COMPAT(providerUsageList): added in v0.1.98, remove after 2027-02-28 once daemon floor >= v0.1.98.
   if (daemonClient.getLastServerInfoMessage()?.features?.providerUsageList !== true) {
     return Promise.reject(new Error("Update the host to list provider usage."));

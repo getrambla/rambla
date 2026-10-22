@@ -58,7 +58,7 @@ interface LegacyCreateWorktreeTestOptions {
   cwd: string;
   baseBranch: string;
   worktreeSlug: string;
-  runSetup?: boolean;
+
   ramblaHome?: string;
   worktreesRoot?: string;
 }
@@ -78,7 +78,7 @@ function createLegacyWorktreeForTest(
       baseBranch: options.baseBranch,
       branchName: options.branchName,
     },
-    runSetup: options.runSetup ?? true,
+
     ramblaHome: options.ramblaHome,
     worktreesRoot: options.worktreesRoot,
   });
@@ -239,7 +239,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         worktreeSlug: "my-feature",
         source: { kind: "branch-off", baseBranch: "main", branchName: "feature/x" },
-        runSetup: true,
+
         ramblaHome,
       });
 
@@ -282,7 +282,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           cwd: repoDir,
           worktreeSlug: "existing-feature",
           source: { kind: "checkout-branch", branchName: "feature/existing" },
-          runSetup: false,
+
           ramblaHome,
         });
         const status = await getCheckoutStatus(result.worktreePath, { ramblaHome });
@@ -304,7 +304,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         worktreeSlug: "dev-worktree",
         source: { kind: "checkout-branch", branchName: "dev" },
-        runSetup: true,
+
         ramblaHome,
       });
 
@@ -346,7 +346,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         worktreeSlug: "stale-default",
         source: { kind: "checkout-branch", branchName: "feature/stale-default" },
-        runSetup: false,
+
         ramblaHome,
       });
       const diff = await getCheckoutDiff(created.worktreePath, { mode: "base" }, { ramblaHome });
@@ -365,7 +365,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         worktreeSlug: "feature-x-worktree",
         source: { kind: "checkout-branch", branchName: "feature-x" },
-        runSetup: true,
+
         ramblaHome,
       });
 
@@ -382,7 +382,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         worktreeSlug: "release-worktree",
         source: { kind: "checkout-branch", branchName: "release/1.1.15" },
-        runSetup: true,
+
         ramblaHome,
       });
 
@@ -400,7 +400,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         worktreeSlug: "dev-worktree",
         source: { kind: "checkout-branch", branchName: "main" },
-        runSetup: true,
+
         ramblaHome,
       });
 
@@ -412,7 +412,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       });
     });
 
-    it("fetches a GitHub PR branch, checks it out, writes metadata, and runs setup", async () => {
+    it("fetches a GitHub PR branch and writes metadata without executing setup", async () => {
       const remoteDir = join(tempDir, "remote.git");
       const remoteCloneDir = join(tempDir, "remote-clone");
       execFileSync("git", ["clone", "--bare", repoDir, remoteDir]);
@@ -446,12 +446,12 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           headRef: "user/feature",
           baseRefName: "main",
         },
-        runSetup: true,
+
         ramblaHome,
       });
 
       expect(readFileSync(join(result.worktreePath, "file.txt"), "utf8")).toBe("from-pr\n");
-      expect(readFileSync(join(result.worktreePath, "setup.log"), "utf8")).toBe("setup ran\n");
+      expect(existsSync(join(result.worktreePath, "setup.log"))).toBe(false);
       const currentBranch = execFileSync("git", ["branch", "--show-current"], {
         cwd: result.worktreePath,
       })
@@ -494,7 +494,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           headRef: "Feature.X",
           baseRefName: "main",
         },
-        runSetup: true,
+
         ramblaHome,
       });
 
@@ -540,7 +540,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "refs/heads/main",
         worktreeSlug: "prefer-local-feature",
-        runSetup: false,
+
         ramblaHome,
       });
       const originResult = await createLegacyWorktreeForTest({
@@ -548,7 +548,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "refs/remotes/origin/main",
         worktreeSlug: "prefer-origin-feature",
-        runSetup: false,
+
         ramblaHome,
       });
 
@@ -602,7 +602,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "refs/remotes/upstream/main",
         worktreeSlug: "fork-base-feature",
-        runSetup: false,
+
         ramblaHome,
       });
 
@@ -693,7 +693,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "refs/remotes/upstream/release+hotfix",
         worktreeSlug: "release-hotfix-feature",
-        runSetup: false,
+
         ramblaHome,
       });
 
@@ -721,7 +721,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "prefer-local-fallback-feature",
-        runSetup: false,
+
         ramblaHome,
       });
 
@@ -735,7 +735,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           cwd: repoDir,
           baseBranch: "does-not-exist",
           worktreeSlug: "missing-base-feature",
-          runSetup: false,
+
           ramblaHome,
         }),
       ).rejects.toThrow("Base branch not found: does-not-exist");
@@ -759,7 +759,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           cwd: repoDir,
           worktreeSlug: "invalid-existing-branch",
           source: { kind: "checkout-branch", branchName: "bad..name" },
-          runSetup: true,
+
           ramblaHome,
         });
       } catch (error) {
@@ -777,7 +777,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           cwd: repoDir,
           worktreeSlug: "invalid-option-like-branch",
           source: { kind: "checkout-branch", branchName: "-bad" },
-          runSetup: true,
+
           ramblaHome,
         });
       } catch (error) {
@@ -857,6 +857,10 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
 
       expect(existsSync(result.worktreePath)).toBe(true);
 
+      await runWorktreeSetupCommands({
+        worktreePath: result.worktreePath,
+        branchName: result.branchName,
+      });
       // Verify setup ran and env vars were available
       const setupLog = readFileSync(join(result.worktreePath, "setup.log"), "utf8");
       expect(setupLog).toContain(`source=${repoDir}`);
@@ -890,6 +894,10 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         ramblaHome,
       });
 
+      await runWorktreeSetupCommands({
+        worktreePath: result.worktreePath,
+        branchName: result.branchName,
+      });
       expect(getWorktreeSetupCommands(result.worktreePath)).toEqual([
         'greeting="hello from string setup"\necho "$greeting" > setup.log',
       ]);
@@ -930,7 +938,6 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         await runWorktreeSetupCommands({
           worktreePath: repoDir,
           branchName: "main",
-          cleanupOnFailure: false,
           runtimeEnv: {
             RAMBLA_SOURCE_CHECKOUT_PATH: repoDir,
             RAMBLA_ROOT_PATH: repoDir,
@@ -1006,7 +1013,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       ]);
     });
 
-    it("does not run setup commands when runSetup=false", async () => {
+    it("only provisions the worktree without executing setup", async () => {
       const ramblaConfig = {
         worktree: {
           setup: ['echo "setup ran" > setup.log'],
@@ -1023,7 +1030,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "no-setup-test",
-        runSetup: false,
+
         ramblaHome,
       });
 
@@ -1047,7 +1054,6 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
       const results = await runWorktreeSetupCommands({
         worktreePath: repoDir,
         branchName: "main",
-        cleanupOnFailure: false,
         onEvent: (event) => {
           progressEvents.push(event);
         },
@@ -1065,7 +1071,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "runtime-env-port-reuse",
-        runSetup: false,
+
         ramblaHome,
       });
 
@@ -1087,7 +1093,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         baseBranch: "main",
         worktreeSlug: "runtime-env-port-conflict",
-        runSetup: false,
+
         ramblaHome,
       });
 
@@ -1119,35 +1125,6 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           resolve();
         });
       });
-    });
-
-    it("cleans up worktree if setup command fails", async () => {
-      // Create rambla.json with failing setup command
-      const ramblaConfig = {
-        worktree: {
-          setup: ["exit 1"],
-        },
-      };
-      writeFileSync(join(repoDir, "rambla.json"), JSON.stringify(ramblaConfig));
-      execFileSync("git", ["add", "rambla.json"], { cwd: repoDir });
-      execFileSync("git", ["-c", "commit.gpgsign=false", "commit", "-m", "add rambla.json"], {
-        cwd: repoDir,
-      });
-
-      const expectedWorktreePath = join(ramblaHome, "worktrees", "test-repo", "fail-test");
-
-      await expect(
-        createLegacyWorktreeForTest({
-          branchName: "main",
-          cwd: repoDir,
-          baseBranch: "main",
-          worktreeSlug: "fail-test",
-          ramblaHome,
-        }),
-      ).rejects.toThrow("Worktree setup command failed");
-
-      // Verify worktree was cleaned up
-      expect(existsSync(expectedWorktreePath)).toBe(false);
     });
 
     it("reads worktree terminal specs from rambla.json with optional name", async () => {
@@ -1282,7 +1259,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         worktreeSlug: "seed-uncommitted",
         source: { kind: "branch-off", baseBranch: "main", branchName: "feature/seed" },
-        runSetup: false,
+
         ramblaHome,
       });
 
@@ -1328,7 +1305,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           baseBranch: "origin/main",
           branchName: "feature/upstream-config",
         },
-        runSetup: false,
+
         ramblaHome,
       });
 
@@ -1368,7 +1345,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
           baseBranch: "symlink-config",
           branchName: "feature/symlink-config",
         },
-        runSetup: false,
+
         ramblaHome,
       });
 
@@ -1389,7 +1366,7 @@ describe.skipIf(isPlatform("win32"))("worktree POSIX-only", () => {
         cwd: repoDir,
         worktreeSlug: "no-config",
         source: { kind: "branch-off", baseBranch: "main", branchName: "feature/no-config" },
-        runSetup: false,
+
         ramblaHome,
       });
 

@@ -9,7 +9,7 @@ import type { RamblaToolCatalog } from "./tools/types.js";
 
 export interface AgentProviderRuntime {
   snapshotManager: ProviderSnapshotManager;
-  setRamblaToolCatalog(catalog: RamblaToolCatalog | null): void;
+  setRamblaToolCatalog(catalog: Pick<RamblaToolCatalog, "tools"> | null): void;
   shutdown(): Promise<void>;
 }
 

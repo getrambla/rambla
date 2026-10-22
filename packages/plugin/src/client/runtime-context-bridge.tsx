@@ -1,3 +1,4 @@
+import { PluginTranslationProvider, usePluginTranslationRuntime } from "./translations.js";
 import { useCallback, type ReactNode } from "react";
 import { PluginClientStateProvider, usePluginClientStateSource } from "./client-state.js";
 import { RamblaApiProvider, useRamblaContextValue } from "./rambla-context.js";
@@ -7,6 +8,7 @@ export type PluginRuntimeContextBridge = (children: ReactNode) => ReactNode;
 
 /** Rebuilds plugin runtime contexts inside React Native portal hosts. */
 export function usePluginRuntimeContextBridge(): PluginRuntimeContextBridge {
+  const translations = usePluginTranslationRuntime();
   const rambla = useRamblaContextValue();
   const rpc = usePluginRpcContextValue();
   const state = usePluginClientStateSource();
@@ -24,10 +26,12 @@ export function usePluginRuntimeContextBridge(): PluginRuntimeContextBridge {
       );
       return (
         <RamblaApiProvider rambla={rambla}>
-          <PluginRpcProvider invoke={rpc.invoke}>{content}</PluginRpcProvider>
+          <PluginRpcProvider invoke={rpc.invoke}>
+            <PluginTranslationProvider runtime={translations}>{content}</PluginTranslationProvider>
+          </PluginRpcProvider>
         </RamblaApiProvider>
       );
     },
-    [rambla, rpc, state],
+    [rambla, rpc, state, translations],
   );
 }

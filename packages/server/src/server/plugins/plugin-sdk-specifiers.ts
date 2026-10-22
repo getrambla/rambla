@@ -2,6 +2,7 @@
 export const PLUGIN_CLIENT_ONLY_SDK_SPECIFIERS = [
   "@getrambla/plugin/client",
   "@getrambla/plugin/client/ui",
+  // COMPAT(pluginReactNativeEntrypoint): added in v0.13.0, remove after 2027-04-20
   "@getrambla/plugin/client/react-native",
 ] as const;
 
