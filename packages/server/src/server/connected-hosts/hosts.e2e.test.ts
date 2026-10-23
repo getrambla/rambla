@@ -1719,3 +1719,320 @@ test(
     expect(requests[1]).not.toHaveProperty("sessionMode");
   },
 );
+
+test(
+  "durable remote finish intent survives origin restart and unavailable-host recovery",
+  { timeout: 60000 },
+  async () => {
+    const root = await mkdtemp(join(tmpdir(), "durable-remote-origin-"));
+    cleanup.push(() => rm(root, { recursive: true, force: true }));
+    const parentPrompts: string[] = [];
+    const finish = Promise.withResolvers<void>();
+    cleanup.push(async () => {
+      finish.resolve();
+    });
+    const b = await daemon({
+      agentClients: createTestAgentClients({ beforeTurnComplete: () => finish.promise }),
+    });
+    const clients = () =>
+      createTestAgentClients({
+        onStartTurn: (prompt) => {
+          if (String(prompt).includes('kind="agent-notification"'))
+            parentPrompts.push(String(prompt));
+        },
+      });
+    const a = await daemon({
+      ramblaHomeRoot: root,
+      cleanup: false,
+      agentClients: clients(),
+      mcpEnabled: true,
+    });
+    const origin = await api(a);
+    const destination = await api(b);
+    const saved = await origin.rambla.hosts.add({ connection: `127.0.0.1:${b.port}` });
+    const directory = await online(origin.rambla);
+    const remoteId = directory.hosts[0]!.serverId!;
+    const workspace = await origin.rambla.workspaces.create({
+      source: { kind: "directory", path: a.staticDir },
+    });
+    const remoteWorkspace = await destination.rambla.workspaces.create({
+      source: { kind: "directory", path: b.staticDir },
+    });
+    const parent = await workspace.agents.create({
+      config: { provider: "claude/claude-test", modeId: "full-access" },
+      title: "Remote parent",
+    });
+    const mcp = new Client({ name: "durable-remote-parent", version: "1" });
+    await mcp.connect(
+      new StreamableHTTPClientTransport(
+        new URL(`http://127.0.0.1:${a.port}/mcp/agents?callerAgentId=${parent.id}`),
+      ),
+    );
+    cleanup.push(() => mcp.close());
+    const response = await mcp.callTool({
+      name: "create_agent",
+      arguments: {
+        serverId: remoteId,
+        workspaceId: remoteWorkspace.id,
+        provider: "claude/claude-test",
+        title: "Remote child",
+        initialPrompt: "Keep working while origin restarts",
+        settings: { modeId: "full-access" },
+      },
+    });
+    expect(response.isError).not.toBe(true);
+    const childId = (response.structuredContent as { agentId: string }).agentId;
+    expect((await destination.client.fetchAgent(childId))?.agent.status).toBe("running");
+    const records = async (home: string) =>
+      JSON.parse(await readFile(join(home, "finish-subscriptions.json"), "utf8"));
+    expect(await records(a.ramblaHome)).toHaveLength(1);
+    // An unavailable saved route must retain intent, including through a restart.
+    await origin.rambla.hosts.update(saved.registrationId, { enabled: false });
+    await origin.rambla.dispose();
+    await origin.client.close();
+    await mcp.close();
+    await a.close();
+    const restarted = await daemon({
+      ramblaHomeRoot: root,
+      cleanup: false,
+      agentClients: clients(),
+      mcpEnabled: true,
+    });
+    const recovered = await api(restarted);
+    expect(await records(restarted.ramblaHome)).toHaveLength(1);
+    expect(parentPrompts).toEqual([]);
+    expect((await destination.client.fetchAgent(childId))?.agent.status).toBe("running");
+    await recovered.rambla.hosts.update(saved.registrationId, { enabled: true });
+    await online(recovered.rambla);
+    expect(parentPrompts).toEqual([]);
+    expect(await records(restarted.ramblaHome)).toHaveLength(1);
+    finish.resolve();
+    await expect.poll(() => parentPrompts, { timeout: 15000 }).toHaveLength(1);
+    expect(parentPrompts[0]).toContain(`Agent ${childId}`);
+    expect(parentPrompts[0]).toContain(`Server: ${remoteId}`);
+    expect(parentPrompts[0]).toContain('event="finished"');
+    await expect.poll(() => records(restarted.ramblaHome), { timeout: 5000 }).toEqual([]);
+  },
+);
+
+test(
+  "remote finish observation survives a permission checkpoint until resumed completion",
+  { timeout: 30000 },
+  async () => {
+    const parentPrompts: string[] = [];
+    const finish = Promise.withResolvers<void>();
+    cleanup.push(async () => {
+      finish.resolve();
+    });
+    const a = await daemon({
+      mcpEnabled: true,
+      agentClients: createTestAgentClients({
+        onStartTurn: (prompt) => {
+          if (String(prompt).includes('kind="agent-notification"'))
+            parentPrompts.push(String(prompt));
+        },
+      }),
+    });
+    const b = await daemon({
+      agentClients: createTestAgentClients({ beforeTurnComplete: () => finish.promise }),
+    });
+    const origin = await api(a);
+    const destination = await api(b);
+    await origin.rambla.hosts.add({ connection: `127.0.0.1:${b.port}` });
+    const directory = await online(origin.rambla);
+    const workspace = await origin.rambla.workspaces.create({
+      source: { kind: "directory", path: a.staticDir },
+    });
+    const remoteWorkspace = await destination.rambla.workspaces.create({
+      source: { kind: "directory", path: b.staticDir },
+    });
+    const parent = await workspace.agents.create({
+      config: { provider: "claude/claude-test", modeId: "full-access" },
+      title: "Permission parent",
+    });
+    const mcp = new Client({ name: "permission-parent", version: "1" });
+    cleanup.push(() => mcp.close());
+    await mcp.connect(
+      new StreamableHTTPClientTransport(
+        new URL(`http://127.0.0.1:${a.port}/mcp/agents?callerAgentId=${parent.id}`),
+      ),
+    );
+    const response = await mcp.callTool({
+      name: "create_agent",
+      arguments: {
+        serverId: directory.hosts[0]!.serverId,
+        workspaceId: remoteWorkspace.id,
+        provider: "claude/claude-test",
+        title: "Permission child",
+        initialPrompt: "Run rm -f permission.txt",
+        settings: { modeId: "default" },
+      },
+    });
+    expect(response.isError).not.toBe(true);
+    const childId = (response.structuredContent as { agentId: string }).agentId;
+    await expect.poll(() => parentPrompts, { timeout: 10000 }).toHaveLength(1);
+    expect(parentPrompts[0]).toContain('event="permission-required"');
+    expect(parentPrompts[0]).toContain("respond_to_permission");
+    const child = (await destination.client.fetchAgent(childId))!.agent;
+    expect(child.pendingPermissions).toHaveLength(1);
+    expect(
+      JSON.parse(await readFile(join(a.ramblaHome, "finish-subscriptions.json"), "utf8")),
+    ).toHaveLength(1);
+    await destination.client.respondToPermission(childId, child.pendingPermissions[0]!.id, {
+      behavior: "allow",
+    });
+    expect(parentPrompts).toHaveLength(1);
+    expect((await destination.client.fetchAgent(childId))?.agent.status).toBe("running");
+    finish.resolve();
+    await expect.poll(() => parentPrompts, { timeout: 10000 }).toHaveLength(2);
+    expect(parentPrompts[1]).toContain('event="finished"');
+    await expect
+      .poll(async () =>
+        JSON.parse(await readFile(join(a.ramblaHome, "finish-subscriptions.json"), "utf8")),
+      )
+      .toEqual([]);
+  },
+);
+
+test(
+  "disabled remote send rejects unsent finish intent before reconnecting to an idle child",
+  { timeout: 30000 },
+  async () => {
+    const parentPrompts: string[] = [];
+    const a = await daemon({
+      mcpEnabled: true,
+      agentClients: createTestAgentClients({
+        onStartTurn: (prompt) => {
+          if (String(prompt).includes('kind="agent-notification"'))
+            parentPrompts.push(String(prompt));
+        },
+      }),
+    });
+    const b = await daemon({ agentClients: createTestAgentClients() });
+    const origin = await api(a);
+    const destination = await api(b);
+    const saved = await origin.rambla.hosts.add({ connection: `127.0.0.1:${b.port}` });
+    const directory = await online(origin.rambla);
+    const serverId = directory.hosts[0]!.serverId!;
+    const workspace = await origin.rambla.workspaces.create({
+      source: { kind: "directory", path: a.staticDir },
+    });
+    const remoteWorkspace = await destination.rambla.workspaces.create({
+      source: { kind: "directory", path: b.staticDir },
+    });
+    const parent = await workspace.agents.create({
+      config: { provider: "claude/claude-test", modeId: "full-access" },
+      title: "Parent",
+    });
+    const child = await remoteWorkspace.agents.create({
+      config: { provider: "claude/claude-test", modeId: "full-access" },
+      title: "Idle child",
+    });
+    const mcp = new Client({ name: "offline-parent", version: "1" });
+    cleanup.push(() => mcp.close());
+    await mcp.connect(
+      new StreamableHTTPClientTransport(
+        new URL(`http://127.0.0.1:${a.port}/mcp/agents?callerAgentId=${parent.id}`),
+      ),
+    );
+    await origin.rambla.hosts.update(saved.registrationId, { enabled: false });
+    const response = await mcp.callTool({
+      name: "send_agent_prompt",
+      arguments: { serverId, agentId: child.id, prompt: "Never sent" },
+    });
+    expect(response.isError).toBe(true);
+    const records = () =>
+      readFile(join(a.ramblaHome, "finish-subscriptions.json"), "utf8").then(JSON.parse);
+    expect(await records()).toEqual([]);
+    await origin.rambla.hosts.update(saved.registrationId, { enabled: true });
+    await online(origin.rambla);
+    expect((await destination.client.fetchAgent(child.id))?.agent.status).toBe("idle");
+    expect(await records()).toEqual([]);
+    expect(parentPrompts).toEqual([]);
+  },
+);
+
+test.each(["removed", "disabled"] as const)(
+  "%s remote destination reports unknown child status and consumes its finish subscription",
+  { timeout: 30000 },
+  async (availability) => {
+    const parentPrompts: string[] = [];
+    const finish = Promise.withResolvers<void>();
+    cleanup.push(async () => finish.resolve());
+    const a = await daemon({
+      mcpEnabled: true,
+      agentClients: createTestAgentClients({
+        onStartTurn: (prompt) => {
+          if (String(prompt).includes('kind="agent-notification"'))
+            parentPrompts.push(String(prompt));
+        },
+      }),
+    });
+    const b = await daemon({
+      agentClients: createTestAgentClients({ beforeTurnComplete: () => finish.promise }),
+    });
+    const origin = await api(a);
+    const destination = await api(b);
+    const saved = await origin.rambla.hosts.add({ connection: `127.0.0.1:${b.port}` });
+    const directory = await online(origin.rambla);
+    const serverId = directory.hosts[0]!.serverId!;
+    const workspace = await origin.rambla.workspaces.create({
+      source: { kind: "directory", path: a.staticDir },
+    });
+    const remoteWorkspace = await destination.rambla.workspaces.create({
+      source: { kind: "directory", path: b.staticDir },
+    });
+    const parent = await workspace.agents.create({
+      config: { provider: "claude/claude-test", modeId: "full-access" },
+      title: "Parent",
+    });
+    const mcp = new Client({ name: "removed-host-parent", version: "1" });
+    cleanup.push(() => mcp.close());
+    await mcp.connect(
+      new StreamableHTTPClientTransport(
+        new URL(`http://127.0.0.1:${a.port}/mcp/agents?callerAgentId=${parent.id}`),
+      ),
+    );
+    const response = await mcp.callTool({
+      name: "create_agent",
+      arguments: {
+        serverId,
+        workspaceId: remoteWorkspace.id,
+        provider: "claude/claude-test",
+        title: "Child",
+        initialPrompt: "Held work",
+        settings: { modeId: "full-access" },
+      },
+    });
+    expect(response.isError).not.toBe(true);
+    const childId = (response.structuredContent as { agentId: string }).agentId;
+    if (availability === "removed") await origin.rambla.hosts.remove(saved.registrationId);
+    else await origin.rambla.hosts.update(saved.registrationId, { enabled: false });
+    await expect.poll(() => parentPrompts, { timeout: 15000 }).toHaveLength(1);
+    expect(parentPrompts[0]).toContain(`Status of child agent ${childId}`);
+    expect(parentPrompts[0]).toContain(`Server: ${serverId}`);
+    expect(parentPrompts[0]).toContain(
+      availability === "removed"
+        ? `Host ${serverId} was removed or is unavailable.`
+        : `Could not observe child agent ${childId} on host ${serverId} after three failed attempts.`,
+    );
+    expect(parentPrompts[0]).toContain("is unknown.");
+    expect(parentPrompts[0]).not.toContain("finished.");
+    await expect
+      .poll(async () =>
+        JSON.parse(await readFile(join(a.ramblaHome, "finish-subscriptions.json"), "utf8")),
+      )
+      .toEqual([]);
+    if (availability === "removed")
+      await origin.rambla.hosts.add({ connection: `127.0.0.1:${b.port}` });
+    else await origin.rambla.hosts.update(saved.registrationId, { enabled: true });
+    await online(origin.rambla);
+    finish.resolve();
+    const completed = await destination.client.waitForFinish(childId, 5000);
+    expect(completed.final?.status).toBe("idle");
+    expect(parentPrompts).toHaveLength(1);
+    expect(
+      JSON.parse(await readFile(join(a.ramblaHome, "finish-subscriptions.json"), "utf8")),
+    ).toEqual([]);
+  },
+);
